@@ -3,10 +3,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "regions": ["cdg1"],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "AUTH_SESSION_SECRET": "@auth_session_secret"
-  },
   "functions": {
     "src/app/**/*.ts": {
       "memory": 1024,
