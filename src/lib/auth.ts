@@ -1,3 +1,5 @@
+import { Currency } from '@prisma/client'
+
 export type AuthUser = {
   id: 'avi' | 'serena'
   email: string
@@ -5,16 +7,19 @@ export type AuthUser = {
   passwordHash: string
   accountNames: string[]
   defaultAccountName: string
+  preferredCurrency: Currency
 }
 
 function parseAuthUsers(): AuthUser[] {
   const user1Email = process.env.AUTH_USER1_EMAIL
   const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME
   const user1PasswordHash = process.env.AUTH_USER1_PASSWORD_HASH
+  const user1PreferredCurrency = (process.env.AUTH_USER1_PREFERRED_CURRENCY as Currency) || Currency.USD
 
   const user2Email = process.env.AUTH_USER2_EMAIL
   const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME
   const user2PasswordHash = process.env.AUTH_USER2_PASSWORD_HASH
+  const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
 
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
     throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
@@ -32,6 +37,7 @@ function parseAuthUsers(): AuthUser[] {
       passwordHash: user1PasswordHash,
       accountNames: ['Avi', 'Joint'],
       defaultAccountName: 'Avi',
+      preferredCurrency: user1PreferredCurrency,
     },
     {
       id: 'serena',
@@ -40,6 +46,7 @@ function parseAuthUsers(): AuthUser[] {
       passwordHash: user2PasswordHash,
       accountNames: ['Serena', 'Joint'],
       defaultAccountName: 'Serena',
+      preferredCurrency: user2PreferredCurrency,
     },
   ]
 }
