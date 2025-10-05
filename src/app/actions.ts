@@ -861,7 +861,7 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
       select: { symbol: true },
     })
 
-    const symbols = [...new Set(holdings.map((h) => h.symbol))]
+    const symbols = Array.from(new Set(holdings.map((h) => h.symbol)))
 
     if (symbols.length === 0) {
       return { success: true, updated: 0, skipped: 0, errors: [] }
