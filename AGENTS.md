@@ -1,23 +1,32 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Next.js App Router code lives in `src/app` (layouts, server actions, global styles) with reusable UI in `src/components` and domain helpers in `src/lib` and `src/utils`. Prisma assets (`schema.prisma`, migrations, `seed.ts`) reside in `prisma/`, while static files stay under `public/`. Onboarding scripts sit in `scripts/`, and Docker orchestration for local Postgres is defined in `docker-compose.yml` plus `.env.docker`.
+- **src/** holds all Next.js App Router code, UI components, and TypeScript helpers. Key entry points: `src/app` (routes, server actions), `src/components` (shared UI), `src/lib` (domain logic), and `src/utils` (formatters).
+- **prisma/** contains `schema.prisma`, generated client output, and `seed.ts` for Avi/Serena account data.
+- **tests/** houses Vitest unit suites and Playwright end-to-end specs; `tests/e2e` drives browser flows.
+- **docs/** captures deployment notes (`docs/vercel-deployment.md`). Static assets live under `public/`.
 
 ## Build, Test, and Development Commands
-- `npm run setup:local`: scaffold `.env`, boot Docker Postgres, sync Prisma, seed demo data.
-- `npm run dev:local`: refresh Prisma client then launch the dev server; use `npm run dev` when the DB is already running.
-- `npm run build` / `npm run start`: production compile and serve.
-- `npm run lint`: enforce ESLint + Next.js rules; run with `--fix` before committing.
-- Database utilities: `npm run db:up:local`, `db:down:local`, `db:logs:local`, `db:push`, `db:migrate`, `db:seed`, `npm run prisma:generate`.
+- `npm run setup:local` – installs deps, boots Docker Postgres, syncs schema, seeds data.
+- `npm run dev` / `npm run dev:local` – starts Next dev server (the latter also ensures Docker DB is up).
+- `npm run build` – runs `prisma generate` then `next build` (mirrors Vercel).
+- `npm test` – executes Vitest suites; `npm run test:e2e` drives Playwright (requires running app & seeded DB).
+- `npm run lint` – Next.js ESLint pass.
 
 ## Coding Style & Naming Conventions
-Use TypeScript everywhere, export components in PascalCase, and keep files focused—UI in `src/components`, state or calculations in `src/lib`. Prefer named exports, two-space indentation, Tailwind utilities for styling, and short helper functions. Match existing formatting (no bundled Prettier) and leave server-only code within `src/app` or `lib` modules that avoid browser-only APIs.
+- TypeScript-first; client components opt into `'use client'` when needed.
+- Two-space indentation, Tailwind utility classes for styling, named exports over default.
+- Keep server-only utilities in `src/lib` or `src/app`; avoid browser APIs in server code.
 
 ## Testing Guidelines
-No automated runner ships today. If you add one, colocate specs as `*.test.ts` or `*.test.tsx`, expose it via `npm test`, and document setup in the PR. Meanwhile, rely on `npm run lint`, TypeScript checks, and manual walkthroughs of budgeting, seeding, and recurring-plan flows; capture reproduction steps or screenshots when filing issues.
+- Unit tests live beside helpers (`tests/*.test.ts`) using Vitest. Prefer deterministic data builders over fixtures.
+- Playwright specs in `tests/e2e` cover login, account switching, and CRUD flows; run against seeded DB: `npm run build && npm run test:e2e`.
+- Add new suites when touching auth, finance calculations, or dashboard layout state.
 
 ## Commit & Pull Request Guidelines
-Write imperative commit subjects under ~60 characters (e.g., `Add joint balance widget`) and group schema changes with regenerated Prisma client files. Pull requests should summarize the change, link relevant issues, note migrations or seeds to run, and include screenshots or GIFs for UI work plus manual verification notes. Rebase on `main` before opening to keep history linear.
+- Use imperative commit subjects under ~60 characters (e.g., `Add joint account filters`). Group schema changes with regenerated Prisma client.
+- PRs should summarize intent, list environment or migration steps (`prisma migrate deploy`, `npm run db:seed`), and attach screenshots/GIFs for UI tweaks. Link relevant issues and note manual test coverage (lint/build/tests executed).
 
-## Environment & Security Notes
-Copy `.env.example` to `.env` and keep secrets local; Docker defaults are tracked in `.env.docker`. After any schema edit run `npm run prisma:generate` to prevent stale types. Remove real financial data from logs, seeds, and screenshots prior to sharing.
+## Security & Configuration Tips
+- Secrets: set `DATABASE_URL` and `AUTH_SESSION_SECRET` locally and on Vercel; never commit real credentials.
+- After schema edits run `npm run prisma:generate` and reseed (`npm run db:seed`) so Playwright tests reflect new data.

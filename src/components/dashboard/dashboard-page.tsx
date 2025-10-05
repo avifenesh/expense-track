@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { TransactionType } from '@prisma/client'
+import { TransactionType, Currency } from '@prisma/client'
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,6 +31,7 @@ import {
   upsertBudgetAction,
   upsertRecurringTemplateAction,
   persistActiveAccountAction,
+  refreshExchangeRatesAction,
 } from '@/app/actions'
 import { Sparkline } from '@/components/dashboard/sparkline'
 import { Button } from '@/components/ui/button'
@@ -70,6 +71,12 @@ const typeFilterOptions = [
   { label: 'All types', value: 'all' as const },
   { label: 'Expense', value: TransactionType.EXPENSE },
   { label: 'Income', value: TransactionType.INCOME },
+]
+
+const currencyOptions = [
+  { label: '$ USD', value: Currency.USD },
+  { label: '€ EUR', value: Currency.EUR },
+  { label: '₪ ILS', value: Currency.ILS },
 ]
 
 const TABS: Array<{
@@ -157,6 +164,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [isPendingCategory, startCategory] = useTransition()
   const [isPendingAccount, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
+  const [isPendingRates, startRates] = useTransition()
 
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
@@ -307,6 +315,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     })
   }
 
+  const handleRefreshRates = () => {
+    startRates(async () => {
+      await refreshExchangeRatesAction()
+      router.refresh()
+    })
+  }
+
   const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
     const form = event.currentTarget
@@ -317,6 +332,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       categoryId: formData.get('categoryId') as string,
       type: formData.get('type') as TransactionType,
       amount: Number(formData.get('amount') || 0),
+      currency: (formData.get('currency') as Currency) || Currency.USD,
       date: new Date(`${formData.get('date')}T00:00:00`),
       description: (formData.get('description') as string) || undefined,
       isRecurring: formData.get('isRecurring') === 'on',
@@ -356,6 +372,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       categoryId: formData.get('budgetCategoryId') as string,
       monthKey,
       planned: Number(formData.get('planned') || 0),
+      currency: (formData.get('budgetCurrency') as Currency) || Currency.USD,
       notes: (formData.get('notes') as string) || undefined,
     }
 
@@ -397,6 +414,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       categoryId: formData.get('recurringCategoryId') as string,
       type: formData.get('recurringType') as TransactionType,
       amount: Number(formData.get('recurringAmount') || 0),
+      currency: (formData.get('recurringCurrency') as Currency) || Currency.USD,
       dayOfMonth: Number(formData.get('dayOfMonth') || 1),
       description: (formData.get('recurringDescription') as string) || undefined,
       startMonthKey: (formData.get('startMonth') as string) || undefined,
@@ -595,6 +613,24 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </span>
               )}
             </div>
+            {data.exchangeRateLastUpdate && (
+              <div className="flex flex-col items-start sm:items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full px-4 py-2 text-sm font-medium text-white/80"
+                  onClick={handleRefreshRates}
+                  loading={isPendingRates}
+                  title="Refresh exchange rates from Frankfurter API"
+                >
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Update rates
+                </Button>
+                <span className="mt-1 text-xs text-slate-400">
+                  Last updated: {new Date(data.exchangeRateLastUpdate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -1014,6 +1050,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       <Input name="planned" id="planned" type="number" min="0" step="0.01" placeholder="0.00" required />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="budgetCurrency">
+                        Currency
+                      </label>
+                      <Select
+                        id="budgetCurrency"
+                        name="budgetCurrency"
+                        defaultValue={Currency.USD}
+                        options={currencyOptions}
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="notes">
                         Notes (optional)
                       </label>
@@ -1092,6 +1139,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                           Amount
                         </label>
                         <Input name="amount" id="transactionAmount" type="number" step="0.01" min="0" placeholder="0.00" required />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="transactionCurrency">
+                          Currency
+                        </label>
+                        <Select
+                          id="transactionCurrency"
+                          name="currency"
+                          defaultValue={Currency.USD}
+                          options={currencyOptions}
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="transactionDate">
@@ -1322,6 +1380,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                           Amount
                         </label>
                         <Input name="recurringAmount" id="recurringAmount" type="number" step="0.01" min="0" placeholder="0.00" required />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="recurringCurrency">
+                          Currency
+                        </label>
+                        <Select
+                          id="recurringCurrency"
+                          name="recurringCurrency"
+                          defaultValue={Currency.USD}
+                          options={currencyOptions}
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="dayOfMonth">

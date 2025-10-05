@@ -16,14 +16,17 @@ async function DashboardLoader({
   monthKey,
   accountId,
   allowedAccounts,
+  preferredCurrency,
 }: {
   monthKey: string
   accountId: string
   allowedAccounts: Awaited<ReturnType<typeof getAccounts>>
+  preferredCurrency?: import('@prisma/client').Currency
 }) {
   const data = await getDashboardData({
     monthKey,
     accountId,
+    preferredCurrency,
   })
 
   return <DashboardPage data={{ ...data, accounts: allowedAccounts }} monthKey={monthKey} accountId={accountId} />
@@ -85,7 +88,12 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <Suspense fallback={<div className="p-8 text-sm text-gray-500">Loading dashboard…</div>}>
-      <DashboardLoader monthKey={monthKey} accountId={accountId} allowedAccounts={allowedAccounts} />
+      <DashboardLoader
+        monthKey={monthKey}
+        accountId={accountId}
+        allowedAccounts={allowedAccounts}
+        preferredCurrency={authUser.preferredCurrency}
+      />
     </Suspense>
   )
 }
