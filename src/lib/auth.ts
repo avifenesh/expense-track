@@ -7,24 +7,36 @@ export type AuthUser = {
   defaultAccountName: string
 }
 
-export const AUTH_USERS: AuthUser[] = [
-  {
-    id: 'avi',
-    email: 'user1@example.com',
-    displayName: 'User One',
-    passwordHash: '$2b$12$REPLACE_WITH_YOUR_HASH',
-    accountNames: ['Avi', 'Joint'],
-    defaultAccountName: 'Avi',
-  },
-  {
-    id: 'serena',
-    email: 'user2@example.com',
-    displayName: 'User Two',
-    passwordHash: '$2b$12$REPLACE_WITH_YOUR_HASH',
-    accountNames: ['Serena', 'Joint'],
-    defaultAccountName: 'Serena',
-  },
-]
+function parseAuthUsers(): AuthUser[] {
+  const user1Email = process.env.AUTH_USER1_EMAIL || ''
+  const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME || 'User One'
+  const user1PasswordHash = process.env.AUTH_USER1_PASSWORD_HASH || ''
+
+  const user2Email = process.env.AUTH_USER2_EMAIL || ''
+  const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME || 'User Two'
+  const user2PasswordHash = process.env.AUTH_USER2_PASSWORD_HASH || ''
+
+  return [
+    {
+      id: 'avi',
+      email: user1Email,
+      displayName: user1DisplayName,
+      passwordHash: user1PasswordHash,
+      accountNames: ['Avi', 'Joint'],
+      defaultAccountName: 'Avi',
+    },
+    {
+      id: 'serena',
+      email: user2Email,
+      displayName: user2DisplayName,
+      passwordHash: user2PasswordHash,
+      accountNames: ['Serena', 'Joint'],
+      defaultAccountName: 'Serena',
+    },
+  ]
+}
+
+export const AUTH_USERS: AuthUser[] = parseAuthUsers()
 
 export const RECOVERY_CONTACTS = AUTH_USERS.map((user) => ({
   email: user.email,
