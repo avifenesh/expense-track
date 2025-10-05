@@ -53,6 +53,40 @@ import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
 import { cn } from '@/utils/cn'
 
+export function normalizeDateInput(value: FormDataEntryValue | null): Date | null {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return null
+  }
+
+  const [yearPart, monthPart, dayPart] = value.split('-')
+  if (!yearPart || !monthPart || !dayPart) {
+    return null
+  }
+
+  const year = Number(yearPart)
+  const monthIndex = Number(monthPart) - 1
+  const day = Number(dayPart)
+
+  if (!Number.isInteger(year) || !Number.isInteger(monthIndex) || !Number.isInteger(day)) {
+    return null
+  }
+  if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) {
+    return null
+  }
+
+  const utcDate = new Date(Date.UTC(year, monthIndex, day))
+
+  if (
+    utcDate.getUTCFullYear() !== year ||
+    utcDate.getUTCMonth() !== monthIndex ||
+    utcDate.getUTCDate() !== day
+  ) {
+    return null
+  }
+
+  return utcDate
+}
+
 type Feedback = { type: 'success' | 'error'; message: string }
 type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories'
 
@@ -330,13 +364,19 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     const form = event.currentTarget
     const formData = new FormData(form)
 
+    const dateInput = normalizeDateInput(formData.get('date'))
+    if (!dateInput) {
+      setTransactionFeedback({ type: 'error', message: 'Please select a valid date.' })
+      return
+    }
+
     const payload = {
       accountId: (formData.get('accountId') as string) || defaultAccountId,
       categoryId: formData.get('categoryId') as string,
       type: formData.get('type') as TransactionType,
       amount: Number(formData.get('amount') || 0),
       currency: (formData.get('currency') as Currency) || Currency.USD,
-      date: new Date(`${formData.get('date')}T00:00:00`),
+      date: dateInput,
       description: (formData.get('description') as string) || undefined,
       isRecurring: formData.get('isRecurring') === 'on',
     }
