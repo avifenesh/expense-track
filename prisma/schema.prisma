@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  SELF
+  PARTNER
+  JOINT
+  OTHER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Account {
+  id                 String               @id @default(cuid())
+  name               String
+  type               AccountType
+  color              String?
+  icon               String?
+  description        String?
+  transactions       Transaction[]
+  budgets            Budget[]
+  recurringTemplates RecurringTemplate[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@unique([name])
+}
+
+model Category {
+  id                 String               @id @default(cuid())
+  name               String
+  type               TransactionType
+  color              String?
+  isArchived         Boolean              @default(false)
+  transactions       Transaction[]
+  budgets            Budget[]
+  recurringTemplates RecurringTemplate[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@unique([name, type])
+}
+
+model Transaction {
+  id          String           @id @default(cuid())
+  account     Account          @relation(fields: [accountId], references: [id])
+  accountId   String
+  category    Category         @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  type        TransactionType
+  amount      Decimal          @db.Decimal(12, 2)
+  date        DateTime
+  month       DateTime
+  description String?
+  isRecurring Boolean          @default(false)
+  recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id])
+  recurringTemplateId String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([month])
+  @@index([accountId, month])
+}
+
+model Budget {
+  id         String    @id @default(cuid())
+  account    Account   @relation(fields: [accountId], references: [id])
+  accountId  String
+  category   Category  @relation(fields: [categoryId], references: [id])
+  categoryId String
+  month      DateTime
+  planned    Decimal   @db.Decimal(12, 2)
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([accountId, categoryId, month])
+  @@index([month])
+}
+
+model RecurringTemplate {
+  id          String           @id @default(cuid())
+  account     Account          @relation(fields: [accountId], references: [id])
+  accountId   String
+  category    Category         @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  type        TransactionType
+  amount      Decimal          @db.Decimal(12, 2)
+  dayOfMonth  Int
+  description String?
+  isActive    Boolean          @default(true)
+  startMonth  DateTime?
+  endMonth    DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  transactions Transaction[]
+
+  @@index([isActive])
+}

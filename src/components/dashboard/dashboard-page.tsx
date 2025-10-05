@@ -1,0 +1,1606 @@
+'use client'
+
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { TransactionType } from '@prisma/client'
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarRange,
+  CreditCard,
+  FileSpreadsheet,
+  Gauge,
+  Layers,
+  PiggyBank,
+  RefreshCcw,
+  Repeat,
+  Sparkles,
+  Tags,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react'
+import {
+  archiveCategoryAction,
+  applyRecurringTemplatesAction,
+  createCategoryAction,
+  createTransactionAction,
+  deleteBudgetAction,
+  deleteTransactionAction,
+  logoutAction,
+  toggleRecurringTemplateAction,
+  upsertBudgetAction,
+  upsertRecurringTemplateAction,
+  persistActiveAccountAction,
+} from '@/app/actions'
+import { Sparkline } from '@/components/dashboard/sparkline'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { DashboardData, RecurringTemplateSummary } from '@/lib/finance'
+import {
+  filterBudgets,
+  getBudgetProgress,
+  getHighlightedBudgets,
+  filterTransactions,
+  filterRecurringTemplates,
+  filterCategories,
+  getBudgetTotals,
+} from '@/lib/dashboard-ux'
+import { formatCurrency, formatRelativeAmount } from '@/utils/format'
+import { formatMonthLabel, shiftMonth } from '@/utils/date'
+import { cn } from '@/utils/cn'
+
+type Feedback = { type: 'success' | 'error'; message: string }
+type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories'
+
+type DashboardPageProps = {
+  data: DashboardData
+  monthKey: string
+  accountId: string
+}
+
+const transactionTypeOptions = [
+  { label: 'Expense', value: TransactionType.EXPENSE },
+  { label: 'Income', value: TransactionType.INCOME },
+]
+
+const typeFilterOptions = [
+  { label: 'All types', value: 'all' as const },
+  { label: 'Expense', value: TransactionType.EXPENSE },
+  { label: 'Income', value: TransactionType.INCOME },
+]
+
+const TABS: Array<{
+  value: TabValue
+  label: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+}> = [
+  { value: 'overview', label: 'Overview', description: 'Review trends, forecasts, and highlighted budgets.', icon: Gauge },
+  { value: 'budgets', label: 'Budgets', description: 'Plan spending by account and category with progress tracking.', icon: FileSpreadsheet },
+  { value: 'transactions', label: 'Transactions', description: 'Capture new activity and reconcile existing entries.', icon: CreditCard },
+  { value: 'recurring', label: 'Recurring', description: 'Manage predictable inflows and outflows over time.', icon: Repeat },
+  { value: 'categories', label: 'Categories', description: 'Curate the taxonomy that powers reports and automations.', icon: Tags },
+]
+
+const STAT_VARIANT_STYLES: Record<NonNullable<DashboardData['stats'][number]['variant']>, {
+  border: string
+  chip: string
+  chipText: string
+  icon: string
+}> = {
+  positive: {
+    border: 'border-emerald-400/40',
+    chip: 'bg-emerald-400/20',
+    chipText: 'text-emerald-200',
+    icon: 'text-emerald-200',
+  },
+  negative: {
+    border: 'border-rose-400/40',
+    chip: 'bg-rose-400/20',
+    chipText: 'text-rose-200',
+    icon: 'text-rose-200',
+  },
+  neutral: {
+    border: 'border-white/15',
+    chip: 'bg-white/15',
+    chipText: 'text-slate-200',
+    icon: 'text-slate-200',
+  },
+}
+
+function resolveStatIcon(label: string) {
+  const normalized = label.toLowerCase()
+  if (normalized.includes('expense') || normalized.includes('outflow')) {
+    return PiggyBank
+  }
+  if (normalized.includes('income') || normalized.includes('inflow')) {
+    return Wallet
+  }
+  if (normalized.includes('budget')) {
+    return Layers
+  }
+  return TrendingUp
+}
+
+export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const initialAccountId = accountId ?? data.accounts[0]?.id ?? ''
+  const [activeAccount, setActiveAccount] = useState<string>(initialAccountId)
+  const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE)
+  const [transactionFeedback, setTransactionFeedback] = useState<Feedback | null>(null)
+  const [budgetFeedback, setBudgetFeedback] = useState<Feedback | null>(null)
+  const [recurringFeedback, setRecurringFeedback] = useState<Feedback | null>(null)
+  const [categoryFeedback, setCategoryFeedback] = useState<Feedback | null>(null)
+  const [accountFeedback, setAccountFeedback] = useState<Feedback | null>(null)
+  const [activeTab, setActiveTab] = useState<TabValue>('overview')
+  const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(initialAccountId)
+  const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
+  const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
+  const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(initialAccountId)
+  const [transactionSearch, setTransactionSearch] = useState('')
+  const [recurringTypeFilter, setRecurringTypeFilter] = useState<'all' | TransactionType>('all')
+  const [recurringAccountFilter, setRecurringAccountFilter] = useState<string>(initialAccountId)
+  const [showInactiveRecurring, setShowInactiveRecurring] = useState(false)
+  const [categorySearch, setCategorySearch] = useState('')
+  const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | TransactionType>('all')
+  const [showArchivedCategories, setShowArchivedCategories] = useState(false)
+
+  const [isPendingTransaction, startTransaction] = useTransition()
+  const [isPendingBudget, startBudget] = useTransition()
+  const [isPendingRecurring, startRecurring] = useTransition()
+  const [isPendingCategory, startCategory] = useTransition()
+  const [isPendingAccount, startPersistAccount] = useTransition()
+  const [isPendingLogout, startLogout] = useTransition()
+
+  const accountsOptions = useMemo(
+    () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
+    [data.accounts],
+  )
+
+  useEffect(() => {
+    if (!accountId) return
+    setActiveAccount(accountId)
+  }, [accountId])
+
+  useEffect(() => {
+    if (!accountFeedback) return
+    const timer = window.setTimeout(() => setAccountFeedback(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [accountFeedback])
+
+  const filteredCategories = useMemo(
+    () => data.categories.filter((category) => category.type === selectedType && !category.isArchived),
+    [data.categories, selectedType],
+  )
+
+  const defaultAccountId = activeAccount || data.accounts[0]?.id || ''
+
+  const historyWithLabels = data.history.map((point) => ({
+    ...point,
+    label: formatMonthLabel(point.month),
+  }))
+
+  const netHistory = historyWithLabels.map((point) => point.net)
+  const latestHistory = historyWithLabels.at(-1)
+  const previousHistory = historyWithLabels.at(-2)
+  const netDelta = latestHistory && previousHistory ? latestHistory.net - previousHistory.net : 0
+  const netStat = data.stats.find((stat) => stat.label.toLowerCase().includes('net'))
+  const [highlightLimit] = useState(3)
+
+  useEffect(() => {
+    if (!activeAccount) return
+    setBudgetAccountFilter(activeAccount)
+    setTransactionAccountFilter(activeAccount)
+    setRecurringAccountFilter(activeAccount)
+  }, [activeAccount])
+
+  const filteredBudgets = useMemo(
+    () =>
+      filterBudgets(data.budgets, {
+        accountId: budgetAccountFilter || undefined,
+        type: budgetTypeFilter,
+      }),
+    [data.budgets, budgetAccountFilter, budgetTypeFilter],
+  )
+
+  const highlightedBudgets = useMemo(
+    () => getHighlightedBudgets(filterBudgets(data.budgets, { accountId: activeAccount || undefined }), highlightLimit),
+    [data.budgets, activeAccount, highlightLimit],
+  )
+
+  const budgetTotals = useMemo(() => getBudgetTotals(filteredBudgets), [filteredBudgets])
+
+  const filteredTransactions = useMemo(
+    () =>
+      filterTransactions(data.transactions, {
+        type: transactionFilterType,
+        search: transactionSearch,
+        accountId: transactionAccountFilter || undefined,
+      }),
+    [data.transactions, transactionFilterType, transactionSearch, transactionAccountFilter],
+  )
+
+  const filteredRecurring = useMemo(
+    () =>
+      filterRecurringTemplates(data.recurringTemplates, {
+        type: recurringTypeFilter,
+        includeInactive: showInactiveRecurring,
+        accountId: recurringAccountFilter || undefined,
+      }),
+    [data.recurringTemplates, recurringTypeFilter, showInactiveRecurring, recurringAccountFilter],
+  )
+
+  const activeRecurringTemplates = useMemo(
+    () => filteredRecurring.filter((template) => template.isActive),
+    [filteredRecurring],
+  )
+
+  const inactiveRecurringTemplates = useMemo(
+    () => filteredRecurring.filter((template) => !template.isActive),
+    [filteredRecurring],
+  )
+
+  const filteredCategoryList = useMemo(
+    () =>
+      filterCategories(data.categories, {
+        search: categorySearch,
+        type: categoryTypeFilter,
+        includeArchived: showArchivedCategories,
+      }),
+    [data.categories, categorySearch, categoryTypeFilter, showArchivedCategories],
+  )
+
+  const handleParamUpdate = (key: string, value?: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+    const query = params.toString()
+    router.push(query ? `${pathname}?${query}` : pathname)
+  }
+
+  const handleMonthChange = (direction: number) => {
+    const nextKey = shiftMonth(monthKey, direction)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('month', nextKey)
+    const query = params.toString()
+    router.push(query ? `${pathname}?${query}` : pathname)
+  }
+
+  const handleAccountSelect = (value: string) => {
+    setActiveAccount(value)
+    handleParamUpdate('account', value)
+    const accountLabel = accountsOptions.find((option) => option.value === value)?.label ?? 'Account'
+    startPersistAccount(async () => {
+      const result = await persistActiveAccountAction({ accountId: value })
+      if (result?.error) {
+        const firstErrorSet = Object.values(result.error)[0]
+        const message: string =
+          Array.isArray(firstErrorSet) && firstErrorSet.length > 0
+            ? firstErrorSet[0] ?? 'Unable to remember selection.'
+            : 'Unable to remember selection.'
+        setAccountFeedback({ type: 'error', message })
+        return
+      }
+      setAccountFeedback({ type: 'success', message: `${accountLabel} will open by default next time.` })
+    })
+  }
+
+  const handleLogout = () => {
+    startLogout(async () => {
+      await logoutAction()
+      router.push('/login')
+      router.refresh()
+    })
+  }
+
+  const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = {
+      accountId: (formData.get('accountId') as string) || defaultAccountId,
+      categoryId: formData.get('categoryId') as string,
+      type: formData.get('type') as TransactionType,
+      amount: Number(formData.get('amount') || 0),
+      date: new Date(`${formData.get('date')}T00:00:00`),
+      description: (formData.get('description') as string) || undefined,
+      isRecurring: formData.get('isRecurring') === 'on',
+    }
+
+    startTransaction(async () => {
+      const result = await createTransactionAction(payload)
+      if (result?.error) {
+        setTransactionFeedback({ type: 'error', message: 'Unable to save transaction. Please check required fields.' })
+        return
+      }
+      setTransactionFeedback({ type: 'success', message: 'Transaction saved.' })
+      form.reset()
+      router.refresh()
+    })
+  }
+
+  const handleTransactionDelete = (id: string) => {
+    startTransaction(async () => {
+      const result = await deleteTransactionAction({ id })
+      if (result?.error) {
+        setTransactionFeedback({ type: 'error', message: 'Could not delete transaction.' })
+        return
+      }
+      setTransactionFeedback({ type: 'success', message: 'Transaction removed.' })
+      router.refresh()
+    })
+  }
+
+  const handleBudgetSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = {
+      accountId: (formData.get('budgetAccountId') as string) || defaultAccountId,
+      categoryId: formData.get('budgetCategoryId') as string,
+      monthKey,
+      planned: Number(formData.get('planned') || 0),
+      notes: (formData.get('notes') as string) || undefined,
+    }
+
+    startBudget(async () => {
+      const result = await upsertBudgetAction(payload)
+      if (result?.error) {
+        setBudgetFeedback({ type: 'error', message: 'Could not save budget.' })
+        return
+      }
+      setBudgetFeedback({ type: 'success', message: 'Budget updated.' })
+      form.reset()
+      router.refresh()
+    })
+  }
+
+  const handleBudgetDelete = (categoryId: string, accountIdForBudget: string) => {
+    startBudget(async () => {
+      const result = await deleteBudgetAction({
+        categoryId,
+        accountId: accountIdForBudget,
+        monthKey,
+      })
+      if (result?.error) {
+        setBudgetFeedback({ type: 'error', message: 'Could not remove budget entry.' })
+        return
+      }
+      setBudgetFeedback({ type: 'success', message: 'Budget removed.' })
+      router.refresh()
+    })
+  }
+
+  const handleRecurringSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = {
+      accountId: (formData.get('recurringAccountId') as string) || defaultAccountId,
+      categoryId: formData.get('recurringCategoryId') as string,
+      type: formData.get('recurringType') as TransactionType,
+      amount: Number(formData.get('recurringAmount') || 0),
+      dayOfMonth: Number(formData.get('dayOfMonth') || 1),
+      description: (formData.get('recurringDescription') as string) || undefined,
+      startMonthKey: (formData.get('startMonth') as string) || undefined,
+      endMonthKey: (formData.get('endMonth') as string) || undefined,
+      isActive: true,
+    }
+
+    startRecurring(async () => {
+      const result = await upsertRecurringTemplateAction(payload)
+      if (result?.error) {
+        setRecurringFeedback({ type: 'error', message: 'Could not save recurring template.' })
+        return
+      }
+      setRecurringFeedback({ type: 'success', message: 'Recurring template saved.' })
+      form.reset()
+      router.refresh()
+    })
+  }
+
+  const handleRecurringToggle = (template: RecurringTemplateSummary, isActive: boolean) => {
+    startRecurring(async () => {
+      const result = await toggleRecurringTemplateAction({ id: template.id, isActive })
+      if (result?.error) {
+        setRecurringFeedback({ type: 'error', message: 'Could not update recurring template.' })
+        return
+      }
+      setRecurringFeedback({ type: 'success', message: isActive ? 'Template re-activated.' : 'Template paused.' })
+      router.refresh()
+    })
+  }
+
+  const handleRecurringApply = () => {
+    startRecurring(async () => {
+      const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount })
+      if (result?.error) {
+        setRecurringFeedback({ type: 'error', message: 'Could not apply recurring items.' })
+        return
+      }
+      const created = result?.created ?? 0
+      if (created === 0) {
+        setRecurringFeedback({ type: 'success', message: 'No new recurring items were added for this month.' })
+      } else {
+        setRecurringFeedback({ type: 'success', message: `${created} recurring item${created > 1 ? 's' : ''} added.` })
+      }
+      router.refresh()
+    })
+  }
+
+  const handleCategorySubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = {
+      name: formData.get('categoryName') as string,
+      type: formData.get('categoryType') as TransactionType,
+      color: (formData.get('categoryColor') as string) || undefined,
+    }
+
+    startCategory(async () => {
+      const result = await createCategoryAction(payload)
+      if (result?.error) {
+        setCategoryFeedback({ type: 'error', message: 'Could not create category.' })
+        return
+      }
+      setCategoryFeedback({ type: 'success', message: 'Category added.' })
+      form.reset()
+      router.refresh()
+    })
+  }
+
+  const handleCategoryArchive = (id: string, isArchived: boolean) => {
+    startCategory(async () => {
+      const result = await archiveCategoryAction({ id, isArchived })
+      if (result?.error) {
+        setCategoryFeedback({ type: 'error', message: 'Unable to update category.' })
+        return
+      }
+      setCategoryFeedback({ type: 'success', message: isArchived ? 'Category archived.' : 'Category reactivated.' })
+      router.refresh()
+    })
+  }
+
+  const netDeltaVariant = netDelta >= 0 ? 'text-emerald-300' : 'text-rose-300'
+  const activeTabMeta = TABS.find((tab) => tab.value === activeTab)
+
+  const handleNavigateToTab = (tab: TabValue, anchor?: string) => {
+    setActiveTab(tab)
+    if (anchor) {
+      requestAnimationFrame(() => {
+        document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 lg:gap-10 lg:px-6">
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl lg:p-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_55%)]" aria-hidden />
+        <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-xl space-y-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wide text-slate-200 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" />
+              Financial clarity
+            </span>
+            <div className="space-y-2">
+              <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Balance Beacon</h1>
+              <p className="text-sm leading-relaxed text-slate-200/80">
+                Track personal, partner, and shared spending with insights that highlight what changed and where to focus your next dollar.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-100/80">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
+                <CalendarRange className="h-3.5 w-3.5" />
+                {formatMonthLabel(monthKey)}
+              </span>
+              {netStat && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-200">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  {formatRelativeAmount(netStat.amount)} net flow
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex w-full max-w-md flex-col gap-6 rounded-2xl bg-white/10 p-5 backdrop-blur lg:max-w-sm">
+            <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-200/80">
+              <span>Cashflow snapshot</span>
+              <RefreshCcw className="h-4 w-4 opacity-70" />
+            </div>
+            <div className="h-28 w-full">
+              <Sparkline values={netHistory} strokeClassName="stroke-white" fillClassName="fill-white/15" ariaLabel="Net cashflow snapshot" />
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm text-slate-100/80">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-200/70">Income this month</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.income ?? 0)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-200/70">Spending this month</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.expense ?? 0)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-200/70">Change vs last month</p>
+                <p className={cn('text-lg font-semibold', netDeltaVariant)}>{formatRelativeAmount(netDelta)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-200/70">Accounts tracked</p>
+                <p className="text-lg font-semibold text-white">{data.accounts.length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 w-9 rounded-full text-white/90 transition hover:bg-white/20"
+              onClick={() => handleMonthChange(-1)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2 px-3 text-sm font-medium text-white">
+              <CalendarRange className="h-4 w-4" />
+              {formatMonthLabel(monthKey)}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 w-9 rounded-full text-white/90 transition hover:bg-white/20"
+              onClick={() => handleMonthChange(1)}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col items-stretch gap-3 text-xs sm:flex-row sm:items-center">
+            <div className="flex flex-1 flex-col text-xs">
+              <Select
+                className="min-w-[220px] rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner shadow-slate-950/20 focus:border-sky-400"
+                value={activeAccount || accountsOptions[0]?.value || ''}
+                onChange={(event) => handleAccountSelect(event.target.value)}
+                options={accountsOptions}
+                aria-label="Filter by account"
+                disabled={accountsOptions.length === 0 || isPendingAccount}
+              />
+              {accountFeedback && (
+                <span
+                  className={cn(
+                    'mt-2 text-right',
+                    accountFeedback.type === 'error' ? 'text-rose-300' : 'text-emerald-300',
+                  )}
+                >
+                  {accountFeedback.message}
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full px-4 py-2 text-sm font-medium text-white/80"
+              onClick={handleLogout}
+              loading={isPendingLogout}
+            >
+              Sign out
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {data.stats.map((stat) => {
+          const variantKey = stat.variant ?? 'neutral'
+          const styles = STAT_VARIANT_STYLES[variantKey]
+          const Icon = resolveStatIcon(stat.label)
+          return (
+            <Card
+              key={stat.label}
+              className={cn(
+                'border-white/20 bg-white/10 transition hover:-translate-y-1',
+                styles.border,
+              )}
+            >
+              <CardHeader className="flex flex-row items-start justify-between pb-2 text-slate-300">
+                <div className="space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-300">{stat.label}</span>
+                  {stat.helper && <p className="text-xs text-slate-400">{stat.helper}</p>}
+                </div>
+                <span className={cn('inline-flex items-center justify-center rounded-full p-2 backdrop-blur', styles.chip)}>
+                  <Icon className={cn('h-4 w-4', styles.icon)} />
+                </span>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-semibold tracking-tight text-white">{formatCurrency(stat.amount)}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </section>
+
+      <section className="space-y-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-white">Financial workspace</h2>
+            <p className="text-sm text-slate-400">Navigate budgets, transactions, rules, and taxonomy without scrolling through a single feed.</p>
+          </div>
+          <nav className="flex flex-wrap gap-2" role="tablist" aria-label="Dashboard sections">
+            {TABS.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                id={`tab-${value}`}
+                role="tab"
+                type="button"
+                aria-selected={activeTab === value}
+                aria-controls={`panel-${value}`}
+                onClick={() => setActiveTab(value)}
+                className={cn(
+                  'group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900',
+                  activeTab === value
+                    ? 'border-white/40 bg-white/20 text-white shadow-lg'
+                    : 'border-white/15 bg-white/5 text-slate-200 hover:border-white/25 hover:bg-white/10',
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+        {activeTabMeta && <p className="text-sm text-slate-400">{activeTabMeta.description}</p>}
+
+        {activeTab === 'overview' && (
+          <div
+            role="tabpanel"
+            id="panel-overview"
+            aria-labelledby="tab-overview"
+            className="space-y-6"
+          >
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold text-white">Spending trend</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <Sparkline
+                      values={netHistory}
+                      strokeClassName="stroke-sky-300"
+                      fillClassName="fill-sky-300/20"
+                      className="h-24"
+                      ariaLabel="Historical net cashflow trend"
+                    />
+                  </div>
+                  <div className="space-y-3 text-sm text-slate-200">
+                    {historyWithLabels.map((point) => (
+                      <div
+                        key={point.month}
+                        className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <div className="font-medium text-white">{point.label}</div>
+                          <div className="text-xs text-slate-400">
+                            Income {formatRelativeAmount(point.income)} · Expenses {formatRelativeAmount(-point.expense)}
+                          </div>
+                        </div>
+                        <div className={cn('text-sm font-semibold', point.net >= 0 ? 'text-emerald-300' : 'text-rose-400')}>
+                          {formatRelativeAmount(point.net)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold text-white">Month at a glance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-slate-200">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
+                      <span>Net compared to last month</span>
+                      <span className={cn('text-sm font-semibold', data.comparison.change >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
+                        {formatRelativeAmount(data.comparison.change)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-300">
+                      {formatMonthLabel(data.comparison.previousMonth)} net: {formatCurrency(data.comparison.previousNet)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <span className="text-xs uppercase tracking-wide text-slate-300">Budgets remaining</span>
+                    <div className="mt-2 text-xl font-semibold text-white">
+                      {formatCurrency(
+                        data.budgets
+                          .filter((budget) => budget.categoryType === TransactionType.EXPENSE)
+                          .reduce((sum, budget) => sum + budget.remaining, 0),
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <span className="text-xs uppercase tracking-wide text-slate-300">Income still expected</span>
+                    <div className="mt-2 text-xl font-semibold text-white">
+                      {formatCurrency(
+                        data.budgets
+                          .filter((budget) => budget.categoryType === TransactionType.INCOME)
+                          .reduce((sum, budget) => sum + budget.remaining, 0),
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-white/15 bg-white/10">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-white">Quick actions</CardTitle>
+                <p className="text-sm text-slate-300">Jump straight to the tools you use most frequently.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="justify-start gap-3"
+                    onClick={() => handleNavigateToTab('transactions', 'transaction-form')}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Log a transaction
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="justify-start gap-3"
+                    onClick={() => handleNavigateToTab('budgets', 'budget-form')}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Update a budget
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="justify-start gap-3"
+                    onClick={() => handleNavigateToTab('recurring', 'recurring-form')}
+                  >
+                    <Repeat className="h-4 w-4" />
+                    Manage recurring plan
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="justify-start gap-3"
+                    onClick={() => handleNavigateToTab('categories', 'category-form')}
+                  >
+                    <Tags className="h-4 w-4" />
+                    Add a category
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {highlightedBudgets.length > 0 && (
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader className="flex flex-col gap-3 text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-white">Highlighted budgets</CardTitle>
+                    <p className="text-sm text-slate-300">A quick snapshot of the categories closest to their limits.</p>
+                  </div>
+                  <Button type="button" variant="secondary" onClick={() => setActiveTab('budgets')}>
+                    Manage budgets
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {highlightedBudgets.map((budget) => {
+                    const progress = budget.planned > 0 ? Math.min(budget.actual / budget.planned, 1) : 0
+                    const progressColor =
+                      budget.categoryType === TransactionType.EXPENSE ? 'bg-rose-400/80' : 'bg-emerald-300/80'
+                    const actualLabel = budget.categoryType === TransactionType.EXPENSE ? 'spent' : 'received'
+                    const remainingLabel = `${
+                      budget.categoryType === TransactionType.EXPENSE ? 'Remaining' : 'To receive'
+                    }: ${formatCurrency(budget.remaining)}`
+                    return (
+                      <div
+                        key={`${budget.categoryId}-${budget.budgetId}`}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
+                              <span>{budget.categoryName}</span>
+                              <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-medium text-slate-200">
+                                {budget.accountName}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300">
+                              {formatCurrency(budget.actual)} {actualLabel} / {formatCurrency(budget.planned)} planned
+                            </p>
+                          </div>
+                          <span className="text-sm font-medium text-slate-200">
+                            {Math.round(progress * 100)}%
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
+                          <div
+                            className={cn('h-2 rounded-full transition-all duration-300 ease-out', progressColor)}
+                            style={{ width: `${progress * 100}%` }}
+                            aria-hidden
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-slate-300">{remainingLabel}</p>
+                      </div>
+                    )
+                  })}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'budgets' && (
+          <div
+            role="tabpanel"
+            id="panel-budgets"
+            aria-labelledby="tab-budgets"
+            className="space-y-6"
+          >
+            <Card className="border-white/15 bg-white/10">
+              <CardHeader className="gap-1">
+                <CardTitle className="text-lg font-semibold text-white">Monthly budgets</CardTitle>
+                <p className="text-sm text-slate-400">Compare planned versus actual spending and stay ahead of upcoming obligations.</p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="budget-filter-account-panel">
+                      Account filter
+                    </label>
+                    <Select
+                      id="budget-filter-account-panel"
+                      value={budgetAccountFilter || accountsOptions[0]?.value || ''}
+                      onChange={(event) => setBudgetAccountFilter(event.target.value)}
+                      options={accountsOptions}
+                      disabled={accountsOptions.length === 0}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="budget-filter-type-panel">
+                      Type filter
+                    </label>
+                    <Select
+                      id="budget-filter-type-panel"
+                      value={budgetTypeFilter}
+                      onChange={(event) => setBudgetTypeFilter(event.target.value as typeof budgetTypeFilter)}
+                      options={typeFilterOptions}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="budget-summary-expense-panel">
+                      Expense utilization
+                    </label>
+                    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200">
+                      {formatCurrency(budgetTotals.expenseActual)} of {formatCurrency(budgetTotals.expensePlanned)} spent
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="budget-summary-income-panel">
+                      Income realized
+                    </label>
+                    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200">
+                      {formatCurrency(budgetTotals.incomeActual)} of {formatCurrency(budgetTotals.incomePlanned)} received
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {filteredBudgets.length === 0 && (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
+                      {data.budgets.length === 0 ? (
+                        <>No budgets yet for this month. Use the form below to set your first plan.</>
+                      ) : (
+                        <>No budgets match the current filters.</>
+                      )}
+                    </div>
+                  )}
+                  {filteredBudgets.map((budget) => {
+                    const progress = getBudgetProgress(budget)
+                    const remainingLabel = `${
+                      budget.categoryType === TransactionType.EXPENSE ? 'Remaining' : 'To receive'
+                    }: ${formatCurrency(budget.remaining)}`
+                    const actualLabel = budget.categoryType === TransactionType.EXPENSE ? 'spent' : 'received'
+                    const progressColor =
+                      budget.categoryType === TransactionType.EXPENSE ? 'bg-rose-400/80' : 'bg-emerald-300/80'
+
+                    return (
+                      <div
+                        key={`${budget.categoryId}-${budget.budgetId}`}
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
+                              <span>{budget.categoryName}</span>
+                              <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-slate-200">
+                                {budget.accountName}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-300">
+                              {formatCurrency(budget.actual)} {actualLabel} / {formatCurrency(budget.planned)} planned
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="text-xs text-rose-200 hover:bg-rose-500/20"
+                            onClick={() => handleBudgetDelete(budget.categoryId, budget.accountId)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="mt-3">
+                          <div className="sr-only" role="status">
+                            {formatCurrency(budget.actual)} of {formatCurrency(budget.planned)} {actualLabel}
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
+                            <div
+                              className={cn('h-2 rounded-full transition-all duration-300 ease-out', progressColor)}
+                              style={{ width: `${progress * 100}%` }}
+                              role="progressbar"
+                              aria-valuenow={Math.round(progress * 100)}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label={`${budget.categoryName} progress`}
+                            />
+                          </div>
+                          <p className="mt-2 text-xs text-slate-300">{remainingLabel}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <form id="budget-form" onSubmit={handleBudgetSubmit} className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5" tabIndex={-1}>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-white">Add or update a budget</h3>
+                    <p className="text-xs text-slate-400">Capture limits for priority categories and accounts.</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="budgetAccountId">
+                        Account
+                      </label>
+                      <Select
+                        id="budgetAccountId"
+                        name="budgetAccountId"
+                        defaultValue={defaultAccountId}
+                        options={data.accounts.map((account) => ({ label: account.name, value: account.id }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="budgetCategoryId">
+                        Category
+                      </label>
+                      <Select
+                        id="budgetCategoryId"
+                        name="budgetCategoryId"
+                        options={data.categories
+                          .filter((category) => category.type === TransactionType.EXPENSE && !category.isArchived)
+                          .map((category) => ({ label: category.name, value: category.id }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="planned">
+                        Planned amount
+                      </label>
+                      <Input name="planned" id="planned" type="number" min="0" step="0.01" placeholder="0.00" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="notes">
+                        Notes (optional)
+                      </label>
+                      <Input name="notes" id="notes" placeholder="Context or limit" />
+                    </div>
+                  </div>
+                  <Button type="submit" loading={isPendingBudget} className="w-full">
+                    Save budget
+                  </Button>
+                  {budgetFeedback && (
+                    <p
+                      role="status"
+                      className={cn('text-xs', budgetFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                    >
+                      {budgetFeedback.message}
+                    </p>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <div
+            role="tabpanel"
+            id="panel-transactions"
+            aria-labelledby="tab-transactions"
+            className="space-y-6"
+          >
+            <div className="grid gap-6 xl:grid-cols-[2fr,3fr]">
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-lg font-semibold text-white">Log a transaction</CardTitle>
+                  <p className="text-sm text-slate-400">Capture new activity and classify it without leaving the keyboard.</p>
+                </CardHeader>
+                <CardContent>
+                  <form id="transaction-form" onSubmit={handleTransactionSubmit} className="grid gap-4" tabIndex={-1}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="transactionType">
+                          Type
+                        </label>
+                        <Select
+                          id="transactionType"
+                          name="type"
+                          value={selectedType}
+                          onChange={(event) => setSelectedType(event.target.value as TransactionType)}
+                          options={transactionTypeOptions}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="transactionAccount">
+                          Account
+                        </label>
+                        <Select
+                          id="transactionAccount"
+                          name="accountId"
+                          defaultValue={defaultAccountId}
+                          options={data.accounts.map((account) => ({ label: account.name, value: account.id }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="transactionCategory">
+                          Category
+                        </label>
+                        <Select
+                          id="transactionCategory"
+                          name="categoryId"
+                          options={filteredCategories.map((category) => ({ label: category.name, value: category.id }))}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="transactionAmount">
+                          Amount
+                        </label>
+                        <Input name="amount" id="transactionAmount" type="number" step="0.01" min="0" placeholder="0.00" required />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="transactionDate">
+                          Date
+                        </label>
+                        <Input name="date" id="transactionDate" type="date" defaultValue={`${monthKey}-01`} required />
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <input id="isRecurring" name="isRecurring" type="checkbox" className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40" />
+                        <label htmlFor="isRecurring" className="text-xs text-slate-300">
+                          Permanent (recurring) transaction
+                        </label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="transactionDescription">
+                        Description
+                      </label>
+                      <Textarea name="description" id="transactionDescription" rows={2} placeholder="Optional memo" />
+                    </div>
+                    <Button type="submit" loading={isPendingTransaction} className="w-full">
+                      Save transaction
+                    </Button>
+                    {transactionFeedback && (
+                      <p
+                        role="status"
+                        className={cn('text-xs', transactionFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                      >
+                        {transactionFeedback.message}
+                      </p>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-lg font-semibold text-white">Recent activity</CardTitle>
+                  <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="transaction-filter-type">
+                        Type filter
+                      </label>
+                      <Select
+                        id="transaction-filter-type"
+                        value={transactionFilterType}
+                        onChange={(event) => setTransactionFilterType(event.target.value as typeof transactionFilterType)}
+                        options={typeFilterOptions}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="transaction-filter-account">
+                        Account filter
+                      </label>
+                      <Select
+                        id="transaction-filter-account"
+                        value={transactionAccountFilter || accountsOptions[0]?.value || ''}
+                        onChange={(event) => setTransactionAccountFilter(event.target.value)}
+                        options={accountsOptions}
+                        disabled={accountsOptions.length === 0}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="transaction-search">
+                        Search description or category
+                      </label>
+                      <Input
+                        id="transaction-search"
+                        value={transactionSearch}
+                        onChange={(event) => setTransactionSearch(event.target.value)}
+                        placeholder="e.g. rent, groceries, bonus"
+                      />
+                    </div>
+                    {(transactionSearch || transactionFilterType !== 'all' || transactionAccountFilter !== activeAccount) && (
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-xs text-slate-200"
+                          onClick={() => {
+                            setTransactionSearch('')
+                            setTransactionFilterType('all')
+                            setTransactionAccountFilter(activeAccount)
+                          }}
+                        >
+                          Reset filters
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {filteredTransactions.length === 0 && (
+                    <p className="text-sm text-slate-300">No transactions match the current filters.</p>
+                  )}
+                  {filteredTransactions.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                          <span>{transaction.category.name}</span>
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-200">
+                            {transaction.account.name}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          {new Date(transaction.date).toLocaleDateString()} · {transaction.description || '—'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            'text-sm font-semibold',
+                            transaction.type === TransactionType.EXPENSE ? 'text-rose-600' : 'text-emerald-600',
+                          )}
+                        >
+                          {formatCurrency(
+                            transaction.amount * (transaction.type === TransactionType.EXPENSE ? -1 : 1),
+                          )}
+                        </span>
+                        <Button variant="ghost" className="text-xs text-slate-200 hover:bg-white/10" onClick={() => handleTransactionDelete(transaction.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'recurring' && (
+          <div
+            role="tabpanel"
+            id="panel-recurring"
+            aria-labelledby="tab-recurring"
+            className="space-y-6"
+          >
+            <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-lg font-semibold text-white">Recurring plans</CardTitle>
+                  <p className="text-sm text-slate-400">Keep predictable cashflow on schedule and pause templates when plans change.</p>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="recurring-filter-type">
+                        Type filter
+                      </label>
+                      <Select
+                        id="recurring-filter-type"
+                        value={recurringTypeFilter}
+                        onChange={(event) => setRecurringTypeFilter(event.target.value as typeof recurringTypeFilter)}
+                        options={typeFilterOptions}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="recurring-filter-account">
+                        Account filter
+                      </label>
+                      <Select
+                        id="recurring-filter-account"
+                        value={recurringAccountFilter || accountsOptions[0]?.value || ''}
+                        onChange={(event) => setRecurringAccountFilter(event.target.value)}
+                        options={accountsOptions}
+                        disabled={accountsOptions.length === 0}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-xs"
+                        onClick={() => setShowInactiveRecurring((prev) => !prev)}
+                      >
+                        {showInactiveRecurring ? 'Hide paused templates' : 'Show paused templates'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-white">Log a new template</h3>
+                        <p className="text-xs text-slate-400">Define recurring amounts, cadence, and lifecycle.</p>
+                      </div>
+                      <Button type="button" variant="secondary" className="text-xs" onClick={handleRecurringApply}>
+                        Apply templates this month
+                      </Button>
+                    </div>
+                    <form id="recurring-form" onSubmit={handleRecurringSubmit} className="grid gap-4 sm:grid-cols-2" tabIndex={-1}>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="recurringType">
+                          Type
+                        </label>
+                        <Select id="recurringType" name="recurringType" options={transactionTypeOptions} defaultValue={TransactionType.EXPENSE} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="recurringAccountId">
+                          Account
+                        </label>
+                        <Select
+                          id="recurringAccountId"
+                          name="recurringAccountId"
+                          defaultValue={defaultAccountId}
+                          options={data.accounts.map((account) => ({ label: account.name, value: account.id }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="recurringCategoryId">
+                          Category
+                        </label>
+                        <Select
+                          id="recurringCategoryId"
+                          name="recurringCategoryId"
+                          options={data.categories
+                            .filter((category) => !category.isArchived)
+                            .map((category) => ({ label: category.name, value: category.id }))}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="recurringAmount">
+                          Amount
+                        </label>
+                        <Input name="recurringAmount" id="recurringAmount" type="number" step="0.01" min="0" placeholder="0.00" required />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="dayOfMonth">
+                          Day of month
+                        </label>
+                        <Input name="dayOfMonth" id="dayOfMonth" type="number" min="1" max="28" defaultValue={1} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="recurringDescription">
+                          Description (optional)
+                        </label>
+                        <Input name="recurringDescription" id="recurringDescription" placeholder="Gym membership" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="startMonth">
+                          Start month (optional)
+                        </label>
+                        <Input name="startMonth" id="startMonth" type="month" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="endMonth">
+                          End month (optional)
+                        </label>
+                        <Input name="endMonth" id="endMonth" type="month" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Button type="submit" loading={isPendingRecurring} className="w-full">
+                          Save recurring template
+                        </Button>
+                      </div>
+                    </form>
+                    {recurringFeedback && (
+                      <p
+                        role="status"
+                        className={cn('text-xs', recurringFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                      >
+                        {recurringFeedback.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {filteredRecurring.length === 0 && (
+                      <p className="text-sm text-slate-300">No recurring templates match the current filters.</p>
+                    )}
+                    {activeRecurringTemplates.map((template) => (
+                      <div
+                        key={template.id}
+                        className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm md:flex-row md:items-center md:justify-between"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                            <span>{template.categoryName}</span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                              {template.accountName}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-400">
+                            {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount)} · Day {template.dayOfMonth}
+                          </div>
+                          <div className="text-xs text-slate-400">{template.description || 'No description'}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className={cn('text-xs', template.isActive ? 'text-slate-400' : 'text-emerald-600')}
+                            onClick={() => handleRecurringToggle(template, !template.isActive)}
+                          >
+                            {template.isActive ? 'Pause' : 'Activate'}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {showInactiveRecurring && inactiveRecurringTemplates.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-wide text-slate-300">Paused templates</p>
+                        {inactiveRecurringTemplates.map((template) => (
+                          <div
+                            key={template.id}
+                            className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm md:flex-row md:items-center md:justify-between"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                                <span>{template.categoryName}</span>
+                                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-200">
+                                  {template.accountName}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-300">
+                                {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount)} · Day{' '}
+                                {template.dayOfMonth}
+                              </div>
+                              <div className="text-xs text-slate-400">{template.description || 'No description'}</div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="text-xs text-emerald-200 hover:bg-emerald-500/20"
+                                onClick={() => handleRecurringToggle(template, true)}
+                              >
+                                Activate
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold text-white">Template focus</CardTitle>
+                  <p className="text-sm text-slate-400">See how recurring amounts stack up against your monthly net.</p>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-slate-200">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-300">Active templates</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{activeRecurringTemplates.length}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-300">Total monthly obligation</p>
+                    <p className="mt-2 text-xl font-semibold text-white">
+                      {formatCurrency(
+                        activeRecurringTemplates
+                          .filter((t) => t.type === TransactionType.EXPENSE)
+                          .reduce((sum, template) => sum + template.amount, 0),
+                      )}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-300">Expected recurring income</p>
+                    <p className="mt-2 text-xl font-semibold text-white">
+                      {formatCurrency(
+                        activeRecurringTemplates
+                          .filter((t) => t.type === TransactionType.INCOME)
+                          .reduce((sum, template) => sum + template.amount, 0),
+                      )}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'categories' && (
+          <div
+            role="tabpanel"
+            id="panel-categories"
+            aria-labelledby="tab-categories"
+            className="space-y-6"
+          >
+            <div className="grid gap-6 lg:grid-cols-[2fr,3fr]">
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-lg font-semibold text-white">Create categories</CardTitle>
+                  <p className="text-sm text-slate-400">Enable, archive, and color-code the buckets your household relies on.</p>
+                </CardHeader>
+                <CardContent>
+                  <form id="category-form" onSubmit={handleCategorySubmit} className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5" tabIndex={-1}>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Add new category</h3>
+                      <p className="text-xs text-slate-400">Segment transactions with meaningful labels.</p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="categoryName">
+                          Name
+                        </label>
+                        <Input name="categoryName" id="categoryName" placeholder="e.g. Car Leasing" required />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="categoryType">
+                          Type
+                        </label>
+                        <Select
+                          id="categoryType"
+                          name="categoryType"
+                          options={transactionTypeOptions}
+                          defaultValue={TransactionType.EXPENSE}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-300" htmlFor="categoryColor">
+                          Color (optional)
+                        </label>
+                        <Input name="categoryColor" id="categoryColor" type="color" defaultValue="#0ea5e9" />
+                      </div>
+                    </div>
+                    <Button type="submit" loading={isPendingCategory} className="w-full">
+                      Add category
+                    </Button>
+                    {categoryFeedback && (
+                      <p
+                        role="status"
+                        className={cn('text-xs', categoryFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                      >
+                        {categoryFeedback.message}
+                      </p>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+
+            <Card className="border-white/15 bg-white/10">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-white">Category library</CardTitle>
+                <p className="text-sm text-slate-400">Toggle availability to keep dropdowns focused and reports meaningful.</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="category-filter-type">
+                      Type filter
+                    </label>
+                    <Select
+                      id="category-filter-type"
+                      value={categoryTypeFilter}
+                      onChange={(event) => setCategoryTypeFilter(event.target.value as typeof categoryTypeFilter)}
+                      options={typeFilterOptions}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="category-filter-search">
+                      Search categories
+                    </label>
+                    <Input
+                      id="category-filter-search"
+                      value={categorySearch}
+                      onChange={(event) => setCategorySearch(event.target.value)}
+                      placeholder="e.g. groceries, rent"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="text-xs text-slate-200"
+                      onClick={() => setShowArchivedCategories((prev) => !prev)}
+                    >
+                      {showArchivedCategories ? 'Hide archived' : 'Show archived'}
+                    </Button>
+                  </div>
+                </div>
+                {filteredCategoryList.length === 0 && (
+                  <p className="text-sm text-slate-300">No categories match the current filters.</p>
+                )}
+                {filteredCategoryList.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                          <span>{category.name}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            {category.type === TransactionType.EXPENSE ? 'Expense' : 'Income'}
+                          </span>
+                          {category.isArchived && (
+                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                              Archived
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="text-xs text-slate-400 hover:bg-slate-100"
+                        onClick={() => handleCategoryArchive(category.id, !category.isArchived)}
+                      >
+                        {category.isArchived ? 'Reactivate' : 'Archive'}
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}

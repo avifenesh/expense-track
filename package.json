@@ -1,0 +1,55 @@
+{
+  "name": "expense-track-codex",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node scripts/start.js",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:up:local": "docker compose up -d db",
+    "db:down:local": "docker compose down",
+    "db:logs:local": "docker compose logs -f db",
+    "dev:local": "npm run db:up:local && npm run prisma:generate && npm run dev",
+    "setup:local": "bash ./scripts/setup-local.sh",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^3.0.2",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.544.0",
+    "next": "^15.5.4",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hook-form": "^7.64.0",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@playwright/test": "^1.51.1",
+    "@vitest/coverage-v8": "^1.6.0",
+    "autoprefixer": "^10",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "^8",
+    "eslint-config-next": "13.5.6",
+    "postcss": "^8",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5",
+    "vitest": "^1.6.0"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"commonjs\"} prisma/seed.ts"
+  }
+}
