@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { LoginCard } from '@/components/auth/login-card'
-import { AUTH_USER, RECOVERY_CONTACTS } from '@/lib/auth'
+import { AUTH_USERS } from '@/lib/auth'
 import { getAccounts } from '@/lib/finance'
 import { getSession } from '@/lib/auth-server'
 
@@ -10,13 +10,35 @@ export const metadata: Metadata = {
   description: 'Authenticate with the steward credentials and focus on the account that needs your attention.',
 }
 
-export default async function LoginPage() {
-  const session = await getSession()
-  if (session) {
-    redirect('/')
-  }
+type LoginPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
 
+const loginReasons: Record<string, string> = {
+  'no-accounts': 'No accounts were found for this login. Seed the Avi, Serena, and Joint accounts, then sign in again.',
+  'account-access': 'You tried to open an account that is not assigned to your login. Pick one of your personal or joint accounts.',
+  'unknown-user': 'We could not verify your login. Please sign in again.',
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  const reasonParam = resolvedSearchParams.reason
+  const reason = Array.isArray(reasonParam) ? reasonParam[0] : reasonParam
+  const reasonMessage = reason ? loginReasons[reason] ?? 'Please sign in to continue.' : undefined
+
+  const session = await getSession()
   const accounts = await getAccounts()
+
+  if (session) {
+    const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === session.userEmail.toLowerCase())
+    if (authUser) {
+      const allowedAccounts = accounts.filter((account) => authUser.accountNames.includes(account.name))
+      if (allowedAccounts.length > 0) {
+        const fallbackAccount = allowedAccounts.find((account) => account.id === session.accountId)?.id ?? allowedAccounts[0].id
+        redirect(`/?account=${fallbackAccount}`)
+      }
+    }
+  }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-16 text-slate-100 sm:px-8">
@@ -36,38 +58,26 @@ export default async function LoginPage() {
               Plan confidently, one account at a time
             </h1>
             <p className="max-w-xl text-base text-slate-200/80">
-              Inspired by hierarchy and focus guidance from Apple&rsquo;s Human Interface Guidelines and Microsoft&rsquo;s dashboard
-              recommendations, the workspace keeps signal above noise. Pick an account, review curated KPIs, and act without
-              scrolling marathons.
+              Sign in with your personal credentials to focus on your household accounts and shared plans without overlap.
             </p>
           </div>
 
           <dl className="grid gap-4 text-sm">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <dt className="text-xs font-medium uppercase tracking-wide text-slate-300">Shared steward username</dt>
-              <dd className="mt-1 text-base font-semibold text-white">{AUTH_USER.username}</dd>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <dt className="text-xs font-medium uppercase tracking-wide text-slate-300">Recovery inboxes</dt>
-              <dd className="mt-2 space-y-1">
-                {RECOVERY_CONTACTS.map((contact) => (
-                  <p key={contact.email} className="text-sm text-slate-200/80">
-                    <span className="font-medium text-slate-100">{contact.email}</span>
-                    <span className="ml-2 text-xs uppercase tracking-wide text-slate-400">{contact.label}</span>
-                  </p>
-                ))}
-              </dd>
-            </div>
+            {reasonMessage && (
+              <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 p-4 text-sm text-rose-200">
+                {reasonMessage}
+              </div>
+            )}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
               <p>
-                Keep the password manager in sync after any reset. A confirmation email outlines the process and reiterates the
-                canonical password so the team moves together.
+                Keep your personal password manager in sync after any reset. A confirmation email outlines the process and reiterates
+                the canonical secrets so both partners stay aligned.
               </p>
             </div>
           </dl>
         </section>
 
-        <LoginCard accounts={accounts.map((account) => ({ id: account.id, name: account.name }))} />
+        <LoginCard />
       </div>
     </main>
   )

@@ -8,7 +8,7 @@ export type BudgetFilter = {
 
 export function filterBudgets(budgets: CategoryBudgetSummary[], filter: BudgetFilter) {
   return budgets.filter((budget) => {
-    const matchAccount = !filter.accountId || filter.accountId === 'all' || budget.accountId === filter.accountId
+    const matchAccount = !filter.accountId || budget.accountId === filter.accountId
     const matchType = !filter.type || filter.type === 'all' || budget.categoryType === filter.type
     return matchAccount && matchType
   })
@@ -39,7 +39,7 @@ export function filterTransactions(transactions: Transaction[], filter: Transact
 
   return transactions.filter((transaction) => {
     const matchType = !filter.type || filter.type === 'all' || transaction.type === filter.type
-    const matchAccount = !filter.accountId || filter.accountId === 'all' || transaction.accountId === filter.accountId
+    const matchAccount = !filter.accountId || transaction.accountId === filter.accountId
     const matchSearch =
       searchTerm === '' ||
       transaction.category.name.toLowerCase().includes(searchTerm) ||
@@ -59,7 +59,7 @@ export type RecurringFilter = {
 export function filterRecurringTemplates(templates: RecurringTemplateSummary[], filter: RecurringFilter) {
   return templates.filter((template) => {
     const matchType = !filter.type || filter.type === 'all' || template.type === filter.type
-    const matchAccount = !filter.accountId || filter.accountId === 'all' || template.accountId === filter.accountId
+    const matchAccount = !filter.accountId || template.accountId === filter.accountId
     const matchActive = filter.includeInactive ? true : template.isActive
     return matchType && matchAccount && matchActive
   })

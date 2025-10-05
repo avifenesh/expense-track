@@ -1,35 +1,23 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginAction, requestPasswordResetAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
 import { cn } from '@/utils/cn'
-
-export type LoginAccountOption = {
-  id: string
-  name: string
-}
-
-type LoginCardProps = {
-  accounts: LoginAccountOption[]
-}
 
 type FormErrors = Partial<Record<string, string[]>>
 
 type Mode = 'login' | 'reset'
 
-export function LoginCard({ accounts }: LoginCardProps) {
+export function LoginCard() {
   const router = useRouter()
   const [mode, setMode] = useState<Mode>('login')
   const [errors, setErrors] = useState<FormErrors | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  const defaultAccountId = useMemo(() => accounts[0]?.id ?? '', [accounts])
 
   const handleLoginSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
@@ -37,9 +25,8 @@ export function LoginCard({ accounts }: LoginCardProps) {
     const formData = new FormData(form)
 
     const payload = {
-      username: String(formData.get('username') ?? ''),
+      email: String(formData.get('email') ?? ''),
       password: String(formData.get('password') ?? ''),
-      accountId: String(formData.get('accountId') ?? defaultAccountId),
     }
 
     setErrors(null)
@@ -52,7 +39,8 @@ export function LoginCard({ accounts }: LoginCardProps) {
         return
       }
 
-      router.push(`/?account=${result?.accountId ?? payload.accountId}`)
+      const nextAccount = result?.accountId
+      router.push(nextAccount ? `/?account=${nextAccount}` : '/')
       router.refresh()
     })
   }
@@ -98,8 +86,8 @@ export function LoginCard({ accounts }: LoginCardProps) {
         </CardTitle>
         <p className="text-sm text-slate-300">
           {mode === 'login'
-            ? 'Use the shared steward credentials to unlock dashboards and focus on the account that needs attention.'
-            : 'We will verify one of the trusted recovery inboxes and email the stewardship guide with the standard password.'}
+            ? 'Sign in with your personal email to manage the finances mapped to your profile and shared joint account.'
+            : 'Enter a trusted recovery inbox and we will email the reset checklist with the household credentials.'}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -129,20 +117,21 @@ export function LoginCard({ accounts }: LoginCardProps) {
         {mode === 'login' ? (
           <form onSubmit={handleLoginSubmit} className="space-y-4" autoComplete="off" noValidate>
             <div className="space-y-2">
-              <label htmlFor="username" className="text-xs font-medium uppercase tracking-wide text-slate-300">
-                Username
+              <label htmlFor="email" className="text-xs font-medium uppercase tracking-wide text-slate-300">
+                Email
               </label>
               <Input
-                id="username"
-                name="username"
-                placeholder="balance-director"
-                aria-describedby={errors?.username ? 'username-error' : undefined}
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                aria-describedby={errors?.email ? 'email-error' : undefined}
+                autoComplete="email"
                 required
               />
-              {errors?.username && (
-                <p id="username-error" className="text-xs text-rose-300">
-                  {errors.username[0]}
+              {errors?.email && (
+                <p id="email-error" className="text-xs text-rose-300">
+                  {errors.email[0]}
                 </p>
               )}
             </div>
@@ -164,7 +153,7 @@ export function LoginCard({ accounts }: LoginCardProps) {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Balance2025!"
+                placeholder="••••••••"
                 aria-describedby={errors?.password ? 'password-error' : errors?.credentials ? 'credentials-error' : undefined}
                 autoComplete="current-password"
                 required
@@ -177,27 +166,6 @@ export function LoginCard({ accounts }: LoginCardProps) {
               {errors?.credentials && (
                 <p id="credentials-error" className="text-xs text-rose-300">
                   {errors.credentials[0]}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="accountId" className="text-xs font-medium uppercase tracking-wide text-slate-300">
-                Work on account
-              </label>
-              <Select
-                id="accountId"
-                name="accountId"
-                defaultValue={defaultAccountId}
-                options={accounts.map((account) => ({ label: account.name, value: account.id }))}
-                aria-describedby={errors?.accountId ? 'account-error' : undefined}
-                disabled={accounts.length === 0}
-              >
-                {accounts.length === 0 && <option value="">No accounts available</option>}
-              </Select>
-              {errors?.accountId && (
-                <p id="account-error" className="text-xs text-rose-300">
-                  {errors.accountId[0]}
                 </p>
               )}
             </div>

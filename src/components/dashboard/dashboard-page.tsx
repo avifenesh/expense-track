@@ -179,6 +179,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     [data.categories, selectedType],
   )
 
+  const holdingsCategories = useMemo(
+    () => data.categories.filter((category) => category.isHolding),
+    [data.categories],
+  )
+
   const defaultAccountId = activeAccount || data.accounts[0]?.id || ''
 
   const historyWithLabels = data.history.map((point) => ({
@@ -1579,6 +1584,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                             {category.type === TransactionType.EXPENSE ? 'Expense' : 'Income'}
                           </span>
+                          {category.isHolding && (
+                            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-emerald-200">
+                              Holding
+                            </span>
+                          )}
                           {category.isArchived && (
                             <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
                               Archived
@@ -1597,6 +1607,24 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   ))}
                 </CardContent>
               </Card>
+              {holdingsCategories.length > 0 && (
+                <Card className="border-white/15 bg-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-white">Holdings overview</CardTitle>
+                    <p className="text-sm text-slate-400">
+                      Stocks, ETFs, and savings tracked as accumulating assets rather than cash flow events.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-200">
+                    {holdingsCategories.map((category) => (
+                      <div key={category.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2">
+                        <span className="font-medium text-white">{category.name}</span>
+                        <span className="text-xs uppercase tracking-wide text-slate-300">Category</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}

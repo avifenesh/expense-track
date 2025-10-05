@@ -100,7 +100,7 @@ export async function getTransactionsForMonth({
       lt: nextMonthStart,
     },
   };
-  if (accountId && accountId !== 'all') {
+  if (accountId) {
     where.accountId = accountId;
   }
 
@@ -134,7 +134,7 @@ export async function getBudgetsForMonth({
     month: monthStart,
   };
 
-  if (accountId && accountId !== 'all') {
+  if (accountId) {
     where.accountId = accountId;
   }
 
@@ -156,7 +156,7 @@ export async function getBudgetsForMonth({
 
 export async function getRecurringTemplates({ accountId }: { accountId?: string }) {
   const where: Prisma.RecurringTemplateWhereInput = {};
-  if (accountId && accountId !== 'all') {
+  if (accountId) {
     where.accountId = accountId;
   }
 
@@ -197,7 +197,7 @@ export async function getDashboardData({
   const monthStart = getMonthStartFromKey(monthKey);
   const nextMonthStart = addMonths(monthStart, 1);
   const previousMonthStart = subMonths(monthStart, 1);
-  const accountFilter = accountId && accountId !== 'all' ? { accountId } : undefined;
+  const accountFilter = accountId ? { accountId } : undefined;
 
   const [accounts, categories, budgets, transactions, recurringTemplates, previousTotals, historyRaw] =
     await Promise.all([

@@ -6,18 +6,61 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart, getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
-import { AUTH_USER, RECOVERY_CONTACTS } from '@/lib/auth'
+import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import {
   clearSession,
   establishSession,
   updateSessionAccount,
   verifyCredentials,
+  getAuthUserFromSession,
+  requireSession,
 } from '@/lib/auth-server'
 
 const AMOUNT_SCALE = 100
 
 function toDecimalString(input: number) {
   return (Math.round(input * AMOUNT_SCALE) / AMOUNT_SCALE).toFixed(2)
+}
+
+type AccountRecord = NonNullable<Awaited<ReturnType<typeof prisma.account.findUnique>>>
+
+type AccountAccessSuccess = {
+  account: AccountRecord
+  authUser: (typeof AUTH_USERS)[number]
+}
+
+type AccountAccessError = { error: Record<string, string[]> }
+
+async function ensureAccountAccess(accountId: string): Promise<AccountAccessSuccess | AccountAccessError> {
+  let session
+  try {
+    session = await requireSession()
+  } catch (error) {
+    return { error: { general: ['Your session expired. Please sign in again.'] } }
+  }
+
+  const authUser = getAuthUserFromSession(session)
+  if (!authUser) {
+    return { error: { general: ['We could not resolve your user profile. Please sign in again.'] } }
+  }
+
+  let account
+  try {
+    account = await prisma.account.findUnique({ where: { id: accountId } })
+  } catch (error) {
+    console.error('ensureAccountAccess.accountLookup', error)
+    return { error: { general: ['Unable to verify the selected account. Try again shortly.'] } }
+  }
+
+  if (!account) {
+    return { error: { accountId: ['Account not found'] } }
+  }
+
+  if (!authUser.accountNames.includes(account.name)) {
+    return { error: { accountId: ['You do not have access to this account'] } }
+  }
+
+  return { account, authUser }
 }
 
 const transactionSchema = z.object({
@@ -41,6 +84,11 @@ export async function createTransactionAction(input: TransactionInput) {
 
   const data = parsed.data
   const monthStart = getMonthStart(data.date)
+
+  const access = await ensureAccountAccess(data.accountId)
+  if ('error' in access) {
+    return access
+  }
 
   try {
     await prisma.transaction.create({
@@ -76,6 +124,19 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
   }
 
   try {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: parsed.data.id },
+    })
+
+    if (!transaction) {
+      return { error: { general: ['Transaction not found'] } }
+    }
+
+    const access = await ensureAccountAccess(transaction.accountId)
+    if ('error' in access) {
+      return access
+    }
+
     await prisma.transaction.delete({ where: { id: parsed.data.id } })
   } catch (error) {
     console.error('deleteTransactionAction', error)
@@ -103,6 +164,11 @@ export async function upsertBudgetAction(input: BudgetInput) {
 
   const { accountId, categoryId, monthKey, planned, notes } = parsed.data
   const month = getMonthStartFromKey(monthKey)
+
+  const access = await ensureAccountAccess(accountId)
+  if ('error' in access) {
+    return access
+  }
 
   try {
     await prisma.budget.upsert({
@@ -148,6 +214,11 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
 
   const { accountId, categoryId, monthKey } = parsed.data
   const month = getMonthStartFromKey(monthKey)
+
+  const access = await ensureAccountAccess(accountId)
+  if ('error' in access) {
+    return access
+  }
 
   try {
     await prisma.budget.delete({
@@ -197,6 +268,11 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
     return { error: { endMonthKey: ['End month must be after the start month'] } }
   }
 
+  const access = await ensureAccountAccess(data.accountId)
+  if ('error' in access) {
+    return access
+  }
+
   const payload = {
     accountId: data.accountId,
     categoryId: data.categoryId,
@@ -239,6 +315,16 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
   }
 
   try {
+    const template = await prisma.recurringTemplate.findUnique({ where: { id: parsed.data.id } })
+    if (!template) {
+      return { error: { general: ['Recurring template not found'] } }
+    }
+
+    const access = await ensureAccountAccess(template.accountId)
+    if ('error' in access) {
+      return access
+    }
+
     await prisma.recurringTemplate.update({
       where: { id: parsed.data.id },
       data: { isActive: parsed.data.isActive },
@@ -254,7 +340,7 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
 
 const applyRecurringSchema = z.object({
   monthKey: z.string().min(7),
-  accountId: z.string().optional(),
+  accountId: z.string().min(1),
   templateIds: z.array(z.string()).optional(),
 })
 
@@ -267,6 +353,11 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
   const { monthKey, accountId, templateIds } = parsed.data
   const monthStart = getMonthStartFromKey(monthKey)
 
+  const access = await ensureAccountAccess(accountId)
+  if ('error' in access) {
+    return access
+  }
+
   const where: Prisma.RecurringTemplateWhereInput = {
     isActive: true,
     OR: [
@@ -278,9 +369,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
     ],
   }
 
-  if (accountId && accountId !== 'all') {
-    where.accountId = accountId
-  }
+  where.accountId = accountId
 
   if (templateIds && templateIds.length > 0) {
     where.id = { in: templateIds }
@@ -395,42 +484,51 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
 }
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  email: z.string().email('Enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
-  accountId: z.string().min(1, 'Choose an account'),
 })
 
 export async function loginAction(input: z.infer<typeof loginSchema>) {
   const parsed = loginSchema.safeParse({
     ...input,
-    username: input.username.trim().toLowerCase(),
+    email: input.email.trim().toLowerCase(),
   })
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { username, password, accountId } = parsed.data
+  const { email, password } = parsed.data
+  const normalizedEmail = email.toLowerCase()
+  const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
 
-  let account
-  try {
-    account = await prisma.account.findUnique({ where: { id: accountId } })
-  } catch (error) {
-    console.error('loginAction.accountLookup', error)
-    return { error: { general: ['We could not verify the selected account. Try again shortly.'] } }
-  }
-
-  if (!account) {
-    return { error: { accountId: ['Selected account is unavailable'] } }
-  }
-
-  const credentialsValid = await verifyCredentials({ username, password })
+  const credentialsValid = await verifyCredentials({ email, password })
   if (!credentialsValid) {
     return { error: { credentials: ['Invalid username or password'] } }
   }
 
-  await establishSession({ username: AUTH_USER.username, accountId })
-  return { success: true, accountId }
+  if (!authUser) {
+    return { error: { credentials: ['Invalid username or password'] } }
+  }
+
+  const accounts = await prisma.account.findMany({
+    where: { name: { in: authUser.accountNames } },
+    orderBy: { name: 'asc' },
+  })
+
+  if (accounts.length === 0) {
+    return {
+      error: {
+        general: ['No accounts are provisioned for this user. Please contact support.'],
+      },
+    }
+  }
+
+  const defaultAccount =
+    accounts.find((account) => account.name === authUser.defaultAccountName) ?? accounts[0]
+
+  await establishSession({ userEmail: authUser.email, accountId: defaultAccount.id })
+  return { success: true, accountId: defaultAccount.id }
 }
 
 export async function logoutAction() {
@@ -476,12 +574,12 @@ export async function persistActiveAccountAction(input: z.infer<typeof accountSe
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const account = await prisma.account.findUnique({ where: { id: parsed.data.accountId } })
-  if (!account) {
-    return { error: { accountId: ['Account not found'] } }
+  const access = await ensureAccountAccess(parsed.data.accountId)
+  if ('error' in access) {
+    return access
   }
 
-  const updateResult = await updateSessionAccount(account.id)
+  const updateResult = await updateSessionAccount(access.account.id)
   if ('error' in updateResult) {
     return { error: { general: [updateResult.error] } }
   }

@@ -3,7 +3,8 @@ import 'server-only'
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { cookies } from 'next/headers'
-import { ACCOUNT_COOKIE, AUTH_USER, SESSION_COOKIE, USER_COOKIE, type AuthSession } from '@/lib/auth'
+import { ACCOUNT_COOKIE, AUTH_USERS, SESSION_COOKIE, USER_COOKIE, type AuthSession, type AuthUser } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 const SESSION_SECRET = process.env.AUTH_SESSION_SECRET ?? 'balance-beacon-hardcoded-secret'
 
@@ -43,18 +44,20 @@ const baseCookieConfig = {
 }
 
 export async function verifyCredentials({
-  username,
+  email,
   password,
 }: {
-  username: string
+  email: string
   password: string
 }) {
-  if (username.trim().toLowerCase() !== AUTH_USER.username) {
+  const normalizedEmail = email.trim().toLowerCase()
+  const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
+  if (!authUser) {
     return false
   }
 
   try {
-    const match = await bcrypt.compare(password, AUTH_USER.passwordHash)
+    const match = await bcrypt.compare(password, authUser.passwordHash)
     return match
   } catch (error) {
     console.error('verifyCredentials error', error)
@@ -62,10 +65,10 @@ export async function verifyCredentials({
   }
 }
 
-export async function establishSession({ username, accountId }: { username: string; accountId: string }) {
+export async function establishSession({ userEmail, accountId }: { userEmail: string; accountId: string }) {
   const cookieStore = await getCookieStore()
-  const token = createSessionToken(username)
-  cookieStore.set(USER_COOKIE, username, baseCookieConfig)
+  const token = createSessionToken(userEmail)
+  cookieStore.set(USER_COOKIE, userEmail, baseCookieConfig)
   cookieStore.set(SESSION_COOKIE, token, baseCookieConfig)
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
   return { token }
@@ -77,6 +80,20 @@ export async function updateSessionAccount(accountId: string) {
   if (!session) {
     return { error: 'No active session' }
   }
+  const authUser = getAuthUserFromSession(session)
+  if (!authUser) {
+    return { error: 'User record not found' }
+  }
+
+  const account = await prisma.account.findUnique({ where: { id: accountId } })
+  if (!account) {
+    return { error: 'Account not found' }
+  }
+
+  if (!authUser.accountNames.includes(account.name)) {
+    return { error: 'Account is not available for this user' }
+  }
+
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
   return { success: true }
 }
@@ -90,15 +107,18 @@ export async function clearSession() {
 
 export async function getSession(): Promise<AuthSession | null> {
   const cookieStore = await getCookieStore()
-  const username = cookieStore.get(USER_COOKIE)?.value
+  const userEmail = cookieStore.get(USER_COOKIE)?.value
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const accountId = cookieStore.get(ACCOUNT_COOKIE)?.value
 
-  if (!isSessionTokenValid({ token, username })) {
+  if (!isSessionTokenValid({ token, username: userEmail })) {
     return null
   }
-
-  return { username: username!, accountId }
+  const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === userEmail!.toLowerCase())
+  if (!authUser) {
+    return null
+  }
+  return { userEmail: userEmail!, accountId }
 }
 
 export async function requireSession(): Promise<AuthSession> {
@@ -107,4 +127,9 @@ export async function requireSession(): Promise<AuthSession> {
     throw new Error('Unauthenticated')
   }
   return session
+}
+
+export function getAuthUserFromSession(session: AuthSession): AuthUser | undefined {
+  const normalizedEmail = session.userEmail.toLowerCase()
+  return AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
 }
