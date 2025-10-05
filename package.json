@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run prisma:generate && next build",
     "start": "node scripts/start.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -17,7 +17,8 @@
     "dev:local": "npm run db:up:local && npm run prisma:generate && npm run dev",
     "setup:local": "bash ./scripts/setup-local.sh",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

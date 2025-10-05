@@ -1,0 +1,15 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "AUTH_SESSION_SECRET": "@auth_session_secret"
+  },
+  "functions": {
+    "src/app/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}

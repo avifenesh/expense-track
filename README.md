@@ -45,6 +45,7 @@ The script installs dependencies (if needed), writes `.env` with local defaults,
    cp .env.example .env
    ```
    - Replace `DATABASE_URL` with your Postgres connection string (Neon will give you one that already includes `sslmode=require`).
+   - Set a long, random `AUTH_SESSION_SECRET` (use `openssl rand -hex 32`).
    - Optionally set `NEXT_PUBLIC_APP_URL` for absolute URLs in emails/links.
 
 3. **Start a local Postgres instance (optional)**
@@ -98,14 +99,12 @@ The script installs dependencies (if needed), writes `.env` with local defaults,
 2. In Vercel, import the project and choose the `main` branch (App Router detected automatically).
 3. Add the following environment variables in the Vercel dashboard:
    - `DATABASE_URL` – your production Postgres URL (Neon free tier works great).
+   - `AUTH_SESSION_SECRET` – same random 64-char string you used locally.
    - `NEXT_PUBLIC_APP_URL` – e.g. `https://your-app.vercel.app`.
-4. (Optional but recommended) Add a [Vercel Postgres or Neon integration](https://vercel.com/integrations) so migrations can run securely.
-5. Configure a deploy hook or Vercel build command to run database migrations:
-   ```bash
-   npm run db:migrate && npm run prisma:generate
-   ```
-   Vercel Postgres users can rely on `prisma migrate deploy` running in the `postinstall` hook as well.
-6. Trigger a production deploy. Server Actions are enabled in `next.config.js`, so no extra flags are needed on Vercel.
+4. (Optional) Wire up a [Vercel Postgres or Neon integration](https://vercel.com/integrations) for managed credentials.
+5. Trigger a production deploy. The build runs `npm run build`, which executes `prisma generate` automatically (see `package.json`).
+
+Detailed, step-by-step notes live in [`docs/vercel-deployment.md`](docs/vercel-deployment.md).
 
 ## Database Model
 
