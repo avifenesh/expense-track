@@ -109,7 +109,7 @@ model RecurringTemplate {
   dayOfMonth  Int
   description String?
   isActive    Boolean          @default(true)
-  startMonth  DateTime?
+  startMonth  DateTime
   endMonth    DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

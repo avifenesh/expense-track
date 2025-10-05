@@ -1,32 +1,19 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- **src/** holds all Next.js App Router code, UI components, and TypeScript helpers. Key entry points: `src/app` (routes, server actions), `src/components` (shared UI), `src/lib` (domain logic), and `src/utils` (formatters).
-- **prisma/** contains `schema.prisma`, generated client output, and `seed.ts` for Avi/Serena account data.
-- **tests/** houses Vitest unit suites and Playwright end-to-end specs; `tests/e2e` drives browser flows.
-- **docs/** captures deployment notes (`docs/vercel-deployment.md`). Static assets live under `public/`.
+Source first lives in `src/`: `src/app` for routes and server actions, `src/components` for shared UI, `src/lib` for domain logic, and `src/utils` for formatters. Database schema, generated Prisma client, and seeds sit under `prisma/`. Vitest and Playwright suites reside in `tests/`, with browser flows in `tests/e2e`. Deployment notes are in `docs/`, while static assets remain in `public/`.
 
 ## Build, Test, and Development Commands
-- `npm run setup:local` – installs deps, boots Docker Postgres, syncs schema, seeds data.
-- `npm run dev` / `npm run dev:local` – starts Next dev server (the latter also ensures Docker DB is up).
-- `npm run build` – runs `prisma generate` then `next build` (mirrors Vercel).
-- `npm test` – executes Vitest suites; `npm run test:e2e` drives Playwright (requires running app & seeded DB).
-- `npm run lint` – Next.js ESLint pass.
+Run `npm run setup:local` to install dependencies, start Docker Postgres, sync Prisma, and seed demo accounts. Use `npm run dev` (or `npm run dev:local` when you need the Docker DB bootstrapped) to iterate locally. `npm run build` executes `prisma generate` and `next build` to mirror Vercel. Execute `npm test` for Vitest and `npm run test:e2e` for Playwright after a successful build and seeded DB. Lint with `npm run lint`.
 
 ## Coding Style & Naming Conventions
-- TypeScript-first; client components opt into `'use client'` when needed.
-- Two-space indentation, Tailwind utility classes for styling, named exports over default.
-- Keep server-only utilities in `src/lib` or `src/app`; avoid browser APIs in server code.
+Write TypeScript modules with named exports and two-space indentation. Client-side files opt into `'use client'`; server-only helpers belong in `src/lib` or route handlers to avoid bundling browser APIs. Styling relies on Tailwind utility classes; keep classlists readable and composable. Let the Next.js ESLint rules guide formatting and import order.
 
 ## Testing Guidelines
-- Unit tests live beside helpers (`tests/*.test.ts`) using Vitest. Prefer deterministic data builders over fixtures.
-- Playwright specs in `tests/e2e` cover login, account switching, and CRUD flows; run against seeded DB: `npm run build && npm run test:e2e`.
-- Add new suites when touching auth, finance calculations, or dashboard layout state.
+Unit suites use Vitest; place builders alongside tests instead of fixtures. Ensure new logic ships with deterministic coverage by extending files in `tests/`. For end-to-end coverage, build the app, seed data, then run `npm run test:e2e` while the dev server is live. Name tests after the behavior under verification (e.g., `dashboard-layout.test.ts`).
 
 ## Commit & Pull Request Guidelines
-- Use imperative commit subjects under ~60 characters (e.g., `Add joint account filters`). Group schema changes with regenerated Prisma client.
-- PRs should summarize intent, list environment or migration steps (`prisma migrate deploy`, `npm run db:seed`), and attach screenshots/GIFs for UI tweaks. Link relevant issues and note manual test coverage (lint/build/tests executed).
+Compose imperative commit subjects under ~60 characters such as `Add joint account filters`. When schema changes occur, regenerate Prisma client and include the output. Pull requests should summarize intent, note migrations or seeding steps (`prisma migrate deploy`, `npm run db:seed`), link issues, and document manual verification (lint/build/tests).
 
 ## Security & Configuration Tips
-- Secrets: set `DATABASE_URL` and `AUTH_SESSION_SECRET` locally and on Vercel; never commit real credentials.
-- After schema edits run `npm run prisma:generate` and reseed (`npm run db:seed`) so Playwright tests reflect new data.
+Never commit secrets; set `DATABASE_URL` and `AUTH_SESSION_SECRET` locally and in Vercel. After altering schema, re-run `npm run prisma:generate` and `npm run db:seed` so tests and Playwright flows stay accurate. Keep environment files out of version control and scrub any credentials from logs or screenshots before sharing.

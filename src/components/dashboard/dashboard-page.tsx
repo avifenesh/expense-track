@@ -420,7 +420,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       currency: (formData.get('recurringCurrency') as Currency) || Currency.USD,
       dayOfMonth: Number(formData.get('dayOfMonth') || 1),
       description: (formData.get('recurringDescription') as string) || undefined,
-      startMonthKey: (formData.get('startMonth') as string) || undefined,
+      startMonthKey: formData.get('startMonth') as string,
       endMonthKey: (formData.get('endMonth') as string) || undefined,
       isActive: true,
     }
@@ -1412,9 +1412,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="startMonth">
-                          Start month (optional)
+                          Start month
                         </label>
-                        <Input name="startMonth" id="startMonth" type="month" />
+                        <Input name="startMonth" id="startMonth" type="month" required />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="endMonth">

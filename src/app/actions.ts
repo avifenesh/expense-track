@@ -254,7 +254,7 @@ const recurringTemplateSchema = z.object({
   currency: z.nativeEnum(Currency).default(Currency.USD),
   dayOfMonth: z.coerce.number().min(1).max(31),
   description: z.string().max(240).optional().nullable(),
-  startMonthKey: z.string().min(7).optional().nullable(),
+  startMonthKey: z.string().min(7, 'Start month is required'),
   endMonthKey: z.string().min(7).optional().nullable(),
   isActive: z.boolean().optional().default(true),
 })
@@ -268,10 +268,10 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
   }
 
   const data = parsed.data
-  const startMonth = data.startMonthKey ? getMonthStartFromKey(data.startMonthKey) : null
+  const startMonth = getMonthStartFromKey(data.startMonthKey)
   const endMonth = data.endMonthKey ? getMonthStartFromKey(data.endMonthKey) : null
 
-  if (startMonth && endMonth && endMonth < startMonth) {
+  if (endMonth && endMonth < startMonth) {
     return { error: { endMonthKey: ['End month must be after the start month'] } }
   }
 
@@ -368,12 +368,10 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
 
   const where: Prisma.RecurringTemplateWhereInput = {
     isActive: true,
+    startMonth: { lte: monthStart },
     OR: [
-      { startMonth: null },
-      { startMonth: { lte: monthStart } },
-    ],
-    AND: [
-      { OR: [{ endMonth: null }, { endMonth: { gte: monthStart } }] },
+      { endMonth: null },
+      { endMonth: { gte: monthStart } },
     ],
   }
 
