@@ -1,6 +1,6 @@
 'use server'
 
-import { Prisma, TransactionType } from '@prisma/client'
+import { Prisma, TransactionType, Currency } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
@@ -15,6 +15,7 @@ import {
   getAuthUserFromSession,
   requireSession,
 } from '@/lib/auth-server'
+import { refreshExchangeRates } from '@/lib/currency'
 
 const AMOUNT_SCALE = 100
 
@@ -68,6 +69,7 @@ const transactionSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   type: z.nativeEnum(TransactionType),
   amount: z.coerce.number().min(0.01, 'Amount must be positive'),
+  currency: z.nativeEnum(Currency).default(Currency.USD),
   date: z.coerce.date(),
   description: z.string().max(240, 'Keep the description short').optional().nullable(),
   isRecurring: z.boolean().optional().default(false),
@@ -97,6 +99,7 @@ export async function createTransactionAction(input: TransactionInput) {
         categoryId: data.categoryId,
         type: data.type,
         amount: new Prisma.Decimal(toDecimalString(data.amount)),
+        currency: data.currency,
         date: data.date,
         month: monthStart,
         description: data.description,
@@ -151,6 +154,7 @@ const budgetSchema = z.object({
   categoryId: z.string().min(1),
   monthKey: z.string().min(7),
   planned: z.coerce.number().min(0, 'Budget must be >= 0'),
+  currency: z.nativeEnum(Currency).default(Currency.USD),
   notes: z.string().max(240).optional().nullable(),
 })
 
@@ -162,7 +166,7 @@ export async function upsertBudgetAction(input: BudgetInput) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { accountId, categoryId, monthKey, planned, notes } = parsed.data
+  const { accountId, categoryId, monthKey, planned, currency, notes } = parsed.data
   const month = getMonthStartFromKey(monthKey)
 
   const access = await ensureAccountAccess(accountId)
@@ -181,6 +185,7 @@ export async function upsertBudgetAction(input: BudgetInput) {
       },
       update: {
         planned: new Prisma.Decimal(toDecimalString(planned)),
+        currency,
         notes: notes ?? null,
       },
       create: {
@@ -188,6 +193,7 @@ export async function upsertBudgetAction(input: BudgetInput) {
         categoryId,
         month,
         planned: new Prisma.Decimal(toDecimalString(planned)),
+        currency,
         notes: notes ?? null,
       },
     })
@@ -245,6 +251,7 @@ const recurringTemplateSchema = z.object({
   categoryId: z.string().min(1),
   type: z.nativeEnum(TransactionType),
   amount: z.coerce.number().min(0.01),
+  currency: z.nativeEnum(Currency).default(Currency.USD),
   dayOfMonth: z.coerce.number().min(1).max(31),
   description: z.string().max(240).optional().nullable(),
   startMonthKey: z.string().min(7).optional().nullable(),
@@ -278,6 +285,7 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
     categoryId: data.categoryId,
     type: data.type,
     amount: new Prisma.Decimal(toDecimalString(data.amount)),
+    currency: data.currency,
     dayOfMonth: data.dayOfMonth,
     description: data.description ?? null,
     startMonth,
@@ -406,6 +414,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
         categoryId: template.categoryId,
         type: template.type,
         amount: new Prisma.Decimal(toDecimalString(template.amount.toNumber())),
+        currency: template.currency,
         date,
         month: monthStart,
         description: template.description,
@@ -585,4 +594,25 @@ export async function persistActiveAccountAction(input: z.infer<typeof accountSe
   }
 
   return { success: true }
+}
+
+export async function refreshExchangeRatesAction() {
+  try {
+    await requireSession()
+  } catch (error) {
+    return { error: { general: ['Your session expired. Please sign in again.'] } }
+  }
+
+  try {
+    const result = await refreshExchangeRates()
+    if (!result.success) {
+      return { error: { general: [result.error || 'Failed to refresh exchange rates'] } }
+    }
+
+    revalidatePath('/')
+    return { success: true, updatedAt: result.updatedAt }
+  } catch (error) {
+    console.error('refreshExchangeRatesAction', error)
+    return { error: { general: ['Unable to refresh exchange rates'] } }
+  }
 }

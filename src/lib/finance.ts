@@ -1,7 +1,8 @@
-import { Prisma, TransactionType } from '@prisma/client';
+import { Prisma, TransactionType, Currency } from '@prisma/client';
 import { addMonths, subMonths } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { formatMonthLabel, getMonthKey, getMonthStart, getMonthStartFromKey } from '@/utils/date';
+import { convertAmount, getLastUpdateTime } from '@/lib/currency';
 
 export type MonetaryStat = {
   label: string;
@@ -59,6 +60,8 @@ export type DashboardData = {
     change: number;
   };
   history: MonthlyHistoryPoint[];
+  exchangeRateLastUpdate: Date | null;
+  preferredCurrency?: Currency;
 };
 
 const TWO_DECIMAL = 100;
@@ -88,9 +91,11 @@ export async function getCategories() {
 export async function getTransactionsForMonth({
   monthKey,
   accountId,
+  preferredCurrency,
 }: {
   monthKey: string;
   accountId?: string;
+  preferredCurrency?: Currency;
 }) {
   const monthStart = getMonthStartFromKey(monthKey);
   const nextMonthStart = addMonths(monthStart, 1);
@@ -115,11 +120,37 @@ export async function getTransactionsForMonth({
     },
   });
 
-  return transactions.map((transaction) => ({
-    ...transaction,
-    amount: decimalToNumber(transaction.amount),
-    month: getMonthKey(transaction.month),
-  }));
+  const converted = await Promise.all(
+    transactions.map(async (transaction) => {
+      const originalAmount = decimalToNumber(transaction.amount);
+      let convertedAmount = originalAmount;
+
+      // Convert if preferred currency is different from transaction currency
+      if (preferredCurrency && transaction.currency !== preferredCurrency) {
+        try {
+          convertedAmount = await convertAmount(
+            originalAmount,
+            transaction.currency,
+            preferredCurrency,
+            transaction.date
+          );
+        } catch (error) {
+          console.warn(`Currency conversion failed for transaction ${transaction.id}:`, error);
+          // Fall back to original amount
+        }
+      }
+
+      return {
+        ...transaction,
+        amount: originalAmount,
+        convertedAmount,
+        displayCurrency: preferredCurrency || transaction.currency,
+        month: getMonthKey(transaction.month),
+      };
+    })
+  );
+
+  return converted;
 }
 
 export async function getBudgetsForMonth({
@@ -190,21 +221,23 @@ export async function getRecurringTemplates({ accountId }: { accountId?: string 
 export async function getDashboardData({
   monthKey,
   accountId,
+  preferredCurrency,
 }: {
   monthKey: string;
   accountId?: string;
+  preferredCurrency?: Currency;
 }): Promise<DashboardData> {
   const monthStart = getMonthStartFromKey(monthKey);
   const nextMonthStart = addMonths(monthStart, 1);
   const previousMonthStart = subMonths(monthStart, 1);
   const accountFilter = accountId ? { accountId } : undefined;
 
-  const [accounts, categories, budgets, transactions, recurringTemplates, previousTotals, historyRaw] =
+  const [accounts, categories, budgets, transactions, recurringTemplates, previousTotals, historyRaw, exchangeRateLastUpdate] =
     await Promise.all([
       getAccounts(),
       getCategories(),
       getBudgetsForMonth({ monthKey, accountId }),
-      getTransactionsForMonth({ monthKey, accountId }),
+      getTransactionsForMonth({ monthKey, accountId, preferredCurrency }),
       getRecurringTemplates({ accountId }),
       prisma.transaction.groupBy({
         by: ['type'],
@@ -231,13 +264,15 @@ export async function getDashboardData({
           month: 'asc',
         },
       }),
+      getLastUpdateTime(),
     ]);
 
   const transactionsWithNumbers = transactions;
 
+  // Use converted amounts for calculations when preferred currency is set
   const totals = transactionsWithNumbers.map((t) => ({
     type: t.type,
-    amount: t.amount,
+    amount: t.convertedAmount,
   }));
 
   const actualIncome = sumByType(totals, TransactionType.INCOME);
@@ -277,7 +312,7 @@ export async function getDashboardData({
   transactionsWithNumbers.forEach((transaction) => {
     const map = transaction.type === TransactionType.EXPENSE ? expensesByCategory : incomeByCategory;
     const current = map.get(transaction.categoryId) ?? 0;
-    map.set(transaction.categoryId, current + transaction.amount);
+    map.set(transaction.categoryId, current + transaction.convertedAmount);
   });
 
   const budgetsSummary: CategoryBudgetSummary[] = budgets.map((budget) => {
@@ -372,5 +407,7 @@ export async function getDashboardData({
       change,
     },
     history,
+    exchangeRateLastUpdate,
+    preferredCurrency,
   };
 }
