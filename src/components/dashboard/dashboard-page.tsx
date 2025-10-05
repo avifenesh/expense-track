@@ -188,7 +188,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const initialTransactionAccountFilterValue =
     initialAccountRecord?.type === AccountType.JOINT ? 'all' : initialAccountId
   const [activeAccount, setActiveAccount] = useState<string>(initialAccountId)
-  const [transactionFormState, setTransactionFormState] = useState({
+  const [transactionFormState, setTransactionFormState] = useState<{
+    type: TransactionType
+    accountId: string
+    categoryId: string
+    amount: string
+    currency: Currency
+    date: string
+    description: string
+    isRecurring: boolean
+    isMutual: boolean
+  }>({
     type: TransactionType.EXPENSE,
     accountId: initialAccountId,
     categoryId: defaultExpenseCategoryId,
