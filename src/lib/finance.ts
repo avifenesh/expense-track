@@ -232,15 +232,15 @@ export async function getDashboardData({
   const previousMonthStart = subMonths(monthStart, 1);
   const accountFilter = accountId ? { accountId } : undefined;
 
-  const [accounts, categories, budgets, transactions, recurringTemplates, previousTotals, historyRaw, exchangeRateLastUpdate] =
+  const [accounts, categories, budgets, transactions, recurringTemplates, previousTransactionsRaw, historyTransactionsRaw, exchangeRateLastUpdate] =
     await Promise.all([
       getAccounts(),
       getCategories(),
       getBudgetsForMonth({ monthKey, accountId }),
       getTransactionsForMonth({ monthKey, accountId, preferredCurrency }),
       getRecurringTemplates({ accountId }),
-      prisma.transaction.groupBy({
-        by: ['type'],
+      // Fetch previous month's transactions for conversion
+      prisma.transaction.findMany({
         where: {
           date: {
             gte: previousMonthStart,
@@ -248,10 +248,15 @@ export async function getDashboardData({
           },
           ...(accountFilter ?? {}),
         },
-        _sum: { amount: true },
+        select: {
+          type: true,
+          amount: true,
+          currency: true,
+          date: true,
+        },
       }),
-      prisma.transaction.groupBy({
-        by: ['month', 'type'],
+      // Fetch history transactions for conversion
+      prisma.transaction.findMany({
         where: {
           month: {
             gte: subMonths(monthStart, 5),
@@ -259,7 +264,13 @@ export async function getDashboardData({
           },
           ...(accountFilter ?? {}),
         },
-        _sum: { amount: true },
+        select: {
+          type: true,
+          amount: true,
+          currency: true,
+          date: true,
+          month: true,
+        },
         orderBy: {
           month: 'asc',
         },
@@ -293,15 +304,34 @@ export async function getDashboardData({
   const actualNet = actualIncome - actualExpense;
   const plannedNet = plannedIncome - plannedExpense;
 
-  const previousIncome = sumByType(
-    previousTotals.map((total) => ({ type: total.type, amount: decimalToNumber(total._sum.amount) })),
-    TransactionType.INCOME,
+  // Convert previous month's transactions to preferred currency
+  const previousTransactionsConverted = await Promise.all(
+    previousTransactionsRaw.map(async (transaction) => {
+      const originalAmount = decimalToNumber(transaction.amount);
+      let convertedAmount = originalAmount;
+
+      if (preferredCurrency && transaction.currency !== preferredCurrency) {
+        try {
+          convertedAmount = await convertAmount(
+            originalAmount,
+            transaction.currency,
+            preferredCurrency,
+            transaction.date
+          );
+        } catch (error) {
+          console.warn(`Currency conversion failed for previous transaction:`, error);
+        }
+      }
+
+      return {
+        type: transaction.type,
+        amount: convertedAmount,
+      };
+    })
   );
 
-  const previousExpense = sumByType(
-    previousTotals.map((total) => ({ type: total.type, amount: decimalToNumber(total._sum.amount) })),
-    TransactionType.EXPENSE,
-  );
+  const previousIncome = sumByType(previousTransactionsConverted, TransactionType.INCOME);
+  const previousExpense = sumByType(previousTransactionsConverted, TransactionType.EXPENSE);
 
   const previousNet = previousIncome - previousExpense;
   const change = actualNet - previousNet;
@@ -338,20 +368,46 @@ export async function getDashboardData({
     };
   });
 
+  // Convert history transactions to preferred currency
+  const historyTransactionsConverted = await Promise.all(
+    historyTransactionsRaw.map(async (transaction) => {
+      const originalAmount = decimalToNumber(transaction.amount);
+      let convertedAmount = originalAmount;
+
+      if (preferredCurrency && transaction.currency !== preferredCurrency) {
+        try {
+          convertedAmount = await convertAmount(
+            originalAmount,
+            transaction.currency,
+            preferredCurrency,
+            transaction.date
+          );
+        } catch (error) {
+          console.warn(`Currency conversion failed for history transaction:`, error);
+        }
+      }
+
+      return {
+        type: transaction.type,
+        amount: convertedAmount,
+        month: transaction.month as Date,
+      };
+    })
+  );
+
   const historySeed = new Map<string, { income: number; expense: number }>();
   for (let offset = 5; offset >= 0; offset -= 1) {
     const key = getMonthKey(subMonths(monthStart, offset));
     historySeed.set(key, { income: 0, expense: 0 });
   }
 
-  const historyGrouped = historyRaw.reduce((acc, entry) => {
-    const key = getMonthKey(entry.month as Date);
+  const historyGrouped = historyTransactionsConverted.reduce((acc, entry) => {
+    const key = getMonthKey(entry.month);
     const existing = acc.get(key) ?? { income: 0, expense: 0 };
-    const amount = decimalToNumber(entry._sum.amount);
     if (entry.type === TransactionType.INCOME) {
-      existing.income += amount;
+      existing.income += entry.amount;
     } else {
-      existing.expense += amount;
+      existing.expense += entry.amount;
     }
     acc.set(key, existing);
     return acc;
