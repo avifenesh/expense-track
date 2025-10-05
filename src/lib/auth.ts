@@ -10,17 +10,17 @@ export type AuthUser = {
 export const AUTH_USERS: AuthUser[] = [
   {
     id: 'avi',
-    email: 'aviarchi1994@gmail.com',
-    displayName: 'Avi Archi',
-    passwordHash: '$2b$12$Aimtye8X.eHLuZGy0960s.dnUR5bDQnmwZo0knsz5rbrC0K.1GleS',
+    email: 'user1@example.com',
+    displayName: 'User One',
+    passwordHash: '$2b$12$REPLACE_WITH_YOUR_HASH',
     accountNames: ['Avi', 'Joint'],
     defaultAccountName: 'Avi',
   },
   {
     id: 'serena',
-    email: 'serena.bianchi@hotmail.it',
-    displayName: 'Serena Bianchi',
-    passwordHash: '$2b$12$z6LV7T0T/72RbQnZ0Dg/IeQBJDXUdVESKpsDjLj9oQL9hKFBowbeW',
+    email: 'user2@example.com',
+    displayName: 'User Two',
+    passwordHash: '$2b$12$REPLACE_WITH_YOUR_HASH',
     accountNames: ['Serena', 'Joint'],
     defaultAccountName: 'Serena',
   },
