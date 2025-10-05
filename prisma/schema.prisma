@@ -36,6 +36,7 @@ model Account {
   transactions       Transaction[]
   budgets            Budget[]
   recurringTemplates RecurringTemplate[]
+  holdings           Holding[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 
@@ -52,6 +53,7 @@ model Category {
   transactions       Transaction[]
   budgets            Budget[]
   recurringTemplates RecurringTemplate[]
+  holdings           Holding[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 
@@ -71,6 +73,7 @@ model Transaction {
   month       DateTime
   description String?
   isRecurring Boolean          @default(false)
+  isMutual    Boolean          @default(false)
   recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id])
   recurringTemplateId String?
   createdAt   DateTime         @default(now())
@@ -130,4 +133,39 @@ model ExchangeRate {
 
   @@unique([baseCurrency, targetCurrency, date])
   @@index([fetchedAt])
+}
+
+model Holding {
+  id          String   @id @default(cuid())
+  account     Account  @relation(fields: [accountId], references: [id])
+  accountId   String
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  symbol      String
+  quantity    Decimal  @db.Decimal(18, 6)
+  averageCost Decimal  @db.Decimal(12, 2)
+  currency    Currency @default(USD)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([accountId, categoryId, symbol])
+  @@index([accountId])
+  @@index([categoryId])
+}
+
+model StockPrice {
+  id            String   @id @default(cuid())
+  symbol        String
+  price         Decimal  @db.Decimal(12, 4)
+  currency      Currency @default(USD)
+  changePercent Decimal? @db.Decimal(8, 4)
+  volume        BigInt?
+  fetchedAt     DateTime @default(now())
+  source        String   @default("alphavantage")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([symbol, fetchedAt])
+  @@index([symbol, fetchedAt(sort: Desc)])
 }

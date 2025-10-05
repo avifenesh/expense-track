@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { DashboardPage } from '@/components/dashboard/dashboard-page'
-import { getAccounts, getDashboardData } from '@/lib/finance'
+import { getAccounts, getDashboardData, getHoldingsWithPrices } from '@/lib/finance'
 import { getMonthKey } from '@/utils/date'
 import { getSession, updateSessionAccount } from '@/lib/auth-server'
 import { AUTH_USERS } from '@/lib/auth'
@@ -23,13 +23,16 @@ async function DashboardLoader({
   allowedAccounts: Awaited<ReturnType<typeof getAccounts>>
   preferredCurrency?: import('@prisma/client').Currency
 }) {
-  const data = await getDashboardData({
-    monthKey,
-    accountId,
-    preferredCurrency,
-  })
+  const [data, holdings] = await Promise.all([
+    getDashboardData({
+      monthKey,
+      accountId,
+      preferredCurrency,
+    }),
+    getHoldingsWithPrices({ accountId, preferredCurrency }),
+  ])
 
-  return <DashboardPage data={{ ...data, accounts: allowedAccounts }} monthKey={monthKey} accountId={accountId} />
+  return <DashboardPage data={{ ...data, accounts: allowedAccounts, holdings }} monthKey={monthKey} accountId={accountId} />
 }
 
 export default async function Page({ searchParams }: PageProps) {

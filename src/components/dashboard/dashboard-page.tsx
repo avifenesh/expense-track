@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { TransactionType, Currency } from '@prisma/client'
+import { TransactionType, Currency, AccountType } from '@prisma/client'
 import {
   ArrowLeft,
   ArrowRight,
@@ -24,6 +24,7 @@ import {
   applyRecurringTemplatesAction,
   createCategoryAction,
   createTransactionAction,
+  updateTransactionAction,
   deleteBudgetAction,
   deleteTransactionAction,
   logoutAction,
@@ -32,6 +33,9 @@ import {
   upsertRecurringTemplateAction,
   persistActiveAccountAction,
   refreshExchangeRatesAction,
+  createHoldingAction,
+  deleteHoldingAction,
+  refreshHoldingPricesAction,
 } from '@/app/actions'
 import { Sparkline } from '@/components/dashboard/sparkline'
 import { Button } from '@/components/ui/button'
@@ -88,13 +92,15 @@ export function normalizeDateInput(value: FormDataEntryValue | null): Date | nul
 }
 
 type Feedback = { type: 'success' | 'error'; message: string }
-type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories'
+type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories' | 'holdings'
 
 type DashboardPageProps = {
   data: DashboardData
   monthKey: string
   accountId: string
 }
+
+type DashboardTransaction = DashboardData['transactions'][number]
 
 const transactionTypeOptions = [
   { label: 'Expense', value: TransactionType.EXPENSE },
@@ -124,6 +130,7 @@ const TABS: Array<{
   { value: 'transactions', label: 'Transactions', description: 'Capture new activity and reconcile existing entries.', icon: CreditCard },
   { value: 'recurring', label: 'Recurring', description: 'Manage predictable inflows and outflows over time.', icon: Repeat },
   { value: 'categories', label: 'Categories', description: 'Curate the taxonomy that powers reports and automations.', icon: Tags },
+  { value: 'holdings', label: 'Holdings', description: 'Track stocks, ETFs, and investment portfolios with live valuations.', icon: TrendingUp },
 ]
 
 const STAT_VARIANT_STYLES: Record<NonNullable<DashboardData['stats'][number]['variant']>, {
@@ -175,8 +182,24 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const preferredCurrency = data.preferredCurrency || Currency.USD
 
   const initialAccountId = accountId ?? data.accounts[0]?.id ?? ''
+  const initialAccountRecord = data.accounts.find((account) => account.id === initialAccountId) ?? null
+  const defaultExpenseCategoryId =
+    data.categories.find((category) => category.type === TransactionType.EXPENSE && !category.isArchived)?.id ?? ''
+  const initialTransactionAccountFilterValue =
+    initialAccountRecord?.type === AccountType.JOINT ? 'all' : initialAccountId
   const [activeAccount, setActiveAccount] = useState<string>(initialAccountId)
-  const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE)
+  const [transactionFormState, setTransactionFormState] = useState({
+    type: TransactionType.EXPENSE,
+    accountId: initialAccountId,
+    categoryId: defaultExpenseCategoryId,
+    amount: '',
+    currency: Currency.USD,
+    date: `${monthKey}-01`,
+    description: '',
+    isRecurring: false,
+    isMutual: false,
+  })
+  const [editingTransaction, setEditingTransaction] = useState<DashboardTransaction | null>(null)
   const [transactionFeedback, setTransactionFeedback] = useState<Feedback | null>(null)
   const [budgetFeedback, setBudgetFeedback] = useState<Feedback | null>(null)
   const [recurringFeedback, setRecurringFeedback] = useState<Feedback | null>(null)
@@ -186,7 +209,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(initialAccountId)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
   const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
-  const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(initialAccountId)
+  const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(initialTransactionAccountFilterValue)
   const [transactionSearch, setTransactionSearch] = useState('')
   const [recurringTypeFilter, setRecurringTypeFilter] = useState<'all' | TransactionType>('all')
   const [recurringAccountFilter, setRecurringAccountFilter] = useState<string>(initialAccountId)
@@ -208,6 +231,72 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     [data.accounts],
   )
 
+  const activeAccountRecord = useMemo(
+    () => data.accounts.find((account) => account.id === activeAccount) ?? null,
+    [data.accounts, activeAccount],
+  )
+  const isJointAccountView = activeAccountRecord?.type === AccountType.JOINT
+
+  const transactionAccountOptions = useMemo(() => {
+    if (!isJointAccountView) {
+      return accountsOptions
+    }
+
+    return [{ label: 'All accounts', value: 'all' }, ...accountsOptions]
+  }, [accountsOptions, isJointAccountView])
+
+  const selfAccountName = useMemo(
+    () => data.accounts.find((account) => account.type === AccountType.SELF)?.name ?? 'Self',
+    [data.accounts],
+  )
+
+  const partnerAccountName = useMemo(
+    () => data.accounts.find((account) => account.type === AccountType.PARTNER)?.name ?? 'Partner',
+    [data.accounts],
+  )
+
+  const getDefaultCategoryId = useCallback(
+    (type: TransactionType) =>
+      data.categories.find((category) => category.type === type && !category.isArchived)?.id ?? '',
+    [data.categories],
+  )
+
+  const defaultTransactionAccountFilter =
+    activeAccountRecord?.type === AccountType.JOINT ? 'all' : activeAccount || ''
+
+  const mutualSummaryForView = isJointAccountView ? data.mutualSummary : undefined
+
+  const mutualSummaryDisplay = useMemo(() => {
+    if (!mutualSummaryForView) {
+      return null
+    }
+
+    const ratioText = `Split: 2/3 ${mutualSummaryForView.selfAccountName} · 1/3 ${mutualSummaryForView.partnerAccountName}.`
+
+    if (mutualSummaryForView.status === 'settled' || mutualSummaryForView.amount <= 0.01) {
+      return {
+        headline: 'Shared expenses are settled for this month.',
+        helper: ratioText,
+      }
+    }
+
+    const formattedAmount = formatCurrency(mutualSummaryForView.amount, preferredCurrency)
+
+    if (mutualSummaryForView.status === 'partner-owes-self') {
+      return {
+        headline: `${mutualSummaryForView.partnerAccountName} owes ${mutualSummaryForView.selfAccountName} ${formattedAmount}.`,
+        helper: ratioText,
+      }
+    }
+
+    return {
+      headline: `${mutualSummaryForView.selfAccountName} owes ${mutualSummaryForView.partnerAccountName} ${formattedAmount}.`,
+      helper: ratioText,
+    }
+  }, [mutualSummaryForView, preferredCurrency])
+
+  const isEditingTransaction = Boolean(editingTransaction)
+
   useEffect(() => {
     if (!accountId) return
     setActiveAccount(accountId)
@@ -220,8 +309,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   }, [accountFeedback])
 
   const filteredCategories = useMemo(
-    () => data.categories.filter((category) => category.type === selectedType && !category.isArchived),
-    [data.categories, selectedType],
+    () => data.categories.filter((category) => category.type === transactionFormState.type && !category.isArchived),
+    [data.categories, transactionFormState.type],
+  )
+
+  const transactionCategoryOptions = useMemo(
+    () => filteredCategories.map((category) => ({ label: category.name, value: category.id })),
+    [filteredCategories],
   )
 
   const holdingsCategories = useMemo(
@@ -246,9 +340,105 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   useEffect(() => {
     if (!activeAccount) return
     setBudgetAccountFilter(activeAccount)
-    setTransactionAccountFilter(activeAccount)
+    setTransactionAccountFilter(defaultTransactionAccountFilter)
     setRecurringAccountFilter(activeAccount)
-  }, [activeAccount])
+  }, [activeAccount, activeAccountRecord, defaultTransactionAccountFilter])
+
+  useEffect(() => {
+    if (!activeAccount || editingTransaction) return
+    setTransactionFormState((prev) => ({
+      ...prev,
+      accountId: activeAccount,
+    }))
+  }, [activeAccount, editingTransaction])
+
+  useEffect(() => {
+    if (editingTransaction) return
+    if (filteredCategories.length === 0) {
+      setTransactionFormState((prev) => ({ ...prev, categoryId: '' }))
+      return
+    }
+
+    setTransactionFormState((prev) => {
+      if (filteredCategories.some((category) => category.id === prev.categoryId)) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        categoryId: filteredCategories[0].id,
+      }
+    })
+  }, [filteredCategories, editingTransaction])
+
+  useEffect(() => {
+    if (editingTransaction) return
+    setTransactionFormState((prev) => ({
+      ...prev,
+      date: `${monthKey}-01`,
+    }))
+  }, [monthKey, editingTransaction])
+
+  const resetTransactionForm = useCallback(() => {
+    const fallbackAccountId = activeAccount || data.accounts[0]?.id || ''
+    setTransactionFormState({
+      type: TransactionType.EXPENSE,
+      accountId: fallbackAccountId,
+      categoryId: getDefaultCategoryId(TransactionType.EXPENSE),
+      amount: '',
+      currency: Currency.USD,
+      date: `${monthKey}-01`,
+      description: '',
+      isRecurring: false,
+      isMutual: false,
+    })
+    setEditingTransaction(null)
+  }, [activeAccount, data.accounts, getDefaultCategoryId, monthKey])
+
+  const handleTransactionTypeChange = useCallback(
+    (nextType: TransactionType) => {
+      setTransactionFormState((prev) => {
+        const categoryStillValid = data.categories.some(
+          (category) => category.id === prev.categoryId && category.type === nextType && !category.isArchived,
+        )
+        const nextCategoryId = categoryStillValid ? prev.categoryId : getDefaultCategoryId(nextType)
+
+        return {
+          ...prev,
+          type: nextType,
+          categoryId: nextCategoryId,
+          isMutual: nextType === TransactionType.EXPENSE ? prev.isMutual : false,
+        }
+      })
+    },
+    [data.categories, getDefaultCategoryId],
+  )
+
+  const handleTransactionEdit = useCallback(
+    (transaction: DashboardTransaction) => {
+      setActiveTab('transactions')
+      setEditingTransaction(transaction)
+      const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
+      setTransactionFormState({
+        type: transaction.type,
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        amount: transaction.amount.toFixed(2),
+        currency: transaction.currency,
+        date: isoDate,
+        description: transaction.description ?? '',
+        isRecurring: transaction.isRecurring,
+        isMutual: transaction.type === TransactionType.EXPENSE ? transaction.isMutual : false,
+      })
+      setTransactionFeedback(null)
+    },
+    [],
+  )
+
+  const handleCancelTransactionEdit = useCallback(() => {
+    resetTransactionForm()
+    setTransactionFeedback(null)
+  }, [resetTransactionForm])
 
   const filteredBudgets = useMemo(
     () =>
@@ -271,7 +461,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       filterTransactions(data.transactions, {
         type: transactionFilterType,
         search: transactionSearch,
-        accountId: transactionAccountFilter || undefined,
+        accountId:
+          transactionAccountFilter === 'all' ? undefined : transactionAccountFilter || undefined,
       }),
     [data.transactions, transactionFilterType, transactionSearch, transactionAccountFilter],
   )
@@ -361,34 +552,58 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
   const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
-    const form = event.currentTarget
-    const formData = new FormData(form)
 
-    const dateInput = normalizeDateInput(formData.get('date'))
+    if (!transactionFormState.categoryId) {
+      setTransactionFeedback({ type: 'error', message: 'Please select a category.' })
+      return
+    }
+
+    const dateInput = normalizeDateInput(transactionFormState.date)
     if (!dateInput) {
       setTransactionFeedback({ type: 'error', message: 'Please select a valid date.' })
       return
     }
 
+    const parsedAmount = Number.parseFloat(transactionFormState.amount)
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setTransactionFeedback({ type: 'error', message: 'Enter an amount greater than zero.' })
+      return
+    }
+
+    const description = transactionFormState.description.trim()
+
     const payload = {
-      accountId: (formData.get('accountId') as string) || defaultAccountId,
-      categoryId: formData.get('categoryId') as string,
-      type: formData.get('type') as TransactionType,
-      amount: Number(formData.get('amount') || 0),
-      currency: (formData.get('currency') as Currency) || Currency.USD,
+      accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
+      categoryId: transactionFormState.categoryId,
+      type: transactionFormState.type,
+      amount: parsedAmount,
+      currency: transactionFormState.currency,
       date: dateInput,
-      description: (formData.get('description') as string) || undefined,
-      isRecurring: formData.get('isRecurring') === 'on',
+      description: description.length > 0 ? description : undefined,
+      isRecurring: transactionFormState.isRecurring,
+      isMutual: transactionFormState.type === TransactionType.EXPENSE && transactionFormState.isMutual,
     }
 
     startTransaction(async () => {
-      const result = await createTransactionAction(payload)
+      const result = editingTransaction
+        ? await updateTransactionAction({ id: editingTransaction.id, ...payload })
+        : await createTransactionAction(payload)
+
       if (result?.error) {
-        setTransactionFeedback({ type: 'error', message: 'Unable to save transaction. Please check required fields.' })
+        setTransactionFeedback({
+          type: 'error',
+          message: editingTransaction
+            ? 'Unable to update transaction. Please check required fields.'
+            : 'Unable to save transaction. Please check required fields.',
+        })
         return
       }
-      setTransactionFeedback({ type: 'success', message: 'Transaction saved.' })
-      form.reset()
+
+      setTransactionFeedback({
+        type: 'success',
+        message: editingTransaction ? 'Transaction updated.' : 'Transaction saved.',
+      })
+      resetTransactionForm()
       router.refresh()
     })
   }
@@ -399,6 +614,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       if (result?.error) {
         setTransactionFeedback({ type: 'error', message: 'Could not delete transaction.' })
         return
+      }
+      if (editingTransaction?.id === id) {
+        resetTransactionForm()
       }
       setTransactionFeedback({ type: 'success', message: 'Transaction removed.' })
       router.refresh()
@@ -1152,8 +1370,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <Select
                           id="transactionType"
                           name="type"
-                          value={selectedType}
-                          onChange={(event) => setSelectedType(event.target.value as TransactionType)}
+                          value={transactionFormState.type}
+                          onChange={(event) => handleTransactionTypeChange(event.target.value as TransactionType)}
                           options={transactionTypeOptions}
                         />
                       </div>
@@ -1164,7 +1382,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <Select
                           id="transactionAccount"
                           name="accountId"
-                          defaultValue={defaultAccountId}
+                          value={transactionFormState.accountId}
+                          onChange={(event) =>
+                            setTransactionFormState((prev) => ({
+                              ...prev,
+                              accountId: event.target.value,
+                            }))
+                          }
                           options={data.accounts.map((account) => ({ label: account.name, value: account.id }))}
                         />
                       </div>
@@ -1175,15 +1399,38 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <Select
                           id="transactionCategory"
                           name="categoryId"
-                          options={filteredCategories.map((category) => ({ label: category.name, value: category.id }))}
+                          value={transactionFormState.categoryId}
+                          onChange={(event) =>
+                            setTransactionFormState((prev) => ({
+                              ...prev,
+                              categoryId: event.target.value,
+                            }))
+                          }
+                          options={transactionCategoryOptions}
                           required
+                          disabled={transactionCategoryOptions.length === 0}
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="transactionAmount">
                           Amount
                         </label>
-                        <Input name="amount" id="transactionAmount" type="number" step="0.01" min="0" placeholder="0.00" required />
+                        <Input
+                          name="amount"
+                          id="transactionAmount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          required
+                          value={transactionFormState.amount}
+                          onChange={(event) =>
+                            setTransactionFormState((prev) => ({
+                              ...prev,
+                              amount: event.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="transactionCurrency">
@@ -1192,7 +1439,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <Select
                           id="transactionCurrency"
                           name="currency"
-                          defaultValue={Currency.USD}
+                          value={transactionFormState.currency}
+                          onChange={(event) =>
+                            setTransactionFormState((prev) => ({
+                              ...prev,
+                              currency: event.target.value as Currency,
+                            }))
+                          }
                           options={currencyOptions}
                         />
                       </div>
@@ -1200,24 +1453,97 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <label className="text-xs font-medium text-slate-300" htmlFor="transactionDate">
                           Date
                         </label>
-                        <Input name="date" id="transactionDate" type="date" defaultValue={`${monthKey}-01`} required />
+                        <Input
+                          name="date"
+                          id="transactionDate"
+                          type="date"
+                          required
+                          value={transactionFormState.date}
+                          onChange={(event) =>
+                            setTransactionFormState((prev) => ({
+                              ...prev,
+                              date: event.target.value,
+                            }))
+                          }
+                        />
                       </div>
-                      <div className="flex items-end gap-2">
-                        <input id="isRecurring" name="isRecurring" type="checkbox" className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40" />
-                        <label htmlFor="isRecurring" className="text-xs text-slate-300">
-                          Permanent (recurring) transaction
-                        </label>
+                      <div className="space-y-2 sm:col-span-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="isRecurring"
+                            name="isRecurring"
+                            type="checkbox"
+                            className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40"
+                            checked={transactionFormState.isRecurring}
+                            onChange={(event) =>
+                              setTransactionFormState((prev) => ({
+                                ...prev,
+                                isRecurring: event.target.checked,
+                              }))
+                            }
+                          />
+                          <label htmlFor="isRecurring" className="text-xs text-slate-300">
+                            Permanent (recurring) transaction
+                          </label>
+                        </div>
+                        {transactionFormState.type === TransactionType.EXPENSE && (
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="isMutual"
+                              name="isMutual"
+                              type="checkbox"
+                              className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40"
+                              checked={transactionFormState.isMutual}
+                              onChange={(event) =>
+                                setTransactionFormState((prev) => ({
+                                  ...prev,
+                                  isMutual: event.target.checked,
+                                }))
+                              }
+                            />
+                            <label htmlFor="isMutual" className="text-xs text-slate-300">
+                              Mutual expense (2/3 {selfAccountName} · 1/3 {partnerAccountName})
+                            </label>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="transactionDescription">
                         Description
                       </label>
-                      <Textarea name="description" id="transactionDescription" rows={2} placeholder="Optional memo" />
+                      <Textarea
+                        name="description"
+                        id="transactionDescription"
+                        rows={2}
+                        placeholder="Optional memo"
+                        value={transactionFormState.description}
+                        onChange={(event) =>
+                          setTransactionFormState((prev) => ({
+                            ...prev,
+                            description: event.target.value,
+                          }))
+                        }
+                      />
                     </div>
-                    <Button type="submit" loading={isPendingTransaction} className="w-full">
-                      Save transaction
-                    </Button>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex w-full flex-col gap-2 sm:flex-row">
+                        <Button type="submit" loading={isPendingTransaction} className="w-full sm:w-auto">
+                          {isEditingTransaction ? 'Update transaction' : 'Save transaction'}
+                        </Button>
+                        {isEditingTransaction && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={handleCancelTransactionEdit}
+                            disabled={isPendingTransaction}
+                          >
+                            Cancel edit
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     {transactionFeedback && (
                       <p
                         role="status"
@@ -1236,6 +1562,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {mutualSummaryDisplay && (
+                    <div className="rounded-2xl border border-sky-400/30 bg-sky-500/15 p-3 text-xs text-sky-50">
+                      <p className="font-medium text-sky-100">{mutualSummaryDisplay.headline}</p>
+                      <p className="mt-1 text-[11px] text-sky-100/80">{mutualSummaryDisplay.helper}</p>
+                    </div>
+                  )}
                   <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="transaction-filter-type">
@@ -1254,10 +1586,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       </label>
                       <Select
                         id="transaction-filter-account"
-                        value={transactionAccountFilter || accountsOptions[0]?.value || ''}
+                        value={transactionAccountFilter || transactionAccountOptions[0]?.value || ''}
                         onChange={(event) => setTransactionAccountFilter(event.target.value)}
-                        options={accountsOptions}
-                        disabled={accountsOptions.length === 0}
+                        options={transactionAccountOptions}
+                        disabled={transactionAccountOptions.length === 0}
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2 lg:col-span-1">
@@ -1271,7 +1603,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         placeholder="e.g. rent, groceries, bonus"
                       />
                     </div>
-                    {(transactionSearch || transactionFilterType !== 'all' || transactionAccountFilter !== activeAccount) && (
+                    {(transactionSearch || transactionFilterType !== 'all' || transactionAccountFilter !== defaultTransactionAccountFilter) && (
                       <div className="flex items-end">
                         <Button
                           type="button"
@@ -1280,7 +1612,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                           onClick={() => {
                             setTransactionSearch('')
                             setTransactionFilterType('all')
-                            setTransactionAccountFilter(activeAccount)
+                            setTransactionAccountFilter(defaultTransactionAccountFilter)
                           }}
                         >
                           Reset filters
@@ -1291,40 +1623,67 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   {filteredTransactions.length === 0 && (
                     <p className="text-sm text-slate-300">No transactions match the current filters.</p>
                   )}
-                  {filteredTransactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2 font-medium text-white">
-                          <span>{transaction.category.name}</span>
-                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-200">
-                            {transaction.account.name}
+                  {filteredTransactions.map((transaction) => {
+                    const isCurrentlyEditing = editingTransaction?.id === transaction.id
+                    return (
+                      <div
+                        key={transaction.id}
+                        className={cn(
+                          'flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 md:flex-row md:items-center md:justify-between',
+                          isCurrentlyEditing && 'border-sky-400/60 bg-sky-500/10 text-sky-50',
+                        )}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                            <span>{transaction.category.name}</span>
+                            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-200">
+                              {transaction.account.name}
+                            </span>
+                            {transaction.isMutual && (
+                              <span className="rounded-full border border-sky-400/40 bg-sky-500/20 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-sky-100">
+                                Mutual
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-300">
+                            {new Date(transaction.date).toLocaleDateString()} · {transaction.description || '—'}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+                          <span
+                            className={cn(
+                              'text-sm font-semibold',
+                              transaction.type === TransactionType.EXPENSE ? 'text-rose-600' : 'text-emerald-600',
+                            )}
+                          >
+                            {formatCurrency(
+                              transaction.convertedAmount * (transaction.type === TransactionType.EXPENSE ? -1 : 1),
+                              preferredCurrency,
+                            )}
                           </span>
-                        </div>
-                        <div className="text-xs text-slate-300">
-                          {new Date(transaction.date).toLocaleDateString()} · {transaction.description || '—'}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="text-xs text-slate-200 hover:bg-white/10"
+                              onClick={() => handleTransactionEdit(transaction)}
+                              disabled={isCurrentlyEditing}
+                            >
+                              {isCurrentlyEditing ? 'Editing' : 'Edit'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="text-xs text-slate-200 hover:bg-white/10"
+                              onClick={() => handleTransactionDelete(transaction.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={cn(
-                            'text-sm font-semibold',
-                            transaction.type === TransactionType.EXPENSE ? 'text-rose-600' : 'text-emerald-600',
-                          )}
-                        >
-                          {formatCurrency(
-                            transaction.convertedAmount * (transaction.type === TransactionType.EXPENSE ? -1 : 1),
-                            preferredCurrency
-                          )}
-                        </span>
-                        <Button variant="ghost" className="text-xs text-slate-200 hover:bg-white/10" onClick={() => handleTransactionDelete(transaction.id)}>
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </CardContent>
               </Card>
             </div>
@@ -1743,6 +2102,291 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </Card>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Holdings Tab */}
+        {activeTab === 'holdings' && (
+          <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
+            {/* Left: Add Holding Form */}
+            <Card className="border-white/15 bg-white/10 h-fit">
+              <CardHeader className="gap-1">
+                <CardTitle className="text-lg font-semibold text-white">Add holding</CardTitle>
+                <p className="text-sm text-slate-400">Track stocks, ETFs, or other investments with live market prices.</p>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    const form = event.currentTarget
+                    const formData = new FormData(form)
+                    const payload = {
+                      accountId: (formData.get('accountId') as string) || activeAccount,
+                      categoryId: formData.get('categoryId') as string,
+                      symbol: (formData.get('symbol') as string).toUpperCase(),
+                      quantity: Number(formData.get('quantity') || 0),
+                      averageCost: Number(formData.get('averageCost') || 0),
+                      currency: (formData.get('currency') as Currency) || Currency.USD,
+                      notes: (formData.get('notes') as string) || undefined,
+                    }
+
+                    startTransaction(async () => {
+                      const result = await createHoldingAction(payload)
+                      if (result?.error) {
+                        setTransactionFeedback({
+                          type: 'error',
+                          message: Object.values(result.error).flat().join(', ') || 'Unable to add holding',
+                        })
+                        return
+                      }
+                      setTransactionFeedback({ type: 'success', message: 'Holding added successfully' })
+                      form.reset()
+                    })
+                  }}
+                >
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="holdingAccount">
+                      Account
+                    </label>
+                    <Select
+                      name="accountId"
+                      id="holdingAccount"
+                      value={activeAccount}
+                      onChange={(e) => setActiveAccount(e.target.value)}
+                      options={accountsOptions}
+                      disabled={accountsOptions.length === 0}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="holdingCategory">
+                      Category
+                    </label>
+                    <Select
+                      name="categoryId"
+                      id="holdingCategory"
+                      options={data.categories
+                        .filter((cat) => cat.isHolding && !cat.isArchived)
+                        .map((cat) => ({ label: cat.name, value: cat.id }))}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="symbol">
+                        Symbol
+                      </label>
+                      <Input
+                        name="symbol"
+                        id="symbol"
+                        placeholder="e.g. AMZN, SPY"
+                        required
+                        className="uppercase"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="quantity">
+                        Quantity
+                      </label>
+                      <Input name="quantity" id="quantity" type="number" step="0.000001" placeholder="100" required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="averageCost">
+                        Avg Cost
+                      </label>
+                      <Input
+                        name="averageCost"
+                        id="averageCost"
+                        type="number"
+                        step="0.01"
+                        placeholder="150.00"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="holdingCurrency">
+                        Currency
+                      </label>
+                      <Select name="currency" id="holdingCurrency" options={currencyOptions} defaultValue={Currency.USD} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-300" htmlFor="holdingNotes">
+                      Notes (optional)
+                    </label>
+                    <Textarea name="notes" id="holdingNotes" rows={2} placeholder="Investment thesis or notes" />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isPendingTransaction}>
+                    {isPendingTransaction ? 'Adding...' : 'Add holding'}
+                  </Button>
+                  {transactionFeedback && (
+                    <div
+                      className={cn(
+                        'rounded-lg px-3 py-2 text-xs',
+                        transactionFeedback.type === 'success'
+                          ? 'bg-emerald-500/20 text-emerald-200'
+                          : 'bg-rose-500/20 text-rose-200',
+                      )}
+                    >
+                      {transactionFeedback.message}
+                    </div>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Right: Holdings List */}
+            <Card className="border-white/15 bg-white/10">
+              <CardHeader className="gap-1 flex-row items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-white">Your holdings</CardTitle>
+                  <p className="text-sm text-slate-400">
+                    Stocks and ETFs tracked with live market prices. Values update on refresh.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    startTransaction(async () => {
+                      const result = await refreshHoldingPricesAction({ accountId: activeAccount })
+                      if ('error' in result) {
+                        setTransactionFeedback({ type: 'error', message: 'Failed to refresh prices' })
+                        return
+                      }
+                      setTransactionFeedback({
+                        type: 'success',
+                        message: `Updated ${result.updated} price${result.updated !== 1 ? 's' : ''}`,
+                      })
+                    })
+                  }}
+                  disabled={isPendingTransaction || data.holdings.length === 0}
+                  className="gap-2"
+                >
+                  <RefreshCcw className={cn('h-4 w-4', isPendingTransaction && 'animate-spin')} />
+                  Refresh prices
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {data.holdings.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center text-sm text-slate-400">
+                    <TrendingUp className="mx-auto mb-2 h-8 w-8 text-slate-500" />
+                    <p>No holdings tracked yet.</p>
+                    <p className="mt-1 text-xs">Add your first stock or ETF to start tracking portfolio value.</p>
+                  </div>
+                )}
+                {data.holdings.map((holding) => {
+                  const staleBadge =
+                    holding.priceAge && holding.isStale ? (
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
+                        Stale
+                      </span>
+                    ) : null
+                  const priceAge = holding.priceAge
+                    ? new Date(holding.priceAge).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Unknown'
+
+                  return (
+                    <div
+                      key={holding.id}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-sky-500/20 px-3 py-1 text-sm font-bold tracking-wide text-sky-200">
+                            {holding.symbol}
+                          </span>
+                          <span className="text-xs text-slate-400">×{holding.quantity}</span>
+                          {staleBadge}
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete ${holding.symbol} holding?`)) {
+                              startTransaction(async () => {
+                                const result = await deleteHoldingAction({ id: holding.id })
+                                if ('error' in result) {
+                                  setTransactionFeedback({ type: 'error', message: 'Failed to delete holding' })
+                                  return
+                                }
+                                setTransactionFeedback({ type: 'success', message: 'Holding deleted' })
+                              })
+                            }
+                          }}
+                          className="text-xs text-rose-400 hover:text-rose-300 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-slate-400">Market Value</p>
+                          <p className="font-semibold text-white">
+                            {formatCurrency(holding.marketValue, holding.currency)}
+                          </p>
+                          {holding.currency !== preferredCurrency && holding.marketValueConverted !== undefined && (
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {formatCurrency(holding.marketValueConverted, preferredCurrency)}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Cost Basis</p>
+                          <p className="text-slate-300">{formatCurrency(holding.costBasis, holding.currency)}</p>
+                          {holding.currency !== preferredCurrency && holding.costBasisConverted !== undefined && (
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {formatCurrency(holding.costBasisConverted, preferredCurrency)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <div>
+                          <span className="text-slate-400">Gain/Loss: </span>
+                          <span
+                            className={cn(
+                              'font-medium',
+                              holding.gainLoss >= 0 ? 'text-emerald-300' : 'text-rose-400',
+                            )}
+                          >
+                            {formatCurrency(holding.gainLoss, holding.currency)} ({holding.gainLossPercent.toFixed(2)}%)
+                          </span>
+                          {holding.currency !== preferredCurrency && holding.gainLossConverted !== undefined && (
+                            <span className="ml-1 text-slate-400">
+                              ({formatCurrency(holding.gainLossConverted, preferredCurrency)})
+                            </span>
+                          )}
+                        </div>
+                        {holding.currentPrice && (
+                          <div className="text-slate-400">
+                            @ {formatCurrency(holding.currentPrice, holding.currency)}
+                            {holding.currency !== preferredCurrency && holding.currentPriceConverted && (
+                              <span className="ml-1">
+                                ({formatCurrency(holding.currentPriceConverted, preferredCurrency)})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {holding.notes && (
+                        <p className="text-xs text-slate-400 border-t border-white/5 pt-2 mt-2">{holding.notes}</p>
+                      )}
+
+                      <p className="text-[10px] text-slate-500">Last updated: {priceAge}</p>
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
           </div>
         )}
       </section>
