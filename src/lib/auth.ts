@@ -8,13 +8,21 @@ export type AuthUser = {
 }
 
 function parseAuthUsers(): AuthUser[] {
-  const user1Email = process.env.AUTH_USER1_EMAIL || ''
-  const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME || 'User One'
-  const user1PasswordHash = process.env.AUTH_USER1_PASSWORD_HASH || ''
+  const user1Email = process.env.AUTH_USER1_EMAIL
+  const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME
+  const user1PasswordHash = process.env.AUTH_USER1_PASSWORD_HASH
 
-  const user2Email = process.env.AUTH_USER2_EMAIL || ''
-  const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME || 'User Two'
-  const user2PasswordHash = process.env.AUTH_USER2_PASSWORD_HASH || ''
+  const user2Email = process.env.AUTH_USER2_EMAIL
+  const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME
+  const user2PasswordHash = process.env.AUTH_USER2_PASSWORD_HASH
+
+  if (!user1Email || !user1DisplayName || !user1PasswordHash) {
+    throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
+  }
+
+  if (!user2Email || !user2DisplayName || !user2PasswordHash) {
+    throw new Error('Missing required environment variables for user 2 (AUTH_USER2_*)')
+  }
 
   return [
     {
