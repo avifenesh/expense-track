@@ -134,9 +134,6 @@ Detailed, step-by-step notes live in [`docs/vercel-deployment.md`](docs/vercel-d
 | `npm run db:seed` | Seed baseline accounts and categories |
 
 ## Next Steps & Ideas
-
-- Add authentication if you plan to expose this beyond personal use.
-- Attach receipt uploads to transactions (S3, Cloudinary, etc.).
 - Create analytics widgets (cash flow by quarter, partner split, etc.).
 - Automate monthly rollovers that duplicate all active recurring templates automatically on the 1st.
 
