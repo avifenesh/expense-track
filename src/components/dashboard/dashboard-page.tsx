@@ -137,6 +137,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // Get user's preferred currency for formatting
+  const preferredCurrency = data.preferredCurrency || Currency.USD
+
   const initialAccountId = accountId ?? data.accounts[0]?.id ?? ''
   const [activeAccount, setActiveAccount] = useState<string>(initialAccountId)
   const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE)
@@ -551,15 +554,15 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="grid grid-cols-2 gap-4 text-sm text-slate-100/80">
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Income this month</p>
-                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.income ?? 0)}</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.income ?? 0, preferredCurrency)}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Spending this month</p>
-                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.expense ?? 0)}</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.expense ?? 0, preferredCurrency)}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Change vs last month</p>
-                <p className={cn('text-lg font-semibold', netDeltaVariant)}>{formatRelativeAmount(netDelta)}</p>
+                <p className={cn('text-lg font-semibold', netDeltaVariant)}>{formatRelativeAmount(netDelta, preferredCurrency)}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Accounts tracked</p>
@@ -667,7 +670,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </span>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-semibold tracking-tight text-white">{formatCurrency(stat.amount)}</p>
+                <p className="text-3xl font-semibold tracking-tight text-white">{formatCurrency(stat.amount, preferredCurrency)}</p>
               </CardContent>
             </Card>
           )
@@ -757,11 +760,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
                       <span>Net compared to last month</span>
                       <span className={cn('text-sm font-semibold', data.comparison.change >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
-                        {formatRelativeAmount(data.comparison.change)}
+                        {formatRelativeAmount(data.comparison.change, preferredCurrency)}
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-slate-300">
-                      {formatMonthLabel(data.comparison.previousMonth)} net: {formatCurrency(data.comparison.previousNet)}
+                      {formatMonthLabel(data.comparison.previousMonth)} net: {formatCurrency(data.comparison.previousNet, preferredCurrency)}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -771,6 +774,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         data.budgets
                           .filter((budget) => budget.categoryType === TransactionType.EXPENSE)
                           .reduce((sum, budget) => sum + budget.remaining, 0),
+                        preferredCurrency
                       )}
                     </div>
                   </div>
@@ -781,6 +785,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         data.budgets
                           .filter((budget) => budget.categoryType === TransactionType.INCOME)
                           .reduce((sum, budget) => sum + budget.remaining, 0),
+                        preferredCurrency
                       )}
                     </div>
                   </div>
@@ -854,7 +859,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     const actualLabel = budget.categoryType === TransactionType.EXPENSE ? 'spent' : 'received'
                     const remainingLabel = `${
                       budget.categoryType === TransactionType.EXPENSE ? 'Remaining' : 'To receive'
-                    }: ${formatCurrency(budget.remaining)}`
+                    }: ${formatCurrency(budget.remaining, preferredCurrency)}`
                     return (
                       <div
                         key={`${budget.categoryId}-${budget.budgetId}`}
@@ -869,7 +874,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                               </span>
                             </div>
                             <p className="text-xs text-slate-300">
-                              {formatCurrency(budget.actual)} {actualLabel} / {formatCurrency(budget.planned)} planned
+                              {formatCurrency(budget.actual, preferredCurrency)} {actualLabel} / {formatCurrency(budget.planned, preferredCurrency)} planned
                             </p>
                           </div>
                           <span className="text-sm font-medium text-slate-200">
@@ -935,7 +940,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       Expense utilization
                     </label>
                     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200">
-                      {formatCurrency(budgetTotals.expenseActual)} of {formatCurrency(budgetTotals.expensePlanned)} spent
+                      {formatCurrency(budgetTotals.expenseActual, preferredCurrency)} of {formatCurrency(budgetTotals.expensePlanned, preferredCurrency)} spent
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -943,7 +948,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       Income realized
                     </label>
                     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200">
-                      {formatCurrency(budgetTotals.incomeActual)} of {formatCurrency(budgetTotals.incomePlanned)} received
+                      {formatCurrency(budgetTotals.incomeActual, preferredCurrency)} of {formatCurrency(budgetTotals.incomePlanned, preferredCurrency)} received
                     </div>
                   </div>
                 </div>
@@ -961,7 +966,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     const progress = getBudgetProgress(budget)
                     const remainingLabel = `${
                       budget.categoryType === TransactionType.EXPENSE ? 'Remaining' : 'To receive'
-                    }: ${formatCurrency(budget.remaining)}`
+                    }: ${formatCurrency(budget.remaining, preferredCurrency)}`
                     const actualLabel = budget.categoryType === TransactionType.EXPENSE ? 'spent' : 'received'
                     const progressColor =
                       budget.categoryType === TransactionType.EXPENSE ? 'bg-rose-400/80' : 'bg-emerald-300/80'
@@ -980,7 +985,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                               </span>
                             </div>
                             <div className="mt-1 text-xs text-slate-300">
-                              {formatCurrency(budget.actual)} {actualLabel} / {formatCurrency(budget.planned)} planned
+                              {formatCurrency(budget.actual, preferredCurrency)} {actualLabel} / {formatCurrency(budget.planned, preferredCurrency)} planned
                             </div>
                           </div>
                           <Button
@@ -994,7 +999,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         </div>
                         <div className="mt-3">
                           <div className="sr-only" role="status">
-                            {formatCurrency(budget.actual)} of {formatCurrency(budget.planned)} {actualLabel}
+                            {formatCurrency(budget.actual, preferredCurrency)} of {formatCurrency(budget.planned, preferredCurrency)} {actualLabel}
                           </div>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
                             <div
@@ -1270,7 +1275,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                           )}
                         >
                           {formatCurrency(
-                            transaction.amount * (transaction.type === TransactionType.EXPENSE ? -1 : 1),
+                            transaction.convertedAmount * (transaction.type === TransactionType.EXPENSE ? -1 : 1),
+                            preferredCurrency
                           )}
                         </span>
                         <Button variant="ghost" className="text-xs text-slate-200 hover:bg-white/10" onClick={() => handleTransactionDelete(transaction.id)}>
@@ -1449,7 +1455,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                             </span>
                           </div>
                           <div className="text-xs text-slate-400">
-                            {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount)} · Day {template.dayOfMonth}
+                            {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount, preferredCurrency)} · Day {template.dayOfMonth}
                           </div>
                           <div className="text-xs text-slate-400">{template.description || 'No description'}</div>
                         </div>
@@ -1481,7 +1487,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                                 </span>
                               </div>
                               <div className="text-xs text-slate-300">
-                                {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount)} · Day{' '}
+                                {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount, preferredCurrency)} · Day{' '}
                                 {template.dayOfMonth}
                               </div>
                               <div className="text-xs text-slate-400">{template.description || 'No description'}</div>
@@ -1521,6 +1527,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         activeRecurringTemplates
                           .filter((t) => t.type === TransactionType.EXPENSE)
                           .reduce((sum, template) => sum + template.amount, 0),
+                        preferredCurrency
                       )}
                     </p>
                   </div>
@@ -1531,6 +1538,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         activeRecurringTemplates
                           .filter((t) => t.type === TransactionType.INCOME)
                           .reduce((sum, template) => sum + template.amount, 0),
+                        preferredCurrency
                       )}
                     </p>
                   </div>
