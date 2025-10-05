@@ -44,9 +44,11 @@ src/
 ### Authentication System
 
 - **Session-based auth** using signed cookies (`balance_session`, `balance_user`, `balance_account`)
-- User definitions in `src/lib/auth.ts` with hardcoded `AUTH_USERS` (Avi and Serena)
+- User credentials loaded from environment variables in `src/lib/auth.ts` (no fallbacks - will throw if missing)
+- Required env vars: `AUTH_USER1_EMAIL`, `AUTH_USER1_DISPLAY_NAME`, `AUTH_USER1_PASSWORD_HASH`, `AUTH_USER2_EMAIL`, `AUTH_USER2_DISPLAY_NAME`, `AUTH_USER2_PASSWORD_HASH`
 - All mutations in `src/app/actions.ts` validate sessions via `requireSession()` and check account access via `ensureAccountAccess()`
 - Password hashing with bcryptjs; session secrets from `AUTH_SESSION_SECRET` env variable
+- To generate password hash: `node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('YOUR_PASSWORD', 12, (err, hash) => console.log(hash));"`
 
 ### Server Actions Pattern
 
@@ -136,10 +138,27 @@ Dashboard data aggregation lives in `src/lib/dashboard-ux.ts`:
 Required in `.env`:
 
 ```bash
-DATABASE_URL="postgresql://..."           # Postgres connection string
-AUTH_SESSION_SECRET="long-random-string"  # Session signing secret (use openssl rand -hex 32)
-NEXT_PUBLIC_APP_URL="http://localhost:3000"  # Optional: app base URL
+# Database
+DATABASE_URL="postgresql://..."                    # Postgres connection string (Neon, local, etc.)
+
+# Authentication
+AUTH_SESSION_SECRET="long-random-string"           # Session signing secret (use: openssl rand -hex 32)
+
+# User 1 credentials (required - no fallbacks)
+AUTH_USER1_EMAIL="user1@example.com"
+AUTH_USER1_DISPLAY_NAME="User One"
+AUTH_USER1_PASSWORD_HASH="$2b$12$..."              # Generate with bcryptjs (see Authentication System)
+
+# User 2 credentials (required - no fallbacks)
+AUTH_USER2_EMAIL="user2@example.com"
+AUTH_USER2_DISPLAY_NAME="User Two"
+AUTH_USER2_PASSWORD_HASH="$2b$12$..."              # Generate with bcryptjs (see Authentication System)
+
+# Optional
+NEXT_PUBLIC_APP_URL="http://localhost:3000"        # App base URL for absolute links
 ```
+
+**Security Note**: All auth environment variables are required with no fallbacks. The application will throw an error at startup if any are missing.
 
 ## Testing
 
@@ -155,6 +174,27 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"  # Optional: app base URL
 - **Decimal precision**: Financial amounts use `Decimal(12,2)` in DB and multiply by 100 in JS before storage
 - **Session expiry**: Sessions are stateless; re-login required if cookies expire
 
+## Deployment
+
+### Vercel + Neon Setup
+
+The application is configured to deploy on Vercel with Neon PostgreSQL:
+
+1. **Vercel Configuration** (`vercel.json`):
+   - Region set to `cdg1` (Paris) for optimal latency to Tel Aviv
+   - Next.js framework with custom build command
+   - Function timeout set to 30 seconds
+
+2. **Required Environment Variables in Vercel**:
+   - All environment variables from `.env.example` must be configured
+   - Use Vercel-Neon integration for automatic `DATABASE_URL` setup (recommended)
+   - Add auth environment variables manually in Vercel dashboard
+
+3. **Database Migrations**:
+   - Migrations are in `prisma/migrations/` and tracked in git
+   - Production deployments use `npm run db:migrate` (runs `prisma migrate deploy`)
+   - Vercel build automatically runs `prisma generate` via `npm run build`
+
 ## Common Pitfalls
 
 - **Stale Prisma types**: Always run `npm run prisma:generate` after schema changes
@@ -162,3 +202,4 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"  # Optional: app base URL
 - **Month normalization**: Use `getMonthStart()` consistently to avoid off-by-one errors
 - **Amount scaling**: Server actions use `toDecimalString()` helper to properly round currency values
 - **Docker conflicts**: If `npm run db:up:local` fails, check for existing containers with `docker ps -a`
+- **Missing auth env vars**: Application will fail to start if any `AUTH_USER*` variables are missing (no fallbacks by design)
