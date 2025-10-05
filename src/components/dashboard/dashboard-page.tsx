@@ -2258,7 +2258,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </div>
                 <Button
                   variant="ghost"
-                  size="sm"
                   onClick={() => {
                     startTransaction(async () => {
                       const result = await refreshHoldingPricesAction({ accountId: activeAccount })

@@ -138,7 +138,7 @@ export async function getStockPrice(symbol: string): Promise<StockPriceWithMeta>
  * Refresh stock prices for an array of symbols with rate limiting
  */
 export async function refreshStockPrices(symbols: string[]): Promise<RefreshResult> {
-  const uniqueSymbols = [...new Set(symbols.map((s) => s.toUpperCase()))]
+  const uniqueSymbols = Array.from(new Set(symbols.map((s) => s.toUpperCase())))
   const result: RefreshResult = {
     updated: 0,
     skipped: 0,
@@ -188,7 +188,7 @@ export async function refreshStockPrices(symbols: string[]): Promise<RefreshResu
 export async function needsRefresh(symbols: string[]): Promise<boolean> {
   if (symbols.length === 0) return false
 
-  const uniqueSymbols = [...new Set(symbols.map((s) => s.toUpperCase()))]
+  const uniqueSymbols = Array.from(new Set(symbols.map((s) => s.toUpperCase())))
 
   // Get most recent fetchedAt across all user's holdings' symbols
   const mostRecent = await prisma.stockPrice.findFirst({
