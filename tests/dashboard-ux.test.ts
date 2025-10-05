@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TransactionType } from '@prisma/client'
+import { TransactionType, AccountType, Currency } from "@prisma/client";
 import {
   filterBudgets,
   getBudgetProgress,
@@ -51,34 +51,84 @@ const sampleBudgets = [
 
 const sampleTransactions = [
   {
-    id: 't1',
-    accountId: 'a1',
-    categoryId: 'c1',
+    id: "t1",
+    accountId: "a1",
+    categoryId: "c1",
     type: TransactionType.EXPENSE,
     amount: 50,
-    date: new Date('2025-10-05'),
-    description: 'Coffee with Sam',
-    category: { id: 'c1', name: 'Dining', type: TransactionType.EXPENSE, isArchived: false },
-    account: { id: 'a1', name: 'Joint' },
+    currency: Currency.USD,
+    convertedAmount: 50,
+    displayCurrency: Currency.USD,
+    date: new Date("2025-10-05"),
+    description: "Coffee with Sam",
+    isRecurring: false,
+    recurringTemplateId: null,
+    isMutual: false,
+    category: {
+      id: "c1",
+      name: "Dining",
+      type: TransactionType.EXPENSE,
+      color: null,
+      isHolding: false,
+      isArchived: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    account: {
+      id: "a1",
+      name: "Joint",
+      type: AccountType.JOINT,
+      preferredCurrency: Currency.USD,
+      color: null,
+      icon: null,
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
     createdAt: new Date(),
     updatedAt: new Date(),
-    month: '2025-10',
+    month: "2025-10",
   },
   {
-    id: 't2',
-    accountId: 'a2',
-    categoryId: 'c2',
+    id: "t2",
+    accountId: "a2",
+    categoryId: "c2",
     type: TransactionType.INCOME,
     amount: 1200,
-    date: new Date('2025-10-01'),
-    description: 'October salary',
-    category: { id: 'c2', name: 'Salary', type: TransactionType.INCOME, isArchived: false },
-    account: { id: 'a2', name: 'Partner' },
+    currency: Currency.USD,
+    convertedAmount: 1200,
+    displayCurrency: Currency.USD,
+    date: new Date("2025-10-01"),
+    description: "October salary",
+    isRecurring: true,
+    recurringTemplateId: "rt1",
+    isMutual: false,
+    category: {
+      id: "c2",
+      name: "Salary",
+      type: TransactionType.INCOME,
+      color: null,
+      isHolding: false,
+      isArchived: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    account: {
+      id: "a2",
+      name: "Partner",
+      type: AccountType.SELF,
+      preferredCurrency: Currency.USD,
+      color: null,
+      icon: null,
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
     createdAt: new Date(),
     updatedAt: new Date(),
-    month: '2025-10',
+    month: "2025-10",
   },
-]
+];
 
 const sampleRecurring = [
   {
@@ -112,10 +162,37 @@ const sampleRecurring = [
 ]
 
 const sampleCategories = [
-  { id: 'c1', name: 'Dining', type: TransactionType.EXPENSE, isArchived: false },
-  { id: 'c2', name: 'Salary', type: TransactionType.INCOME, isArchived: false },
-  { id: 'c3', name: 'Travel', type: TransactionType.EXPENSE, isArchived: true },
-]
+  {
+    id: "c1",
+    name: "Dining",
+    type: TransactionType.EXPENSE,
+    color: null,
+    isHolding: false,
+    isArchived: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "c2",
+    name: "Salary",
+    type: TransactionType.INCOME,
+    color: null,
+    isHolding: false,
+    isArchived: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "c3",
+    name: "Travel",
+    type: TransactionType.EXPENSE,
+    color: null,
+    isHolding: false,
+    isArchived: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
 
 describe('dashboard-ux helpers', () => {
   it('filters budgets by account and type', () => {

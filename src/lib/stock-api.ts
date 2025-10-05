@@ -110,10 +110,10 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuoteData> {
  */
 export async function getStockPrice(symbol: string): Promise<StockPriceWithMeta> {
   // Try to get most recent cached price
-  const cached = await prisma.stockPrice.findFirst({
+  const cached = await(prisma as any).stockPrice.findFirst({
     where: { symbol: symbol.toUpperCase() },
-    orderBy: { fetchedAt: 'desc' },
-  })
+    orderBy: { fetchedAt: "desc" },
+  });
 
   const now = new Date()
 
@@ -155,17 +155,20 @@ export async function refreshStockPrices(symbols: string[]): Promise<RefreshResu
       const quote = await fetchStockQuote(symbol)
 
       // Save to database
-      await prisma.stockPrice.create({
+      await(prisma as any).stockPrice.create({
         data: {
           symbol: quote.symbol,
           price: new Prisma.Decimal(quote.price.toFixed(4)),
           currency: Currency.USD, // Alpha Vantage returns USD prices
-          changePercent: quote.changePercent !== null ? new Prisma.Decimal(quote.changePercent.toFixed(4)) : null,
+          changePercent:
+            quote.changePercent !== null
+              ? new Prisma.Decimal(quote.changePercent.toFixed(4))
+              : null,
           volume: quote.volume,
           fetchedAt: quote.fetchedAt,
-          source: 'alphavantage',
+          source: "alphavantage",
         },
-      })
+      });
 
       result.updated++
 
@@ -191,19 +194,19 @@ export async function needsRefresh(symbols: string[]): Promise<boolean> {
   const uniqueSymbols = Array.from(new Set(symbols.map((s) => s.toUpperCase())))
 
   // Get most recent fetchedAt across all user's holdings' symbols
-  const mostRecent = await prisma.stockPrice.findFirst({
+  const mostRecent = await(prisma as any).stockPrice.findFirst({
     where: {
       symbol: {
         in: uniqueSymbols,
       },
     },
     orderBy: {
-      fetchedAt: 'desc',
+      fetchedAt: "desc",
     },
     select: {
       fetchedAt: true,
     },
-  })
+  });
 
   if (!mostRecent) {
     return true // No prices cached yet

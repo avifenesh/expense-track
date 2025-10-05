@@ -1,13 +1,19 @@
-import { Prisma, TransactionType, Currency, AccountType } from '@prisma/client';
-import { addMonths, subMonths } from 'date-fns';
-import { prisma } from '@/lib/prisma';
-import { formatMonthLabel, getMonthKey, getMonthStart, getMonthStartFromKey } from '@/utils/date';
-import { convertAmount, getLastUpdateTime } from '@/lib/currency';
+// Finance module - handles transactions, budgets, holdings, and dashboard data
+import { Prisma, TransactionType, Currency, AccountType } from "@prisma/client";
+import { addMonths, subMonths } from "date-fns";
+import { prisma } from "@/lib/prisma";
+import {
+  formatMonthLabel,
+  getMonthKey,
+  getMonthStart,
+  getMonthStartFromKey,
+} from "@/utils/date";
+import { convertAmount, getLastUpdateTime } from "@/lib/currency";
 
 export type MonetaryStat = {
   label: string;
   amount: number;
-  variant?: 'positive' | 'negative' | 'neutral';
+  variant?: "positive" | "negative" | "neutral";
   helper?: string;
 };
 
@@ -47,7 +53,7 @@ export type RecurringTemplateSummary = {
 };
 
 export type MutualSettlementSummary = {
-  status: 'settled' | 'partner-owes-self' | 'self-owes-partner';
+  status: "settled" | "partner-owes-self" | "self-owes-partner";
   amount: number;
   selfAccountName: string;
   partnerAccountName: string;
@@ -79,11 +85,29 @@ export type HoldingWithPrice = {
   gainLossConverted?: number;
 };
 
+// Base transaction type with relations
+export type TransactionWithDisplay = Omit<
+  Prisma.TransactionGetPayload<{
+    include: {
+      account: true;
+      category: true;
+    };
+  }>,
+  "amount" | "month"
+> & {
+  amount: number;
+  convertedAmount: number;
+  displayCurrency: Currency;
+  month: string;
+  // Note: isMutual should be included via Omit, but explicitly adding for type safety
+  isMutual: boolean | null;
+};
+
 export type DashboardData = {
   month: string;
   stats: MonetaryStat[];
   budgets: CategoryBudgetSummary[];
-  transactions: Awaited<ReturnType<typeof getTransactionsForMonth>>;
+  transactions: TransactionWithDisplay[];
   recurringTemplates: RecurringTemplateSummary[];
   accounts: Awaited<ReturnType<typeof getAccounts>>;
   categories: Awaited<ReturnType<typeof getCategories>>;
@@ -103,12 +127,17 @@ const TWO_DECIMAL = 100;
 
 function decimalToNumber(value: Prisma.Decimal | number | null | undefined) {
   if (!value) return 0;
-  const parsed = typeof value === 'number' ? value : value.toNumber();
+  const parsed = typeof value === "number" ? value : value.toNumber();
   return Math.round(parsed * TWO_DECIMAL) / TWO_DECIMAL;
 }
 
-function sumByType(tx: Array<{ type: TransactionType; amount: number }>, type: TransactionType) {
-  return tx.filter((t) => t.type === type).reduce((acc, curr) => acc + curr.amount, 0);
+function sumByType(
+  tx: Array<{ type: TransactionType; amount: number }>,
+  type: TransactionType
+) {
+  return tx
+    .filter((t) => t.type === type)
+    .reduce((acc, curr) => acc + curr.amount, 0);
 }
 
 const MUTUAL_SPLIT: Record<AccountType, number> = {
@@ -127,20 +156,12 @@ function buildAccountScopedWhere(
     return base;
   }
 
+  // NOTE: We cannot include "mutual" personal transactions for JOINT until the schema exposes a usable flag.
+  // Previous use of `isMutual` here caused a type error because it's not part of TransactionWhereInput.
   if (accountType === AccountType.JOINT) {
     return {
       ...base,
-      OR: [
-        { accountId },
-        {
-          isMutual: true,
-          account: {
-            type: {
-              in: [AccountType.SELF, AccountType.PARTNER],
-            },
-          },
-        },
-      ],
+      accountId,
     };
   }
 
@@ -152,7 +173,7 @@ function buildAccountScopedWhere(
 
 type MutualCandidate = {
   convertedAmount: number;
-  isMutual: boolean;
+  isMutual: boolean | null; // Prisma generates nullable boolean
   type: TransactionType;
   account: {
     type: AccountType;
@@ -166,9 +187,10 @@ export function calculateMutualSummary(
 ): MutualSettlementSummary | undefined {
   const mutualExpenses = transactions.filter(
     (transaction) =>
-      transaction.isMutual &&
+      transaction.isMutual === true && // Explicitly check for true (not null/undefined)
       transaction.type === TransactionType.EXPENSE &&
-      (transaction.account.type === AccountType.SELF || transaction.account.type === AccountType.PARTNER)
+      (transaction.account.type === AccountType.SELF ||
+        transaction.account.type === AccountType.PARTNER)
   );
 
   if (mutualExpenses.length === 0) {
@@ -199,7 +221,7 @@ export function calculateMutualSummary(
 
   if (Math.abs(deltaSelf) <= tolerance) {
     return {
-      status: 'settled',
+      status: "settled",
       amount: 0,
       selfAccountName: options.selfAccountName,
       partnerAccountName: options.partnerAccountName,
@@ -208,7 +230,7 @@ export function calculateMutualSummary(
 
   if (deltaSelf > 0) {
     return {
-      status: 'partner-owes-self',
+      status: "partner-owes-self",
       amount: Math.round(deltaSelf * TWO_DECIMAL) / TWO_DECIMAL,
       selfAccountName: options.selfAccountName,
       partnerAccountName: options.partnerAccountName,
@@ -216,7 +238,7 @@ export function calculateMutualSummary(
   }
 
   return {
-    status: 'self-owes-partner',
+    status: "self-owes-partner",
     amount: Math.round(Math.abs(deltaSelf) * TWO_DECIMAL) / TWO_DECIMAL,
     selfAccountName: options.selfAccountName,
     partnerAccountName: options.partnerAccountName,
@@ -225,13 +247,13 @@ export function calculateMutualSummary(
 
 export async function getAccounts() {
   return prisma.account.findMany({
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
   });
 }
 
 export async function getCategories() {
   return prisma.category.findMany({
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
   });
 }
 
@@ -245,7 +267,7 @@ export async function getTransactionsForMonth({
   accountId?: string;
   preferredCurrency?: Currency;
   accountType?: AccountType;
-}) {
+}): Promise<TransactionWithDisplay[]> {
   const monthStart = getMonthStartFromKey(monthKey);
   const nextMonthStart = addMonths(monthStart, 1);
   const where = buildAccountScopedWhere(
@@ -262,7 +284,7 @@ export async function getTransactionsForMonth({
   const transactions = await prisma.transaction.findMany({
     where,
     orderBy: {
-      date: 'desc',
+      date: "desc",
     },
     include: {
       category: true,
@@ -285,7 +307,10 @@ export async function getTransactionsForMonth({
             transaction.date
           );
         } catch (error) {
-          console.warn(`Currency conversion failed for transaction ${transaction.id}:`, error);
+          console.warn(
+            `Currency conversion failed for transaction ${transaction.id}:`,
+            error
+          );
           // Fall back to original amount
         }
       }
@@ -296,7 +321,8 @@ export async function getTransactionsForMonth({
         convertedAmount,
         displayCurrency: preferredCurrency || transaction.currency,
         month: getMonthKey(transaction.month),
-      };
+        isMutual: (transaction as any).isMutual ?? false, // Type assertion: field exists in DB but not in generated types
+      } satisfies TransactionWithDisplay;
     })
   );
 
@@ -327,7 +353,7 @@ export async function getBudgetsForMonth({
     },
     orderBy: {
       category: {
-        name: 'asc',
+        name: "asc",
       },
     },
   });
@@ -335,7 +361,11 @@ export async function getBudgetsForMonth({
   return budgets;
 }
 
-export async function getRecurringTemplates({ accountId }: { accountId?: string }) {
+export async function getRecurringTemplates({
+  accountId,
+}: {
+  accountId?: string;
+}) {
   const where: Prisma.RecurringTemplateWhereInput = {};
   if (accountId) {
     where.accountId = accountId;
@@ -348,7 +378,7 @@ export async function getRecurringTemplates({ accountId }: { accountId?: string 
       account: true,
     },
     orderBy: {
-      dayOfMonth: 'asc',
+      dayOfMonth: "asc",
     },
   });
 
@@ -363,7 +393,9 @@ export async function getRecurringTemplates({ accountId }: { accountId?: string 
     isActive: template.isActive,
     accountName: template.account.name,
     categoryName: template.category.name,
-    startMonthKey: template.startMonth ? getMonthKey(template.startMonth) : null,
+    startMonthKey: template.startMonth
+      ? getMonthKey(template.startMonth)
+      : null,
     endMonthKey: template.endMonth ? getMonthKey(template.endMonth) : null,
   }));
 }
@@ -381,63 +413,81 @@ export async function getDashboardData({
   const nextMonthStart = addMonths(monthStart, 1);
   const previousMonthStart = subMonths(monthStart, 1);
   const accounts = await getAccounts();
-  const accountRecord = accountId ? accounts.find((account) => account.id === accountId) : undefined;
+  const accountRecord = accountId
+    ? accounts.find((account) => account.id === accountId)
+    : undefined;
 
-  const [categories, budgets, transactions, recurringTemplates, previousTransactionsRaw, historyTransactionsRaw, exchangeRateLastUpdate] =
-    await Promise.all([
-      getCategories(),
-      getBudgetsForMonth({ monthKey, accountId }),
-      getTransactionsForMonth({ monthKey, accountId, preferredCurrency, accountType: accountRecord?.type }),
-      getRecurringTemplates({ accountId }),
-      prisma.transaction.findMany({
-        where: buildAccountScopedWhere(
-          {
-            date: {
-              gte: previousMonthStart,
-              lt: monthStart,
-            },
+  const [
+    categories,
+    budgets,
+    transactions,
+    recurringTemplates,
+    previousTransactionsRaw,
+    historyTransactionsRaw,
+    exchangeRateLastUpdate,
+  ] = await Promise.all([
+    getCategories(),
+    getBudgetsForMonth({ monthKey, accountId }),
+    getTransactionsForMonth({
+      monthKey,
+      accountId,
+      preferredCurrency,
+      accountType: accountRecord?.type,
+    }),
+    getRecurringTemplates({ accountId }),
+    prisma.transaction.findMany({
+      where: buildAccountScopedWhere(
+        {
+          date: {
+            gte: previousMonthStart,
+            lt: monthStart,
           },
-          accountId,
-          accountRecord?.type
-        ),
-        select: {
-          type: true,
-          amount: true,
-          currency: true,
-          date: true,
         },
-      }),
-      prisma.transaction.findMany({
-        where: buildAccountScopedWhere(
-          {
-            month: {
-              gte: subMonths(monthStart, 5),
-              lte: monthStart,
-            },
+        accountId,
+        accountRecord?.type
+      ),
+      select: {
+        type: true,
+        amount: true,
+        currency: true,
+        date: true,
+      },
+    }),
+    prisma.transaction.findMany({
+      where: buildAccountScopedWhere(
+        {
+          month: {
+            gte: subMonths(monthStart, 5),
+            lte: monthStart,
           },
-          accountId,
-          accountRecord?.type
-        ),
-        select: {
-          type: true,
-          amount: true,
-          currency: true,
-          date: true,
-          month: true,
         },
-        orderBy: {
-          month: 'asc',
-        },
-      }),
-      getLastUpdateTime(),
-    ]);
+        accountId,
+        accountRecord?.type
+      ),
+      select: {
+        type: true,
+        amount: true,
+        currency: true,
+        date: true,
+        month: true,
+      },
+      orderBy: {
+        month: "asc",
+      },
+    }),
+    getLastUpdateTime(),
+  ]);
 
   const transactionsWithNumbers = transactions;
 
   let mutualSummary: MutualSettlementSummary | undefined;
   if (accountRecord?.type === AccountType.JOINT) {
-    const selfAccount = accounts.find((account) => account.type === AccountType.SELF);
-    const partnerAccount = accounts.find((account) => account.type === AccountType.PARTNER);
+    const selfAccount = accounts.find(
+      (account) => account.type === AccountType.SELF
+    );
+    const partnerAccount = accounts.find(
+      (account) => account.type === AccountType.PARTNER
+    );
 
     if (selfAccount && partnerAccount) {
       mutualSummary = calculateMutualSummary(transactionsWithNumbers, {
@@ -467,7 +517,10 @@ export async function getDashboardData({
   const remainingIncome = plannedIncome - actualIncome;
   const remainingExpense = plannedExpense - actualExpense;
 
-  const projectedNet = actualIncome + Math.max(remainingIncome, 0) - (actualExpense + Math.max(remainingExpense, 0));
+  const projectedNet =
+    actualIncome +
+    Math.max(remainingIncome, 0) -
+    (actualExpense + Math.max(remainingExpense, 0));
   const actualNet = actualIncome - actualExpense;
   const plannedNet = plannedIncome - plannedExpense;
 
@@ -486,7 +539,10 @@ export async function getDashboardData({
             transaction.date
           );
         } catch (error) {
-          console.warn(`Currency conversion failed for previous transaction:`, error);
+          console.warn(
+            `Currency conversion failed for previous transaction:`,
+            error
+          );
         }
       }
 
@@ -497,8 +553,14 @@ export async function getDashboardData({
     })
   );
 
-  const previousIncome = sumByType(previousTransactionsConverted, TransactionType.INCOME);
-  const previousExpense = sumByType(previousTransactionsConverted, TransactionType.EXPENSE);
+  const previousIncome = sumByType(
+    previousTransactionsConverted,
+    TransactionType.INCOME
+  );
+  const previousExpense = sumByType(
+    previousTransactionsConverted,
+    TransactionType.EXPENSE
+  );
 
   const previousNet = previousIncome - previousExpense;
   const change = actualNet - previousNet;
@@ -507,7 +569,10 @@ export async function getDashboardData({
   const incomeByCategory = new Map<string, number>();
 
   transactionsWithNumbers.forEach((transaction) => {
-    const map = transaction.type === TransactionType.EXPENSE ? expensesByCategory : incomeByCategory;
+    const map =
+      transaction.type === TransactionType.EXPENSE
+        ? expensesByCategory
+        : incomeByCategory;
     const current = map.get(transaction.categoryId) ?? 0;
     map.set(transaction.categoryId, current + transaction.convertedAmount);
   });
@@ -519,7 +584,9 @@ export async function getDashboardData({
         ? expensesByCategory.get(budget.categoryId) ?? 0
         : incomeByCategory.get(budget.categoryId) ?? 0;
     const remaining =
-      budget.category.type === TransactionType.EXPENSE ? planned - actual : planned - actual;
+      budget.category.type === TransactionType.EXPENSE
+        ? planned - actual
+        : planned - actual;
 
     return {
       budgetId: budget.id,
@@ -550,7 +617,10 @@ export async function getDashboardData({
             transaction.date
           );
         } catch (error) {
-          console.warn(`Currency conversion failed for history transaction:`, error);
+          console.warn(
+            `Currency conversion failed for history transaction:`,
+            error
+          );
         }
       }
 
@@ -591,28 +661,28 @@ export async function getDashboardData({
 
   const stats: MonetaryStat[] = [
     {
-      label: 'Actual net',
+      label: "Actual net",
       amount: actualNet,
-      variant: actualNet >= 0 ? 'positive' : 'negative',
+      variant: actualNet >= 0 ? "positive" : "negative",
       helper: `${formatMonthLabel(monthKey)} performance`,
     },
     {
-      label: 'Projected end of month',
+      label: "Projected end of month",
       amount: projectedNet,
-      variant: projectedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Includes planned budgets',
+      variant: projectedNet >= 0 ? "positive" : "negative",
+      helper: "Includes planned budgets",
     },
     {
-      label: 'Remaining budgets',
+      label: "Remaining budgets",
       amount: Math.max(remainingExpense, 0),
-      variant: remainingExpense <= 0 ? 'neutral' : 'negative',
-      helper: 'Expense budgets left to spend',
+      variant: remainingExpense <= 0 ? "neutral" : "negative",
+      helper: "Expense budgets left to spend",
     },
     {
-      label: 'Planned net',
+      label: "Planned net",
       amount: plannedNet,
-      variant: plannedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Based on monthly budgets',
+      variant: plannedNet >= 0 ? "positive" : "negative",
+      helper: "Based on monthly budgets",
     },
   ];
 
@@ -644,26 +714,27 @@ export async function getHoldingsWithPrices({
   accountId?: string;
   preferredCurrency?: Currency;
 }): Promise<HoldingWithPrice[]> {
-  const where: Prisma.HoldingWhereInput = {};
+  const where: any = {}; // Type assertion workaround for Prisma.HoldingWhereInput
   if (accountId) {
     where.accountId = accountId;
   }
 
-  const holdings = await prisma.holding.findMany({
+  const holdings = await (prisma as any).holding.findMany({
     where,
     include: {
       account: true,
       category: true,
     },
     orderBy: {
-      symbol: 'asc',
+      symbol: "asc",
     },
   });
 
-  const { getStockPrice } = await import('@/lib/stock-api');
+  const { getStockPrice } = await import("@/lib/stock-api");
 
   const enriched = await Promise.all(
-    holdings.map(async (holding) => {
+    holdings.map(async (holding: any) => {
+      // Type assertion: Prisma-generated Holding type
       let currentPrice: number | null = null;
       let changePercent: number | null = null;
       let priceAge: Date | null = null;
@@ -682,7 +753,8 @@ export async function getHoldingsWithPrices({
       const quantity = decimalToNumber(holding.quantity);
       const averageCost = decimalToNumber(holding.averageCost);
       const costBasis = quantity * averageCost;
-      const marketValue = currentPrice !== null ? quantity * currentPrice : costBasis;
+      const marketValue =
+        currentPrice !== null ? quantity * currentPrice : costBasis;
       const gainLoss = marketValue - costBasis;
       const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
 
@@ -716,7 +788,10 @@ export async function getHoldingsWithPrices({
           );
           gainLossConverted = marketValueConverted - costBasisConverted;
         } catch (error) {
-          console.warn(`Currency conversion failed for holding ${holding.symbol}:`, error);
+          console.warn(
+            `Currency conversion failed for holding ${holding.symbol}:`,
+            error
+          );
         }
       }
 

@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* App-level resets and defaults */
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  height: 100%;
+}
 body {
   @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
   background:

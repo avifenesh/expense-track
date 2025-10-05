@@ -40,6 +40,7 @@ import {
 import { Sparkline } from '@/components/dashboard/sparkline'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -158,6 +159,15 @@ const STAT_VARIANT_STYLES: Record<NonNullable<DashboardData['stats'][number]['va
     icon: 'text-slate-200',
   },
 }
+
+const STAT_TOOLTIPS: Record<string, string> = {
+  'Actual net': 'Reflects all income minus expenses captured for the current month.',
+  'Projected end of month': 'Blends current activity with budget forecasts to estimate month-end balance.',
+  'Remaining budgets': 'Shows unspent expense allocations so you know how much room is left.',
+  'Planned net': 'Represents the net position if every monthly budget posts as scheduled.',
+}
+
+const DEFAULT_STAT_TOOLTIP = 'Monitors this monthly metric based on your recorded data and budgets.'
 
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
@@ -438,7 +448,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         date: isoDate,
         description: transaction.description ?? '',
         isRecurring: transaction.isRecurring,
-        isMutual: transaction.type === TransactionType.EXPENSE ? transaction.isMutual : false,
+        isMutual: transaction.type === TransactionType.EXPENSE ? (transaction.isMutual ?? false) : false,
       })
       setTransactionFeedback(null)
     },
@@ -920,23 +930,30 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           const variantKey = stat.variant ?? 'neutral'
           const styles = STAT_VARIANT_STYLES[variantKey]
           const Icon = resolveStatIcon(stat.label)
-          return (
-            <Card
-              key={stat.label}
-              className={cn(
-                'border-white/20 bg-white/10 transition hover:-translate-y-1',
-                styles.border,
-              )}
-            >
-              <CardHeader className="flex flex-row items-start justify-between pb-2 text-slate-300">
-                <div className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-300">{stat.label}</span>
-                  {stat.helper && <p className="text-xs text-slate-400">{stat.helper}</p>}
-                </div>
+        return (
+          <Card
+            key={stat.label}
+            className={cn(
+              'border-white/20 bg-white/10 transition hover:-translate-y-1',
+              styles.border,
+            )}
+          >
+            <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 text-slate-300">
+              <div className="space-y-1">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-300">{stat.label}</span>
+                {stat.helper && <p className="text-xs text-slate-400">{stat.helper}</p>}
+              </div>
+              <div className="flex items-start gap-2">
+                <InfoTooltip
+                  description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
+                  label={`Explain ${stat.label}`}
+                  placement="left"
+                />
                 <span className={cn('inline-flex items-center justify-center rounded-full p-2 backdrop-blur', styles.chip)}>
                   <Icon className={cn('h-4 w-4', styles.icon)} />
                 </span>
-              </CardHeader>
+              </div>
+            </CardHeader>
               <CardContent>
                 <p className="text-3xl font-semibold tracking-tight text-white">{formatCurrency(stat.amount, preferredCurrency)}</p>
               </CardContent>
@@ -986,7 +1003,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-white">Spending trend</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Tracks six months of net cashflow so you can spot spending shifts."
+                  >
+                    Spending trend
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -1021,7 +1043,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
               <Card className="border-white/15 bg-white/10">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-white">Month at a glance</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Summarizes net changes, remaining budgets, and expected income for the current month."
+                  >
+                    Month at a glance
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm text-slate-200">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -1063,7 +1090,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
             <Card className="border-white/15 bg-white/10">
               <CardHeader>
-                <CardTitle className="text-lg font-semibold text-white">Quick actions</CardTitle>
+                <CardTitle
+                  className="text-lg font-semibold text-white"
+                  helpText="Launches your most common finance workflows without leaving the dashboard."
+                >
+                  Quick actions
+                </CardTitle>
                 <p className="text-sm text-slate-300">Jump straight to the tools you use most frequently.</p>
               </CardHeader>
               <CardContent>
@@ -1112,7 +1144,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="flex flex-col gap-3 text-slate-300 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold text-white">Highlighted budgets</CardTitle>
+                    <CardTitle
+                      className="text-lg font-semibold text-white"
+                      helpText="Surfaces the budgets closest to their limits so you can adjust spending early."
+                    >
+                      Highlighted budgets
+                    </CardTitle>
                     <p className="text-sm text-slate-300">A quick snapshot of the categories closest to their limits.</p>
                   </div>
                   <Button type="button" variant="secondary" onClick={() => setActiveTab('budgets')}>
@@ -1175,7 +1212,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           >
             <Card className="border-white/15 bg-white/10">
               <CardHeader className="gap-1">
-                <CardTitle className="text-lg font-semibold text-white">Monthly budgets</CardTitle>
+                <CardTitle
+                  className="text-lg font-semibold text-white"
+                  helpText="Tune filters and edit plan amounts; progress bars show how actuals track against budgets."
+                >
+                  Monthly budgets
+                </CardTitle>
                 <p className="text-sm text-slate-400">Compare planned versus actual spending and stay ahead of upcoming obligations.</p>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -1367,7 +1409,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="grid gap-6 xl:grid-cols-[2fr,3fr]">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">
-                  <CardTitle className="text-lg font-semibold text-white">Log a transaction</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Record income or expenses with account, category, currency, and optional notes."
+                  >
+                    Log a transaction
+                  </CardTitle>
                   <p className="text-sm text-slate-400">Capture new activity and classify it without leaving the keyboard.</p>
                 </CardHeader>
                 <CardContent>
@@ -1568,7 +1615,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">
-                  <CardTitle className="text-lg font-semibold text-white">Recent activity</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Review the newest transactions, apply filters, and jump into edits when something looks off."
+                  >
+                    Recent activity
+                  </CardTitle>
                   <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -1710,7 +1762,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">
-                  <CardTitle className="text-lg font-semibold text-white">Recurring plans</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Manage repeating templates, adjust schedules, and toggle the plans that automate your ledger."
+                  >
+                    Recurring plans
+                  </CardTitle>
                   <p className="text-sm text-slate-400">Keep predictable cashflow on schedule and pause templates when plans change.</p>
                 </CardHeader>
                 <CardContent className="space-y-5">
@@ -1921,7 +1978,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
               <Card className="border-white/15 bg-white/10">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-white">Template focus</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Summarizes recurring template volume so you can compare automated flows to your monthly targets."
+                  >
+                    Template focus
+                  </CardTitle>
                   <p className="text-sm text-slate-400">See how recurring amounts stack up against your monthly net.</p>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm text-slate-200">
@@ -1967,7 +2029,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="grid gap-6 lg:grid-cols-[2fr,3fr]">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">
-                  <CardTitle className="text-lg font-semibold text-white">Create categories</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Add bookkeeping categories with type, color, and archive controls for budgeting and rules."
+                  >
+                    Create categories
+                  </CardTitle>
                   <p className="text-sm text-slate-400">Enable, archive, and color-code the buckets your household relies on.</p>
                 </CardHeader>
                 <CardContent>
@@ -2018,7 +2085,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
             <Card className="border-white/15 bg-white/10">
               <CardHeader>
-                <CardTitle className="text-lg font-semibold text-white">Category library</CardTitle>
+                <CardTitle
+                  className="text-lg font-semibold text-white"
+                  helpText="Search, filter, and archive categories; changes sync across budgeting and transaction forms."
+                >
+                  Category library
+                </CardTitle>
                 <p className="text-sm text-slate-400">Toggle availability to keep dropdowns focused and reports meaningful.</p>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2096,7 +2168,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
               {holdingsCategories.length > 0 && (
                 <Card className="border-white/15 bg-white/10">
                   <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-white">Holdings overview</CardTitle>
+                    <CardTitle
+                      className="text-lg font-semibold text-white"
+                      helpText="Lists asset categories flagged for holdings so the portfolio tools know where to post positions."
+                    >
+                      Holdings overview
+                    </CardTitle>
                     <p className="text-sm text-slate-400">
                       Stocks, ETFs, and savings tracked as accumulating assets rather than cash flow events.
                     </p>
@@ -2121,7 +2198,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             {/* Left: Add Holding Form */}
             <Card className="border-white/15 bg-white/10 h-fit">
               <CardHeader className="gap-1">
-                <CardTitle className="text-lg font-semibold text-white">Add holding</CardTitle>
+                <CardTitle
+                  className="text-lg font-semibold text-white"
+                  helpText="Register a new position with quantity, cost basis, and notes so valuations stay accurate."
+                >
+                  Add holding
+                </CardTitle>
                 <p className="text-sm text-slate-400">Track stocks, ETFs, or other investments with live market prices.</p>
               </CardHeader>
               <CardContent>
@@ -2251,7 +2333,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <Card className="border-white/15 bg-white/10">
               <CardHeader className="gap-1 flex-row items-start justify-between">
                 <div>
-                  <CardTitle className="text-lg font-semibold text-white">Your holdings</CardTitle>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Review each holding’s market value, gain/loss, and sync price data for the selected account."
+                    helpPlacement="left"
+                  >
+                    Your holdings
+                  </CardTitle>
                   <p className="text-sm text-slate-400">
                     Stocks and ETFs tracked with live market prices. Values update on refresh.
                   </p>

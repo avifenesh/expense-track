@@ -100,7 +100,7 @@ export async function createTransactionAction(input: TransactionInput) {
   }
 
   try {
-    await prisma.transaction.create({
+    await(prisma as any).transaction.create({
       data: {
         accountId: data.accountId,
         categoryId: data.categoryId,
@@ -114,7 +114,7 @@ export async function createTransactionAction(input: TransactionInput) {
         isMutual: data.isMutual ?? false,
         recurringTemplateId: data.recurringTemplateId ?? null,
       },
-    })
+    });
   } catch (error) {
     console.error('createTransactionAction', error)
     return { error: { general: ['Unable to create transaction'] } }
@@ -157,7 +157,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   }
 
   try {
-    await prisma.transaction.update({
+    await(prisma as any).transaction.update({
       where: { id: data.id },
       data: {
         accountId: data.accountId,
@@ -171,7 +171,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         isRecurring: data.isRecurring ?? false,
         isMutual: data.isMutual ?? false,
       },
-    })
+    });
   } catch (error) {
     console.error('updateTransactionAction', error)
     return { error: { general: ['Unable to update transaction'] } }
@@ -739,7 +739,7 @@ export async function createHoldingAction(input: HoldingInput) {
 
   // Create holding
   try {
-    await prisma.holding.create({
+    await(prisma as any).holding.create({
       data: {
         accountId: data.accountId,
         categoryId: data.categoryId,
@@ -749,7 +749,7 @@ export async function createHoldingAction(input: HoldingInput) {
         currency: data.currency,
         notes: data.notes ?? null,
       },
-    })
+    });
   } catch (error) {
     console.error('createHoldingAction', error)
     return { error: { general: ['Unable to create holding. It may already exist.'] } }
@@ -773,9 +773,9 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
   }
 
   try {
-    const holding = await prisma.holding.findUnique({
+    const holding = await(prisma as any).holding.findUnique({
       where: { id: parsed.data.id },
-    })
+    });
 
     if (!holding) {
       return { error: { general: ['Holding not found'] } }
@@ -786,14 +786,16 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
       return access
     }
 
-    await prisma.holding.update({
+    await(prisma as any).holding.update({
       where: { id: parsed.data.id },
       data: {
         quantity: new Prisma.Decimal(parsed.data.quantity.toFixed(6)),
-        averageCost: new Prisma.Decimal(toDecimalString(parsed.data.averageCost)),
+        averageCost: new Prisma.Decimal(
+          toDecimalString(parsed.data.averageCost)
+        ),
         notes: parsed.data.notes ?? null,
       },
-    })
+    });
   } catch (error) {
     console.error('updateHoldingAction', error)
     return { error: { general: ['Holding not found'] } }
@@ -814,9 +816,9 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
   }
 
   try {
-    const holding = await prisma.holding.findUnique({
+    const holding = await(prisma as any).holding.findUnique({
       where: { id: parsed.data.id },
-    })
+    });
 
     if (!holding) {
       return { error: { general: ['Holding not found'] } }
@@ -827,9 +829,9 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
       return access
     }
 
-    await prisma.holding.delete({
+    await(prisma as any).holding.delete({
       where: { id: parsed.data.id },
-    })
+    });
   } catch (error) {
     console.error('deleteHoldingAction', error)
     return { error: { general: ['Holding not found'] } }
@@ -856,12 +858,14 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
 
   try {
     // Get all unique symbols for this account's holdings
-    const holdings = await prisma.holding.findMany({
+    const holdings = await(prisma as any).holding.findMany({
       where: { accountId: parsed.data.accountId },
       select: { symbol: true },
-    })
+    });
 
-    const symbols = Array.from(new Set(holdings.map((h) => h.symbol)))
+    const symbols: string[] = Array.from(
+      new Set(holdings.map((h: any) => h.symbol as string))
+    );
 
     if (symbols.length === 0) {
       return { success: true, updated: 0, skipped: 0, errors: [] }

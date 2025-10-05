@@ -21,9 +21,9 @@ test.describe('authentication experience', () => {
     await expect(dashboardAccountSelect.locator('option', { hasText: 'Joint' })).toHaveCount(1)
     await expect(dashboardAccountSelect.locator('option', { hasText: 'Serena' })).toHaveCount(0)
 
-    await expect.poll(async () => {
-      return dashboardAccountSelect.evaluate((select) => select.options[select.selectedIndex]?.textContent?.trim())
-    }).toBe('Avi')
+    await expect(dashboardAccountSelect.locator("option:checked")).toHaveText(
+      "Avi"
+    );
 
     await dashboardAccountSelect.selectOption({ label: 'Joint' })
     await expect(page.getByText('Joint will open by default next time.')).toBeVisible()
