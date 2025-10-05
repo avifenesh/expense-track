@@ -16,3 +16,19 @@ a {
 ::selection {
   @apply bg-sky-500/50 text-white;
 }
+
+select.glass-select option,
+select.glass-select optgroup {
+  background-color: rgba(15, 23, 42, 0.95);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+select.glass-select option:checked {
+  background-color: rgba(56, 189, 248, 0.35);
+  color: #f8fafc;
+}
+
+select.glass-select:disabled option {
+  background-color: rgba(30, 41, 59, 0.75);
+  color: rgba(148, 163, 184, 0.85);
+}
