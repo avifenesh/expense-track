@@ -1,11 +1,4 @@
 import { Currency } from '@prisma/client'
-import { config } from 'dotenv'
-import { resolve } from 'path'
-
-// Load .env file explicitly for Server Actions
-if (typeof window === 'undefined') {
-  config({ path: resolve(process.cwd(), '.env'), override: true })
-}
 
 export type AuthUser = {
   id: 'avi' | 'serena'
