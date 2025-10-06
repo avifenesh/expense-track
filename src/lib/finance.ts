@@ -714,21 +714,22 @@ export async function getHoldingsWithPrices({
   accountId?: string;
   preferredCurrency?: Currency;
 }): Promise<HoldingWithPrice[]> {
-  const where: any = {}; // Type assertion workaround for Prisma.HoldingWhereInput
-  if (accountId) {
-    where.accountId = accountId;
-  }
+  try {
+    const where: any = {}; // Type assertion workaround for Prisma.HoldingWhereInput
+    if (accountId) {
+      where.accountId = accountId;
+    }
 
-  const holdings = await (prisma as any).holding.findMany({
-    where,
-    include: {
-      account: true,
-      category: true,
-    },
-    orderBy: {
-      symbol: "asc",
-    },
-  });
+    const holdings = await (prisma as any).holding.findMany({
+      where,
+      include: {
+        account: true,
+        category: true,
+      },
+      orderBy: {
+        symbol: "asc",
+      },
+    });
 
   const { getStockPrice } = await import("@/lib/stock-api");
 
@@ -823,4 +824,8 @@ export async function getHoldingsWithPrices({
   );
 
   return enriched;
+  } catch (error) {
+    console.error('Failed to fetch holdings:', error);
+    return [];
+  }
 }
