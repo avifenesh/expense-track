@@ -26,22 +26,10 @@ function parseAuthUsers(): AuthUser[] {
   const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
 
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
-    console.error('[parseAuthUsers] MISSING USER1:', {
-      email: !!user1Email,
-      displayName: !!user1DisplayName,
-      hashRaw: user1PasswordHashRaw,
-      hashProcessed: user1PasswordHash,
-    })
     throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
   }
 
   if (!user2Email || !user2DisplayName || !user2PasswordHash) {
-    console.error('[parseAuthUsers] MISSING USER2:', {
-      email: !!user2Email,
-      displayName: !!user2DisplayName,
-      hashRaw: user2PasswordHashRaw,
-      hashProcessed: user2PasswordHash,
-    })
     throw new Error('Missing required environment variables for user 2 (AUTH_USER2_*)')
   }
 
