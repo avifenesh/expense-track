@@ -75,9 +75,20 @@ export async function getExchangeRate(
       throw new Error(`No exchange rate found for ${from} -> ${to}`)
     }
 
-    // Cache the rate
-    await prisma.exchangeRate.create({
-      data: {
+    // Cache the rate (upsert to handle duplicates)
+    await prisma.exchangeRate.upsert({
+      where: {
+        baseCurrency_targetCurrency_date: {
+          baseCurrency: from,
+          targetCurrency: to,
+          date: targetDate,
+        },
+      },
+      update: {
+        rate: new Prisma.Decimal(rate),
+        fetchedAt: new Date(),
+      },
+      create: {
         baseCurrency: from,
         targetCurrency: to,
         rate: new Prisma.Decimal(rate),
