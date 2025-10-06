@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Balance Beacon is a personal finance application for managing income, spending, and shared budgets across multiple accounts (Self/Partner/Joint). Built with Next.js 13 App Router, Prisma ORM, PostgreSQL, and TypeScript.
 
+**NEW: AI Financial Advisor** - Powered by Amazon Bedrock (Claude Sonnet) for natural language financial assistance, transaction creation, spending analysis, and forecasting.
+
 ## Architecture
 
 ### Core Data Models (Prisma)
@@ -27,14 +29,22 @@ The application revolves around seven main entities in `prisma/schema.prisma`:
 src/
 ├── app/                    # Next.js App Router pages and server actions
 │   ├── actions.ts          # All server actions for mutations (transactions, budgets, templates, auth)
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts    # AI chat streaming endpoint
 │   ├── layout.tsx          # Root layout with auth and global styles
 │   ├── page.tsx            # Main dashboard page (protected route)
 │   └── login/page.tsx      # Login page
 ├── components/
+│   ├── ai/
+│   │   └── chat-widget.tsx # AI chat interface (floating button + chat panel)
 │   ├── auth/               # Login UI components
 │   ├── dashboard/          # Dashboard page and visualization components (sparklines, stats)
 │   └── ui/                 # Reusable UI primitives (button, card, input, select, textarea)
 ├── lib/
+│   ├── ai/
+│   │   ├── bedrock.ts      # AWS Bedrock client, AI tools, and system prompts
+│   │   └── context.ts      # Financial context builder for AI prompts
 │   ├── auth.ts             # Auth user definitions and session cookie names
 │   ├── auth-server.ts      # Server-side session management (establish/verify/clear)
 │   ├── currency.ts         # Multi-currency support: exchange rates, conversion, caching
@@ -93,6 +103,30 @@ Key patterns in `src/lib/finance.ts`:
 - **Stale detection**: `needsRefresh()` checks if prices are older than TTL
 - **Background refresh**: `maybeRefreshOnStartup()` for non-blocking price updates on serverless cold starts
 - **Holdings integration**: Holdings track investment quantities and average cost per symbol
+
+### AI Financial Advisor (`src/lib/ai/`, `src/app/api/chat/`)
+
+- **Model**: Claude Sonnet 4.5 via Amazon Bedrock (`anthropic.claude-sonnet-4-5-20250929-v1:0`)
+- **Provider**: Vercel AI SDK with `@ai-sdk/amazon-bedrock`
+- **Streaming**: Real-time responses via Server-Sent Events
+- **Context**: Builds comprehensive financial summary from dashboard data
+- **Tools**: 7 function-calling tools for AI actions:
+  1. `create_transaction` - Add income/expenses from natural language
+  2. `get_transactions` - Query historical transactions
+  3. `analyze_spending` - Spending patterns and aggregations
+  4. `create_budget` - Set monthly budgets
+  5. `get_budgets` - Budget status and progress
+  6. `forecast_cashflow` - Predict future income/expenses (1-6 months)
+  7. `analyze_holdings` - Portfolio analysis and performance
+
+**Cost**: ~$2-5/month for 2 users with typical usage (20-30 queries/month)
+
+**Example queries**:
+- "How much did we spend on groceries last month?"
+- "Add coffee $5 today"
+- "Show me our budget status"
+- "What's our investment portfolio worth?"
+- "Forecast our cashflow for the next 3 months"
 
 ## Development Commands
 
@@ -188,8 +222,14 @@ AUTH_USER2_PREFERRED_CURRENCY="EUR"                # Default: USD (options: USD,
 ALPHA_VANTAGE_API_KEY="your-api-key-here"          # Required for stock price fetching (free at alphavantage.co)
 STOCK_PRICE_MAX_AGE_HOURS="24"                     # How long to cache stock prices (default: 24)
 
+# AWS Bedrock AI (for AI Financial Advisor)
+AWS_BEDROCK_ACCESS_KEY_ID="your-access-key-here"   # AWS IAM user access key with Bedrock permissions
+AWS_BEDROCK_SECRET_ACCESS_KEY="your-secret-key"    # AWS IAM user secret access key
+AWS_BEDROCK_REGION="us-east-1"                     # AWS region (us-east-1 or us-west-2 recommended)
+
 # Optional
 NEXT_PUBLIC_APP_URL="http://localhost:3000"        # App base URL for absolute links
+NEXT_PUBLIC_AI_ENABLED="true"                      # Enable/disable AI chat widget (default: true)
 ```
 
 **Security Note**: All auth environment variables are required with no fallbacks. The application will throw an error at startup if any are missing.

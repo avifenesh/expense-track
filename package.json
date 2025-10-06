@@ -18,11 +18,14 @@
     "setup:local": "bash ./scripts/setup-local.sh",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cleanup": "rm -rf .next node_modules/.cache tsconfig.tsbuildinfo test-results .vercel && echo '✓ Cleaned build artifacts and cache'"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^3.0.30",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.16.3",
+    "ai": "^5.0.60",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

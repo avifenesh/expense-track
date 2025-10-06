@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import {
   formatMonthLabel,
   getMonthKey,
-  getMonthStart,
   getMonthStartFromKey,
 } from "@/utils/date";
 import { convertAmount, getLastUpdateTime } from "@/lib/currency";
@@ -467,7 +466,7 @@ export async function getDashboardData({
             in: [AccountType.SELF, AccountType.PARTNER],
           },
         },
-      },
+      } as any,
       include: {
         account: true,
       },
@@ -543,7 +542,7 @@ export async function getDashboardData({
 
       return {
         convertedAmount,
-        isMutual: transaction.isMutual,
+        isMutual: (transaction as any).isMutual,
         type: transaction.type,
         account: {
           type: transaction.account.type,

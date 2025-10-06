@@ -55,6 +55,7 @@ import {
 import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
 import { cn } from '@/utils/cn'
+import { ChatWidget } from '@/components/ai/chat-widget'
 
 export function normalizeDateInput(value: FormDataEntryValue | null): Date | null {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -2295,6 +2296,15 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           </Suspense>
         )}
       </section>
+
+      {/* AI Chat Widget */}
+      {process.env.NEXT_PUBLIC_AI_ENABLED !== 'false' && (
+        <ChatWidget
+          accountId={accountId}
+          monthKey={monthKey}
+          preferredCurrency={preferredCurrency}
+        />
+      )}
     </div>
   )
 }
