@@ -422,15 +422,17 @@ export async function getDashboardData({
   monthKey,
   accountId,
   preferredCurrency,
+  accounts: providedAccounts,
 }: {
   monthKey: string;
   accountId?: string;
   preferredCurrency?: Currency;
+  accounts?: Awaited<ReturnType<typeof getAccounts>>;
 }): Promise<DashboardData> {
   const monthStart = getMonthStartFromKey(monthKey);
   const nextMonthStart = addMonths(monthStart, 1);
   const previousMonthStart = subMonths(monthStart, 1);
-  const accounts = await getAccounts();
+  const accounts = providedAccounts ?? (await getAccounts());
   const accountRecord = accountId
     ? accounts.find((account) => account.id === accountId)
     : undefined;

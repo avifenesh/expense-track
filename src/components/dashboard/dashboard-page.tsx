@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { TransactionType, Currency, AccountType } from '@prisma/client'
 import {
   ArrowLeft,
@@ -33,9 +34,6 @@ import {
   upsertRecurringTemplateAction,
   persistActiveAccountAction,
   refreshExchangeRatesAction,
-  createHoldingAction,
-  deleteHoldingAction,
-  refreshHoldingPricesAction,
 } from '@/app/actions'
 import { Sparkline } from '@/components/dashboard/sparkline'
 import { Button } from '@/components/ui/button'
@@ -119,6 +117,34 @@ const currencyOptions = [
   { label: '€ EUR', value: Currency.EUR },
   { label: '₪ ILS', value: Currency.ILS },
 ]
+
+const HoldingsTab = dynamic(() => import('./holdings-tab'), {
+  ssr: false,
+  loading: () => <HoldingsFallback />,
+})
+
+function HoldingsFallback() {
+  return (
+    <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
+      <Card className="border-white/15 bg-white/10 h-fit">
+        <CardHeader className="gap-1">
+          <CardTitle className="text-lg font-semibold text-white">Loading holdings…</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-32 animate-pulse rounded-xl bg-white/5" />
+        </CardContent>
+      </Card>
+      <Card className="border-white/15 bg-white/10">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-white">Preparing data…</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-48 animate-pulse rounded-2xl bg-white/5" />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
 const TABS: Array<{
   value: TabValue
@@ -2258,297 +2284,15 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
         {/* Holdings Tab */}
         {activeTab === 'holdings' && (
-          <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
-            {/* Left: Add Holding Form */}
-            <Card className="border-white/15 bg-white/10 h-fit">
-              <CardHeader className="gap-1">
-                <CardTitle
-                  className="text-lg font-semibold text-white"
-                  helpText="Register a new position with quantity, cost basis, and notes so valuations stay accurate."
-                >
-                  Add holding
-                </CardTitle>
-                <p className="text-sm text-slate-400">Track stocks, ETFs, or other investments with live market prices.</p>
-              </CardHeader>
-              <CardContent>
-                <form
-                  className="space-y-4"
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    const form = event.currentTarget
-                    const formData = new FormData(form)
-                    const payload = {
-                      accountId: (formData.get('accountId') as string) || activeAccount,
-                      categoryId: formData.get('categoryId') as string,
-                      symbol: (formData.get('symbol') as string).toUpperCase(),
-                      quantity: Number(formData.get('quantity') || 0),
-                      averageCost: Number(formData.get('averageCost') || 0),
-                      currency: (formData.get('currency') as Currency) || Currency.USD,
-                      notes: (formData.get('notes') as string) || undefined,
-                    }
-
-                    startTransaction(async () => {
-                      const result = await createHoldingAction(payload)
-                      if (result?.error) {
-                        setTransactionFeedback({
-                          type: 'error',
-                          message: Object.values(result.error).flat().join(', ') || 'Unable to add holding',
-                        })
-                        return
-                      }
-                      setTransactionFeedback({ type: 'success', message: 'Holding added successfully' })
-                      form.reset()
-                    })
-                  }}
-                >
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300" htmlFor="holdingAccount">
-                      Account
-                    </label>
-                    <Select
-                      name="accountId"
-                      id="holdingAccount"
-                      value={activeAccount}
-                      onChange={(e) => setActiveAccount(e.target.value)}
-                      options={accountsOptions}
-                      disabled={accountsOptions.length === 0}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300" htmlFor="holdingCategory">
-                      Category
-                    </label>
-                    <Select
-                      name="categoryId"
-                      id="holdingCategory"
-                      options={data.categories
-                        .filter((cat) => cat.isHolding && !cat.isArchived)
-                        .map((cat) => ({ label: cat.name, value: cat.id }))}
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300" htmlFor="symbol">
-                        Symbol
-                      </label>
-                      <Input
-                        name="symbol"
-                        id="symbol"
-                        placeholder="e.g. AMZN, SPY"
-                        required
-                        className="uppercase"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300" htmlFor="quantity">
-                        Quantity
-                      </label>
-                      <Input name="quantity" id="quantity" type="number" step="0.000001" placeholder="100" required />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300" htmlFor="averageCost">
-                        Avg Cost
-                      </label>
-                      <Input
-                        name="averageCost"
-                        id="averageCost"
-                        type="number"
-                        step="0.01"
-                        placeholder="150.00"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300" htmlFor="holdingCurrency">
-                        Currency
-                      </label>
-                      <Select name="currency" id="holdingCurrency" options={currencyOptions} defaultValue={Currency.USD} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300" htmlFor="holdingNotes">
-                      Notes (optional)
-                    </label>
-                    <Textarea name="notes" id="holdingNotes" rows={2} placeholder="Investment thesis or notes" />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isPendingTransaction}>
-                    {isPendingTransaction ? 'Adding...' : 'Add holding'}
-                  </Button>
-                  {transactionFeedback && (
-                    <div
-                      className={cn(
-                        'rounded-lg px-3 py-2 text-xs',
-                        transactionFeedback.type === 'success'
-                          ? 'bg-emerald-500/20 text-emerald-200'
-                          : 'bg-rose-500/20 text-rose-200',
-                      )}
-                    >
-                      {transactionFeedback.message}
-                    </div>
-                  )}
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Right: Holdings List */}
-            <Card className="border-white/15 bg-white/10">
-              <CardHeader className="gap-1 flex-row items-start justify-between">
-                <div>
-                  <CardTitle
-                    className="text-lg font-semibold text-white"
-                    helpText="Review each holding’s market value, gain/loss, and sync price data for the selected account."
-                    helpPlacement="left"
-                  >
-                    Your holdings
-                  </CardTitle>
-                  <p className="text-sm text-slate-400">
-                    Stocks and ETFs tracked with live market prices. Values update on refresh.
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    startTransaction(async () => {
-                      const result = await refreshHoldingPricesAction({ accountId: activeAccount })
-                      if ('error' in result) {
-                        setTransactionFeedback({ type: 'error', message: 'Failed to refresh prices' })
-                        return
-                      }
-                      setTransactionFeedback({
-                        type: 'success',
-                        message: `Updated ${result.updated} price${result.updated !== 1 ? 's' : ''}`,
-                      })
-                    })
-                  }}
-                  disabled={isPendingTransaction || data.holdings.length === 0}
-                  className="gap-2"
-                >
-                  <RefreshCcw className={cn('h-4 w-4', isPendingTransaction && 'animate-spin')} />
-                  Refresh prices
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {data.holdings.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center text-sm text-slate-400">
-                    <TrendingUp className="mx-auto mb-2 h-8 w-8 text-slate-500" />
-                    <p>No holdings tracked yet.</p>
-                    <p className="mt-1 text-xs">Add your first stock or ETF to start tracking portfolio value.</p>
-                  </div>
-                )}
-                {data.holdings.map((holding) => {
-                  const staleBadge =
-                    holding.priceAge && holding.isStale ? (
-                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
-                        Stale
-                      </span>
-                    ) : null
-                  const priceAge = holding.priceAge
-                    ? new Date(holding.priceAge).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : 'Unknown'
-
-                  return (
-                    <div
-                      key={holding.id}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 space-y-2"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-sky-500/20 px-3 py-1 text-sm font-bold tracking-wide text-sky-200">
-                            {holding.symbol}
-                          </span>
-                          <span className="text-xs text-slate-400">×{holding.quantity}</span>
-                          {staleBadge}
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete ${holding.symbol} holding?`)) {
-                              startTransaction(async () => {
-                                const result = await deleteHoldingAction({ id: holding.id })
-                                if ('error' in result) {
-                                  setTransactionFeedback({ type: 'error', message: 'Failed to delete holding' })
-                                  return
-                                }
-                                setTransactionFeedback({ type: 'success', message: 'Holding deleted' })
-                              })
-                            }
-                          }}
-                          className="text-xs text-rose-400 hover:text-rose-300 transition"
-                        >
-                          Delete
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-slate-400">Market Value</p>
-                          <p className="font-semibold text-white">
-                            {formatCurrency(holding.marketValue, holding.currency)}
-                          </p>
-                          {holding.currency !== preferredCurrency && holding.marketValueConverted !== undefined && (
-                            <p className="text-xs text-slate-400 mt-0.5">
-                              {formatCurrency(holding.marketValueConverted, preferredCurrency)}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400">Cost Basis</p>
-                          <p className="text-slate-300">{formatCurrency(holding.costBasis, holding.currency)}</p>
-                          {holding.currency !== preferredCurrency && holding.costBasisConverted !== undefined && (
-                            <p className="text-xs text-slate-400 mt-0.5">
-                              {formatCurrency(holding.costBasisConverted, preferredCurrency)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs">
-                        <div>
-                          <span className="text-slate-400">Gain/Loss: </span>
-                          <span
-                            className={cn(
-                              'font-medium',
-                              holding.gainLoss >= 0 ? 'text-emerald-300' : 'text-rose-400',
-                            )}
-                          >
-                            {formatCurrency(holding.gainLoss, holding.currency)} ({holding.gainLossPercent.toFixed(2)}%)
-                          </span>
-                          {holding.currency !== preferredCurrency && holding.gainLossConverted !== undefined && (
-                            <span className="ml-1 text-slate-400">
-                              ({formatCurrency(holding.gainLossConverted, preferredCurrency)})
-                            </span>
-                          )}
-                        </div>
-                        {holding.currentPrice && (
-                          <div className="text-slate-400">
-                            @ {formatCurrency(holding.currentPrice, holding.currency)}
-                            {holding.currency !== preferredCurrency && holding.currentPriceConverted && (
-                              <span className="ml-1">
-                                ({formatCurrency(holding.currentPriceConverted, preferredCurrency)})
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {holding.notes && (
-                        <p className="text-xs text-slate-400 border-t border-white/5 pt-2 mt-2">{holding.notes}</p>
-                      )}
-
-                      <p className="text-[10px] text-slate-500">Last updated: {priceAge}</p>
-                    </div>
-                  )
-                })}
-              </CardContent>
-            </Card>
-          </div>
+          <Suspense fallback={<HoldingsFallback />}>
+            <HoldingsTab
+              activeAccount={activeAccount}
+              accountsOptions={accountsOptions}
+              categories={data.categories}
+              preferredCurrency={preferredCurrency}
+              onSelectAccount={handleAccountSelect}
+            />
+          </Suspense>
         )}
       </section>
     </div>
