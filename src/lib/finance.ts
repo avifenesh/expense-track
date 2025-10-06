@@ -480,21 +480,20 @@ export async function getDashboardData({
 
   const transactionsWithNumbers = transactions;
 
+  // Calculate mutual summary for all views, not just Joint account
   let mutualSummary: MutualSettlementSummary | undefined;
-  if (accountRecord?.type === AccountType.JOINT) {
-    const selfAccount = accounts.find(
-      (account) => account.type === AccountType.SELF
-    );
-    const partnerAccount = accounts.find(
-      (account) => account.type === AccountType.PARTNER
-    );
+  const selfAccount = accounts.find(
+    (account) => account.type === AccountType.SELF
+  );
+  const partnerAccount = accounts.find(
+    (account) => account.type === AccountType.PARTNER
+  );
 
-    if (selfAccount && partnerAccount) {
-      mutualSummary = calculateMutualSummary(transactionsWithNumbers, {
-        selfAccountName: selfAccount.name,
-        partnerAccountName: partnerAccount.name,
-      });
-    }
+  if (selfAccount && partnerAccount) {
+    mutualSummary = calculateMutualSummary(transactionsWithNumbers, {
+      selfAccountName: selfAccount.name,
+      partnerAccountName: partnerAccount.name,
+    });
   }
 
   // Use converted amounts for calculations when preferred currency is set

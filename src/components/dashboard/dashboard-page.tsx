@@ -284,7 +284,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const defaultTransactionAccountFilter =
     activeAccountRecord?.type === AccountType.JOINT ? 'all' : activeAccount || ''
 
-  const mutualSummaryForView = isJointAccountView ? data.mutualSummary : undefined
+  const mutualSummaryForView = data.mutualSummary
 
   const mutualSummaryDisplay = useMemo(() => {
     if (!mutualSummaryForView) {
