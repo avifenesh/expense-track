@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart, getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
-import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
+import { AUTH_USERS, RECOVERY_CONTACTS, type AuthUser } from '@/lib/auth'
 import {
   clearSession,
   establishSession,
@@ -27,7 +27,7 @@ type AccountRecord = NonNullable<Awaited<ReturnType<typeof prisma.account.findUn
 
 type AccountAccessSuccess = {
   account: AccountRecord
-  authUser: (typeof AUTH_USERS)[number]
+  authUser: AuthUser
 }
 
 type AccountAccessError = { error: Record<string, string[]> }
