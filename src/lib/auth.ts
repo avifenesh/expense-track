@@ -25,6 +25,21 @@ function parseAuthUsers(): AuthUser[] {
   const user2PasswordHash = user2PasswordHashRaw?.replace(/\\(.)/g, '$1') // Unescape \$ -> $
   const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
 
+  console.log('[parseAuthUsers] user1:', {
+    email: user1Email,
+    displayName: user1DisplayName,
+    hashRaw: user1PasswordHashRaw,
+    hashProcessed: user1PasswordHash,
+    hashLength: user1PasswordHash?.length,
+  })
+  console.log('[parseAuthUsers] user2:', {
+    email: user2Email,
+    displayName: user2DisplayName,
+    hashRaw: user2PasswordHashRaw,
+    hashProcessed: user2PasswordHash,
+    hashLength: user2PasswordHash?.length,
+  })
+
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
     throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
   }
