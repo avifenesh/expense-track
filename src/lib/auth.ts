@@ -11,20 +11,19 @@ export type AuthUser = {
 }
 
 function parseAuthUsers(): AuthUser[] {
-  const user1Email = process.env.AUTH_USER1_EMAIL
-  const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME
-  const user1PasswordHash = process.env.AUTH_USER1_PASSWORD_HASH
+  const user1Email = process.env.AUTH_USER1_EMAIL?.trim()
+  const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME?.trim()
+  // Strip quotes, whitespace, and unescape backslashes that might be added by environment variable storage
+  const user1PasswordHashRaw = process.env.AUTH_USER1_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
+  const user1PasswordHash = user1PasswordHashRaw?.replace(/\\(.)/g, '$1') // Unescape \$ -> $
   const user1PreferredCurrency = (process.env.AUTH_USER1_PREFERRED_CURRENCY as Currency) || Currency.USD
 
-  const user2Email = process.env.AUTH_USER2_EMAIL
-  const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME
-  const user2PasswordHash = process.env.AUTH_USER2_PASSWORD_HASH
+  const user2Email = process.env.AUTH_USER2_EMAIL?.trim()
+  const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME?.trim()
+  // Strip quotes, whitespace, and unescape backslashes that might be added by environment variable storage
+  const user2PasswordHashRaw = process.env.AUTH_USER2_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
+  const user2PasswordHash = user2PasswordHashRaw?.replace(/\\(.)/g, '$1') // Unescape \$ -> $
   const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
-
-  // Debug logging
-  console.log('[AUTH DEBUG] user1PasswordHash:', JSON.stringify(user1PasswordHash))
-  console.log('[AUTH DEBUG] user1PasswordHash length:', user1PasswordHash?.length)
-  console.log('[AUTH DEBUG] user1PasswordHash chars:', user1PasswordHash?.split('').map((c, i) => `${i}:${c}(${c.charCodeAt(0)})`).slice(0, 10))
 
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
     throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
