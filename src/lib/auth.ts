@@ -21,6 +21,11 @@ function parseAuthUsers(): AuthUser[] {
   const user2PasswordHash = process.env.AUTH_USER2_PASSWORD_HASH
   const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
 
+  // Debug logging
+  console.log('[AUTH DEBUG] user1PasswordHash:', JSON.stringify(user1PasswordHash))
+  console.log('[AUTH DEBUG] user1PasswordHash length:', user1PasswordHash?.length)
+  console.log('[AUTH DEBUG] user1PasswordHash chars:', user1PasswordHash?.split('').map((c, i) => `${i}:${c}(${c.charCodeAt(0)})`).slice(0, 10))
+
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
     throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
   }
