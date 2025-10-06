@@ -156,12 +156,30 @@ function buildAccountScopedWhere(
     return base;
   }
 
-  // NOTE: We cannot include "mutual" personal transactions for JOINT until the schema exposes a usable flag.
-  // Previous use of `isMutual` here caused a type error because it's not part of TransactionWhereInput.
+  // Treat the joint view as an aggregation of mutual personal expenses plus any direct joint entries.
   if (accountType === AccountType.JOINT) {
+    const sharedScopes: Prisma.TransactionWhereInput[] = [];
+
+    if (accountId) {
+      sharedScopes.push({ accountId });
+    }
+
+    sharedScopes.push({
+      isMutual: true,
+      account: {
+        type: {
+          in: [AccountType.SELF, AccountType.PARTNER],
+        },
+      },
+    });
+
     return {
-      ...base,
-      accountId,
+      AND: [
+        base,
+        {
+          OR: sharedScopes,
+        },
+      ],
     };
   }
 
@@ -421,6 +439,7 @@ export async function getDashboardData({
     categories,
     budgets,
     transactions,
+    mutualTransactionsRaw,
     recurringTemplates,
     previousTransactionsRaw,
     historyTransactionsRaw,
@@ -433,6 +452,23 @@ export async function getDashboardData({
       accountId,
       preferredCurrency,
       accountType: accountRecord?.type,
+    }),
+    prisma.transaction.findMany({
+      where: {
+        date: {
+          gte: monthStart,
+          lt: nextMonthStart,
+        },
+        isMutual: true,
+        account: {
+          type: {
+            in: [AccountType.SELF, AccountType.PARTNER],
+          },
+        },
+      },
+      include: {
+        account: true,
+      },
     }),
     getRecurringTemplates({ accountId }),
     prisma.transaction.findMany({
@@ -482,6 +518,38 @@ export async function getDashboardData({
 
   // Calculate mutual summary for all views, not just Joint account
   let mutualSummary: MutualSettlementSummary | undefined;
+  const mutualSummaryCandidates: MutualCandidate[] = await Promise.all(
+    mutualTransactionsRaw.map(async (transaction) => {
+      const originalAmount = decimalToNumber(transaction.amount);
+      let convertedAmount = originalAmount;
+
+      if (preferredCurrency && transaction.currency !== preferredCurrency) {
+        try {
+          convertedAmount = await convertAmount(
+            originalAmount,
+            transaction.currency,
+            preferredCurrency,
+            transaction.date
+          );
+        } catch (error) {
+          console.warn(
+            `Currency conversion failed for mutual transaction ${transaction.id}:`,
+            error
+          );
+        }
+      }
+
+      return {
+        convertedAmount,
+        isMutual: transaction.isMutual,
+        type: transaction.type,
+        account: {
+          type: transaction.account.type,
+          name: transaction.account.name,
+        },
+      } satisfies MutualCandidate;
+    })
+  );
   const selfAccount = accounts.find(
     (account) => account.type === AccountType.SELF
   );
@@ -490,7 +558,7 @@ export async function getDashboardData({
   );
 
   if (selfAccount && partnerAccount) {
-    mutualSummary = calculateMutualSummary(transactionsWithNumbers, {
+    mutualSummary = calculateMutualSummary(mutualSummaryCandidates, {
       selfAccountName: selfAccount.name,
       partnerAccountName: partnerAccount.name,
     });
