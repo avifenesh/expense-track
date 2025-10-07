@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       system: `${systemPrompt}\n\n=== CURRENT FINANCIAL DATA ===\n${context}`,
       messages: validMessages,
       tools: tools as any,
-      stopWhen: stepCountIs(2),
+      stopWhen: stepCountIs(5),
       maxRetries: 3,
     })
     return result.toTextStreamResponse()
