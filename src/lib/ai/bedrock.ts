@@ -27,11 +27,9 @@ export const bedrock = createAmazonBedrock({
   }),
 })
 
-// Model configuration - Claude Sonnet 4.5 (September 2025 - most advanced)
-// Using US inference profile for on-demand access
-export const model = bedrock('us.anthropic.claude-sonnet-4-20250514-v1:0')
-// Fallback model for throttling/overflow: Claude 3.5 Sonnet v2
-export const fastModel = bedrock('us.anthropic.claude-3-5-sonnet-20241022-v2:0')
+// Model configuration - Claude 3.5 Sonnet v2
+// This is the primary model for all AI interactions.
+export const model = bedrock('us.anthropic.claude-3-5-sonnet-20241022-v2:0')
 
 // AI Tools - Standard AI SDK format for Bedrock/Claude: array of tool() instances with Zod schemas
 export const tools = [
