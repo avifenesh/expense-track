@@ -8,13 +8,13 @@
 - [x] Task: Implement Transaction Request Schema (33a1655)
     - [x] Sub-task: Add `TransactionRequest` model or update `Transaction` with status
     - [x] Sub-task: Generate and run migration
-- [ ] Task: Backend Actions for Requests
-    - [ ] Sub-task: Write Tests for `createTransactionRequest`
-    - [ ] Sub-task: Implement `createTransactionRequest` server action
-    - [ ] Sub-task: Write Tests for `approveTransactionRequest`
-    - [ ] Sub-task: Implement `approveTransactionRequest` server action
-    - [ ] Sub-task: Write Tests for `rejectTransactionRequest`
-    - [ ] Sub-task: Implement `rejectTransactionRequest` server action
+- [x] Task: Backend Actions for Requests (938e83e)
+    - [x] Sub-task: Write Tests for `createTransactionRequest`
+    - [x] Sub-task: Implement `createTransactionRequest` server action
+    - [x] Sub-task: Write Tests for `approveTransactionRequest`
+    - [x] Sub-task: Implement `approveTransactionRequest` server action
+    - [x] Sub-task: Write Tests for `rejectTransactionRequest`
+    - [x] Sub-task: Implement `rejectTransactionRequest` server action
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Refactor' (Protocol in workflow.md)
 
 ## Phase 2: Frontend Dashboard Update
