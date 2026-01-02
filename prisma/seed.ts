@@ -15,7 +15,6 @@ async function main() {
   const accounts = [
     { name: 'Avi', type: AccountType.SELF, preferredCurrency: Currency.ILS, color: '#0ea5e9', icon: 'User' },
     { name: 'Serena', type: AccountType.PARTNER, preferredCurrency: Currency.EUR, color: '#f472b6', icon: 'Heart' },
-    { name: 'Joint', type: AccountType.JOINT, preferredCurrency: Currency.USD, color: '#22c55e', icon: 'Users' },
   ];
 
   await Promise.all(

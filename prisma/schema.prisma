@@ -20,6 +20,8 @@ model Account {
   holdings          Holding[]
   recurringTemplates RecurringTemplate[]
   transactions      Transaction[]
+  sentRequests      TransactionRequest[] @relation("SentRequests")
+  receivedRequests  TransactionRequest[] @relation("ReceivedRequests")
 }
 
 model Budget {
@@ -52,6 +54,7 @@ model Category {
   holdings          Holding[]
   recurringTemplates RecurringTemplate[]
   transactions      Transaction[]
+  transactionRequests TransactionRequest[]
 
   @@unique([name, type])
 }
@@ -152,8 +155,30 @@ model Transaction {
 enum AccountType {
   SELF
   PARTNER
-  JOINT
   OTHER
+}
+
+model TransactionRequest {
+  id          String          @id @default(cuid())
+  fromId      String
+  toId        String
+  categoryId  String
+  amount      Decimal         @db.Decimal(12, 2)
+  currency    Currency        @default(USD)
+  date        DateTime
+  description String?
+  status      RequestStatus   @default(PENDING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  from        Account         @relation("SentRequests", fields: [fromId], references: [id])
+  to          Account         @relation("ReceivedRequests", fields: [toId], references: [id])
+  category    Category        @relation(fields: [categoryId], references: [id])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum Currency {
