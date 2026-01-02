@@ -1,6 +1,6 @@
 'use server'
 
-import { Prisma, TransactionType, Currency } from '@prisma/client'
+import { Prisma, TransactionType, Currency, RequestStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
@@ -84,6 +84,188 @@ const transactionUpdateSchema = transactionSchema.extend({
 })
 
 type TransactionUpdateInput = z.infer<typeof transactionUpdateSchema>
+
+const transactionRequestSchema = z.object({
+  toId: z.string().min(1, 'Target partner account is required'),
+  categoryId: z.string().min(1, 'Category is required'),
+  amount: z.coerce.number().min(0.01, 'Amount must be positive'),
+  currency: z.nativeEnum(Currency).default(Currency.USD),
+  date: z.coerce.date(),
+  description: z.string().max(240, 'Keep the description short').optional().nullable(),
+})
+
+type TransactionRequestInput = z.infer<typeof transactionRequestSchema>
+
+export async function createTransactionRequestAction(input: TransactionRequestInput) {
+  const parsed = transactionRequestSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const data = parsed.data
+
+  let session
+  try {
+    session = await requireSession()
+  } catch (error) {
+    return { error: { general: ['Your session expired. Please sign in again.'] } }
+  }
+
+  const authUser = getAuthUserFromSession(session)
+  if (!authUser) {
+    return { error: { general: ['We could not resolve your user profile. Please sign in again.'] } }
+  }
+
+  // Determine current user's account ID (the 'from' account)
+  const fromAccount = await prisma.account.findFirst({
+    where: { name: { in: authUser.accountNames }, type: 'SELF' },
+  })
+
+  if (!fromAccount) {
+    return { error: { general: ['Unable to identify your primary account'] } }
+  }
+
+  try {
+    await prisma.transactionRequest.create({
+      data: {
+        fromId: fromAccount.id,
+        toId: data.toId,
+        categoryId: data.categoryId,
+        amount: new Prisma.Decimal(toDecimalString(data.amount)),
+        currency: data.currency,
+        date: data.date,
+        description: data.description,
+        status: RequestStatus.PENDING,
+      },
+    })
+  } catch (error) {
+    console.error('createTransactionRequestAction', error)
+    return { error: { general: ['Unable to create transaction request'] } }
+  }
+
+  revalidatePath('/')
+  return { success: true }
+}
+
+const idSchema = z.object({
+  id: z.string().min(1),
+})
+
+export async function approveTransactionRequestAction(input: z.infer<typeof idSchema>) {
+  const parsed = idSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  let session
+  try {
+    session = await requireSession()
+  } catch (error) {
+    return { error: { general: ['Your session expired. Please sign in again.'] } }
+  }
+
+  const authUser = getAuthUserFromSession(session)
+  if (!authUser) {
+    return { error: { general: ['We could not resolve your user profile. Please sign in again.'] } }
+  }
+
+  const request = await prisma.transactionRequest.findUnique({
+    where: { id: parsed.data.id },
+  })
+
+  if (!request) {
+    return { error: { general: ['Transaction request not found'] } }
+  }
+
+  // Ensure the user has access to the 'to' account
+  const toAccount = await prisma.account.findUnique({
+    where: { id: request.toId },
+  })
+
+  if (!toAccount || !authUser.accountNames.includes(toAccount.name)) {
+    return { error: { general: ['You do not have access to this transaction request'] } }
+  }
+
+  if (request.status !== RequestStatus.PENDING) {
+    return { error: { general: [`Request is already ${request.status.toLowerCase()}`] } }
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.transactionRequest.update({
+        where: { id: request.id },
+        data: { status: RequestStatus.APPROVED },
+      }),
+      (prisma as any).transaction.create({
+        data: {
+          accountId: request.toId,
+          categoryId: request.categoryId,
+          type: TransactionType.EXPENSE,
+          amount: request.amount,
+          currency: request.currency,
+          date: request.date,
+          month: getMonthStart(request.date),
+          description: request.description,
+        },
+      }),
+    ])
+  } catch (error) {
+    console.error('approveTransactionRequestAction', error)
+    return { error: { general: ['Unable to approve transaction request'] } }
+  }
+
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function rejectTransactionRequestAction(input: z.infer<typeof idSchema>) {
+  const parsed = idSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  let session
+  try {
+    session = await requireSession()
+  } catch (error) {
+    return { error: { general: ['Your session expired. Please sign in again.'] } }
+  }
+
+  const authUser = getAuthUserFromSession(session)
+  if (!authUser) {
+    return { error: { general: ['We could not resolve your user profile. Please sign in again.'] } }
+  }
+
+  const request = await prisma.transactionRequest.findUnique({
+    where: { id: parsed.data.id },
+  })
+
+  if (!request) {
+    return { error: { general: ['Transaction request not found'] } }
+  }
+
+  const toAccount = await prisma.account.findUnique({
+    where: { id: request.toId },
+  })
+
+  if (!toAccount || !authUser.accountNames.includes(toAccount.name)) {
+    return { error: { general: ['You do not have access to this transaction request'] } }
+  }
+
+  try {
+    await prisma.transactionRequest.update({
+      where: { id: request.id },
+      data: { status: RequestStatus.REJECTED },
+    })
+  } catch (error) {
+    console.error('rejectTransactionRequestAction', error)
+    return { error: { general: ['Unable to reject transaction request'] } }
+  }
+
+  revalidatePath('/')
+  return { success: true }
+}
+
 
 export async function createTransactionAction(input: TransactionInput) {
   const parsed = transactionSchema.safeParse(input)
