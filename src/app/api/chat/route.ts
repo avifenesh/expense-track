@@ -9,7 +9,7 @@ export const maxDuration = 30
 export async function POST(req: Request) {
   try {
     // Authentication check
-    const session = await requireSession()
+    await requireSession();
 
     // Parse request body
     const { messages, accountId, monthKey, preferredCurrency, useFallback } = await req.json()
@@ -26,16 +26,16 @@ export async function POST(req: Request) {
     )
 
     // Filter out messages with empty content (Bedrock requirement)
-    const validMessages = messages.filter((msg: any) => {
-      return msg.content && (
-        typeof msg.content === 'string'
-          ? msg.content.trim().length > 0
-          : Array.isArray(msg.content) && msg.content.length > 0
-      )
-    })
-
-    // Log tools for debugging
-    console.log('Tools config:', JSON.stringify(tools, null, 2))
+    const validMessages = messages.filter(
+      (msg: { content: string | unknown[] }) => {
+        return (
+          msg.content &&
+          (typeof msg.content === "string"
+            ? msg.content.trim().length > 0
+            : Array.isArray(msg.content) && msg.content.length > 0)
+        );
+      }
+    );
 
     // Select model based on explicit fallback flag
     const selectedModel = useFallback ? fastModel : model
@@ -43,10 +43,11 @@ export async function POST(req: Request) {
       model: selectedModel,
       system: `${systemPrompt}\n\n=== CURRENT FINANCIAL DATA ===\n${context}`,
       messages: validMessages,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tools: tools as any,
       stopWhen: stepCountIs(2),
       maxRetries: useFallback ? 3 : 0,
-    })
+    });
     return result.toTextStreamResponse()
   } catch (error) {
     console.error('Chat API error:', error)

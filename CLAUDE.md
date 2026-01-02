@@ -64,7 +64,7 @@ src/
 - Required env vars: `AUTH_USER1_EMAIL`, `AUTH_USER1_DISPLAY_NAME`, `AUTH_USER1_PASSWORD_HASH`, `AUTH_USER1_PREFERRED_CURRENCY`, `AUTH_USER2_EMAIL`, `AUTH_USER2_DISPLAY_NAME`, `AUTH_USER2_PASSWORD_HASH`, `AUTH_USER2_PREFERRED_CURRENCY`
 - All mutations in `src/app/actions.ts` validate sessions via `requireSession()` and check account access via `ensureAccountAccess()`
 - Password hashing with bcryptjs; session secrets from `AUTH_SESSION_SECRET` env variable
-- **Important**: Password hashes in environment variables are automatically unescaped (handles `\$` -> `$` conversion for Vercel env vars)
+- **Important**: Password hashes in environment variables are automatically unescaped (handles `\$` -> `$` conversion if a host UI escapes values)
 - To generate password hash: `node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('YOUR_PASSWORD', 12, (err, hash) => console.log(hash));"`
 
 ### Server Actions Pattern
@@ -250,24 +250,24 @@ NEXT_PUBLIC_AI_ENABLED="true"                      # Enable/disable AI chat widg
 
 ## Deployment
 
-### Vercel + Neon Setup
+### Railway + Postgres Setup
 
-The application is configured to deploy on Vercel with Neon PostgreSQL:
+The application is configured to deploy on Railway with PostgreSQL:
 
-1. **Vercel Configuration** (`vercel.json`):
-   - Region set to `cdg1` (Paris) for optimal latency to Tel Aviv
-   - Next.js framework with custom build command
-   - Function timeout set to 30 seconds
+1. **Railway Configuration** (`railway.json`):
+   - Build uses `npm run build`
+   - Deploy runs `npm run db:migrate` before starting
+   - Start command uses `npm run start`
 
-2. **Required Environment Variables in Vercel**:
+2. **Required Environment Variables in Railway**:
    - All environment variables from `.env.example` must be configured
-   - Use Vercel-Neon integration for automatic `DATABASE_URL` setup (recommended)
-   - Add auth environment variables manually in Vercel dashboard
+   - Set `DATABASE_URL` from the Railway Postgres plugin
+   - Add auth environment variables in the Railway Variables tab
 
 3. **Database Migrations**:
    - Migrations are in `prisma/migrations/` and tracked in git
    - Production deployments use `npm run db:migrate` (runs `prisma migrate deploy`)
-   - Vercel build automatically runs `prisma generate` via `npm run build`
+   - Build runs `prisma generate` via `npm run build`
 
 ## Common Pitfalls
 
@@ -277,7 +277,7 @@ The application is configured to deploy on Vercel with Neon PostgreSQL:
 - **Amount scaling**: Server actions use `toDecimalString()` helper to properly round currency values
 - **Docker conflicts**: If `npm run db:up:local` fails, check for existing containers with `docker ps -a`
 - **Missing auth env vars**: Application will fail to start if any `AUTH_USER*` variables are missing (no fallbacks by design)
-- **Password hash escaping**: When deploying to Vercel, bcrypt hashes with `$` may get escaped to `\$` - the app auto-unescapes these
+- **Password hash escaping**: Some hosting UIs escape `$` in env vars; the app auto-unescapes `\$`
 - **Stock API rate limits**: Alpha Vantage free tier is 25 calls/day and 5 calls/minute - exceeding these will cause errors
 - **Currency conversion**: Always check if exchange rates are cached before performing conversions; API failures fall back to stale rates
 - **Holdings without prices**: Holdings require stock prices to be refreshed before they can display current values

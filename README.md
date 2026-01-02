@@ -12,7 +12,7 @@ Personal finance workspace tailored for managing income, spending, and shared bu
 
 ## Tech Stack
 
-- [Next.js 13 App Router](https://nextjs.org/docs/app) with Server Actions enabled
+- [Next.js 16 App Router](https://nextjs.org/docs/app) with Server Actions enabled
 - TypeScript + Tailwind CSS UI primitives
 - [Prisma ORM](https://www.prisma.io/) with PostgreSQL (tested against Neon)
 - Zod validation on all server mutations
@@ -93,18 +93,17 @@ The script installs dependencies (if needed), writes `.env` with local defaults,
    npm run db:down:local
    ```
 
-## Deployment (Vercel)
+## Deployment (Railway)
 
 1. Push this repository to GitHub/GitLab.
-2. In Vercel, import the project and choose the `main` branch (App Router detected automatically).
-3. Add the following environment variables in the Vercel dashboard:
-   - `DATABASE_URL` – your production Postgres URL (Neon free tier works great).
+2. In Railway, create a new project from the repo and add a PostgreSQL database.
+3. Set the required environment variables:
+   - `DATABASE_URL` – your Railway Postgres connection string.
    - `AUTH_SESSION_SECRET` – same random 64-char string you used locally.
-   - `NEXT_PUBLIC_APP_URL` – e.g. `https://your-app.vercel.app`.
-4. (Optional) Wire up a [Vercel Postgres or Neon integration](https://vercel.com/integrations) for managed credentials.
-5. Trigger a production deploy. The build runs `npm run build`, which executes `prisma generate` automatically (see `package.json`).
+   - `NEXT_PUBLIC_APP_URL` – your Railway public URL or custom domain.
+4. Deploy. Railway uses `railway.json` to run `npm run build`, apply migrations, and start the app.
 
-Detailed, step-by-step notes live in [`docs/vercel-deployment.md`](docs/vercel-deployment.md).
+Detailed, step-by-step notes live in [`docs/railway-deployment.md`](docs/railway-deployment.md).
 
 ## Database Model
 

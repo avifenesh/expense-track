@@ -1,29 +1,30 @@
-import type { Currency } from '@prisma/client'
-import { getCurrencySymbol } from '@/lib/currency'
+// Currency type matching Prisma schema enum
+type Currency = "USD" | "EUR" | "ILS";
 
-const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-})
-
-export function formatCurrency(value: number, currencyCode: Currency | string = 'USD') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+export function formatCurrency(
+  value: number,
+  currencyCode: Currency | string = "USD"
+) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currencyCode,
     minimumFractionDigits: 2,
-  }).format(value)
+  }).format(value);
 }
 
-export function formatRelativeAmount(value: number, currencyCode: Currency | string = 'USD') {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
+export function formatRelativeAmount(
+  value: number,
+  currencyCode: Currency | string = "USD"
+) {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currencyCode,
     minimumFractionDigits: 2,
-  })
-  const formatted = formatter.format(Math.abs(value))
-  if (value > 0) return `+${formatted}`
-  if (value < 0) return `-${formatted}`
-  return formatted
+  });
+  const formatted = formatter.format(Math.abs(value));
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `-${formatted}`;
+  return formatted;
 }
 
 /**
@@ -36,37 +37,40 @@ export function formatCurrencyWithOriginal({
   displayCurrency,
   originalCurrency,
 }: {
-  convertedAmount: number
-  originalAmount: number
-  displayCurrency: Currency
-  originalCurrency: Currency
+  convertedAmount: number;
+  originalAmount: number;
+  displayCurrency: Currency;
+  originalCurrency: Currency;
 }): string {
-  const converted = formatCurrency(convertedAmount, displayCurrency)
+  const converted = formatCurrency(convertedAmount, displayCurrency);
 
   // If currencies are the same, just return the converted amount
   if (displayCurrency === originalCurrency) {
-    return converted
+    return converted;
   }
 
   // Show both currencies
-  const original = formatCurrency(originalAmount, originalCurrency)
-  return `${converted} (${original})`
+  const original = formatCurrency(originalAmount, originalCurrency);
+  return `${converted} (${original})`;
 }
 
 /**
  * Get compact currency format without decimals for large amounts
  */
-export function formatCurrencyCompact(value: number, currencyCode: Currency | string = 'USD'): string {
-  const absValue = Math.abs(value)
+export function formatCurrencyCompact(
+  value: number,
+  currencyCode: Currency | string = "USD"
+): string {
+  const absValue = Math.abs(value);
 
   if (absValue >= 1000000) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currencyCode,
-      notation: 'compact',
+      notation: "compact",
       maximumFractionDigits: 1,
-    }).format(value)
+    }).format(value);
   }
 
-  return formatCurrency(value, currencyCode)
+  return formatCurrency(value, currencyCode);
 }

@@ -1,9 +1,8 @@
 # Multi-Currency Feature Test Checklist
 
 ## Test Environment
-- **URL**: https://expense-track-git-develop-avi-feneshs-projects.vercel.app/?_vercel_share=zdHoSYUbTMTYgo10qfgRhm6HslguQjyV
-- **Expires**: Oct 6, 2025, 1:21 PM
-- **Database**: Neon develop branch (`br-icy-cell-afr9226h`)
+- **URL**: Replace with the Railway deployment URL or custom domain
+- **Database**: Railway Postgres (or your configured provider)
 
 ## User Credentials
 - **Avi**: `aviarchi1994@gmail.com` / `Af!@#$56789` (Preferred: ILS ₪)

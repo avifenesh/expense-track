@@ -30,6 +30,6 @@
 - PRs should summarize intent, link issues, call out required migrations or seeds (`prisma migrate deploy`, `npm run db:seed`), and list manual verification (lint, build, tests).
 
 ## Security & Configuration Tips
-- Never commit secrets; configure `DATABASE_URL` and `AUTH_SESSION_SECRET` locally and in Vercel.
+- Never commit secrets; configure `DATABASE_URL` and `AUTH_SESSION_SECRET` locally and in Railway.
 - After schema updates, rerun generation and seeds so Vitest and Playwright stay deterministic.
 - Keep `.env` files out of version control and redact credentials from logs, screenshots, and PR notes.
