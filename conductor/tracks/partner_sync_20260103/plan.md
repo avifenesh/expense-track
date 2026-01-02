@@ -1,13 +1,13 @@
 # Track Plan: Simplified Partner Sync
 
 ## Phase 1: Database & Backend Refactor
-- [ ] Task: Remove JOINT account type and update Prisma schema
-    - [ ] Sub-task: Write migration to remove JOINT type (handle data migration/deletion policy)
-    - [ ] Sub-task: Update `AccountType` enum in `schema.prisma`
-    - [ ] Sub-task: Run migration
-- [ ] Task: Implement Transaction Request Schema
-    - [ ] Sub-task: Add `TransactionRequest` model or update `Transaction` with status
-    - [ ] Sub-task: Generate and run migration
+- [x] Task: Remove JOINT account type and update Prisma schema (33a1655)
+    - [x] Sub-task: Write migration to remove JOINT type (handle data migration/deletion policy)
+    - [x] Sub-task: Update `AccountType` enum in `schema.prisma`
+    - [x] Sub-task: Run migration
+- [x] Task: Implement Transaction Request Schema (33a1655)
+    - [x] Sub-task: Add `TransactionRequest` model or update `Transaction` with status
+    - [x] Sub-task: Generate and run migration
 - [ ] Task: Backend Actions for Requests
     - [ ] Sub-task: Write Tests for `createTransactionRequest`
     - [ ] Sub-task: Implement `createTransactionRequest` server action
