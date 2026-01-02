@@ -1,0 +1,8 @@
+{
+  "track_id": "partner_sync_20260103",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-03T00:00:00Z",
+  "updated_at": "2026-01-03T00:00:00Z",
+  "description": "Refactor for Simplified Partner Sync: Remove the \"Joint\" account type and refactor the system to support only two synced partner accounts. Implement a \"Request Transaction\" feature allowing one partner to initiate an expense for the other to approve/reimburse, streamlining the UI for non-technical users."
+}
