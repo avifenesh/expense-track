@@ -865,7 +865,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   }
 
   const netDeltaVariant = netDelta >= 0 ? 'text-emerald-300' : 'text-rose-300'
-  const activeTabMeta = TABS.find((tab) => tab.value === activeTab)
 
   const handleExportCSV = useCallback(() => {
     const headers = ['Date', 'Type', 'Category', 'Account', 'Amount', 'Currency', 'Description']
@@ -1089,7 +1088,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             ))}
           </nav>
         </div>
-        {activeTabMeta && <p className="text-sm text-slate-400">{activeTabMeta.description}</p>}
 
         {activeTab === 'overview' && (
           <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="space-y-6">
