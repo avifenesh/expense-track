@@ -18,8 +18,10 @@
     "setup:local": "bash ./scripts/setup-local.sh",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "check-types": "tsc --noEmit",
     "postinstall": "prisma generate",
-    "cleanup": "rm -rf .next node_modules/.cache tsconfig.tsbuildinfo test-results .vercel .railway && echo '✓ Cleaned build artifacts and cache'"
+    "cleanup": "rm -rf .next node_modules/.cache tsconfig.tsbuildinfo test-results .vercel .railway && echo '✓ Cleaned build artifacts and cache'",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.4",
@@ -47,7 +49,10 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "postcss": "^8",
+    "prettier": "^3.7.4",
     "prisma": "^7.2.0",
     "tailwindcss": "^3.4.0",
     "ts-node": "^10.9.2",
@@ -56,5 +61,14 @@
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"commonjs\"} prisma/seed.ts"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix --max-warnings 0"
+    ],
+    "**/*.{js,jsx,json,md}": [
+      "prettier --write"
+    ]
   }
 }

@@ -1,0 +1,4 @@
+# Pre-commit hook: Fast quality checks
+# Runs lint-staged (prettier + eslint on staged files)
+
+npx lint-staged

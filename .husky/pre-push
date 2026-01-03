@@ -1,0 +1,18 @@
+# Pre-push hook: Comprehensive quality checks
+# Ensures code quality before pushing to remote
+
+echo "Running pre-push quality checks..."
+
+# 1. Type checking (catches type errors)
+echo "Checking types..."
+npm run check-types
+
+# 2. Full lint check
+echo "Running full lint..."
+npm run lint
+
+# 3. Run tests
+echo "Running tests..."
+npm test
+
+echo "Pre-push checks passed!"
