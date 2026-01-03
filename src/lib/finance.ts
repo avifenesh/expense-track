@@ -142,7 +142,6 @@ function sumByType(
 const MUTUAL_SPLIT: Record<AccountType, number> = {
   [AccountType.SELF]: 2 / 3,
   [AccountType.PARTNER]: 1 / 3,
-  [AccountType.JOINT]: 0,
   [AccountType.OTHER]: 0,
 };
 
@@ -153,33 +152,6 @@ function buildAccountScopedWhere(
 ): Prisma.TransactionWhereInput {
   if (!accountId) {
     return base;
-  }
-
-  // Treat the joint view as an aggregation of mutual personal expenses plus any direct joint entries.
-  if (accountType === AccountType.JOINT) {
-    const sharedScopes: Prisma.TransactionWhereInput[] = [];
-
-    if (accountId) {
-      sharedScopes.push({ accountId });
-    }
-
-    sharedScopes.push({
-      isMutual: true,
-      account: {
-        type: {
-          in: [AccountType.SELF, AccountType.PARTNER],
-        },
-      },
-    });
-
-    return {
-      AND: [
-        base,
-        {
-          OR: sharedScopes,
-        },
-      ],
-    };
   }
 
   return {

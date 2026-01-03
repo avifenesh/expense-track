@@ -222,8 +222,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const initialAccountRecord = data.accounts.find((account) => account.id === initialAccountId) ?? null
   const defaultExpenseCategoryId =
     data.categories.find((category) => category.type === TransactionType.EXPENSE && !category.isArchived)?.id ?? ''
-  const initialTransactionAccountFilterValue =
-    initialAccountRecord?.type === AccountType.JOINT ? 'all' : initialAccountId
+  const initialTransactionAccountFilterValue = initialAccountId
   const [activeAccount, setActiveAccount] = useState<string>(initialAccountId)
   const [transactionFormState, setTransactionFormState] = useState<{
     type: TransactionType
@@ -236,7 +235,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     isRecurring: boolean
     isMutual: boolean
   }>(() => {
-    const loggableAccounts = data.accounts.filter((account) => account.type !== AccountType.JOINT)
+    const loggableAccounts = data.accounts
     const initialLoggableAccountId =
       loggableAccounts.find((account) => account.id === initialAccountId)?.id ?? loggableAccounts[0]?.id ?? ''
 
@@ -285,7 +284,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   )
 
   const transactionLoggableAccounts = useMemo(
-    () => data.accounts.filter((account) => account.type !== AccountType.JOINT),
+    () => data.accounts,
     [data.accounts],
   )
 
@@ -309,15 +308,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       value: account.id,
     }))
 
-    const currentAccount = data.accounts.find((account) => account.id === transactionFormState.accountId)
-    if (
-      currentAccount &&
-      currentAccount.type === AccountType.JOINT &&
-      !options.some((option) => option.value === currentAccount.id)
-    ) {
-      return [...options, { label: currentAccount.name, value: currentAccount.id }]
-    }
-
     return options
   }, [data.accounts, transactionFormState.accountId, transactionLoggableAccounts])
 
@@ -325,7 +315,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     () => data.accounts.find((account) => account.id === activeAccount) ?? null,
     [data.accounts, activeAccount],
   )
-  const isJointAccountView = activeAccountRecord?.type === AccountType.JOINT
+  const isJointAccountView = false
 
   const transactionAccountOptions = useMemo(() => {
     if (!isJointAccountView) {
@@ -351,8 +341,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     [data.categories],
   )
 
-  const defaultTransactionAccountFilter =
-    activeAccountRecord?.type === AccountType.JOINT ? 'all' : activeAccount || ''
+  const defaultTransactionAccountFilter = activeAccount || ''
 
   const mutualSummaryForView = data.mutualSummary
 
@@ -438,9 +427,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     if (editingTransaction) return
     if (!activeAccount) return
 
-    const nextAccountId = resolveLoggableAccountId(
-      activeAccountRecord?.type === AccountType.JOINT ? undefined : activeAccount,
-    )
+    const nextAccountId = resolveLoggableAccountId(activeAccount)
 
     setTransactionFormState((prev) => {
       if (prev.accountId === nextAccountId) {
@@ -482,9 +469,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   }, [monthKey, editingTransaction])
 
   const resetTransactionForm = useCallback(() => {
-    const fallbackAccountId = resolveLoggableAccountId(
-      activeAccountRecord?.type === AccountType.JOINT ? undefined : activeAccount,
-    )
+    const fallbackAccountId = resolveLoggableAccountId(activeAccount)
     setTransactionFormState({
       type: TransactionType.EXPENSE,
       accountId: fallbackAccountId,

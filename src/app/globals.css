@@ -12,27 +12,18 @@ body {
   height: 100%;
 }
 body {
-  min-height: 100vh;
-  background-color: #020617;
-  color: #f1f5f9;
-  -webkit-font-smoothing: antialiased;
+  @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
   background:
     radial-gradient(circle at top, rgba(148, 163, 184, 0.45), transparent 55%),
     linear-gradient(145deg, #0f172a 0%, #020817 55%, #0b1120 100%);
 }
 
 a {
-  color: #7dd3fc;
-  transition: color 150ms ease;
-}
-
-a:hover {
-  color: #bae6fd;
+  @apply text-sky-300 transition hover:text-sky-200;
 }
 
 ::selection {
-  background-color: rgba(14, 165, 233, 0.5);
-  color: #ffffff;
+  @apply bg-sky-500/50 text-white;
 }
 
 select.glass-select option,
