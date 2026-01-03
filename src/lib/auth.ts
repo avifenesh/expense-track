@@ -66,13 +66,13 @@ export function getAuthUsers(): AuthUser[] {
 
 // For backward compatibility
 export const AUTH_USERS = new Proxy({} as AuthUser[], {
-  get(target, prop) {
+  get(_target, prop) {
     return getAuthUsers()[prop as any]
   },
-  has(target, prop) {
+  has(_target, prop) {
     return prop in getAuthUsers()
   },
-  ownKeys(target) {
+  ownKeys(_target) {
     return Reflect.ownKeys(getAuthUsers())
   },
 }) as unknown as AuthUser[]
@@ -85,7 +85,7 @@ export function getRecoveryContacts() {
 }
 
 export const RECOVERY_CONTACTS = new Proxy([] as ReturnType<typeof getRecoveryContacts>, {
-  get(target, prop) {
+  get(_target, prop) {
     return getRecoveryContacts()[prop as any]
   },
 }) as unknown as ReturnType<typeof getRecoveryContacts>
