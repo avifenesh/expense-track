@@ -1,6 +1,10 @@
+import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AccountType, Currency, PrismaClient, TransactionType } from '@prisma/client';
 import { Pool } from 'pg';
+
+// Load .env file
+config();
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
