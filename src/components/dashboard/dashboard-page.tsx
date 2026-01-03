@@ -8,10 +8,12 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarRange,
+  ChevronDown,
   CreditCard,
   FileSpreadsheet,
   Gauge,
   Layers,
+  MoreHorizontal,
   PiggyBank,
   RefreshCcw,
   Repeat,
@@ -149,19 +151,29 @@ function HoldingsFallback() {
   )
 }
 
-const TABS: Array<{
+const PRIMARY_TABS: Array<{
   value: TabValue
   label: string
   description: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
-  { value: 'overview', label: 'Overview', description: 'Review trends, forecasts, and highlighted budgets.', icon: Gauge },
-  { value: 'budgets', label: 'Budgets', description: 'Plan spending by account and category with progress tracking.', icon: FileSpreadsheet },
-  { value: 'transactions', label: 'Transactions', description: 'Capture new activity and reconcile existing entries.', icon: CreditCard },
-  { value: 'recurring', label: 'Recurring', description: 'Manage predictable inflows and outflows over time.', icon: Repeat },
-  { value: 'categories', label: 'Categories', description: 'Curate the taxonomy that powers reports and automations.', icon: Tags },
-  { value: 'holdings', label: 'Holdings', description: 'Track stocks, ETFs, and investment portfolios with live valuations.', icon: TrendingUp },
+  { value: 'overview', label: 'Overview', description: 'Your spending at a glance.', icon: Gauge },
+  { value: 'transactions', label: 'Transactions', description: 'Log and view expenses.', icon: CreditCard },
+  { value: 'budgets', label: 'Budgets', description: 'Set monthly spending limits.', icon: FileSpreadsheet },
 ]
+
+const MORE_TABS: Array<{
+  value: TabValue
+  label: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+}> = [
+  { value: 'recurring', label: 'Auto-repeat', description: 'Recurring payments and income.', icon: Repeat },
+  { value: 'categories', label: 'Labels', description: 'Organize your spending categories.', icon: Tags },
+  { value: 'holdings', label: 'Investments', description: 'Track stocks and ETFs.', icon: TrendingUp },
+]
+
+const TABS = [...PRIMARY_TABS, ...MORE_TABS]
 
 const STAT_VARIANT_STYLES: Record<NonNullable<DashboardData['stats'][number]['variant']>, {
   border: string
@@ -260,6 +272,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [categoryFeedback, setCategoryFeedback] = useState<Feedback | null>(null)
   const [accountFeedback, setAccountFeedback] = useState<Feedback | null>(null)
   const [activeTab, setActiveTab] = useState<TabValue>('overview')
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(initialAccountId)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
   const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
@@ -1018,11 +1031,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       <section className="space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-white">Financial workspace</h2>
-            <p className="text-sm text-slate-400">Navigate budgets, transactions, rules, and taxonomy without scrolling through a single feed.</p>
+            <h2 className="text-lg font-semibold text-white">Dashboard</h2>
           </div>
-          <nav className="flex flex-wrap gap-2" role="tablist" aria-label="Dashboard sections">
-            {TABS.map(({ value, label, icon: Icon }) => (
+          <nav className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Dashboard sections">
+            {PRIMARY_TABS.map(({ value, label, icon: Icon }) => (
               <button
                 key={value}
                 id={`tab-${value}`}
@@ -1042,6 +1054,47 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 <span>{label}</span>
               </button>
             ))}
+            {/* More dropdown for less-used tabs */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                onBlur={() => setTimeout(() => setMoreMenuOpen(false), 150)}
+                className={cn(
+                  'group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900',
+                  MORE_TABS.some(t => t.value === activeTab)
+                    ? 'border-white/40 bg-white/20 text-white shadow-lg'
+                    : 'border-white/15 bg-white/5 text-slate-200 hover:border-white/25 hover:bg-white/10',
+                )}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                <span>More</span>
+                <ChevronDown className={cn('h-3 w-3 transition-transform', moreMenuOpen && 'rotate-180')} />
+              </button>
+              {moreMenuOpen && (
+                <div className="absolute top-full left-0 z-50 mt-2 w-48 rounded-xl border border-white/15 bg-slate-900/95 p-1 shadow-xl backdrop-blur-sm">
+                  {MORE_TABS.map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(value)
+                        setMoreMenuOpen(false)
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
+                        activeTab === value
+                          ? 'bg-white/20 text-white'
+                          : 'text-slate-300 hover:bg-white/10 hover:text-white',
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
         </div>
         {activeTabMeta && <p className="text-sm text-slate-400">{activeTabMeta.description}</p>}
@@ -1053,6 +1106,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             aria-labelledby="tab-overview"
             className="space-y-6"
           >
+            {/* Partner requests shown prominently at top */}
+            {data.transactionRequests.length > 0 && (
+              <RequestList requests={data.transactionRequests} preferredCurrency={preferredCurrency} />
+            )}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader>
@@ -1469,9 +1526,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     className="text-lg font-semibold text-white"
                     helpText="Record income or expenses with account, category, currency, and optional notes."
                   >
-                    Log a transaction
+                    Add expense or income
                   </CardTitle>
-                  <p className="text-sm text-slate-400">Capture new activity and classify it without leaving the keyboard.</p>
                 </CardHeader>
                 <CardContent>
                   <form id="transaction-form" onSubmit={handleTransactionSubmit} className="grid gap-4" tabIndex={-1}>
@@ -1581,46 +1637,26 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                           }
                         />
                       </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <div className="flex items-center gap-2">
+                      {transactionFormState.type === TransactionType.EXPENSE && !editingTransaction && (
+                        <div className="flex items-center gap-2 sm:col-span-2">
                           <input
-                            id="isRecurring"
-                            name="isRecurring"
+                            id="isRequest"
+                            name="isRequest"
                             type="checkbox"
                             className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40"
-                            checked={transactionFormState.isRecurring}
+                            checked={transactionFormState.isRequest}
                             onChange={(event) =>
                               setTransactionFormState((prev) => ({
                                 ...prev,
-                                isRecurring: event.target.checked,
+                                isRequest: event.target.checked,
                               }))
                             }
                           />
-                          <label htmlFor="isRecurring" className="text-xs text-slate-300">
-                            Permanent (recurring) transaction
+                          <label htmlFor="isRequest" className="text-sm text-slate-300">
+                            Ask partner to pay this
                           </label>
                         </div>
-                        {transactionFormState.type === TransactionType.EXPENSE && !editingTransaction && (
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="isRequest"
-                              name="isRequest"
-                              type="checkbox"
-                              className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40"
-                              checked={transactionFormState.isRequest}
-                              onChange={(event) =>
-                                setTransactionFormState((prev) => ({
-                                  ...prev,
-                                  isRequest: event.target.checked,
-                                }))
-                              }
-                            />
-                            <label htmlFor="isRequest" className="text-xs text-slate-300">
-                              Charge partner (creates a request for approval)
-                            </label>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="transactionDescription">
