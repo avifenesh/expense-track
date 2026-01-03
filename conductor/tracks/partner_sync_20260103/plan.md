@@ -17,7 +17,7 @@
     - [x] Sub-task: Implement `rejectTransactionRequest` server action
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Refactor' (Protocol in workflow.md) (467b65f)
 
-## Phase 2: Frontend Dashboard Update
+## Phase 2: Frontend Dashboard Update [checkpoint: c1b4640]
 - [x] Task: Remove Joint View from Dashboard (938e83e+)
     - [x] Sub-task: Remove "Joint" tab from `dashboard-page.tsx`
     - [x] Sub-task: Update `dashboard-ux.ts` to handle only 2 accounts
@@ -29,7 +29,7 @@
     - [x] Sub-task: Add "Request from Partner" toggle
     - [x] Sub-task: Wire up form to new `createTransactionRequestAction` action
     - [x] Sub-task: Write E2E test for full request flow
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Dashboard Update' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Dashboard Update' (Protocol in workflow.md) (c1b4640)
 
 ## Phase 3: Cleanup & Polish
 - [ ] Task: Remove legacy Joint account code
