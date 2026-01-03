@@ -1,6 +1,6 @@
 # Track Plan: Simplified Partner Sync
 
-## Phase 1: Database & Backend Refactor
+## Phase 1: Database & Backend Refactor [checkpoint: 467b65f]
 - [x] Task: Remove JOINT account type and update Prisma schema (33a1655)
     - [x] Sub-task: Write migration to remove JOINT type (handle data migration/deletion policy)
     - [x] Sub-task: Update `AccountType` enum in `schema.prisma`
@@ -15,7 +15,7 @@
     - [x] Sub-task: Implement `approveTransactionRequest` server action
     - [x] Sub-task: Write Tests for `rejectTransactionRequest`
     - [x] Sub-task: Implement `rejectTransactionRequest` server action
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Refactor' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Refactor' (Protocol in workflow.md) (467b65f)
 
 ## Phase 2: Frontend Dashboard Update
 - [ ] Task: Remove Joint View from Dashboard
