@@ -153,15 +153,14 @@ function HoldingsFallback() {
 const TABS: Array<{
   value: TabValue
   label: string
-  description: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
-  { value: 'overview', label: 'Overview', description: 'Your spending at a glance.', icon: Gauge },
-  { value: 'transactions', label: 'Transactions', description: 'Log and view expenses.', icon: CreditCard },
-  { value: 'budgets', label: 'Budgets', description: 'Set monthly spending limits.', icon: FileSpreadsheet },
-  { value: 'recurring', label: 'Auto-repeat', description: 'Recurring payments and income.', icon: Repeat },
-  { value: 'categories', label: 'Labels', description: 'Organize your spending categories.', icon: Tags },
-  { value: 'holdings', label: 'Investments', description: 'Track stocks and ETFs.', icon: TrendingUp },
+  { value: 'overview', label: 'Overview', icon: Gauge },
+  { value: 'transactions', label: 'Transactions', icon: CreditCard },
+  { value: 'budgets', label: 'Budgets', icon: FileSpreadsheet },
+  { value: 'recurring', label: 'Auto-repeat', icon: Repeat },
+  { value: 'categories', label: 'Labels', icon: Tags },
+  { value: 'holdings', label: 'Investments', icon: TrendingUp },
 ]
 
 const STAT_VARIANT_STYLES: Record<
