@@ -34,7 +34,7 @@
 ## Phase 3: Cleanup & Polish
 - [x] Task: Remove legacy Joint account code (425e7ea+)
     - [x] Sub-task: Search and remove dead code related to "Joint"
-- [ ] Task: Final E2E Verification
-    - [ ] Sub-task: Run full regression suite
+- [x] Task: Final E2E Verification (df5ce31+)
+    - [x] Sub-task: Run full regression suite
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Cleanup & Polish' (Protocol in workflow.md)
 
