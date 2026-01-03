@@ -276,6 +276,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [categorySearch, setCategorySearch] = useState('')
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | TransactionType>('all')
   const [showArchivedCategories, setShowArchivedCategories] = useState(false)
+  const [visibleCategoriesCount, setVisibleCategoriesCount] = useState(10)
 
   const [isPendingTransaction, startTransaction] = useTransition()
   const [isPendingBudget, startBudget] = useTransition()
@@ -2287,7 +2288,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       <Select
                         id="category-filter-type"
                         value={categoryTypeFilter}
-                        onChange={(event) => setCategoryTypeFilter(event.target.value as typeof categoryTypeFilter)}
+                        onChange={(event) => {
+                          setCategoryTypeFilter(event.target.value as typeof categoryTypeFilter)
+                          setVisibleCategoriesCount(10)
+                        }}
                         options={typeFilterOptions}
                       />
                     </div>
@@ -2298,7 +2302,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       <Input
                         id="category-filter-search"
                         value={categorySearch}
-                        onChange={(event) => setCategorySearch(event.target.value)}
+                        onChange={(event) => {
+                          setCategorySearch(event.target.value)
+                          setVisibleCategoriesCount(10)
+                        }}
                         placeholder="e.g. groceries, rent"
                       />
                     </div>
@@ -2307,7 +2314,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         type="button"
                         variant="ghost"
                         className="text-xs text-slate-200"
-                        onClick={() => setShowArchivedCategories((prev) => !prev)}
+                        onClick={() => {
+                          setShowArchivedCategories((prev) => !prev)
+                          setVisibleCategoriesCount(10)
+                        }}
                       >
                         {showArchivedCategories ? 'Hide archived' : 'Show archived'}
                       </Button>
@@ -2331,7 +2341,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       )}
                     </div>
                   )}
-                  {filteredCategoryList.map((category) => (
+                  {filteredCategoryList.slice(0, visibleCategoriesCount).map((category) => (
                     <div
                       key={category.id}
                       className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between"
@@ -2363,6 +2373,16 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       </Button>
                     </div>
                   ))}
+                  {filteredCategoryList.length > visibleCategoriesCount && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setVisibleCategoriesCount((prev) => prev + 10)}
+                    >
+                      Load more ({filteredCategoryList.length - visibleCategoriesCount} remaining)
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>
