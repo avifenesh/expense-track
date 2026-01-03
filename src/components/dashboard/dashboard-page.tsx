@@ -1083,6 +1083,67 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         )}
       </header>
 
+      {/* Balance form - shown when Balance button clicked */}
+      {showBalanceForm && (
+        <Card className="border-white/15 bg-white/10">
+          <CardHeader className="gap-1">
+            <CardTitle className="text-lg font-semibold text-white">Set current balance</CardTitle>
+            <p className="text-sm text-slate-300">
+              Enter your actual current balance. We&apos;ll create an adjustment transaction to match it.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
+                <span>Current net this month</span>
+                <span className="text-sm font-semibold text-white">
+                  {formatCurrency(data.stats.find((s) => s.label === 'Actual net')?.amount ?? 0, preferredCurrency)}
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-300" htmlFor="balanceAmount">
+                  Target balance
+                </label>
+                <Input
+                  id="balanceAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={balanceAmount}
+                  onChange={(e) => setBalanceAmount(e.target.value)}
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button type="button" onClick={handleSetBalance} loading={isPendingBalance} className="flex-1">
+                  Set balance
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowBalanceForm(false)
+                    setBalanceAmount('')
+                    setBalanceFeedback(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+            {balanceFeedback && (
+              <p
+                role="status"
+                className={cn('text-xs', balanceFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+              >
+                {balanceFeedback.message}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <section className="space-y-6">
         {activeTab === 'overview' && (
           <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="space-y-6">
@@ -1186,69 +1247,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </CardContent>
               </Card>
             </div>
-
-            {showBalanceForm && (
-              <Card className="border-white/15 bg-white/10">
-                <CardHeader className="gap-1">
-                  <CardTitle className="text-lg font-semibold text-white">Set current balance</CardTitle>
-                  <p className="text-sm text-slate-300">
-                    Enter your actual current balance. We&apos;ll create an adjustment transaction to match it.
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
-                      <span>Current net this month</span>
-                      <span className="text-sm font-semibold text-white">
-                        {formatCurrency(
-                          data.stats.find((s) => s.label === 'Actual net')?.amount ?? 0,
-                          preferredCurrency,
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300" htmlFor="balanceAmount">
-                        Target balance
-                      </label>
-                      <Input
-                        id="balanceAmount"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={balanceAmount}
-                        onChange={(e) => setBalanceAmount(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <Button type="button" onClick={handleSetBalance} loading={isPendingBalance} className="flex-1">
-                        Set balance
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setShowBalanceForm(false)
-                          setBalanceAmount('')
-                          setBalanceFeedback(null)
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                  {balanceFeedback && (
-                    <p
-                      role="status"
-                      className={cn('text-xs', balanceFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
-                    >
-                      {balanceFeedback.message}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
 
             {highlightedBudgets.length > 0 && (
               <Card className="border-white/15 bg-white/10">
