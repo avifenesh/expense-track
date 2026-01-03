@@ -1004,107 +1004,64 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           </div>
         </div>
 
-        <div className="relative z-10 mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur">
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-9 w-9 rounded-full text-white/90 transition hover:bg-white/20"
-              onClick={() => handleMonthChange(-1)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 px-3 text-sm font-medium text-white">
-              <CalendarRange className="h-4 w-4" />
-              {formatMonthLabel(monthKey)}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-9 w-9 rounded-full text-white/90 transition hover:bg-white/20"
-              onClick={() => handleMonthChange(1)}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-col items-stretch gap-3 text-xs sm:flex-row sm:items-center">
-            {data.exchangeRateLastUpdate && (
-              <div className="flex flex-col items-start sm:items-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full px-4 py-2 text-sm font-medium text-white/80"
-                  onClick={handleRefreshRates}
-                  loading={isPendingRates}
-                  title="Refresh exchange rates from Frankfurter API"
-                >
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Update rates
-                </Button>
-                <span className="mt-1 text-xs text-slate-400">
-                  Last updated:{' '}
-                  {new Date(data.exchangeRateLastUpdate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+        {/* Compact stat cards at the bottom of header */}
+        <div className="relative z-10 mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {data.stats.map((stat) => {
+            const variantKey = stat.variant ?? 'neutral'
+            const styles = STAT_VARIANT_STYLES[variantKey]
+            const Icon = resolveStatIcon(stat.label)
+            return (
+              <div
+                key={stat.label}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition hover:bg-white/10',
+                  styles.border,
+                )}
+              >
+                <span className={cn('inline-flex shrink-0 items-center justify-center rounded-lg p-1.5', styles.chip)}>
+                  <Icon className={cn('h-3.5 w-3.5', styles.icon)} />
                 </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[10px] font-medium uppercase tracking-wide text-slate-300">
+                    {stat.label}
+                  </p>
+                  <p className="truncate text-sm font-semibold text-white">
+                    {formatCurrency(stat.amount, preferredCurrency)}
+                  </p>
+                </div>
+                <InfoTooltip
+                  description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
+                  label={`Explain ${stat.label}`}
+                  placement="left"
+                />
               </div>
-            )}
+            )
+          })}
+        </div>
+
+        {/* Exchange rate refresh - compact */}
+        {data.exchangeRateLastUpdate && (
+          <div className="relative z-10 mt-3 flex items-center justify-end gap-2 text-xs text-slate-400">
+            <span>
+              Rates:{' '}
+              {new Date(data.exchangeRateLastUpdate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })}
+            </span>
             <Button
               type="button"
-              variant="outline"
-              className="rounded-full px-4 py-2 text-sm font-medium text-white/80"
-              onClick={handleLogout}
-              loading={isPendingLogout}
+              variant="ghost"
+              className="h-6 px-2 text-xs text-slate-300 hover:bg-white/10"
+              onClick={handleRefreshRates}
+              loading={isPendingRates}
+              title="Refresh exchange rates"
             >
-              Sign out
+              <RefreshCcw className="h-3 w-3" />
             </Button>
           </div>
-        </div>
+        )}
       </header>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {data.stats.map((stat) => {
-          const variantKey = stat.variant ?? 'neutral'
-          const styles = STAT_VARIANT_STYLES[variantKey]
-          const Icon = resolveStatIcon(stat.label)
-          return (
-            <Card
-              key={stat.label}
-              className={cn('border-white/20 bg-white/10 transition hover:-translate-y-1', styles.border)}
-            >
-              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 text-slate-300">
-                <div className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-300">{stat.label}</span>
-                  {stat.helper && <p className="text-xs text-slate-400">{stat.helper}</p>}
-                </div>
-                <div className="flex items-start gap-2">
-                  <InfoTooltip
-                    description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
-                    label={`Explain ${stat.label}`}
-                    placement="left"
-                  />
-                  <span
-                    className={cn(
-                      'inline-flex items-center justify-center rounded-full p-2 backdrop-blur',
-                      styles.chip,
-                    )}
-                  >
-                    <Icon className={cn('h-4 w-4', styles.icon)} />
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-semibold tracking-tight text-white">
-                  {formatCurrency(stat.amount, preferredCurrency)}
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </section>
 
       <section className="space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
