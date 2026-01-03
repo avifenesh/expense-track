@@ -890,73 +890,75 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   }, [filteredTransactions, monthKey])
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 lg:gap-6 lg:px-6">
-      {/* Compact top bar with quick actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 w-8 rounded-full text-white/90 transition hover:bg-white/20"
-            onClick={() => handleMonthChange(-1)}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2 px-2 text-sm font-medium text-white">
-            <CalendarRange className="h-4 w-4" />
-            {formatMonthLabel(monthKey)}
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 w-8 rounded-full text-white/90 transition hover:bg-white/20"
-            onClick={() => handleMonthChange(1)}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Tab navigation */}
-        <div className="flex items-center gap-1 overflow-x-auto">
-          {TABS.map(({ value, label, icon: Icon }) => (
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-20 lg:gap-6 lg:px-6 lg:pt-24">
+      {/* Floating top bar */}
+      <div className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-slate-900/95 px-4 py-3 backdrop-blur-md lg:px-6 lg:py-4">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 backdrop-blur">
             <Button
-              key={value}
               type="button"
               variant="ghost"
-              className={cn(
-                'h-8 gap-1.5 rounded-full px-3 text-xs font-medium transition',
-                activeTab === value ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white',
-              )}
-              onClick={() => setActiveTab(value)}
-              title={label}
+              className="h-9 w-9 rounded-full text-white/90 transition hover:bg-white/20"
+              onClick={() => handleMonthChange(-1)}
             >
-              <Icon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{label}</span>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-          ))}
-          <div className="mx-1 h-4 w-px bg-white/20" />
+            <div className="flex items-center gap-2 px-2 text-sm font-medium text-white">
+              <CalendarRange className="h-4 w-4" />
+              {formatMonthLabel(monthKey)}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 w-9 rounded-full text-white/90 transition hover:bg-white/20"
+              onClick={() => handleMonthChange(1)}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Tab navigation */}
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {TABS.map(({ value, label, icon: Icon }) => (
+              <Button
+                key={value}
+                type="button"
+                variant="ghost"
+                className={cn(
+                  'h-9 gap-2 rounded-full px-4 text-sm font-medium transition',
+                  activeTab === value ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white',
+                )}
+                onClick={() => setActiveTab(value)}
+                title={label}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </Button>
+            ))}
+            <div className="mx-1.5 h-5 w-px bg-white/20" />
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 gap-2 rounded-full px-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"
+              onClick={() => setShowBalanceForm((prev) => !prev)}
+              title="Set balance"
+            >
+              <Scale className="h-4 w-4" />
+              <span className="hidden lg:inline">Balance</span>
+            </Button>
+          </div>
+
+          {/* Right side actions */}
           <Button
             type="button"
             variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
-            onClick={() => setShowBalanceForm((prev) => !prev)}
-            title="Set balance"
+            className="h-9 rounded-full px-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={handleLogout}
+            loading={isPendingLogout}
           >
-            <Scale className="h-3.5 w-3.5" />
-            <span className="hidden lg:inline">Balance</span>
+            Sign out
           </Button>
         </div>
-
-        {/* Right side actions */}
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
-          onClick={handleLogout}
-          loading={isPendingLogout}
-        >
-          Sign out
-        </Button>
       </div>
 
       <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white shadow-xl lg:p-6">
