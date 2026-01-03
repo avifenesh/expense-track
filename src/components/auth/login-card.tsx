@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginAction, requestPasswordResetAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/utils/cn'
 
@@ -18,6 +18,8 @@ export function LoginCard() {
   const [errors, setErrors] = useState<FormErrors | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  const isRecovery = mode === 'reset'
 
   const handleLoginSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
