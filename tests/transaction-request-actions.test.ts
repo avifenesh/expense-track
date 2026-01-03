@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Mock returns require any casts */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   createTransactionRequestAction,

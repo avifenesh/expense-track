@@ -38,26 +38,23 @@ function createTitleFromMessage(message: Message | undefined) {
 }
 
 export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidgetProps) {
-  const storageKey = useMemo(
-    () => `balance-ai-sessions::${accountId}::${monthKey}`,
-    [accountId, monthKey],
-  )
-  const activeSessionKey = useMemo(
-    () => `balance-ai-active-session::${accountId}::${monthKey}`,
-    [accountId, monthKey],
-  )
+  const storageKey = useMemo(() => `balance-ai-sessions::${accountId}::${monthKey}`, [accountId, monthKey])
+  const activeSessionKey = useMemo(() => `balance-ai-active-session::${accountId}::${monthKey}`, [accountId, monthKey])
 
   const [isOpen, setIsOpen] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 
-  const createSession = useCallback((title: string, isCustomTitle = false): ChatSession => ({
-    id: crypto.randomUUID?.() ?? `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    title,
-    messages: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isCustomTitle,
-  }), [])
+  const createSession = useCallback(
+    (title: string, isCustomTitle = false): ChatSession => ({
+      id: crypto.randomUUID?.() ?? `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isCustomTitle,
+    }),
+    [],
+  )
 
   const loadSessions = useCallback((): ChatSession[] => {
     if (typeof window === 'undefined') {
@@ -301,7 +298,9 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         let errText = ''
         try {
           errText = await response.text()
-        } catch {}
+        } catch {
+          // Ignore - errText stays empty
+        }
         console.error('[ChatWidget] /api/chat HTTP', response.status, errText)
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
@@ -350,9 +349,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
               const latest = assistantContent
               applyMessagesUpdate(sessionId, (existing) =>
                 existing.map((message) =>
-                  message.id === assistantMessage.id
-                    ? { ...message, content: latest }
-                    : message,
+                  message.id === assistantMessage.id ? { ...message, content: latest } : message,
                 ),
               )
               handledStructured = true
@@ -366,7 +363,9 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         if (!handledStructured && /Too many tokens|ThrottlingException/i.test(diag)) {
           try {
             reader.cancel()
-          } catch {}
+          } catch {
+            // Ignore cancel errors
+          }
 
           const retryResp = await fetch('/api/chat', {
             method: 'POST',
@@ -401,7 +400,9 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
                       ),
                     )
                   }
-                } catch {}
+                } catch {
+                  // Ignore JSON parse errors for malformed stream lines
+                }
               }
             }
           }
@@ -414,16 +415,12 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
           assistantContent += diag
           const latest = assistantContent
           applyMessagesUpdate(sessionId, (existing) =>
-            existing.map((message) =>
-              message.id === assistantMessage.id
-                ? { ...message, content: latest }
-                : message,
-            ),
+            existing.map((message) => (message.id === assistantMessage.id ? { ...message, content: latest } : message)),
           )
         }
       }
-    } catch (error: any) {
-      if (error?.name === 'AbortError') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
           {
@@ -452,7 +449,9 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
   const handleStop = useCallback(() => {
     try {
       abortRef.current?.abort()
-    } catch {}
+    } catch {
+      // Ignore abort errors
+    }
   }, [])
 
   if (!isOpen) {
@@ -559,7 +558,9 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
               </div>
               <div className="space-y-1">
                 <p className="text-base font-medium text-white">Ask anything about this workspace.</p>
-                <p className="text-xs text-slate-400">Balance AI can summarize trends, explain variances, and draft next steps.</p>
+                <p className="text-xs text-slate-400">
+                  Balance AI can summarize trends, explain variances, and draft next steps.
+                </p>
               </div>
               <div className="flex flex-wrap justify-center gap-2 text-xs">
                 {quickPrompts.map((prompt) => (

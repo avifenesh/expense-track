@@ -1,5 +1,6 @@
 'use server'
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for some models */
 import { Prisma, TransactionType, Currency, RequestStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'

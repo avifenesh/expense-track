@@ -1,4 +1,5 @@
 // Finance module - handles transactions, budgets, holdings, and dashboard data
+/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for Holding model */
 import { Prisma, TransactionType, Currency, AccountType } from '@prisma/client'
 import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'

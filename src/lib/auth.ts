@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Proxy handlers require any for dynamic property access */
 import { Currency } from '@prisma/client'
 
 export type AuthUser = {
