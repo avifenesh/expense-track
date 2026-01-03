@@ -93,7 +93,6 @@ export const tools: Record<string, ToolConfig> = {
           category: t.category.name,
           account: t.account.name,
           description: t.description,
-          isMutual: t.isMutual,
         })),
       };
     },
@@ -184,7 +183,6 @@ export const tools: Record<string, ToolConfig> = {
         category: t.category?.name,
         account: t.account?.name,
         description: t.description,
-        isMutual: t.isMutual,
       }));
     },
   }),
@@ -199,10 +197,6 @@ export const tools: Record<string, ToolConfig> = {
       currency: currencyEnum.optional().describe("Currency code"),
       date: z.string().optional().describe("ISO date string (YYYY-MM-DD)"),
       description: z.string().optional().describe("Optional description"),
-      isMutual: z
-        .boolean()
-        .optional()
-        .describe("Whether this is a mutual expense"),
       isRecurring: z
         .boolean()
         .optional()
@@ -220,7 +214,6 @@ export const tools: Record<string, ToolConfig> = {
       currency?: "USD" | "EUR" | "ILS";
       date?: string;
       description?: string;
-      isMutual?: boolean;
       isRecurring?: boolean;
       recurringTemplateId?: string;
     }) => {
@@ -232,7 +225,6 @@ export const tools: Record<string, ToolConfig> = {
         currency: (args.currency as Currency) ?? undefined,
         date: args.date ? new Date(args.date) : new Date(),
         description: args.description,
-        isMutual: args.isMutual ?? false,
         isRecurring: args.isRecurring ?? false,
         recurringTemplateId: args.recurringTemplateId,
       });
@@ -251,7 +243,6 @@ export const tools: Record<string, ToolConfig> = {
       currency: currencyEnum,
       date: z.string().describe("ISO date string (YYYY-MM-DD)"),
       description: z.string().optional(),
-      isMutual: z.boolean().optional(),
       isRecurring: z.boolean().optional(),
     }),
     execute: async (args: {
@@ -263,7 +254,6 @@ export const tools: Record<string, ToolConfig> = {
       currency: "USD" | "EUR" | "ILS";
       date: string;
       description?: string;
-      isMutual?: boolean;
       isRecurring?: boolean;
     }) => {
       return updateTransactionAction({
@@ -275,7 +265,6 @@ export const tools: Record<string, ToolConfig> = {
         currency: args.currency as Currency,
         date: new Date(args.date),
         description: args.description,
-        isMutual: args.isMutual ?? false,
         isRecurring: args.isRecurring ?? false,
       });
     },
@@ -599,34 +588,6 @@ export const tools: Record<string, ToolConfig> = {
     },
   }),
 
-  mutual_settlement_summary: createTool({
-    description: "Summarize who owes whom based on mutual expenses this month.",
-    parameters: z.object({
-      accountId: z
-        .string()
-        .optional()
-        .describe("Account ID (optional, for scoping other data)"),
-      monthKey: z.string().describe("YYYY-MM"),
-      preferredCurrency: currencyEnum.optional(),
-    }),
-    execute: async ({
-      accountId,
-      monthKey,
-      preferredCurrency,
-    }: {
-      accountId?: string;
-      monthKey: string;
-      preferredCurrency?: "USD" | "EUR" | "ILS";
-    }) => {
-      const data = await getDashboardData({
-        accountId,
-        monthKey,
-        preferredCurrency: preferredCurrency as Currency | undefined,
-      });
-      return data.mutualSummary ?? { status: "settled", amount: 0 };
-    },
-  }),
-
   get_holdings: createTool({
     description: "List holdings with market value, P/L, and price age.",
     parameters: z.object({
@@ -863,7 +824,6 @@ Guidelines:
 Available accounts:
 - Avi (personal account)
 - Serena (personal account)
-- Joint (shared account)
 
 When users ask questions, use the appropriate tools to fetch real data rather than guessing.
 If you need to create or modify financial data, ask for confirmation first before using the tool.`;

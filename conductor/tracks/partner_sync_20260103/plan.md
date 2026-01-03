@@ -32,8 +32,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Dashboard Update' (Protocol in workflow.md) (c1b4640)
 
 ## Phase 3: Cleanup & Polish
-- [ ] Task: Remove legacy Joint account code
-    - [ ] Sub-task: Search and remove dead code related to "Joint"
+- [x] Task: Remove legacy Joint account code (425e7ea+)
+    - [x] Sub-task: Search and remove dead code related to "Joint"
 - [ ] Task: Final E2E Verification
     - [ ] Sub-task: Run full regression suite
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Cleanup & Polish' (Protocol in workflow.md)

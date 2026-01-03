@@ -55,7 +55,7 @@ ${recentTransactions.length > 0 ? recentTransactions.map(t => {
   const acct = t?.account?.name ?? 'Unknown Account'
   const amt = Number(t?.convertedAmount ?? 0)
   const desc = (t?.description ?? '').toString().trim()
-  return `${dateStr}: ${cat} - ${currencySymbol}${amt.toFixed(2)} (${acct})${t?.isMutual ? ' [Mutual]' : ''}${desc ? ` — ${desc.slice(0, 120)}` : ''}`
+  return `${dateStr}: ${cat} - ${currencySymbol}${amt.toFixed(2)} (${acct})${desc ? ` — ${desc.slice(0, 120)}` : ''}`
 }).join('\n') : 'No transactions this month'}
 
 === RECURRING TEMPLATES ===
@@ -76,15 +76,6 @@ ${holdings.length > 0 ? holdings.map(h => {
   const glp = Number(h.gainLossPercent ?? (price ? (gl / (mv - gl)) * 100 : 0))
   return `${h.symbol}: ${Number(h.quantity ?? 0)} shares @ ${currencySymbol}${price?.toFixed(2) ?? 'N/A'} = ${currencySymbol}${mv.toFixed(2)} (${gl >= 0 ? '+' : ''}${glp.toFixed(2)}%)`
 }).join('\n') : 'No holdings'}
-
-=== MUTUAL EXPENSES ===
-${data.mutualSummary ?
-  data.mutualSummary.status === 'settled'
-    ? 'Mutual expenses are balanced - no settlement needed'
-    : `${data.mutualSummary.status === 'partner-owes-self'
-        ? `${data.mutualSummary.partnerAccountName ?? 'Partner'} owes ${data.mutualSummary.selfAccountName ?? 'You'}`
-        : `${data.mutualSummary.selfAccountName ?? 'You'} owes ${data.mutualSummary.partnerAccountName ?? 'Partner'}`} ${currencySymbol}${Number(data.mutualSummary.amount ?? 0).toFixed(2)}`
-  : 'No mutual expenses this month'}
 
 === AVAILABLE CATEGORIES ===
 Income: ${incomeCategories.map(c => `${c.name} (${c.id})`).join(', ')}
