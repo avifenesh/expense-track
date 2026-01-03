@@ -276,7 +276,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [isPendingBudget, startBudget] = useTransition()
   const [isPendingRecurring, startRecurring] = useTransition()
   const [isPendingCategory, startCategory] = useTransition()
-  const [isPendingAccount, startPersistAccount] = useTransition()
+  const [_isPendingAccount, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
   const [isPendingRates, startRates] = useTransition()
 
@@ -918,10 +918,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   {formatRelativeAmount(netDelta, preferredCurrency)}
                 </p>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-200/70">Accounts tracked</p>
-                <p className="text-lg font-semibold text-white">{data.accounts.length}</p>
-              </div>
             </div>
           </div>
         </div>
@@ -950,26 +946,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             </Button>
           </div>
           <div className="flex flex-col items-stretch gap-3 text-xs sm:flex-row sm:items-center">
-            <div className="flex flex-1 flex-col text-xs">
-              <Select
-                className="min-w-[220px] rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner shadow-slate-950/20 focus:border-sky-400"
-                value={activeAccount || accountsOptions[0]?.value || ''}
-                onChange={(event) => handleAccountSelect(event.target.value)}
-                options={accountsOptions}
-                aria-label="Filter by account"
-                disabled={accountsOptions.length === 0 || isPendingAccount}
-              />
-              {accountFeedback && (
-                <span
-                  className={cn(
-                    'mt-2 text-right',
-                    accountFeedback.type === 'error' ? 'text-rose-300' : 'text-emerald-300',
-                  )}
-                >
-                  {accountFeedback.message}
-                </span>
-              )}
-            </div>
             {data.exchangeRateLastUpdate && (
               <div className="flex flex-col items-start sm:items-end">
                 <Button
