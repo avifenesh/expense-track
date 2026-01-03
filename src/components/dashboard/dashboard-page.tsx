@@ -15,7 +15,6 @@ import {
   Gauge,
   Layers,
   PiggyBank,
-  Plus,
   RefreshCcw,
   Repeat,
   Scale,
@@ -890,15 +889,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     URL.revokeObjectURL(url)
   }, [filteredTransactions, monthKey])
 
-  const handleNavigateToTab = (tab: TabValue, anchor?: string) => {
-    setActiveTab(tab)
-    if (anchor) {
-      requestAnimationFrame(() => {
-        document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
-    }
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 lg:gap-6 lg:px-6">
       {/* Compact top bar with quick actions */}
@@ -926,42 +916,29 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           </Button>
         </div>
 
-        {/* Quick action buttons */}
-        <div className="flex items-center gap-1">
+        {/* Tab navigation */}
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {TABS.map(({ value, label, icon: Icon }) => (
+            <Button
+              key={value}
+              type="button"
+              variant="ghost"
+              className={cn(
+                'h-8 gap-1.5 rounded-full px-3 text-xs font-medium transition',
+                activeTab === value ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white',
+              )}
+              onClick={() => setActiveTab(value)}
+              title={label}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </Button>
+          ))}
+          <div className="mx-1 h-4 w-px bg-white/20" />
           <Button
             type="button"
             variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
-            onClick={() => handleNavigateToTab('transactions', 'transaction-form')}
-            title="Log a transaction"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Transaction</span>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
-            onClick={() => handleNavigateToTab('budgets', 'budget-form')}
-            title="Update a budget"
-          >
-            <FileSpreadsheet className="h-3.5 w-3.5" />
-            <span className="hidden lg:inline">Budget</span>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
-            onClick={() => handleNavigateToTab('recurring', 'recurring-form')}
-            title="Manage recurring"
-          >
-            <Repeat className="h-3.5 w-3.5" />
-            <span className="hidden lg:inline">Recurring</span>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
+            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
             onClick={() => setShowBalanceForm((prev) => !prev)}
             title="Set balance"
           >
@@ -1115,38 +1092,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       </header>
 
       <section className="space-y-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-white">Dashboard</h2>
-          </div>
-          <nav
-            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
-            role="tablist"
-            aria-label="Dashboard sections"
-          >
-            {TABS.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                id={`tab-${value}`}
-                role="tab"
-                type="button"
-                aria-selected={activeTab === value}
-                aria-controls={`panel-${value}`}
-                onClick={() => setActiveTab(value)}
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900',
-                  activeTab === value
-                    ? 'border-white/40 bg-white/20 text-white shadow-lg'
-                    : 'border-white/15 bg-white/5 text-slate-200 hover:border-white/25 hover:bg-white/10',
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-
         {activeTab === 'overview' && (
           <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="space-y-6">
             {/* Partner requests shown prominently at top */}
