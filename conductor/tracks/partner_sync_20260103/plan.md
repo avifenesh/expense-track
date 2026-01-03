@@ -25,10 +25,10 @@
     - [x] Sub-task: Create `RequestList` component
     - [x] Sub-task: Implement Approve/Reject UI interactions
     - [x] Sub-task: Write component tests
-- [ ] Task: Update Transaction Creation Form
-    - [ ] Sub-task: Add "Request from Partner" toggle
-    - [ ] Sub-task: Wire up form to new `createTransactionRequest` action
-    - [ ] Sub-task: Write E2E test for full request flow
+- [x] Task: Update Transaction Creation Form (b8f92f2+)
+    - [x] Sub-task: Add "Request from Partner" toggle
+    - [x] Sub-task: Wire up form to new `createTransactionRequestAction` action
+    - [x] Sub-task: Write E2E test for full request flow
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Dashboard Update' (Protocol in workflow.md)
 
 ## Phase 3: Cleanup & Polish

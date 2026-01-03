@@ -25,6 +25,7 @@ import {
   applyRecurringTemplatesAction,
   createCategoryAction,
   createTransactionAction,
+  createTransactionRequestAction,
   updateTransactionAction,
   deleteBudgetAction,
   deleteTransactionAction,
@@ -234,6 +235,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     date: string
     description: string
     isRecurring: boolean
+    isRequest: boolean
   }>(() => {
     const loggableAccounts = data.accounts
     const initialLoggableAccountId =
@@ -248,6 +250,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
+      isRequest: false,
     }
   })
   const [editingTransaction, setEditingTransaction] = useState<DashboardTransaction | null>(null)
@@ -440,6 +443,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
+      isRequest: false,
     })
     setEditingTransaction(null)
   }, [
@@ -482,6 +486,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         date: isoDate,
         description: transaction.description ?? '',
         isRecurring: transaction.isRecurring,
+        isRequest: false,
       })
       setTransactionFeedback(null)
     },
@@ -625,21 +630,37 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
     const description = transactionFormState.description.trim()
 
-    const payload = {
-      accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
-      categoryId: transactionFormState.categoryId,
-      type: transactionFormState.type,
-      amount: parsedAmount,
-      currency: transactionFormState.currency,
-      date: dateInput,
-      description: description.length > 0 ? description : undefined,
-      isRecurring: transactionFormState.isRecurring,
-    }
-
     startTransaction(async () => {
-      const result = editingTransaction
-        ? await updateTransactionAction({ id: editingTransaction.id, ...payload })
-        : await createTransactionAction(payload)
+      let result;
+      if (transactionFormState.isRequest && !editingTransaction) {
+        const partnerAccount = data.accounts.find(acc => acc.type === AccountType.PARTNER);
+        if (!partnerAccount) {
+          setTransactionFeedback({ type: 'error', message: 'Partner account not found.' });
+          return;
+        }
+        result = await createTransactionRequestAction({
+          toId: partnerAccount.id,
+          categoryId: transactionFormState.categoryId,
+          amount: parsedAmount,
+          currency: transactionFormState.currency,
+          date: dateInput,
+          description: description.length > 0 ? description : undefined,
+        });
+      } else {
+        const payload = {
+          accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
+          categoryId: transactionFormState.categoryId,
+          type: transactionFormState.type,
+          amount: parsedAmount,
+          currency: transactionFormState.currency,
+          date: dateInput,
+          description: description.length > 0 ? description : undefined,
+          isRecurring: transactionFormState.isRecurring,
+        }
+        result = editingTransaction
+          ? await updateTransactionAction({ id: editingTransaction.id, ...payload })
+          : await createTransactionAction(payload)
+      }
 
       if (result?.error) {
         setTransactionFeedback({
@@ -653,7 +674,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
       setTransactionFeedback({
         type: 'success',
-        message: editingTransaction ? 'Transaction updated.' : 'Transaction saved.',
+        message: transactionFormState.isRequest ? 'Request sent to partner.' : (editingTransaction ? 'Transaction updated.' : 'Transaction saved.'),
       })
       resetTransactionForm()
       router.refresh()
@@ -1579,6 +1600,26 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                             Permanent (recurring) transaction
                           </label>
                         </div>
+                        {transactionFormState.type === TransactionType.EXPENSE && !editingTransaction && (
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="isRequest"
+                              name="isRequest"
+                              type="checkbox"
+                              className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40"
+                              checked={transactionFormState.isRequest}
+                              onChange={(event) =>
+                                setTransactionFormState((prev) => ({
+                                  ...prev,
+                                  isRequest: event.target.checked,
+                                }))
+                              }
+                            />
+                            <label htmlFor="isRequest" className="text-xs text-slate-300">
+                              Charge partner (creates a request for approval)
+                            </label>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
