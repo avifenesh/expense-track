@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { DashboardPage } from '@/components/dashboard/dashboard-page'
+import { DashboardSkeleton } from '@/components/ui/skeleton'
 import { getAccounts, getDashboardData } from '@/lib/finance'
 import { getMonthKey } from '@/utils/date'
 import { getSession, updateSessionAccount } from '@/lib/auth-server'
@@ -90,7 +91,7 @@ export default async function Page({ searchParams }: PageProps) {
   }
 
   return (
-    <Suspense fallback={<div className="p-8 text-sm text-gray-500">Loading dashboard…</div>}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardLoader
         monthKey={monthKey}
         accountId={accountId}

@@ -8,13 +8,13 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarRange,
-  ChevronDown,
   CreditCard,
+  Download,
   FileSpreadsheet,
   Gauge,
   Layers,
-  MoreHorizontal,
   PiggyBank,
+  PlusCircle,
   RefreshCcw,
   Repeat,
   Sparkles,
@@ -151,7 +151,7 @@ function HoldingsFallback() {
   )
 }
 
-const PRIMARY_TABS: Array<{
+const TABS: Array<{
   value: TabValue
   label: string
   description: string
@@ -160,20 +160,10 @@ const PRIMARY_TABS: Array<{
   { value: 'overview', label: 'Overview', description: 'Your spending at a glance.', icon: Gauge },
   { value: 'transactions', label: 'Transactions', description: 'Log and view expenses.', icon: CreditCard },
   { value: 'budgets', label: 'Budgets', description: 'Set monthly spending limits.', icon: FileSpreadsheet },
-]
-
-const MORE_TABS: Array<{
-  value: TabValue
-  label: string
-  description: string
-  icon: React.ComponentType<{ className?: string }>
-}> = [
   { value: 'recurring', label: 'Auto-repeat', description: 'Recurring payments and income.', icon: Repeat },
   { value: 'categories', label: 'Labels', description: 'Organize your spending categories.', icon: Tags },
   { value: 'holdings', label: 'Investments', description: 'Track stocks and ETFs.', icon: TrendingUp },
 ]
-
-const TABS = [...PRIMARY_TABS, ...MORE_TABS]
 
 const STAT_VARIANT_STYLES: Record<NonNullable<DashboardData['stats'][number]['variant']>, {
   border: string
@@ -272,7 +262,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [categoryFeedback, setCategoryFeedback] = useState<Feedback | null>(null)
   const [accountFeedback, setAccountFeedback] = useState<Feedback | null>(null)
   const [activeTab, setActiveTab] = useState<TabValue>('overview')
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(initialAccountId)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
   const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
@@ -848,6 +837,32 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const netDeltaVariant = netDelta >= 0 ? 'text-emerald-300' : 'text-rose-300'
   const activeTabMeta = TABS.find((tab) => tab.value === activeTab)
 
+  const handleExportCSV = useCallback(() => {
+    const headers = ['Date', 'Type', 'Category', 'Account', 'Amount', 'Currency', 'Description']
+    const rows = filteredTransactions.map((t) => [
+      new Date(t.date).toISOString().slice(0, 10),
+      t.type,
+      t.category.name,
+      t.account.name,
+      t.type === TransactionType.EXPENSE ? -t.amount : t.amount,
+      t.currency,
+      (t.description || '').replace(/"/g, '""'),
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `transactions-${monthKey}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }, [filteredTransactions, monthKey])
+
   const handleNavigateToTab = (tab: TabValue, anchor?: string) => {
     setActiveTab(tab)
     if (anchor) {
@@ -1033,8 +1048,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-white">Dashboard</h2>
           </div>
-          <nav className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Dashboard sections">
-            {PRIMARY_TABS.map(({ value, label, icon: Icon }) => (
+          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0" role="tablist" aria-label="Dashboard sections">
+            {TABS.map(({ value, label, icon: Icon }) => (
               <button
                 key={value}
                 id={`tab-${value}`}
@@ -1044,7 +1059,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 aria-controls={`panel-${value}`}
                 onClick={() => setActiveTab(value)}
                 className={cn(
-                  'group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900',
+                  'inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900',
                   activeTab === value
                     ? 'border-white/40 bg-white/20 text-white shadow-lg'
                     : 'border-white/15 bg-white/5 text-slate-200 hover:border-white/25 hover:bg-white/10',
@@ -1054,47 +1069,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 <span>{label}</span>
               </button>
             ))}
-            {/* More dropdown for less-used tabs */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                onBlur={() => setTimeout(() => setMoreMenuOpen(false), 150)}
-                className={cn(
-                  'group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-900',
-                  MORE_TABS.some(t => t.value === activeTab)
-                    ? 'border-white/40 bg-white/20 text-white shadow-lg'
-                    : 'border-white/15 bg-white/5 text-slate-200 hover:border-white/25 hover:bg-white/10',
-                )}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                <span>More</span>
-                <ChevronDown className={cn('h-3 w-3 transition-transform', moreMenuOpen && 'rotate-180')} />
-              </button>
-              {moreMenuOpen && (
-                <div className="absolute top-full left-0 z-50 mt-2 w-48 rounded-xl border border-white/15 bg-slate-900/95 p-1 shadow-xl backdrop-blur-sm">
-                  {MORE_TABS.map(({ value, label, icon: Icon }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => {
-                        setActiveTab(value)
-                        setMoreMenuOpen(false)
-                      }}
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
-                        activeTab === value
-                          ? 'bg-white/20 text-white'
-                          : 'text-slate-300 hover:bg-white/10 hover:text-white',
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </nav>
         </div>
         {activeTabMeta && <p className="text-sm text-slate-400">{activeTabMeta.description}</p>}
@@ -1374,11 +1348,20 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </div>
                 <div className="space-y-3">
                   {filteredBudgets.length === 0 && (
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                      <div className="rounded-full bg-white/10 p-3">
+                        <FileSpreadsheet className="h-6 w-6 text-slate-300" />
+                      </div>
                       {data.budgets.length === 0 ? (
-                        <>No budgets yet for this month. Use the form below to set your first plan.</>
+                        <>
+                          <p className="text-sm font-medium text-white">No budgets yet</p>
+                          <p className="text-xs text-slate-400">Set spending limits to stay on track. Scroll down to add your first budget.</p>
+                        </>
                       ) : (
-                        <>No budgets match the current filters.</>
+                        <>
+                          <p className="text-sm font-medium text-white">No matching budgets</p>
+                          <p className="text-xs text-slate-400">Try adjusting the filters above.</p>
+                        </>
                       )}
                     </div>
                   )}
@@ -1707,17 +1690,32 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
               </Card>
 
               <Card className="border-white/15 bg-white/10">
-                <CardHeader className="gap-1">
-                  <CardTitle
-                    className="text-lg font-semibold text-white"
-                                      helpText="Review the newest transactions, apply filters, and jump into edits when something looks off."
-                                    >
-                                      Recent activity
-                                    </CardTitle>
-                                    <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
-                                  </CardHeader>
-                                  <CardContent className="space-y-3">
-                                    <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">                    <div className="space-y-2">
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <CardTitle
+                      className="text-lg font-semibold text-white"
+                      helpText="Review the newest transactions, apply filters, and jump into edits when something looks off."
+                    >
+                      Recent activity
+                    </CardTitle>
+                    <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
+                  </div>
+                  {filteredTransactions.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="shrink-0 gap-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white"
+                      onClick={handleExportCSV}
+                      title="Download transactions as CSV"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Export</span>
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+                    <div className="space-y-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="transaction-filter-type">
                         Type filter
                       </label>
@@ -1769,7 +1767,22 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     )}
                   </div>
                   {filteredTransactions.length === 0 && (
-                    <p className="text-sm text-slate-300">No transactions match the current filters.</p>
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                      <div className="rounded-full bg-white/10 p-3">
+                        <CreditCard className="h-6 w-6 text-slate-300" />
+                      </div>
+                      {data.transactions.length === 0 ? (
+                        <>
+                          <p className="text-sm font-medium text-white">No transactions yet</p>
+                          <p className="text-xs text-slate-400">Log your first expense or income using the form on the left.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-white">No matching transactions</p>
+                          <p className="text-xs text-slate-400">Try adjusting the filters or search term.</p>
+                        </>
+                      )}
+                    </div>
                   )}
                   {filteredTransactions.map((transaction) => {
                     const isCurrentlyEditing = editingTransaction?.id === transaction.id
@@ -1987,7 +2000,22 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
                   <div className="space-y-3">
                     {filteredRecurring.length === 0 && (
-                      <p className="text-sm text-slate-300">No recurring templates match the current filters.</p>
+                      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                        <div className="rounded-full bg-white/10 p-3">
+                          <Repeat className="h-6 w-6 text-slate-300" />
+                        </div>
+                        {data.recurringTemplates.length === 0 ? (
+                          <>
+                            <p className="text-sm font-medium text-white">No auto-repeat items</p>
+                            <p className="text-xs text-slate-400">Set up recurring income or expenses that repeat each month.</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-white">No matching templates</p>
+                            <p className="text-xs text-slate-400">Try adjusting the filters above.</p>
+                          </>
+                        )}
+                      </div>
                     )}
                     {activeRecurringTemplates.map((template) => (
                       <div
@@ -2210,7 +2238,22 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   </div>
                 </div>
                 {filteredCategoryList.length === 0 && (
-                  <p className="text-sm text-slate-300">No categories match the current filters.</p>
+                  <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                    <div className="rounded-full bg-white/10 p-3">
+                      <Tags className="h-6 w-6 text-slate-300" />
+                    </div>
+                    {data.categories.length === 0 ? (
+                      <>
+                        <p className="text-sm font-medium text-white">No labels yet</p>
+                        <p className="text-xs text-slate-400">Create labels to organize your spending and income.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-white">No matching labels</p>
+                        <p className="text-xs text-slate-400">Try adjusting the filters above.</p>
+                      </>
+                    )}
+                  </div>
                 )}
                 {filteredCategoryList.map((category) => (
                   <div
