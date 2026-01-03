@@ -7,6 +7,7 @@ import { TransactionType, Currency, AccountType } from '@prisma/client'
 import {
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   CalendarRange,
   CreditCard,
   Download,
@@ -14,6 +15,7 @@ import {
   Gauge,
   Layers,
   PiggyBank,
+  Plus,
   RefreshCcw,
   Repeat,
   Scale,
@@ -900,8 +902,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 lg:gap-6 lg:px-6">
-      {/* Compact top bar */}
-      <div className="flex items-center justify-between">
+      {/* Compact top bar with quick actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur">
           <Button
             type="button"
@@ -924,15 +926,72 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
-          onClick={handleLogout}
-          loading={isPendingLogout}
-        >
-          Sign out
-        </Button>
+
+        {/* Quick action buttons */}
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={() => handleNavigateToTab('transactions', 'transaction-form')}
+            title="Log a transaction"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Transaction</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={() => handleNavigateToTab('budgets', 'budget-form')}
+            title="Update a budget"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Budget</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={() => handleNavigateToTab('recurring', 'recurring-form')}
+            title="Manage recurring"
+          >
+            <Repeat className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Recurring</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={() => setShowBalanceForm((prev) => !prev)}
+            title="Set balance"
+          >
+            <Scale className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">Balance</span>
+          </Button>
+        </div>
+
+        {/* Right side actions */}
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 w-8 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            title="Scroll to top"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={handleLogout}
+            loading={isPendingLogout}
+          >
+            Sign out
+          </Button>
+        </div>
       </div>
 
       <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white shadow-xl lg:p-6">
@@ -1191,67 +1250,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </CardContent>
               </Card>
             </div>
-
-            <Card className="border-white/15 bg-white/10">
-              <CardHeader>
-                <CardTitle
-                  className="text-lg font-semibold text-white"
-                  helpText="Launches your most common finance workflows without leaving the dashboard."
-                >
-                  Quick actions
-                </CardTitle>
-                <p className="text-sm text-slate-300">Jump straight to the tools you use most frequently.</p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="justify-start gap-3"
-                    onClick={() => handleNavigateToTab('transactions', 'transaction-form')}
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    Log a transaction
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="justify-start gap-3"
-                    onClick={() => handleNavigateToTab('budgets', 'budget-form')}
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                    Update a budget
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="justify-start gap-3"
-                    onClick={() => handleNavigateToTab('recurring', 'recurring-form')}
-                  >
-                    <Repeat className="h-4 w-4" />
-                    Manage recurring plan
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="justify-start gap-3"
-                    onClick={() => handleNavigateToTab('categories', 'category-form')}
-                  >
-                    <Tags className="h-4 w-4" />
-                    Add a category
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="justify-start gap-3"
-                    onClick={() => setShowBalanceForm((prev) => !prev)}
-                  >
-                    <Scale className="h-4 w-4" />
-                    Set balance
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
             {showBalanceForm && (
               <Card className="border-white/15 bg-white/10">
