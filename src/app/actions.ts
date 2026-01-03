@@ -1055,3 +1055,98 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
     return { error: { general: ['Unable to refresh stock prices'] } }
   }
 }
+
+const setBalanceSchema = z.object({
+  accountId: z.string().min(1, 'Account is required'),
+  targetBalance: z.coerce.number(),
+  currency: z.nativeEnum(Currency).default(Currency.USD),
+  monthKey: z.string().min(7, 'Month key is required'),
+})
+
+export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) {
+  const parsed = setBalanceSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const { accountId, targetBalance, currency, monthKey } = parsed.data
+
+  const access = await ensureAccountAccess(accountId)
+  if ('error' in access) {
+    return access
+  }
+
+  const monthStart = getMonthStartFromKey(monthKey)
+
+  // Find or create "Balance Adjustment" category
+  let adjustmentCategory = await prisma.category.findFirst({
+    where: { name: 'Balance Adjustment' },
+  })
+
+  if (!adjustmentCategory) {
+    adjustmentCategory = await prisma.category.create({
+      data: {
+        name: 'Balance Adjustment',
+        type: TransactionType.INCOME,
+      },
+    })
+  }
+
+  // Calculate current net for this account in the current month
+  const transactions = await (prisma as any).transaction.findMany({
+    where: {
+      accountId,
+      month: monthStart,
+    },
+    select: {
+      type: true,
+      amount: true,
+    },
+  })
+
+  let currentIncome = 0
+  let currentExpense = 0
+
+  for (const t of transactions) {
+    const amount = typeof t.amount === 'object' ? Number(t.amount) : t.amount
+    if (t.type === TransactionType.INCOME) {
+      currentIncome += amount
+    } else {
+      currentExpense += amount
+    }
+  }
+
+  const currentNet = currentIncome - currentExpense
+  const adjustment = targetBalance - currentNet
+
+  // If no adjustment needed, return early
+  if (Math.abs(adjustment) < 0.01) {
+    return { success: true, adjustment: 0 }
+  }
+
+  // Create adjustment transaction
+  const transactionType = adjustment > 0 ? TransactionType.INCOME : TransactionType.EXPENSE
+  const transactionAmount = Math.abs(adjustment)
+
+  try {
+    await (prisma as any).transaction.create({
+      data: {
+        accountId,
+        categoryId: adjustmentCategory.id,
+        type: transactionType,
+        amount: new Prisma.Decimal(toDecimalString(transactionAmount)),
+        currency,
+        date: new Date(),
+        month: monthStart,
+        description: 'Balance adjustment',
+        isRecurring: false,
+      },
+    })
+  } catch (err) {
+    console.error('setBalanceAction', err)
+    return { error: { general: ['Unable to create balance adjustment'] } }
+  }
+
+  revalidatePath('/')
+  return { success: true, adjustment }
+}

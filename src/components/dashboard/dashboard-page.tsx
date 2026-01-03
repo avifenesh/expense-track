@@ -16,6 +16,7 @@ import {
   PiggyBank,
   RefreshCcw,
   Repeat,
+  Scale,
   Sparkles,
   Tags,
   TrendingUp,
@@ -36,6 +37,7 @@ import {
   upsertRecurringTemplateAction,
   persistActiveAccountAction,
   refreshExchangeRatesAction,
+  setBalanceAction,
 } from '@/app/actions'
 import { Sparkline } from '@/components/dashboard/sparkline'
 import { Button } from '@/components/ui/button'
@@ -259,6 +261,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [recurringFeedback, setRecurringFeedback] = useState<Feedback | null>(null)
   const [categoryFeedback, setCategoryFeedback] = useState<Feedback | null>(null)
   const [accountFeedback, setAccountFeedback] = useState<Feedback | null>(null)
+  const [showBalanceForm, setShowBalanceForm] = useState(false)
+  const [balanceAmount, setBalanceAmount] = useState('')
+  const [balanceFeedback, setBalanceFeedback] = useState<Feedback | null>(null)
   const [activeTab, setActiveTab] = useState<TabValue>('overview')
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(initialAccountId)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
@@ -279,6 +284,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [_isPendingAccount, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
   const [isPendingRates, startRates] = useTransition()
+  const [isPendingBalance, startBalance] = useTransition()
 
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
@@ -589,6 +595,47 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     })
   }
 
+  const handleSetBalance = () => {
+    const parsedAmount = Number.parseFloat(balanceAmount)
+    if (!Number.isFinite(parsedAmount)) {
+      setBalanceFeedback({ type: 'error', message: 'Enter a valid amount.' })
+      return
+    }
+
+    startBalance(async () => {
+      const result = await setBalanceAction({
+        accountId: activeAccount,
+        targetBalance: parsedAmount,
+        currency: preferredCurrency,
+        monthKey,
+      })
+
+      if (result?.error) {
+        const firstErrorSet = Object.values(result.error)[0]
+        const message: string =
+          Array.isArray(firstErrorSet) && firstErrorSet.length > 0
+            ? (firstErrorSet[0] ?? 'Unable to set balance.')
+            : 'Unable to set balance.'
+        setBalanceFeedback({ type: 'error', message })
+        return
+      }
+
+      const adjustment = result?.adjustment ?? 0
+      if (adjustment === 0) {
+        setBalanceFeedback({ type: 'success', message: 'Balance already matches.' })
+      } else {
+        const sign = adjustment > 0 ? '+' : ''
+        setBalanceFeedback({
+          type: 'success',
+          message: `Balance set. Adjustment: ${sign}${formatCurrency(adjustment, preferredCurrency)}`,
+        })
+      }
+      setBalanceAmount('')
+      setShowBalanceForm(false)
+      router.refresh()
+    })
+  }
+
   const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
 
@@ -853,8 +900,43 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 lg:gap-10 lg:px-6">
-      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl lg:p-10">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 lg:gap-6 lg:px-6">
+      {/* Compact top bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 w-8 rounded-full text-white/90 transition hover:bg-white/20"
+            onClick={() => handleMonthChange(-1)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2 px-2 text-sm font-medium text-white">
+            <CalendarRange className="h-4 w-4" />
+            {formatMonthLabel(monthKey)}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 w-8 rounded-full text-white/90 transition hover:bg-white/20"
+            onClick={() => handleMonthChange(1)}
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
+          onClick={handleLogout}
+          loading={isPendingLogout}
+        >
+          Sign out
+        </Button>
+      </div>
+
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white shadow-xl lg:p-6">
         <div
           className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_55%)]"
           aria-hidden
@@ -1172,7 +1254,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 <p className="text-sm text-slate-300">Jump straight to the tools you use most frequently.</p>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   <Button
                     type="button"
                     variant="secondary"
@@ -1209,9 +1291,81 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     <Tags className="h-4 w-4" />
                     Add a category
                   </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="justify-start gap-3"
+                    onClick={() => setShowBalanceForm((prev) => !prev)}
+                  >
+                    <Scale className="h-4 w-4" />
+                    Set balance
+                  </Button>
                 </div>
               </CardContent>
             </Card>
+
+            {showBalanceForm && (
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-lg font-semibold text-white">Set current balance</CardTitle>
+                  <p className="text-sm text-slate-300">
+                    Enter your actual current balance. We&apos;ll create an adjustment transaction to match it.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
+                      <span>Current net this month</span>
+                      <span className="text-sm font-semibold text-white">
+                        {formatCurrency(
+                          data.stats.find((s) => s.label === 'Actual net')?.amount ?? 0,
+                          preferredCurrency,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="balanceAmount">
+                        Target balance
+                      </label>
+                      <Input
+                        id="balanceAmount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={balanceAmount}
+                        onChange={(e) => setBalanceAmount(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <Button type="button" onClick={handleSetBalance} loading={isPendingBalance} className="flex-1">
+                        Set balance
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowBalanceForm(false)
+                          setBalanceAmount('')
+                          setBalanceFeedback(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                  {balanceFeedback && (
+                    <p
+                      role="status"
+                      className={cn('text-xs', balanceFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                    >
+                      {balanceFeedback.message}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {highlightedBudgets.length > 0 && (
               <Card className="border-white/15 bg-white/10">
