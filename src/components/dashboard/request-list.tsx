@@ -18,7 +18,7 @@ type RequestListProps = {
   preferredCurrency: Currency
 }
 
-export function RequestList({ requests, preferredCurrency }: RequestListProps) {
+export function RequestList({ requests, preferredCurrency: _preferredCurrency }: RequestListProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -69,7 +69,7 @@ export function RequestList({ requests, preferredCurrency }: RequestListProps) {
           <div
             className={cn(
               'rounded-lg px-3 py-2 text-xs font-medium',
-              feedback.type === 'success' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-rose-500/20 text-rose-200'
+              feedback.type === 'success' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-rose-500/20 text-rose-200',
             )}
           >
             {feedback.message}
@@ -91,11 +91,10 @@ export function RequestList({ requests, preferredCurrency }: RequestListProps) {
                   </span>
                 </div>
                 <p className="text-xs text-slate-300">
-                  <span className="font-medium text-sky-200">{request.from.name}</span> asks you to pay · {new Date(request.date).toLocaleDateString()}
+                  <span className="font-medium text-sky-200">{request.from.name}</span> asks you to pay ·{' '}
+                  {new Date(request.date).toLocaleDateString()}
                 </p>
-                {request.description && (
-                  <p className="text-xs italic text-slate-400">"{request.description}"</p>
-                )}
+                {request.description && <p className="text-xs italic text-slate-400">"{request.description}"</p>}
               </div>
               <div className="flex items-center gap-2">
                 <Button

@@ -14,7 +14,6 @@ import {
   Gauge,
   Layers,
   PiggyBank,
-  PlusCircle,
   RefreshCcw,
   Repeat,
   Sparkles,
@@ -84,11 +83,7 @@ export function normalizeDateInput(value: FormDataEntryValue | null): Date | nul
 
   const utcDate = new Date(Date.UTC(year, monthIndex, day))
 
-  if (
-    utcDate.getUTCFullYear() !== year ||
-    utcDate.getUTCMonth() !== monthIndex ||
-    utcDate.getUTCDate() !== day
-  ) {
+  if (utcDate.getUTCFullYear() !== year || utcDate.getUTCMonth() !== monthIndex || utcDate.getUTCDate() !== day) {
     return null
   }
 
@@ -165,12 +160,15 @@ const TABS: Array<{
   { value: 'holdings', label: 'Investments', description: 'Track stocks and ETFs.', icon: TrendingUp },
 ]
 
-const STAT_VARIANT_STYLES: Record<NonNullable<DashboardData['stats'][number]['variant']>, {
-  border: string
-  chip: string
-  chipText: string
-  icon: string
-}> = {
+const STAT_VARIANT_STYLES: Record<
+  NonNullable<DashboardData['stats'][number]['variant']>,
+  {
+    border: string
+    chip: string
+    chipText: string
+    icon: string
+  }
+> = {
   positive: {
     border: 'border-emerald-400/40',
     chip: 'bg-emerald-400/20',
@@ -223,7 +221,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const preferredCurrency = data.preferredCurrency || Currency.USD
 
   const initialAccountId = accountId ?? data.accounts[0]?.id ?? ''
-  const initialAccountRecord = data.accounts.find((account) => account.id === initialAccountId) ?? null
+  const _initialAccountRecord = data.accounts.find((account) => account.id === initialAccountId) ?? null
   const defaultExpenseCategoryId =
     data.categories.find((category) => category.type === TransactionType.EXPENSE && !category.isArchived)?.id ?? ''
   const initialTransactionAccountFilterValue = initialAccountId
@@ -287,17 +285,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     [data.accounts],
   )
 
-  const transactionLoggableAccounts = useMemo(
-    () => data.accounts,
-    [data.accounts],
-  )
+  const transactionLoggableAccounts = useMemo(() => data.accounts, [data.accounts])
 
   const resolveLoggableAccountId = useCallback(
     (preferredAccountId?: string) => {
-      if (
-        preferredAccountId &&
-        transactionLoggableAccounts.some((account) => account.id === preferredAccountId)
-      ) {
+      if (preferredAccountId && transactionLoggableAccounts.some((account) => account.id === preferredAccountId)) {
         return preferredAccountId
       }
 
@@ -313,7 +305,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     }))
 
     return options
-  }, [data.accounts, transactionFormState.accountId, transactionLoggableAccounts])
+  }, [transactionLoggableAccounts])
 
   const activeAccountRecord = useMemo(
     () => data.accounts.find((account) => account.id === activeAccount) ?? null,
@@ -322,12 +314,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
   const transactionAccountOptions = accountsOptions
 
-  const selfAccountName = useMemo(
+  const _selfAccountName = useMemo(
     () => data.accounts.find((account) => account.type === AccountType.SELF)?.name ?? 'Self',
     [data.accounts],
   )
 
-  const partnerAccountName = useMemo(
+  const _partnerAccountName = useMemo(
     () => data.accounts.find((account) => account.type === AccountType.PARTNER)?.name ?? 'Partner',
     [data.accounts],
   )
@@ -363,10 +355,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     [filteredCategories],
   )
 
-  const holdingsCategories = useMemo(
-    () => data.categories.filter((category) => category.isHolding),
-    [data.categories],
-  )
+  const holdingsCategories = useMemo(() => data.categories.filter((category) => category.isHolding), [data.categories])
 
   const defaultAccountId = activeAccount || data.accounts[0]?.id || ''
 
@@ -448,13 +437,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       isRequest: false,
     })
     setEditingTransaction(null)
-  }, [
-    activeAccount,
-    activeAccountRecord,
-    getDefaultCategoryId,
-    monthKey,
-    resolveLoggableAccountId,
-  ])
+  }, [activeAccount, getDefaultCategoryId, monthKey, resolveLoggableAccountId])
 
   const handleTransactionTypeChange = useCallback(
     (nextType: TransactionType) => {
@@ -474,26 +457,23 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     [data.categories, getDefaultCategoryId],
   )
 
-  const handleTransactionEdit = useCallback(
-    (transaction: DashboardTransaction) => {
-      setActiveTab('transactions')
-      setEditingTransaction(transaction)
-      const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
-      setTransactionFormState({
-        type: transaction.type,
-        accountId: transaction.accountId,
-        categoryId: transaction.categoryId,
-        amount: transaction.amount.toFixed(2),
-        currency: transaction.currency,
-        date: isoDate,
-        description: transaction.description ?? '',
-        isRecurring: transaction.isRecurring,
-        isRequest: false,
-      })
-      setTransactionFeedback(null)
-    },
-    [],
-  )
+  const handleTransactionEdit = useCallback((transaction: DashboardTransaction) => {
+    setActiveTab('transactions')
+    setEditingTransaction(transaction)
+    const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
+    setTransactionFormState({
+      type: transaction.type,
+      accountId: transaction.accountId,
+      categoryId: transaction.categoryId,
+      amount: transaction.amount.toFixed(2),
+      currency: transaction.currency,
+      date: isoDate,
+      description: transaction.description ?? '',
+      isRecurring: transaction.isRecurring,
+      isRequest: false,
+    })
+    setTransactionFeedback(null)
+  }, [])
 
   const handleCancelTransactionEdit = useCallback(() => {
     resetTransactionForm()
@@ -521,8 +501,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       filterTransactions(data.transactions, {
         type: transactionFilterType,
         search: transactionSearch,
-        accountId:
-          transactionAccountFilter === 'all' ? undefined : transactionAccountFilter || undefined,
+        accountId: transactionAccountFilter === 'all' ? undefined : transactionAccountFilter || undefined,
       }),
     [data.transactions, transactionFilterType, transactionSearch, transactionAccountFilter],
   )
@@ -586,7 +565,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         const firstErrorSet = Object.values(result.error)[0]
         const message: string =
           Array.isArray(firstErrorSet) && firstErrorSet.length > 0
-            ? firstErrorSet[0] ?? 'Unable to remember selection.'
+            ? (firstErrorSet[0] ?? 'Unable to remember selection.')
             : 'Unable to remember selection.'
         setAccountFeedback({ type: 'error', message })
         return
@@ -633,12 +612,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     const description = transactionFormState.description.trim()
 
     startTransaction(async () => {
-      let result;
+      let result
       if (transactionFormState.isRequest && !editingTransaction) {
-        const partnerAccount = data.accounts.find(acc => acc.type === AccountType.PARTNER);
+        const partnerAccount = data.accounts.find((acc) => acc.type === AccountType.PARTNER)
         if (!partnerAccount) {
-          setTransactionFeedback({ type: 'error', message: 'Partner account not found.' });
-          return;
+          setTransactionFeedback({ type: 'error', message: 'Partner account not found.' })
+          return
         }
         result = await createTransactionRequestAction({
           toId: partnerAccount.id,
@@ -647,7 +626,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           currency: transactionFormState.currency,
           date: dateInput,
           description: description.length > 0 ? description : undefined,
-        });
+        })
       } else {
         const payload = {
           accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
@@ -676,7 +655,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
       setTransactionFeedback({
         type: 'success',
-        message: transactionFormState.isRequest ? 'Request sent to partner.' : (editingTransaction ? 'Transaction updated.' : 'Transaction saved.'),
+        message: transactionFormState.isRequest
+          ? 'Request sent to partner.'
+          : editingTransaction
+            ? 'Transaction updated.'
+            : 'Transaction saved.',
       })
       resetTransactionForm()
       router.refresh()
@@ -849,10 +832,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       (t.description || '').replace(/"/g, '""'),
     ])
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-    ].join('\n')
+    const csvContent = [headers.join(','), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -875,7 +855,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 lg:gap-10 lg:px-6">
       <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl lg:p-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_55%)]" aria-hidden />
+        <div
+          className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_55%)]"
+          aria-hidden
+        />
         <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl space-y-5">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wide text-slate-200 backdrop-blur">
@@ -885,7 +868,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="space-y-2">
               <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Balance Beacon</h1>
               <p className="text-sm leading-relaxed text-slate-200/80">
-                Track personal, partner, and shared spending with insights that highlight what changed and where to focus your next dollar.
+                Track personal, partner, and shared spending with insights that highlight what changed and where to
+                focus your next dollar.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-100/80">
@@ -908,20 +892,31 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
               <RefreshCcw className="h-4 w-4 opacity-70" />
             </div>
             <div className="h-28 w-full">
-              <Sparkline values={netHistory} strokeClassName="stroke-white" fillClassName="fill-white/15" ariaLabel="Net cashflow snapshot" />
+              <Sparkline
+                values={netHistory}
+                strokeClassName="stroke-white"
+                fillClassName="fill-white/15"
+                ariaLabel="Net cashflow snapshot"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm text-slate-100/80">
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Income this month</p>
-                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.income ?? 0, preferredCurrency)}</p>
+                <p className="text-lg font-semibold text-white">
+                  {formatCurrency(latestHistory?.income ?? 0, preferredCurrency)}
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Spending this month</p>
-                <p className="text-lg font-semibold text-white">{formatCurrency(latestHistory?.expense ?? 0, preferredCurrency)}</p>
+                <p className="text-lg font-semibold text-white">
+                  {formatCurrency(latestHistory?.expense ?? 0, preferredCurrency)}
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Change vs last month</p>
-                <p className={cn('text-lg font-semibold', netDeltaVariant)}>{formatRelativeAmount(netDelta, preferredCurrency)}</p>
+                <p className={cn('text-lg font-semibold', netDeltaVariant)}>
+                  {formatRelativeAmount(netDelta, preferredCurrency)}
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-200/70">Accounts tracked</p>
@@ -989,7 +984,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   Update rates
                 </Button>
                 <span className="mt-1 text-xs text-slate-400">
-                  Last updated: {new Date(data.exchangeRateLastUpdate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  Last updated:{' '}
+                  {new Date(data.exchangeRateLastUpdate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </span>
               </div>
             )}
@@ -1011,32 +1012,36 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           const variantKey = stat.variant ?? 'neutral'
           const styles = STAT_VARIANT_STYLES[variantKey]
           const Icon = resolveStatIcon(stat.label)
-        return (
-          <Card
-            key={stat.label}
-            className={cn(
-              'border-white/20 bg-white/10 transition hover:-translate-y-1',
-              styles.border,
-            )}
-          >
-            <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 text-slate-300">
-              <div className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-300">{stat.label}</span>
-                {stat.helper && <p className="text-xs text-slate-400">{stat.helper}</p>}
-              </div>
-              <div className="flex items-start gap-2">
-                <InfoTooltip
-                  description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
-                  label={`Explain ${stat.label}`}
-                  placement="left"
-                />
-                <span className={cn('inline-flex items-center justify-center rounded-full p-2 backdrop-blur', styles.chip)}>
-                  <Icon className={cn('h-4 w-4', styles.icon)} />
-                </span>
-              </div>
-            </CardHeader>
+          return (
+            <Card
+              key={stat.label}
+              className={cn('border-white/20 bg-white/10 transition hover:-translate-y-1', styles.border)}
+            >
+              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 text-slate-300">
+                <div className="space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-300">{stat.label}</span>
+                  {stat.helper && <p className="text-xs text-slate-400">{stat.helper}</p>}
+                </div>
+                <div className="flex items-start gap-2">
+                  <InfoTooltip
+                    description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
+                    label={`Explain ${stat.label}`}
+                    placement="left"
+                  />
+                  <span
+                    className={cn(
+                      'inline-flex items-center justify-center rounded-full p-2 backdrop-blur',
+                      styles.chip,
+                    )}
+                  >
+                    <Icon className={cn('h-4 w-4', styles.icon)} />
+                  </span>
+                </div>
+              </CardHeader>
               <CardContent>
-                <p className="text-3xl font-semibold tracking-tight text-white">{formatCurrency(stat.amount, preferredCurrency)}</p>
+                <p className="text-3xl font-semibold tracking-tight text-white">
+                  {formatCurrency(stat.amount, preferredCurrency)}
+                </p>
               </CardContent>
             </Card>
           )
@@ -1048,7 +1053,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-white">Dashboard</h2>
           </div>
-          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0" role="tablist" aria-label="Dashboard sections">
+          <nav
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
+            role="tablist"
+            aria-label="Dashboard sections"
+          >
             {TABS.map(({ value, label, icon: Icon }) => (
               <button
                 key={value}
@@ -1074,12 +1083,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         {activeTabMeta && <p className="text-sm text-slate-400">{activeTabMeta.description}</p>}
 
         {activeTab === 'overview' && (
-          <div
-            role="tabpanel"
-            id="panel-overview"
-            aria-labelledby="tab-overview"
-            className="space-y-6"
-          >
+          <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="space-y-6">
             {/* Partner requests shown prominently at top */}
             {data.transactionRequests.length > 0 && (
               <RequestList requests={data.transactionRequests} preferredCurrency={preferredCurrency} />
@@ -1113,10 +1117,13 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <div>
                           <div className="font-medium text-white">{point.label}</div>
                           <div className="text-xs text-slate-400">
-                            Income {formatRelativeAmount(point.income)} · Expenses {formatRelativeAmount(-point.expense)}
+                            Income {formatRelativeAmount(point.income)} · Expenses{' '}
+                            {formatRelativeAmount(-point.expense)}
                           </div>
                         </div>
-                        <div className={cn('text-sm font-semibold', point.net >= 0 ? 'text-emerald-300' : 'text-rose-400')}>
+                        <div
+                          className={cn('text-sm font-semibold', point.net >= 0 ? 'text-emerald-300' : 'text-rose-400')}
+                        >
                           {formatRelativeAmount(point.net)}
                         </div>
                       </div>
@@ -1138,12 +1145,18 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
                       <span>Net compared to last month</span>
-                      <span className={cn('text-sm font-semibold', data.comparison.change >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
+                      <span
+                        className={cn(
+                          'text-sm font-semibold',
+                          data.comparison.change >= 0 ? 'text-emerald-300' : 'text-rose-300',
+                        )}
+                      >
                         {formatRelativeAmount(data.comparison.change, preferredCurrency)}
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-slate-300">
-                      {formatMonthLabel(data.comparison.previousMonth)} net: {formatCurrency(data.comparison.previousNet, preferredCurrency)}
+                      {formatMonthLabel(data.comparison.previousMonth)} net:{' '}
+                      {formatCurrency(data.comparison.previousNet, preferredCurrency)}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -1153,7 +1166,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         data.budgets
                           .filter((budget) => budget.categoryType === TransactionType.EXPENSE)
                           .reduce((sum, budget) => sum + budget.remaining, 0),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </div>
                   </div>
@@ -1164,7 +1177,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         data.budgets
                           .filter((budget) => budget.categoryType === TransactionType.INCOME)
                           .reduce((sum, budget) => sum + budget.remaining, 0),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </div>
                   </div>
@@ -1234,7 +1247,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     >
                       Highlighted budgets
                     </CardTitle>
-                    <p className="text-sm text-slate-300">A quick snapshot of the categories closest to their limits.</p>
+                    <p className="text-sm text-slate-300">
+                      A quick snapshot of the categories closest to their limits.
+                    </p>
                   </div>
                   <Button type="button" variant="secondary" onClick={() => setActiveTab('budgets')}>
                     Manage budgets
@@ -1263,12 +1278,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                               </span>
                             </div>
                             <p className="text-xs text-slate-300">
-                              {formatCurrency(budget.actual, preferredCurrency)} {actualLabel} / {formatCurrency(budget.planned, preferredCurrency)} planned
+                              {formatCurrency(budget.actual, preferredCurrency)} {actualLabel} /{' '}
+                              {formatCurrency(budget.planned, preferredCurrency)} planned
                             </p>
                           </div>
-                          <span className="text-sm font-medium text-slate-200">
-                            {Math.round(progress * 100)}%
-                          </span>
+                          <span className="text-sm font-medium text-slate-200">{Math.round(progress * 100)}%</span>
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
                           <div
@@ -1288,12 +1302,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         )}
 
         {activeTab === 'budgets' && (
-          <div
-            role="tabpanel"
-            id="panel-budgets"
-            aria-labelledby="tab-budgets"
-            className="space-y-6"
-          >
+          <div role="tabpanel" id="panel-budgets" aria-labelledby="tab-budgets" className="space-y-6">
             <Card className="border-white/15 bg-white/10">
               <CardHeader className="gap-1">
                 <CardTitle
@@ -1302,7 +1311,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 >
                   Monthly budgets
                 </CardTitle>
-                <p className="text-sm text-slate-400">Compare planned versus actual spending and stay ahead of upcoming obligations.</p>
+                <p className="text-sm text-slate-400">
+                  Compare planned versus actual spending and stay ahead of upcoming obligations.
+                </p>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1334,7 +1345,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       Expense utilization
                     </label>
                     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200">
-                      {formatCurrency(budgetTotals.expenseActual, preferredCurrency)} of {formatCurrency(budgetTotals.expensePlanned, preferredCurrency)} spent
+                      {formatCurrency(budgetTotals.expenseActual, preferredCurrency)} of{' '}
+                      {formatCurrency(budgetTotals.expensePlanned, preferredCurrency)} spent
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -1342,7 +1354,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       Income realized
                     </label>
                     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200">
-                      {formatCurrency(budgetTotals.incomeActual, preferredCurrency)} of {formatCurrency(budgetTotals.incomePlanned, preferredCurrency)} received
+                      {formatCurrency(budgetTotals.incomeActual, preferredCurrency)} of{' '}
+                      {formatCurrency(budgetTotals.incomePlanned, preferredCurrency)} received
                     </div>
                   </div>
                 </div>
@@ -1355,7 +1368,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       {data.budgets.length === 0 ? (
                         <>
                           <p className="text-sm font-medium text-white">No budgets yet</p>
-                          <p className="text-xs text-slate-400">Set spending limits to stay on track. Scroll down to add your first budget.</p>
+                          <p className="text-xs text-slate-400">
+                            Set spending limits to stay on track. Scroll down to add your first budget.
+                          </p>
                         </>
                       ) : (
                         <>
@@ -1388,7 +1403,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                               </span>
                             </div>
                             <div className="mt-1 text-xs text-slate-300">
-                              {formatCurrency(budget.actual, preferredCurrency)} {actualLabel} / {formatCurrency(budget.planned, preferredCurrency)} planned
+                              {formatCurrency(budget.actual, preferredCurrency)} {actualLabel} /{' '}
+                              {formatCurrency(budget.planned, preferredCurrency)} planned
                             </div>
                           </div>
                           <Button
@@ -1402,7 +1418,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         </div>
                         <div className="mt-3">
                           <div className="sr-only" role="status">
-                            {formatCurrency(budget.actual, preferredCurrency)} of {formatCurrency(budget.planned, preferredCurrency)} {actualLabel}
+                            {formatCurrency(budget.actual, preferredCurrency)} of{' '}
+                            {formatCurrency(budget.planned, preferredCurrency)} {actualLabel}
                           </div>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-white/10" role="presentation">
                             <div
@@ -1421,7 +1438,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     )
                   })}
                 </div>
-                <form id="budget-form" onSubmit={handleBudgetSubmit} className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5" tabIndex={-1}>
+                <form
+                  id="budget-form"
+                  onSubmit={handleBudgetSubmit}
+                  className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5"
+                  tabIndex={-1}
+                >
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-white">Add or update a budget</h3>
                     <p className="text-xs text-slate-400">Capture limits for priority categories and accounts.</p>
@@ -1455,7 +1477,15 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       <label className="text-xs font-medium text-slate-300" htmlFor="planned">
                         Planned amount
                       </label>
-                      <Input name="planned" id="planned" type="number" min="0" step="0.01" placeholder="0.00" required />
+                      <Input
+                        name="planned"
+                        id="planned"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="budgetCurrency">
@@ -1493,12 +1523,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         )}
 
         {activeTab === 'transactions' && (
-          <div
-            role="tabpanel"
-            id="panel-transactions"
-            aria-labelledby="tab-transactions"
-            className="space-y-6"
-          >
+          <div role="tabpanel" id="panel-transactions" aria-labelledby="tab-transactions" className="space-y-6">
             {data.transactionRequests.length > 0 && (
               <RequestList requests={data.transactionRequests} preferredCurrency={preferredCurrency} />
             )}
@@ -1680,7 +1705,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     {transactionFeedback && (
                       <p
                         role="status"
-                        className={cn('text-xs', transactionFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                        className={cn(
+                          'text-xs',
+                          transactionFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600',
+                        )}
                       >
                         {transactionFeedback.message}
                       </p>
@@ -1698,7 +1726,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     >
                       Recent activity
                     </CardTitle>
-                    <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
+                    <p className="text-sm text-slate-400">
+                      Swipe through the latest transactions and tidy anything out of place.
+                    </p>
                   </div>
                   {filteredTransactions.length > 0 && (
                     <Button
@@ -1722,7 +1752,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       <Select
                         id="transaction-filter-type"
                         value={transactionFilterType}
-                        onChange={(event) => setTransactionFilterType(event.target.value as typeof transactionFilterType)}
+                        onChange={(event) =>
+                          setTransactionFilterType(event.target.value as typeof transactionFilterType)
+                        }
                         options={typeFilterOptions}
                       />
                     </div>
@@ -1749,7 +1781,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         placeholder="e.g. rent, groceries, bonus"
                       />
                     </div>
-                    {(transactionSearch || transactionFilterType !== 'all' || transactionAccountFilter !== defaultTransactionAccountFilter) && (
+                    {(transactionSearch ||
+                      transactionFilterType !== 'all' ||
+                      transactionAccountFilter !== defaultTransactionAccountFilter) && (
                       <div className="flex items-end">
                         <Button
                           type="button"
@@ -1774,7 +1808,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                       {data.transactions.length === 0 ? (
                         <>
                           <p className="text-sm font-medium text-white">No transactions yet</p>
-                          <p className="text-xs text-slate-400">Log your first expense or income using the form on the left.</p>
+                          <p className="text-xs text-slate-400">
+                            Log your first expense or income using the form on the left.
+                          </p>
                         </>
                       ) : (
                         <>
@@ -1847,12 +1883,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         )}
 
         {activeTab === 'recurring' && (
-          <div
-            role="tabpanel"
-            id="panel-recurring"
-            aria-labelledby="tab-recurring"
-            className="space-y-6"
-          >
+          <div role="tabpanel" id="panel-recurring" aria-labelledby="tab-recurring" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">
@@ -1862,7 +1893,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   >
                     Recurring plans
                   </CardTitle>
-                  <p className="text-sm text-slate-400">Keep predictable cashflow on schedule and pause templates when plans change.</p>
+                  <p className="text-sm text-slate-400">
+                    Keep predictable cashflow on schedule and pause templates when plans change.
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
@@ -1910,12 +1943,22 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         Apply templates this month
                       </Button>
                     </div>
-                    <form id="recurring-form" onSubmit={handleRecurringSubmit} className="grid gap-4 sm:grid-cols-2" tabIndex={-1}>
+                    <form
+                      id="recurring-form"
+                      onSubmit={handleRecurringSubmit}
+                      className="grid gap-4 sm:grid-cols-2"
+                      tabIndex={-1}
+                    >
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="recurringType">
                           Type
                         </label>
-                        <Select id="recurringType" name="recurringType" options={transactionTypeOptions} defaultValue={TransactionType.EXPENSE} />
+                        <Select
+                          id="recurringType"
+                          name="recurringType"
+                          options={transactionTypeOptions}
+                          defaultValue={TransactionType.EXPENSE}
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="recurringAccountId">
@@ -1945,7 +1988,15 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         <label className="text-xs font-medium text-slate-300" htmlFor="recurringAmount">
                           Amount
                         </label>
-                        <Input name="recurringAmount" id="recurringAmount" type="number" step="0.01" min="0" placeholder="0.00" required />
+                        <Input
+                          name="recurringAmount"
+                          id="recurringAmount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          required
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-300" htmlFor="recurringCurrency">
@@ -1991,7 +2042,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     {recurringFeedback && (
                       <p
                         role="status"
-                        className={cn('text-xs', recurringFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                        className={cn(
+                          'text-xs',
+                          recurringFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600',
+                        )}
                       >
                         {recurringFeedback.message}
                       </p>
@@ -2007,7 +2061,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         {data.recurringTemplates.length === 0 ? (
                           <>
                             <p className="text-sm font-medium text-white">No auto-repeat items</p>
-                            <p className="text-xs text-slate-400">Set up recurring income or expenses that repeat each month.</p>
+                            <p className="text-xs text-slate-400">
+                              Set up recurring income or expenses that repeat each month.
+                            </p>
                           </>
                         ) : (
                           <>
@@ -2030,7 +2086,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                             </span>
                           </div>
                           <div className="text-xs text-slate-400">
-                            {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount, preferredCurrency)} · Day {template.dayOfMonth}
+                            {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} ·{' '}
+                            {formatCurrency(template.amount, preferredCurrency)} · Day {template.dayOfMonth}
                           </div>
                           <div className="text-xs text-slate-400">{template.description || 'No description'}</div>
                         </div>
@@ -2062,8 +2119,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                                 </span>
                               </div>
                               <div className="text-xs text-slate-300">
-                                {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} · {formatCurrency(template.amount, preferredCurrency)} · Day{' '}
-                                {template.dayOfMonth}
+                                {template.type === TransactionType.EXPENSE ? 'Expense' : 'Income'} ·{' '}
+                                {formatCurrency(template.amount, preferredCurrency)} · Day {template.dayOfMonth}
                               </div>
                               <div className="text-xs text-slate-400">{template.description || 'No description'}</div>
                             </div>
@@ -2107,7 +2164,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         activeRecurringTemplates
                           .filter((t) => t.type === TransactionType.EXPENSE)
                           .reduce((sum, template) => sum + template.amount, 0),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </p>
                   </div>
@@ -2118,7 +2175,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                         activeRecurringTemplates
                           .filter((t) => t.type === TransactionType.INCOME)
                           .reduce((sum, template) => sum + template.amount, 0),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </p>
                   </div>
@@ -2129,12 +2186,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         )}
 
         {activeTab === 'categories' && (
-          <div
-            role="tabpanel"
-            id="panel-categories"
-            aria-labelledby="tab-categories"
-            className="space-y-6"
-          >
+          <div role="tabpanel" id="panel-categories" aria-labelledby="tab-categories" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[2fr,3fr]">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">
@@ -2144,10 +2196,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   >
                     Create categories
                   </CardTitle>
-                  <p className="text-sm text-slate-400">Enable, archive, and color-code the buckets your household relies on.</p>
+                  <p className="text-sm text-slate-400">
+                    Enable, archive, and color-code the buckets your household relies on.
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <form id="category-form" onSubmit={handleCategorySubmit} className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5" tabIndex={-1}>
+                  <form
+                    id="category-form"
+                    onSubmit={handleCategorySubmit}
+                    className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5"
+                    tabIndex={-1}
+                  >
                     <div>
                       <h3 className="text-sm font-semibold text-white">Add new category</h3>
                       <p className="text-xs text-slate-400">Segment transactions with meaningful labels.</p>
@@ -2183,7 +2242,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                     {categoryFeedback && (
                       <p
                         role="status"
-                        className={cn('text-xs', categoryFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
+                        className={cn(
+                          'text-xs',
+                          categoryFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600',
+                        )}
                       >
                         {categoryFeedback.message}
                       </p>
@@ -2192,75 +2254,77 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 </CardContent>
               </Card>
 
-            <Card className="border-white/15 bg-white/10">
-              <CardHeader>
-                <CardTitle
-                  className="text-lg font-semibold text-white"
-                  helpText="Search, filter, and archive categories; changes sync across budgeting and transaction forms."
-                >
-                  Category library
-                </CardTitle>
-                <p className="text-sm text-slate-400">Toggle availability to keep dropdowns focused and reports meaningful.</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-300" htmlFor="category-filter-type">
-                      Type filter
-                    </label>
-                    <Select
-                      id="category-filter-type"
-                      value={categoryTypeFilter}
-                      onChange={(event) => setCategoryTypeFilter(event.target.value as typeof categoryTypeFilter)}
-                      options={typeFilterOptions}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2 lg:col-span-1">
-                    <label className="text-xs font-medium text-slate-300" htmlFor="category-filter-search">
-                      Search categories
-                    </label>
-                    <Input
-                      id="category-filter-search"
-                      value={categorySearch}
-                      onChange={(event) => setCategorySearch(event.target.value)}
-                      placeholder="e.g. groceries, rent"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="text-xs text-slate-200"
-                      onClick={() => setShowArchivedCategories((prev) => !prev)}
-                    >
-                      {showArchivedCategories ? 'Hide archived' : 'Show archived'}
-                    </Button>
-                  </div>
-                </div>
-                {filteredCategoryList.length === 0 && (
-                  <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
-                    <div className="rounded-full bg-white/10 p-3">
-                      <Tags className="h-6 w-6 text-slate-300" />
-                    </div>
-                    {data.categories.length === 0 ? (
-                      <>
-                        <p className="text-sm font-medium text-white">No labels yet</p>
-                        <p className="text-xs text-slate-400">Create labels to organize your spending and income.</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm font-medium text-white">No matching labels</p>
-                        <p className="text-xs text-slate-400">Try adjusting the filters above.</p>
-                      </>
-                    )}
-                  </div>
-                )}
-                {filteredCategoryList.map((category) => (
-                  <div
-                    key={category.id}
-                    className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+              <Card className="border-white/15 bg-white/10">
+                <CardHeader>
+                  <CardTitle
+                    className="text-lg font-semibold text-white"
+                    helpText="Search, filter, and archive categories; changes sync across budgeting and transaction forms."
                   >
-                    <div className="space-y-1">
+                    Category library
+                  </CardTitle>
+                  <p className="text-sm text-slate-400">
+                    Toggle availability to keep dropdowns focused and reports meaningful.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="category-filter-type">
+                        Type filter
+                      </label>
+                      <Select
+                        id="category-filter-type"
+                        value={categoryTypeFilter}
+                        onChange={(event) => setCategoryTypeFilter(event.target.value as typeof categoryTypeFilter)}
+                        options={typeFilterOptions}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                      <label className="text-xs font-medium text-slate-300" htmlFor="category-filter-search">
+                        Search categories
+                      </label>
+                      <Input
+                        id="category-filter-search"
+                        value={categorySearch}
+                        onChange={(event) => setCategorySearch(event.target.value)}
+                        placeholder="e.g. groceries, rent"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-xs text-slate-200"
+                        onClick={() => setShowArchivedCategories((prev) => !prev)}
+                      >
+                        {showArchivedCategories ? 'Hide archived' : 'Show archived'}
+                      </Button>
+                    </div>
+                  </div>
+                  {filteredCategoryList.length === 0 && (
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                      <div className="rounded-full bg-white/10 p-3">
+                        <Tags className="h-6 w-6 text-slate-300" />
+                      </div>
+                      {data.categories.length === 0 ? (
+                        <>
+                          <p className="text-sm font-medium text-white">No labels yet</p>
+                          <p className="text-xs text-slate-400">Create labels to organize your spending and income.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-white">No matching labels</p>
+                          <p className="text-xs text-slate-400">Try adjusting the filters above.</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {filteredCategoryList.map((category) => (
+                    <div
+                      key={category.id}
+                      className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2 font-medium text-white">
                           <span>{category.name}</span>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
@@ -2304,7 +2368,10 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-slate-200">
                     {holdingsCategories.map((category) => (
-                      <div key={category.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2">
+                      <div
+                        key={category.id}
+                        className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2"
+                      >
                         <span className="font-medium text-white">{category.name}</span>
                         <span className="text-xs uppercase tracking-wide text-slate-300">Category</span>
                       </div>
@@ -2332,11 +2399,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
       {/* AI Chat Widget */}
       {process.env.NEXT_PUBLIC_AI_ENABLED !== 'false' && (
-        <ChatWidget
-          accountId={accountId}
-          monthKey={monthKey}
-          preferredCurrency={preferredCurrency}
-        />
+        <ChatWidget accountId={accountId} monthKey={monthKey} preferredCurrency={preferredCurrency} />
       )}
     </div>
   )

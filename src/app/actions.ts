@@ -36,7 +36,7 @@ async function ensureAccountAccess(accountId: string): Promise<AccountAccessSucc
   let session
   try {
     session = await requireSession()
-  } catch (error) {
+  } catch {
     return { error: { general: ['Your session expired. Please sign in again.'] } }
   }
 
@@ -48,8 +48,8 @@ async function ensureAccountAccess(accountId: string): Promise<AccountAccessSucc
   let account
   try {
     account = await prisma.account.findUnique({ where: { id: accountId } })
-  } catch (error) {
-    console.error('ensureAccountAccess.accountLookup', error)
+  } catch (err) {
+    console.error('ensureAccountAccess.accountLookup', err)
     return { error: { general: ['Unable to verify the selected account. Try again shortly.'] } }
   }
 
@@ -106,7 +106,7 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
   let session
   try {
     session = await requireSession()
-  } catch (error) {
+  } catch {
     return { error: { general: ['Your session expired. Please sign in again.'] } }
   }
 
@@ -137,8 +137,8 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
         status: RequestStatus.PENDING,
       },
     })
-  } catch (error) {
-    console.error('createTransactionRequestAction', error)
+  } catch (err) {
+    console.error('createTransactionRequestAction', err)
     return { error: { general: ['Unable to create transaction request'] } }
   }
 
@@ -159,7 +159,7 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
   let session
   try {
     session = await requireSession()
-  } catch (error) {
+  } catch {
     return { error: { general: ['Your session expired. Please sign in again.'] } }
   }
 
@@ -208,8 +208,8 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
         },
       }),
     ])
-  } catch (error) {
-    console.error('approveTransactionRequestAction', error)
+  } catch (err) {
+    console.error('approveTransactionRequestAction', err)
     return { error: { general: ['Unable to approve transaction request'] } }
   }
 
@@ -226,7 +226,7 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
   let session
   try {
     session = await requireSession()
-  } catch (error) {
+  } catch {
     return { error: { general: ['Your session expired. Please sign in again.'] } }
   }
 
@@ -256,15 +256,14 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
       where: { id: request.id },
       data: { status: RequestStatus.REJECTED },
     })
-  } catch (error) {
-    console.error('rejectTransactionRequestAction', error)
+  } catch (err) {
+    console.error('rejectTransactionRequestAction', err)
     return { error: { general: ['Unable to reject transaction request'] } }
   }
 
   revalidatePath('/')
   return { success: true }
 }
-
 
 export async function createTransactionAction(input: TransactionInput) {
   const parsed = transactionSchema.safeParse(input)
@@ -281,7 +280,7 @@ export async function createTransactionAction(input: TransactionInput) {
   }
 
   try {
-    await(prisma as any).transaction.create({
+    await (prisma as any).transaction.create({
       data: {
         accountId: data.accountId,
         categoryId: data.categoryId,
@@ -294,9 +293,9 @@ export async function createTransactionAction(input: TransactionInput) {
         isRecurring: data.isRecurring ?? false,
         recurringTemplateId: data.recurringTemplateId ?? null,
       },
-    });
-  } catch (error) {
-    console.error('createTransactionAction', error)
+    })
+  } catch (err) {
+    console.error('createTransactionAction', err)
     return { error: { general: ['Unable to create transaction'] } }
   }
 
@@ -337,7 +336,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   }
 
   try {
-    await(prisma as any).transaction.update({
+    await (prisma as any).transaction.update({
       where: { id: data.id },
       data: {
         accountId: data.accountId,
@@ -350,9 +349,9 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         description: data.description,
         isRecurring: data.isRecurring ?? false,
       },
-    });
-  } catch (error) {
-    console.error('updateTransactionAction', error)
+    })
+  } catch (err) {
+    console.error('updateTransactionAction', err)
     return { error: { general: ['Unable to update transaction'] } }
   }
 
@@ -385,8 +384,8 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
     }
 
     await prisma.transaction.delete({ where: { id: parsed.data.id } })
-  } catch (error) {
-    console.error('deleteTransactionAction', error)
+  } catch (err) {
+    console.error('deleteTransactionAction', err)
     return { error: { general: ['Transaction not found'] } }
   }
   revalidatePath('/')
@@ -441,8 +440,8 @@ export async function upsertBudgetAction(input: BudgetInput) {
         notes: notes ?? null,
       },
     })
-  } catch (error) {
-    console.error('upsertBudgetAction', error)
+  } catch (err) {
+    console.error('upsertBudgetAction', err)
     return { error: { general: ['Unable to save budget'] } }
   }
 
@@ -480,8 +479,8 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
         },
       },
     })
-  } catch (error) {
-    console.error('deleteBudgetAction', error)
+  } catch (err) {
+    console.error('deleteBudgetAction', err)
     return { error: { general: ['Budget entry not found'] } }
   }
 
@@ -546,8 +545,8 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
     } else {
       await prisma.recurringTemplate.create({ data: payload })
     }
-  } catch (error) {
-    console.error('upsertRecurringTemplateAction', error)
+  } catch (err) {
+    console.error('upsertRecurringTemplateAction', err)
     return { error: { general: ['Unable to save recurring template'] } }
   }
 
@@ -581,8 +580,8 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
       where: { id: parsed.data.id },
       data: { isActive: parsed.data.isActive },
     })
-  } catch (error) {
-    console.error('toggleRecurringTemplateAction', error)
+  } catch (err) {
+    console.error('toggleRecurringTemplateAction', err)
     return { error: { general: ['Recurring template not found'] } }
   }
 
@@ -613,10 +612,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
   const where: Prisma.RecurringTemplateWhereInput = {
     isActive: true,
     startMonth: { lte: monthStart },
-    OR: [
-      { endMonth: null },
-      { endMonth: { gte: monthStart } },
-    ],
+    OR: [{ endMonth: null }, { endMonth: { gte: monthStart } }],
   }
 
   where.accountId = accountId
@@ -671,8 +667,8 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
 
   try {
     await prisma.transaction.createMany({ data: transactionsToCreate })
-  } catch (error) {
-    console.error('applyRecurringTemplatesAction', error)
+  } catch (err) {
+    console.error('applyRecurringTemplatesAction', err)
     return { error: { general: ['Unable to create recurring transactions'] } }
   }
 
@@ -700,8 +696,8 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
         color: parsed.data.color ?? null,
       },
     })
-  } catch (error) {
-    console.error('createCategoryAction', error)
+  } catch (err) {
+    console.error('createCategoryAction', err)
     return { error: { general: ['Category already exists'] } }
   }
 
@@ -725,8 +721,8 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
       where: { id: parsed.data.id },
       data: { isArchived: parsed.data.isArchived },
     })
-  } catch (error) {
-    console.error('archiveCategoryAction', error)
+  } catch (err) {
+    console.error('archiveCategoryAction', err)
     return { error: { general: ['Category not found'] } }
   }
 
@@ -775,8 +771,7 @@ export async function loginAction(input: z.infer<typeof loginSchema>) {
     }
   }
 
-  const defaultAccount =
-    accounts.find((account) => account.name === authUser.defaultAccountName) ?? accounts[0]
+  const defaultAccount = accounts.find((account) => account.name === authUser.defaultAccountName) ?? accounts[0]
 
   await establishSession({ userEmail: authUser.email, accountId: defaultAccount.id })
   return { success: true, accountId: defaultAccount.id }
@@ -841,7 +836,7 @@ export async function persistActiveAccountAction(input: z.infer<typeof accountSe
 export async function refreshExchangeRatesAction() {
   try {
     await requireSession()
-  } catch (error) {
+  } catch {
     return { error: { general: ['Your session expired. Please sign in again.'] } }
   }
 
@@ -853,8 +848,8 @@ export async function refreshExchangeRatesAction() {
 
     revalidatePath('/')
     return { success: true, updatedAt: result.updatedAt }
-  } catch (error) {
-    console.error('refreshExchangeRatesAction', error)
+  } catch (err) {
+    console.error('refreshExchangeRatesAction', err)
     return { error: { general: ['Unable to refresh exchange rates'] } }
   }
 }
@@ -864,7 +859,11 @@ export async function refreshExchangeRatesAction() {
 const holdingSchema = z.object({
   accountId: z.string().min(1, 'Account is required'),
   categoryId: z.string().min(1, 'Category is required'),
-  symbol: z.string().min(1).max(10).regex(/^[A-Z]+$/, 'Symbol must be uppercase letters'),
+  symbol: z
+    .string()
+    .min(1)
+    .max(10)
+    .regex(/^[A-Z]+$/, 'Symbol must be uppercase letters'),
   quantity: z.coerce.number().min(0.000001).max(999999999, 'Quantity out of range'),
   averageCost: z.coerce.number().min(0, 'Average cost cannot be negative'),
   currency: z.nativeEnum(Currency).default(Currency.USD),
@@ -902,8 +901,8 @@ export async function createHoldingAction(input: HoldingInput) {
     if (!category.isHolding) {
       return { error: { categoryId: ['Category must be marked as a holding category'] } }
     }
-  } catch (error) {
-    console.error('createHoldingAction.categoryCheck', error)
+  } catch (err) {
+    console.error('createHoldingAction.categoryCheck', err)
     return { error: { general: ['Unable to validate category'] } }
   }
 
@@ -911,14 +910,14 @@ export async function createHoldingAction(input: HoldingInput) {
   const { fetchStockQuote } = await import('@/lib/stock-api')
   try {
     await fetchStockQuote(data.symbol)
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Invalid symbol'
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Invalid symbol'
     return { error: { symbol: [errorMessage] } }
   }
 
   // Create holding
   try {
-    await(prisma as any).holding.create({
+    await (prisma as any).holding.create({
       data: {
         accountId: data.accountId,
         categoryId: data.categoryId,
@@ -928,9 +927,9 @@ export async function createHoldingAction(input: HoldingInput) {
         currency: data.currency,
         notes: data.notes ?? null,
       },
-    });
-  } catch (error) {
-    console.error('createHoldingAction', error)
+    })
+  } catch (err) {
+    console.error('createHoldingAction', err)
     return { error: { general: ['Unable to create holding. It may already exist.'] } }
   }
 
@@ -952,9 +951,9 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
   }
 
   try {
-    const holding = await(prisma as any).holding.findUnique({
+    const holding = await (prisma as any).holding.findUnique({
       where: { id: parsed.data.id },
-    });
+    })
 
     if (!holding) {
       return { error: { general: ['Holding not found'] } }
@@ -965,18 +964,16 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
       return access
     }
 
-    await(prisma as any).holding.update({
+    await (prisma as any).holding.update({
       where: { id: parsed.data.id },
       data: {
         quantity: new Prisma.Decimal(parsed.data.quantity.toFixed(6)),
-        averageCost: new Prisma.Decimal(
-          toDecimalString(parsed.data.averageCost)
-        ),
+        averageCost: new Prisma.Decimal(toDecimalString(parsed.data.averageCost)),
         notes: parsed.data.notes ?? null,
       },
-    });
-  } catch (error) {
-    console.error('updateHoldingAction', error)
+    })
+  } catch (err) {
+    console.error('updateHoldingAction', err)
     return { error: { general: ['Holding not found'] } }
   }
 
@@ -995,9 +992,9 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
   }
 
   try {
-    const holding = await(prisma as any).holding.findUnique({
+    const holding = await (prisma as any).holding.findUnique({
       where: { id: parsed.data.id },
-    });
+    })
 
     if (!holding) {
       return { error: { general: ['Holding not found'] } }
@@ -1008,11 +1005,11 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
       return access
     }
 
-    await(prisma as any).holding.delete({
+    await (prisma as any).holding.delete({
       where: { id: parsed.data.id },
-    });
-  } catch (error) {
-    console.error('deleteHoldingAction', error)
+    })
+  } catch (err) {
+    console.error('deleteHoldingAction', err)
     return { error: { general: ['Holding not found'] } }
   }
 
@@ -1037,14 +1034,12 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
 
   try {
     // Get all unique symbols for this account's holdings
-    const holdings = await(prisma as any).holding.findMany({
+    const holdings = await (prisma as any).holding.findMany({
       where: { accountId: parsed.data.accountId },
       select: { symbol: true },
-    });
+    })
 
-    const symbols: string[] = Array.from(
-      new Set(holdings.map((h: any) => h.symbol as string))
-    );
+    const symbols: string[] = Array.from(new Set(holdings.map((h: any) => h.symbol as string)))
 
     if (symbols.length === 0) {
       return { success: true, updated: 0, skipped: 0, errors: [] }
@@ -1055,8 +1050,8 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
 
     revalidatePath('/')
     return { success: true, ...result }
-  } catch (error) {
-    console.error('refreshHoldingPricesAction', error)
+  } catch (err) {
+    console.error('refreshHoldingPricesAction', err)
     return { error: { general: ['Unable to refresh stock prices'] } }
   }
 }

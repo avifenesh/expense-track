@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TransactionType, AccountType, Currency } from "@prisma/client";
+import { TransactionType, AccountType, Currency } from '@prisma/client'
 import {
   filterBudgets,
   getBudgetProgress,
@@ -51,21 +51,22 @@ const sampleBudgets = [
 
 const sampleTransactions = [
   {
-    id: "t1",
-    accountId: "a1",
-    categoryId: "c1",
+    id: 't1',
+    accountId: 'a1',
+    categoryId: 'c1',
     type: TransactionType.EXPENSE,
     amount: 50,
     currency: Currency.USD,
     convertedAmount: 50,
     displayCurrency: Currency.USD,
-    date: new Date("2025-10-05"),
-    description: "Coffee with Sam",
+    date: new Date('2025-10-05'),
+    description: 'Coffee with Sam',
     isRecurring: false,
+    isMutual: false,
     recurringTemplateId: null,
     category: {
-      id: "c1",
-      name: "Dining",
+      id: 'c1',
+      name: 'Dining',
       type: TransactionType.EXPENSE,
       color: null,
       isHolding: false,
@@ -74,8 +75,8 @@ const sampleTransactions = [
       updatedAt: new Date(),
     },
     account: {
-      id: "a1",
-      name: "Joint",
+      id: 'a1',
+      name: 'Joint',
       type: AccountType.PARTNER,
       preferredCurrency: Currency.USD,
       color: null,
@@ -86,24 +87,25 @@ const sampleTransactions = [
     },
     createdAt: new Date(),
     updatedAt: new Date(),
-    month: "2025-10",
+    month: '2025-10',
   },
   {
-    id: "t2",
-    accountId: "a2",
-    categoryId: "c2",
+    id: 't2',
+    accountId: 'a2',
+    categoryId: 'c2',
     type: TransactionType.INCOME,
     amount: 1200,
     currency: Currency.USD,
     convertedAmount: 1200,
     displayCurrency: Currency.USD,
-    date: new Date("2025-10-01"),
-    description: "October salary",
+    date: new Date('2025-10-01'),
+    description: 'October salary',
     isRecurring: true,
-    recurringTemplateId: "rt1",
+    isMutual: false,
+    recurringTemplateId: 'rt1',
     category: {
-      id: "c2",
-      name: "Salary",
+      id: 'c2',
+      name: 'Salary',
       type: TransactionType.INCOME,
       color: null,
       isHolding: false,
@@ -112,8 +114,8 @@ const sampleTransactions = [
       updatedAt: new Date(),
     },
     account: {
-      id: "a2",
-      name: "Partner",
+      id: 'a2',
+      name: 'Partner',
       type: AccountType.SELF,
       preferredCurrency: Currency.USD,
       color: null,
@@ -124,9 +126,9 @@ const sampleTransactions = [
     },
     createdAt: new Date(),
     updatedAt: new Date(),
-    month: "2025-10",
+    month: '2025-10',
   },
-];
+]
 
 const sampleRecurring = [
   {
@@ -161,8 +163,8 @@ const sampleRecurring = [
 
 const sampleCategories = [
   {
-    id: "c1",
-    name: "Dining",
+    id: 'c1',
+    name: 'Dining',
     type: TransactionType.EXPENSE,
     color: null,
     isHolding: false,
@@ -171,8 +173,8 @@ const sampleCategories = [
     updatedAt: new Date(),
   },
   {
-    id: "c2",
-    name: "Salary",
+    id: 'c2',
+    name: 'Salary',
     type: TransactionType.INCOME,
     color: null,
     isHolding: false,
@@ -181,8 +183,8 @@ const sampleCategories = [
     updatedAt: new Date(),
   },
   {
-    id: "c3",
-    name: "Travel",
+    id: 'c3',
+    name: 'Travel',
     type: TransactionType.EXPENSE,
     color: null,
     isHolding: false,
@@ -190,7 +192,7 @@ const sampleCategories = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
-];
+]
 
 describe('dashboard-ux helpers', () => {
   it('filters budgets by account and type', () => {

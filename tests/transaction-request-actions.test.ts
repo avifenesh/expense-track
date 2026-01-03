@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { createTransactionRequestAction, approveTransactionRequestAction, rejectTransactionRequestAction } from '@/app/actions'
+import {
+  createTransactionRequestAction,
+  approveTransactionRequestAction,
+  rejectTransactionRequestAction,
+} from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import { Currency } from '@prisma/client'
 
@@ -52,7 +56,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     transaction: {
       create: vi.fn(),
-    }
+    },
   },
 }))
 
@@ -75,7 +79,7 @@ describe('createTransactionRequestAction', () => {
     })
 
     expect(result).toHaveProperty('error')
-    expect(result.error?.general).toContain('Your session expired. Please sign in again.')
+    expect((result.error as { general?: string[] })?.general).toContain('Your session expired. Please sign in again.')
   })
 
   it('successfully creates a request', async () => {
@@ -84,6 +88,9 @@ describe('createTransactionRequestAction', () => {
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'avi@example.com',
       id: 'avi',
+      displayName: 'Avi',
+      passwordHash: 'mock-hash',
+      preferredCurrency: Currency.USD,
       accountNames: ['Avi', 'Serena'],
       defaultAccountName: 'Avi',
     })
@@ -105,12 +112,14 @@ describe('createTransactionRequestAction', () => {
     })
 
     expect(result).toEqual({ success: true })
-    expect(prisma.transactionRequest.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        fromId: 'from-id',
-        toId: 'to-id',
+    expect(prisma.transactionRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          fromId: 'from-id',
+          toId: 'to-id',
+        }),
       }),
-    }))
+    )
   })
 })
 
@@ -125,6 +134,9 @@ describe('approveTransactionRequestAction', () => {
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'serena@example.com',
       id: 'serena',
+      displayName: 'Serena',
+      passwordHash: 'mock-hash',
+      preferredCurrency: Currency.EUR,
       accountNames: ['Serena'],
       defaultAccountName: 'Serena',
     })
@@ -142,6 +154,9 @@ describe('approveTransactionRequestAction', () => {
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'serena@example.com',
       id: 'serena',
+      displayName: 'Serena',
+      passwordHash: 'mock-hash',
+      preferredCurrency: Currency.EUR,
       accountNames: ['Serena'],
       defaultAccountName: 'Serena',
     })
@@ -189,6 +204,9 @@ describe('rejectTransactionRequestAction', () => {
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'serena@example.com',
       id: 'serena',
+      displayName: 'Serena',
+      passwordHash: 'mock-hash',
+      preferredCurrency: Currency.EUR,
       accountNames: ['Serena'],
       defaultAccountName: 'Serena',
     })
@@ -217,4 +235,3 @@ describe('rejectTransactionRequestAction', () => {
     })
   })
 })
-

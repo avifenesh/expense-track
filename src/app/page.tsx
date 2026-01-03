@@ -66,7 +66,7 @@ export default async function Page({ searchParams }: PageProps) {
   const sessionAccountId = session.accountId && accountLookup.has(session.accountId) ? session.accountId : undefined
   const queryAccountId = typeof accountParam === 'string' && accountLookup.has(accountParam) ? accountParam : undefined
 
-  let accountId = queryAccountId ?? sessionAccountId ?? allowedAccounts[0]?.id
+  const accountId = queryAccountId ?? sessionAccountId ?? allowedAccounts[0]?.id
 
   if (!accountId) {
     redirect('/login?reason=no-accounts')
