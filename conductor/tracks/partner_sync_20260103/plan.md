@@ -31,10 +31,10 @@
     - [x] Sub-task: Write E2E test for full request flow
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Dashboard Update' (Protocol in workflow.md) (c1b4640)
 
-## Phase 3: Cleanup & Polish
+## Phase 3: Cleanup & Polish [checkpoint: 34df60d]
 - [x] Task: Remove legacy Joint account code (425e7ea+)
     - [x] Sub-task: Search and remove dead code related to "Joint"
 - [x] Task: Final E2E Verification (df5ce31+)
     - [x] Sub-task: Run full regression suite
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Cleanup & Polish' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Cleanup & Polish' (Protocol in workflow.md) (34df60d)
 
