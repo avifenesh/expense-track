@@ -941,37 +941,37 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_55%)]"
           aria-hidden
         />
-        {/* Month selector at top of header */}
-        <div className="relative z-10 mb-4 flex items-center justify-center">
-          <div className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur">
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-7 w-7 rounded-full text-white/90 transition hover:bg-white/20"
-              onClick={() => handleMonthChange(-1)}
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </Button>
-            <div className="flex items-center gap-1.5 px-2 text-xs font-medium text-white">
-              <CalendarRange className="h-3.5 w-3.5" />
-              {formatMonthLabel(monthKey)}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-7 w-7 rounded-full text-white/90 transition hover:bg-white/20"
-              onClick={() => handleMonthChange(1)}
-            >
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
         <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wide text-slate-200 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              Financial clarity
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Month selector */}
+              <div className="inline-flex items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 backdrop-blur">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-6 w-6 rounded-full text-white/90 transition hover:bg-white/20"
+                  onClick={() => handleMonthChange(-1)}
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                </Button>
+                <div className="flex items-center gap-1 px-1.5 text-xs font-medium text-white">
+                  <CalendarRange className="h-3 w-3" />
+                  {formatMonthLabel(monthKey)}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-6 w-6 rounded-full text-white/90 transition hover:bg-white/20"
+                  onClick={() => handleMonthChange(1)}
+                >
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wide text-slate-200 backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                Financial clarity
+              </span>
+            </div>
             <div className="space-y-2">
               <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Balance Beacon</h1>
               <p className="text-sm leading-relaxed text-slate-200/80">
