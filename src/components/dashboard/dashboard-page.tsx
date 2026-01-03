@@ -948,26 +948,15 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 w-8 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            title="Scroll to top"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
-            onClick={handleLogout}
-            loading={isPendingLogout}
-          >
-            Sign out
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
+          onClick={handleLogout}
+          loading={isPendingLogout}
+        >
+          Sign out
+        </Button>
       </div>
 
       <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white shadow-xl lg:p-6">
@@ -2422,6 +2411,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       {process.env.NEXT_PUBLIC_AI_ENABLED !== 'false' && (
         <ChatWidget accountId={accountId} monthKey={monthKey} preferredCurrency={preferredCurrency} />
       )}
+
+      {/* Floating scroll-to-top button */}
+      <Button
+        type="button"
+        variant="secondary"
+        className="fixed bottom-6 left-6 h-10 w-10 rounded-full shadow-lg"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        title="Scroll to top"
+      >
+        <ArrowUp className="h-5 w-5" />
+      </Button>
     </div>
   )
 }
