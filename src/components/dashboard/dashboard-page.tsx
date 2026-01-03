@@ -248,7 +248,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       accountId: initialLoggableAccountId,
       categoryId: defaultExpenseCategoryId,
       amount: '',
-      currency: Currency.USD,
+      currency: preferredCurrency,
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
@@ -435,14 +435,14 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       accountId: fallbackAccountId,
       categoryId: getDefaultCategoryId(TransactionType.EXPENSE),
       amount: '',
-      currency: Currency.USD,
+      currency: preferredCurrency,
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
       isRequest: false,
     })
     setEditingTransaction(null)
-  }, [activeAccount, getDefaultCategoryId, monthKey, resolveLoggableAccountId])
+  }, [activeAccount, getDefaultCategoryId, monthKey, preferredCurrency, resolveLoggableAccountId])
 
   const handleTransactionTypeChange = useCallback(
     (nextType: TransactionType) => {
