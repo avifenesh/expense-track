@@ -954,18 +954,12 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 focus your next dollar.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-100/80">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
-                <CalendarRange className="h-3.5 w-3.5" />
-                {formatMonthLabel(monthKey)}
+            {netStat && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-200">
+                <TrendingUp className="h-3.5 w-3.5" />
+                {formatRelativeAmount(netStat.amount)} net flow
               </span>
-              {netStat && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-200">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  {formatRelativeAmount(netStat.amount)} net flow
-                </span>
-              )}
-            </div>
+            )}
           </div>
 
           <div className="flex w-full max-w-md flex-col gap-6 rounded-2xl bg-white/10 p-5 backdrop-blur lg:max-w-sm">
