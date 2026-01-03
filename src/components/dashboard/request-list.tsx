@@ -100,7 +100,6 @@ export function RequestList({ requests, preferredCurrency }: RequestListProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  size="sm"
                   variant="ghost"
                   className="h-8 w-8 rounded-full border border-rose-500/30 bg-rose-500/10 p-0 text-rose-200 hover:bg-rose-500/20"
                   onClick={() => handleReject(request.id)}
@@ -110,7 +109,6 @@ export function RequestList({ requests, preferredCurrency }: RequestListProps) {
                   <X className="h-4 w-4" />
                 </Button>
                 <Button
-                  size="sm"
                   className="h-8 gap-1.5 rounded-full bg-sky-500 px-4 text-xs font-semibold text-white hover:bg-sky-400"
                   onClick={() => handleApprove(request.id)}
                   disabled={isPending}

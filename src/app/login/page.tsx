@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const reasonParam = resolvedSearchParams.reason
   const reason = Array.isArray(reasonParam) ? reasonParam[0] : reasonParam
-  const reasonMessage = reason ? loginReasons[reason] ?? 'Please sign in to continue.' : undefined
+  const reasonMessage = reason ? ERROR_MESSAGES[reason] ?? 'Please sign in to continue.' : undefined
 
   const session = await getSession()
   const accounts = await getAccounts()
