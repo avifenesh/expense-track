@@ -56,6 +56,7 @@ import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { ChatWidget } from '@/components/ai/chat-widget'
+import { RequestList } from '@/components/dashboard/request-list'
 
 export function normalizeDateInput(value: FormDataEntryValue | null): Date | null {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -1437,6 +1438,9 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             aria-labelledby="tab-transactions"
             className="space-y-6"
           >
+            {data.transactionRequests.length > 0 && (
+              <RequestList requests={data.transactionRequests} preferredCurrency={preferredCurrency} />
+            )}
             <div className="grid gap-6 xl:grid-cols-[2fr,3fr]">
               <Card className="border-white/15 bg-white/10">
                 <CardHeader className="gap-1">

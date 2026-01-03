@@ -21,10 +21,10 @@
 - [x] Task: Remove Joint View from Dashboard (938e83e+)
     - [x] Sub-task: Remove "Joint" tab from `dashboard-page.tsx`
     - [x] Sub-task: Update `dashboard-ux.ts` to handle only 2 accounts
-- [ ] Task: Implement "Inbox" for Requests
-    - [ ] Sub-task: Create `RequestList` component
-    - [ ] Sub-task: Implement Approve/Reject UI interactions
-    - [ ] Sub-task: Write component tests
+- [x] Task: Implement "Inbox" for Requests (e7df4ed+)
+    - [x] Sub-task: Create `RequestList` component
+    - [x] Sub-task: Implement Approve/Reject UI interactions
+    - [x] Sub-task: Write component tests
 - [ ] Task: Update Transaction Creation Form
     - [ ] Sub-task: Add "Request from Partner" toggle
     - [ ] Sub-task: Wire up form to new `createTransactionRequest` action

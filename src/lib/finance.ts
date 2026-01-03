@@ -99,6 +99,7 @@ export type DashboardData = {
   budgets: CategoryBudgetSummary[];
   transactions: TransactionWithDisplay[];
   recurringTemplates: RecurringTemplateSummary[];
+  transactionRequests: Awaited<ReturnType<typeof getTransactionRequests>>;
   accounts: Awaited<ReturnType<typeof getAccounts>>;
   categories: Awaited<ReturnType<typeof getCategories>>;
   holdings: HoldingWithPrice[];
@@ -153,6 +154,33 @@ export async function getAccounts() {
 export async function getCategories() {
   return prisma.category.findMany({
     orderBy: { name: "asc" },
+  });
+}
+
+export async function getTransactionRequests({
+  accountId,
+  status,
+}: {
+  accountId?: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+} = {}) {
+  const where: Prisma.TransactionRequestWhereInput = {};
+  if (accountId) {
+    where.toId = accountId;
+  }
+  if (status) {
+    where.status = status;
+  }
+
+  return prisma.transactionRequest.findMany({
+    where,
+    include: {
+      from: true,
+      category: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 }
 
@@ -321,6 +349,7 @@ export async function getDashboardData({
     categories,
     budgets,
     transactions,
+    transactionRequests,
     recurringTemplates,
     previousTransactionsRaw,
     historyTransactionsRaw,
@@ -334,6 +363,7 @@ export async function getDashboardData({
       preferredCurrency,
       accountType: accountRecord?.type,
     }),
+    getTransactionRequests({ accountId, status: "PENDING" }),
     getRecurringTemplates({ accountId }),
     prisma.transaction.findMany({
       where: buildAccountScopedWhere(
@@ -575,6 +605,7 @@ export async function getDashboardData({
     budgets: budgetsSummary,
     transactions: transactionsWithNumbers,
     recurringTemplates,
+    transactionRequests,
     accounts,
     categories,
     holdings: [], // Will be populated separately in page.tsx
