@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Balance Beacon is a personal finance application for managing income, spending, and shared budgets across multiple accounts (Self/Partner/Joint). Built with Next.js 13 App Router, Prisma ORM, PostgreSQL, and TypeScript.
+Balance Beacon is a personal finance application for two partners to manage income, spending, and shared budgets. Built with Next.js 13 App Router, Prisma ORM, PostgreSQL, and TypeScript.
 
 **NEW: AI Financial Advisor** - Powered by Amazon Bedrock (Claude Sonnet) for natural language financial assistance, transaction creation, spending analysis, and forecasting.
 
@@ -14,9 +14,10 @@ Balance Beacon is a personal finance application for managing income, spending, 
 
 The application revolves around seven main entities in `prisma/schema.prisma`:
 
-- **Account** (`SELF`, `PARTNER`, `JOINT`, `OTHER`) - Represents different financial accounts with unique names and optional preferred currency
+- **Account** (`SELF`, `PARTNER`) - Two partner accounts with unique names and preferred currency
 - **Category** - Income or expense groupings; can be soft-archived (`isArchived`) without losing history; supports holding categories for investments
-- **Transaction** - Individual financial entries linked to account + category; includes month snapshots for aggregation, multi-currency support, and mutual expense tracking
+- **Transaction** - Individual financial entries linked to account + category; includes month snapshots for aggregation and multi-currency support
+- **TransactionRequest** - Partner-to-partner expense requests with `PENDING`/`APPROVED`/`REJECTED` status
 - **Budget** - Monthly planned amounts per account-category pair (unique constraint on `accountId`, `categoryId`, `month`) with multi-currency support
 - **RecurringTemplate** - Permanent transaction plans that can be applied to create actual transactions each month
 - **Holding** - Investment holdings (stocks, ETFs) with quantity, average cost, and symbol tracking per account-category
@@ -82,7 +83,7 @@ Key patterns in `src/lib/finance.ts`:
 - **Budget tracking**: Compares planned amounts vs. actual transaction sums for each account-category-month
 - **Historical trends**: Fetches last N months of income/expense/net for sparklines
 - **Recurring templates**: Apply templates to create transactions for a given month using `applyRecurringTemplate()`
-- **Mutual expenses**: Transactions can be marked as `isMutual` to track shared expenses between partners
+- **Partner requests**: One partner can request expenses from another via `TransactionRequest`; approved requests become transactions
 - **Multi-currency**: All financial entities (transactions, budgets, holdings) support `Currency` enum (USD, EUR, ILS)
 
 ### Currency Management (`src/lib/currency.ts`)
