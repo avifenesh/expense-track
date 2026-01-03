@@ -901,7 +901,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 type="button"
                 variant="ghost"
                 className={cn(
-                  'h-8 gap-1.5 rounded-full px-3 text-xs font-medium transition',
+                  'h-9 gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition',
                   activeTab === value ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white',
                 )}
                 onClick={() => setActiveTab(value)}
@@ -911,11 +911,11 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 <span className="hidden sm:inline">{label}</span>
               </Button>
             ))}
-            <div className="mx-1 h-4 w-px bg-white/20" />
+            <div className="mx-1 h-5 w-px bg-white/20" />
             <Button
               type="button"
               variant="ghost"
-              className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
+              className="h-9 gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
               onClick={() => setShowBalanceForm((prev) => !prev)}
               title="Set balance"
             >

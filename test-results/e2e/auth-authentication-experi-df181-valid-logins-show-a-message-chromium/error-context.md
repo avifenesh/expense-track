@@ -1,0 +1,108 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+    - generic [active]:
+        - generic [ref=e4]:
+            - generic [ref=e5]:
+                - generic [ref=e6]:
+                    - navigation [ref=e7]:
+                        - button "previous" [disabled] [ref=e8]:
+                            - img "previous" [ref=e9]
+                        - generic [ref=e11]:
+                            - generic [ref=e12]: 1/
+                            - text: '1'
+                        - button "next" [disabled] [ref=e13]:
+                            - img "next" [ref=e14]
+                    - img
+                - generic [ref=e16]:
+                    - generic [ref=e17]:
+                        - img [ref=e18]
+                        - generic "Latest available version is detected (16.1.1)." [ref=e20]: Next.js 16.1.1
+                        - generic [ref=e21]: Turbopack
+                    - img
+            - dialog "Runtime Error" [ref=e23]:
+                - generic [ref=e26]:
+                    - generic [ref=e27]:
+                        - generic [ref=e28]:
+                            - generic [ref=e29]:
+                                - generic [ref=e30]: Runtime Error
+                                - generic [ref=e31]: Server
+                            - generic [ref=e32]:
+                                - button "Copy Error Info" [ref=e33] [cursor=pointer]:
+                                    - img [ref=e34]
+                                - button "No related documentation found" [disabled] [ref=e36]:
+                                    - img [ref=e37]
+                                - button "Attach Node.js inspector" [ref=e39] [cursor=pointer]:
+                                    - img [ref=e40]
+                        - generic [ref=e49]: Missing required environment variables for user 1 (AUTH_USER1_*)
+                    - generic [ref=e50]:
+                        - generic [ref=e51]:
+                            - paragraph [ref=e53]:
+                                - img [ref=e55]
+                                - generic [ref=e59]: src/lib/auth.ts (29:11) @ parseAuthUsers
+                                - button "Open in editor" [ref=e60] [cursor=pointer]:
+                                    - img [ref=e62]
+                            - generic [ref=e65]:
+                                - generic [ref=e66]: 27 |
+                                - generic [ref=e67]: '28 | if (!user1Email || !user1DisplayName || !user1PasswordHash) {'
+                                - generic [ref=e68]: "> 29 | throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')"
+                                - generic [ref=e69]: '| ^'
+                                - generic [ref=e70]: '30 | }'
+                                - generic [ref=e71]: 31 |
+                                - generic [ref=e72]: '32 | if (!user2Email || !user2DisplayName || !user2PasswordHash) {'
+                        - generic [ref=e73]:
+                            - generic [ref=e74]:
+                                - paragraph [ref=e75]:
+                                    - text: Call Stack
+                                    - generic [ref=e76]: '10'
+                                - button "Show 5 ignore-listed frame(s)" [ref=e77] [cursor=pointer]:
+                                    - text: Show 5 ignore-listed frame(s)
+                                    - img [ref=e78]
+                            - generic [ref=e80]:
+                                - generic [ref=e81]:
+                                    - text: parseAuthUsers
+                                    - button "Open parseAuthUsers in editor" [ref=e82] [cursor=pointer]:
+                                        - img [ref=e83]
+                                - text: src/lib/auth.ts (29:11)
+                            - generic [ref=e85]:
+                                - generic [ref=e86]:
+                                    - text: getAuthUsers
+                                    - button "Open getAuthUsers in editor" [ref=e87] [cursor=pointer]:
+                                        - img [ref=e88]
+                                - text: src/lib/auth.ts (62:18)
+                            - generic [ref=e90]:
+                                - generic [ref=e91]:
+                                    - text: Object.get
+                                    - button "Open Object.get in editor" [ref=e92] [cursor=pointer]:
+                                        - img [ref=e93]
+                                - text: src/lib/auth.ts (70:12)
+                            - generic [ref=e95]:
+                                - generic [ref=e96]:
+                                    - text: loginAction
+                                    - button "Open loginAction in editor" [ref=e97] [cursor=pointer]:
+                                        - img [ref=e98]
+                                - text: src/app/actions.ts (750:31)
+                            - generic [ref=e100]:
+                                - generic [ref=e101]:
+                                    - text: LoginPage
+                                    - button "Open LoginPage in editor" [ref=e102] [cursor=pointer]:
+                                        - img [ref=e103]
+                                - text: src/app/login/page.tsx (79:9)
+                - generic [ref=e105]: '1'
+                - generic [ref=e106]: '2'
+        - generic [ref=e111] [cursor=pointer]:
+            - button "Open Next.js Dev Tools" [ref=e112]:
+                - img [ref=e113]
+            - generic [ref=e116]:
+                - button "Open issues overlay" [ref=e117]:
+                    - generic [ref=e118]:
+                        - generic [ref=e119]: '0'
+                        - generic [ref=e120]: '1'
+                    - generic [ref=e121]: Issue
+                - button "Collapse issues badge" [ref=e122]:
+                    - img [ref=e123]
+    - generic [ref=e126]:
+        - 'heading "Application error: a server-side exception has occurred while loading 127.0.0.1 (see the server logs for more information)." [level=2] [ref=e127]'
+        - paragraph [ref=e128]: 'Digest: 3582198674'
+```
