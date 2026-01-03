@@ -233,7 +233,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     date: string
     description: string
     isRecurring: boolean
-    isMutual: boolean
   }>(() => {
     const loggableAccounts = data.accounts
     const initialLoggableAccountId =
@@ -248,7 +247,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
-      isMutual: false,
     }
   })
   const [editingTransaction, setEditingTransaction] = useState<DashboardTransaction | null>(null)
@@ -315,15 +313,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     () => data.accounts.find((account) => account.id === activeAccount) ?? null,
     [data.accounts, activeAccount],
   )
-  const isJointAccountView = false
 
-  const transactionAccountOptions = useMemo(() => {
-    if (!isJointAccountView) {
-      return accountsOptions
-    }
-
-    return [{ label: 'All accounts', value: 'all' }, ...accountsOptions]
-  }, [accountsOptions, isJointAccountView])
+  const transactionAccountOptions = accountsOptions
 
   const selfAccountName = useMemo(
     () => data.accounts.find((account) => account.type === AccountType.SELF)?.name ?? 'Self',
@@ -342,37 +333,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   )
 
   const defaultTransactionAccountFilter = activeAccount || ''
-
-  const mutualSummaryForView = data.mutualSummary
-
-  const mutualSummaryDisplay = useMemo(() => {
-    if (!mutualSummaryForView) {
-      return null
-    }
-
-    const ratioText = `Split: 2/3 ${mutualSummaryForView.selfAccountName} · 1/3 ${mutualSummaryForView.partnerAccountName}.`
-
-    if (mutualSummaryForView.status === 'settled' || mutualSummaryForView.amount <= 0.01) {
-      return {
-        headline: 'Shared expenses are settled for this month.',
-        helper: ratioText,
-      }
-    }
-
-    const formattedAmount = formatCurrency(mutualSummaryForView.amount, preferredCurrency)
-
-    if (mutualSummaryForView.status === 'partner-owes-self') {
-      return {
-        headline: `${mutualSummaryForView.partnerAccountName} owes ${mutualSummaryForView.selfAccountName} ${formattedAmount}.`,
-        helper: ratioText,
-      }
-    }
-
-    return {
-      headline: `${mutualSummaryForView.selfAccountName} owes ${mutualSummaryForView.partnerAccountName} ${formattedAmount}.`,
-      helper: ratioText,
-    }
-  }, [mutualSummaryForView, preferredCurrency])
 
   const isEditingTransaction = Boolean(editingTransaction)
 
@@ -479,7 +439,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
-      isMutual: false,
     })
     setEditingTransaction(null)
   }, [
@@ -502,7 +461,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
           ...prev,
           type: nextType,
           categoryId: nextCategoryId,
-          isMutual: nextType === TransactionType.EXPENSE ? prev.isMutual : false,
         }
       })
     },
@@ -523,7 +481,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
         date: isoDate,
         description: transaction.description ?? '',
         isRecurring: transaction.isRecurring,
-        isMutual: transaction.type === TransactionType.EXPENSE ? (transaction.isMutual ?? false) : false,
       })
       setTransactionFeedback(null)
     },
@@ -676,7 +633,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
       date: dateInput,
       description: description.length > 0 ? description : undefined,
       isRecurring: transactionFormState.isRecurring,
-      isMutual: transactionFormState.type === TransactionType.EXPENSE && transactionFormState.isMutual,
     }
 
     startTransaction(async () => {
@@ -1619,26 +1575,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                             Permanent (recurring) transaction
                           </label>
                         </div>
-                        {transactionFormState.type === TransactionType.EXPENSE && (
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="isMutual"
-                              name="isMutual"
-                              type="checkbox"
-                              className="h-4 w-4 rounded border border-white/30 bg-white/10 text-sky-400 focus:ring-sky-400/40"
-                              checked={transactionFormState.isMutual}
-                              onChange={(event) =>
-                                setTransactionFormState((prev) => ({
-                                  ...prev,
-                                  isMutual: event.target.checked,
-                                }))
-                              }
-                            />
-                            <label htmlFor="isMutual" className="text-xs text-slate-300">
-                              Mutual expense (2/3 {selfAccountName} · 1/3 {partnerAccountName})
-                            </label>
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1693,21 +1629,14 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                 <CardHeader className="gap-1">
                   <CardTitle
                     className="text-lg font-semibold text-white"
-                    helpText="Review the newest transactions, apply filters, and jump into edits when something looks off."
-                  >
-                    Recent activity
-                  </CardTitle>
-                  <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {mutualSummaryDisplay && (
-                    <div className="rounded-2xl border border-sky-400/30 bg-sky-500/15 p-3 text-xs text-sky-50">
-                      <p className="font-medium text-sky-100">{mutualSummaryDisplay.headline}</p>
-                      <p className="mt-1 text-[11px] text-sky-100/80">{mutualSummaryDisplay.helper}</p>
-                    </div>
-                  )}
-                  <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-                    <div className="space-y-2">
+                                      helpText="Review the newest transactions, apply filters, and jump into edits when something looks off."
+                                    >
+                                      Recent activity
+                                    </CardTitle>
+                                    <p className="text-sm text-slate-400">Swipe through the latest transactions and tidy anything out of place.</p>
+                                  </CardHeader>
+                                  <CardContent className="space-y-3">
+                                    <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">                    <div className="space-y-2">
                       <label className="text-xs font-medium text-slate-300" htmlFor="transaction-filter-type">
                         Type filter
                       </label>
@@ -1777,11 +1706,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
                             <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-200">
                               {transaction.account.name}
                             </span>
-                            {transaction.isMutual && (
-                              <span className="rounded-full border border-sky-400/40 bg-sky-500/20 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-sky-100">
-                                Mutual
-                              </span>
-                            )}
                           </div>
                           <div className="text-xs text-slate-300">
                             {new Date(transaction.date).toLocaleDateString()} · {transaction.description || '—'}

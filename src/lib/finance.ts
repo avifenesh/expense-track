@@ -51,13 +51,6 @@ export type RecurringTemplateSummary = {
   endMonthKey: string | null;
 };
 
-export type MutualSettlementSummary = {
-  status: "settled" | "partner-owes-self" | "self-owes-partner";
-  amount: number;
-  selfAccountName: string;
-  partnerAccountName: string;
-};
-
 export type HoldingWithPrice = {
   id: string;
   accountId: string;
@@ -98,8 +91,6 @@ export type TransactionWithDisplay = Omit<
   convertedAmount: number;
   displayCurrency: Currency;
   month: string;
-  // Note: isMutual should be included via Omit, but explicitly adding for type safety
-  isMutual: boolean | null;
 };
 
 export type DashboardData = {
@@ -119,7 +110,6 @@ export type DashboardData = {
   history: MonthlyHistoryPoint[];
   exchangeRateLastUpdate: Date | null;
   preferredCurrency?: Currency;
-  mutualSummary?: MutualSettlementSummary;
 };
 
 const TWO_DECIMAL = 100;
@@ -139,12 +129,6 @@ function sumByType(
     .reduce((acc, curr) => acc + curr.amount, 0);
 }
 
-const MUTUAL_SPLIT: Record<AccountType, number> = {
-  [AccountType.SELF]: 2 / 3,
-  [AccountType.PARTNER]: 1 / 3,
-  [AccountType.OTHER]: 0,
-};
-
 function buildAccountScopedWhere(
   base: Prisma.TransactionWhereInput,
   accountId?: string,
@@ -157,80 +141,6 @@ function buildAccountScopedWhere(
   return {
     ...base,
     accountId,
-  };
-}
-
-type MutualCandidate = {
-  convertedAmount: number;
-  isMutual: boolean | null; // Prisma generates nullable boolean
-  type: TransactionType;
-  account: {
-    type: AccountType;
-    name: string;
-  };
-};
-
-export function calculateMutualSummary(
-  transactions: MutualCandidate[],
-  options: { selfAccountName: string; partnerAccountName: string }
-): MutualSettlementSummary | undefined {
-  const mutualExpenses = transactions.filter(
-    (transaction) =>
-      transaction.isMutual === true && // Explicitly check for true (not null/undefined)
-      transaction.type === TransactionType.EXPENSE &&
-      (transaction.account.type === AccountType.SELF ||
-        transaction.account.type === AccountType.PARTNER)
-  );
-
-  if (mutualExpenses.length === 0) {
-    return undefined;
-  }
-
-  let actualSelf = 0;
-  let actualPartner = 0;
-  let expectedSelf = 0;
-  let expectedPartner = 0;
-
-  mutualExpenses.forEach((transaction) => {
-    const total = transaction.convertedAmount;
-    expectedSelf += total * MUTUAL_SPLIT[AccountType.SELF];
-    expectedPartner += total * MUTUAL_SPLIT[AccountType.PARTNER];
-
-    if (transaction.account.type === AccountType.SELF) {
-      actualSelf += total;
-    }
-
-    if (transaction.account.type === AccountType.PARTNER) {
-      actualPartner += total;
-    }
-  });
-
-  const deltaSelf = actualSelf - expectedSelf;
-  const tolerance = 0.01;
-
-  if (Math.abs(deltaSelf) <= tolerance) {
-    return {
-      status: "settled",
-      amount: 0,
-      selfAccountName: options.selfAccountName,
-      partnerAccountName: options.partnerAccountName,
-    };
-  }
-
-  if (deltaSelf > 0) {
-    return {
-      status: "partner-owes-self",
-      amount: Math.round(deltaSelf * TWO_DECIMAL) / TWO_DECIMAL,
-      selfAccountName: options.selfAccountName,
-      partnerAccountName: options.partnerAccountName,
-    };
-  }
-
-  return {
-    status: "self-owes-partner",
-    amount: Math.round(Math.abs(deltaSelf) * TWO_DECIMAL) / TWO_DECIMAL,
-    selfAccountName: options.selfAccountName,
-    partnerAccountName: options.partnerAccountName,
   };
 }
 
@@ -310,7 +220,6 @@ export async function getTransactionsForMonth({
         convertedAmount,
         displayCurrency: preferredCurrency || transaction.currency,
         month: getMonthKey(transaction.month),
-        isMutual: (transaction as any).isMutual ?? false, // Type assertion: field exists in DB but not in generated types
       } satisfies TransactionWithDisplay;
     })
   );
@@ -412,7 +321,6 @@ export async function getDashboardData({
     categories,
     budgets,
     transactions,
-    mutualTransactionsRaw,
     recurringTemplates,
     previousTransactionsRaw,
     historyTransactionsRaw,
@@ -425,23 +333,6 @@ export async function getDashboardData({
       accountId,
       preferredCurrency,
       accountType: accountRecord?.type,
-    }),
-    prisma.transaction.findMany({
-      where: {
-        date: {
-          gte: monthStart,
-          lt: nextMonthStart,
-        },
-        isMutual: true,
-        account: {
-          type: {
-            in: [AccountType.SELF, AccountType.PARTNER],
-          },
-        },
-      } as any,
-      include: {
-        account: true,
-      },
     }),
     getRecurringTemplates({ accountId }),
     prisma.transaction.findMany({
@@ -488,54 +379,6 @@ export async function getDashboardData({
   ]);
 
   const transactionsWithNumbers = transactions;
-
-  // Calculate mutual summary for all views, not just Joint account
-  let mutualSummary: MutualSettlementSummary | undefined;
-  const mutualSummaryCandidates: MutualCandidate[] = await Promise.all(
-    mutualTransactionsRaw.map(async (transaction) => {
-      const originalAmount = decimalToNumber(transaction.amount);
-      let convertedAmount = originalAmount;
-
-      if (preferredCurrency && transaction.currency !== preferredCurrency) {
-        try {
-          convertedAmount = await convertAmount(
-            originalAmount,
-            transaction.currency,
-            preferredCurrency,
-            transaction.date
-          );
-        } catch (error) {
-          console.warn(
-            `Currency conversion failed for mutual transaction ${transaction.id}:`,
-            error
-          );
-        }
-      }
-
-      return {
-        convertedAmount,
-        isMutual: (transaction as any).isMutual,
-        type: transaction.type,
-        account: {
-          type: transaction.account.type,
-          name: transaction.account.name,
-        },
-      } satisfies MutualCandidate;
-    })
-  );
-  const selfAccount = accounts.find(
-    (account) => account.type === AccountType.SELF
-  );
-  const partnerAccount = accounts.find(
-    (account) => account.type === AccountType.PARTNER
-  );
-
-  if (selfAccount && partnerAccount) {
-    mutualSummary = calculateMutualSummary(mutualSummaryCandidates, {
-      selfAccountName: selfAccount.name,
-      partnerAccountName: partnerAccount.name,
-    });
-  }
 
   // Use converted amounts for calculations when preferred currency is set
   const totals = transactionsWithNumbers.map((t) => ({
@@ -743,7 +586,6 @@ export async function getDashboardData({
     history,
     exchangeRateLastUpdate,
     preferredCurrency,
-    mutualSummary,
   };
 }
 

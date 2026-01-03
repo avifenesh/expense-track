@@ -84,11 +84,11 @@ export function LoginCard() {
         <CardTitle className="text-2xl font-semibold text-white">
           {mode === 'login' ? 'Resume your financial workspace' : 'Restore sign-in access'}
         </CardTitle>
-        <p className="text-sm text-slate-300">
-          {mode === 'login'
-            ? 'Sign in with your personal email to manage the finances mapped to your profile and shared joint account.'
-            : 'Enter a trusted recovery inbox and we will email the reset checklist with the household credentials.'}
-        </p>
+          <CardDescription className="text-slate-400">
+            {isRecovery
+              ? 'Enter your account email to receive a recovery link and instructions.'
+              : 'Sign in with your personal email to manage your finances and synced partner account.'}
+          </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex rounded-full bg-slate-900/30 p-1 text-xs font-medium text-slate-300">

@@ -73,7 +73,6 @@ const transactionSchema = z.object({
   date: z.coerce.date(),
   description: z.string().max(240, 'Keep the description short').optional().nullable(),
   isRecurring: z.boolean().optional().default(false),
-  isMutual: z.boolean().optional().default(false),
   recurringTemplateId: z.string().optional().nullable(),
 })
 
@@ -293,7 +292,6 @@ export async function createTransactionAction(input: TransactionInput) {
         month: monthStart,
         description: data.description,
         isRecurring: data.isRecurring ?? false,
-        isMutual: data.isMutual ?? false,
         recurringTemplateId: data.recurringTemplateId ?? null,
       },
     });
@@ -351,7 +349,6 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         month: monthStart,
         description: data.description,
         isRecurring: data.isRecurring ?? false,
-        isMutual: data.isMutual ?? false,
       },
     });
   } catch (error) {

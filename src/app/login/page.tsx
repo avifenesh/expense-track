@@ -14,10 +14,9 @@ type LoginPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
-const loginReasons: Record<string, string> = {
-  'no-accounts': 'No accounts were found for this login. Seed the Avi, Serena, and Joint accounts, then sign in again.',
-  'account-access': 'You tried to open an account that is not assigned to your login. Pick one of your personal or joint accounts.',
-  'unknown-user': 'We could not verify your login. Please sign in again.',
+const ERROR_MESSAGES: Record<string, string> = {
+  'no-accounts': 'No accounts were found for this login. Seed the Avi and Serena accounts, then sign in again.',
+  'account-access': 'You tried to open an account that is not assigned to your login. Pick one of your personal or partner accounts.',
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {

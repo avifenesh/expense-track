@@ -63,7 +63,6 @@ const sampleTransactions = [
     description: "Coffee with Sam",
     isRecurring: false,
     recurringTemplateId: null,
-    isMutual: false,
     category: {
       id: "c1",
       name: "Dining",
@@ -77,7 +76,7 @@ const sampleTransactions = [
     account: {
       id: "a1",
       name: "Joint",
-      type: AccountType.JOINT,
+      type: AccountType.PARTNER,
       preferredCurrency: Currency.USD,
       color: null,
       icon: null,
@@ -102,7 +101,6 @@ const sampleTransactions = [
     description: "October salary",
     isRecurring: true,
     recurringTemplateId: "rt1",
-    isMutual: false,
     category: {
       id: "c2",
       name: "Salary",

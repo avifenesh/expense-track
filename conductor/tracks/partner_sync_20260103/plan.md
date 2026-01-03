@@ -18,9 +18,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Refactor' (Protocol in workflow.md) (467b65f)
 
 ## Phase 2: Frontend Dashboard Update
-- [ ] Task: Remove Joint View from Dashboard
-    - [ ] Sub-task: Remove "Joint" tab from `dashboard-page.tsx`
-    - [ ] Sub-task: Update `dashboard-ux.ts` to handle only 2 accounts
+- [x] Task: Remove Joint View from Dashboard (938e83e+)
+    - [x] Sub-task: Remove "Joint" tab from `dashboard-page.tsx`
+    - [x] Sub-task: Update `dashboard-ux.ts` to handle only 2 accounts
 - [ ] Task: Implement "Inbox" for Requests
     - [ ] Sub-task: Create `RequestList` component
     - [ ] Sub-task: Implement Approve/Reject UI interactions
