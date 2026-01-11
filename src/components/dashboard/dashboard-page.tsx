@@ -223,7 +223,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const preferredCurrency = data.preferredCurrency || Currency.USD
 
   const initialAccountId = accountId ?? data.accounts[0]?.id ?? ''
-  const _initialAccountRecord = data.accounts.find((account) => account.id === initialAccountId) ?? null
   const defaultExpenseCategoryId =
     data.categories.find((category) => category.type === TransactionType.EXPENSE && !category.isArchived)?.id ?? ''
   const initialTransactionAccountFilterValue = initialAccountId
@@ -282,7 +281,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const [isPendingBudget, startBudget] = useTransition()
   const [isPendingRecurring, startRecurring] = useTransition()
   const [isPendingCategory, startCategory] = useTransition()
-  const [_isPendingAccount, startPersistAccount] = useTransition()
+  const [, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
   const [isPendingRates, startRates] = useTransition()
   const [isPendingBalance, startBalance] = useTransition()
@@ -321,15 +320,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
   const transactionAccountOptions = accountsOptions
 
-  const _selfAccountName = useMemo(
-    () => data.accounts.find((account) => account.type === AccountType.SELF)?.name ?? 'Self',
-    [data.accounts],
-  )
-
-  const _partnerAccountName = useMemo(
-    () => data.accounts.find((account) => account.type === AccountType.PARTNER)?.name ?? 'Partner',
-    [data.accounts],
-  )
 
   const getDefaultCategoryId = useCallback(
     (type: TransactionType) =>

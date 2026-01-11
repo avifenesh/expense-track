@@ -125,7 +125,6 @@ function sumByType(tx: Array<{ type: TransactionType; amount: number }>, type: T
 function buildAccountScopedWhere(
   base: Prisma.TransactionWhereInput,
   accountId?: string,
-  _accountType?: AccountType,
 ): Prisma.TransactionWhereInput {
   if (!accountId) {
     return base
@@ -197,7 +196,6 @@ export async function getTransactionsForMonth({
       },
     },
     accountId,
-    accountType,
   )
 
   const transactions = await prisma.transaction.findMany({
@@ -348,7 +346,6 @@ export async function getDashboardData({
           },
         },
         accountId,
-        accountRecord?.type,
       ),
       select: {
         type: true,
@@ -366,7 +363,6 @@ export async function getDashboardData({
           },
         },
         accountId,
-        accountRecord?.type,
       ),
       select: {
         type: true,

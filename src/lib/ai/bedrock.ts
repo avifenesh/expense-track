@@ -29,8 +29,6 @@ export const bedrock = createAmazonBedrock({
 // Model configuration - Claude 4.5 Haiku (fast, cost-effective)
 // Using US inference profile for on-demand access
 export const model = bedrock('us.anthropic.claude-haiku-4-5-20250514-v1:0')
-// Fallback model for throttling/overflow: Claude 4.5 Haiku (same model)
-export const fastModel = bedrock('us.anthropic.claude-haiku-4-5-20250514-v1:0')
 
 // Currency and TransactionType enums for Zod
 const currencyEnum = z.enum(['USD', 'EUR', 'ILS'])

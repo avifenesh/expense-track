@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { startOfDay } from 'date-fns'
 
 const FRANKFURTER_BASE_URL = 'https://api.frankfurter.dev/v1'
-const CACHE_TTL_HOURS = 24
 
 type FrankfurterResponse = {
   amount: number
@@ -225,50 +224,4 @@ export async function getLastUpdateTime(): Promise<Date | null> {
   })
 
   return latest?.fetchedAt || null
-}
-
-/**
- * Check if exchange rates are stale (older than TTL)
- */
-export async function areRatesStale(): Promise<boolean> {
-  const lastUpdate = await getLastUpdateTime()
-
-  if (!lastUpdate) {
-    return true
-  }
-
-  const hoursSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60)
-  return hoursSinceUpdate > CACHE_TTL_HOURS
-}
-
-/**
- * Get currency symbol for display
- */
-export function getCurrencySymbol(currency: Currency): string {
-  switch (currency) {
-    case 'USD':
-      return '$'
-    case 'EUR':
-      return '€'
-    case 'ILS':
-      return '₪'
-    default:
-      return currency
-  }
-}
-
-/**
- * Get currency display name
- */
-export function getCurrencyName(currency: Currency): string {
-  switch (currency) {
-    case 'USD':
-      return 'US Dollar'
-    case 'EUR':
-      return 'Euro'
-    case 'ILS':
-      return 'Israeli Shekel'
-    default:
-      return currency
-  }
 }

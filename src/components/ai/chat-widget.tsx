@@ -289,7 +289,6 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
           accountId,
           monthKey,
           preferredCurrency,
-          useFallback: false,
         }),
         signal: controller.signal,
       })
@@ -375,7 +374,6 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
               accountId,
               monthKey,
               preferredCurrency,
-              useFallback: true,
             }),
             signal: controller.signal,
           })

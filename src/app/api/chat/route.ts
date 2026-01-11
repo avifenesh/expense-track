@@ -1,5 +1,5 @@
 import { streamText, stepCountIs } from 'ai'
-import { model, fastModel, tools, systemPrompt } from '@/lib/ai/bedrock'
+import { model, tools, systemPrompt } from '@/lib/ai/bedrock'
 import { buildFinancialContext } from '@/lib/ai/context'
 import { requireSession } from '@/lib/auth-server'
 import { Currency } from '@prisma/client'
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     await requireSession();
 
     // Parse request body
-    const { messages, accountId, monthKey, preferredCurrency, useFallback } = await req.json()
+    const { messages, accountId, monthKey, preferredCurrency } = await req.json()
 
     if (!accountId || !monthKey) {
       return new Response('Missing accountId or monthKey', { status: 400 })
@@ -37,16 +37,13 @@ export async function POST(req: Request) {
       }
     );
 
-    // Select model based on explicit fallback flag
-    const selectedModel = useFallback ? fastModel : model
     const result = streamText({
-      model: selectedModel,
+      model,
       system: `${systemPrompt}\n\n=== CURRENT FINANCIAL DATA ===\n${context}`,
       messages: validMessages,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tools: tools as any,
       stopWhen: stepCountIs(2),
-      maxRetries: useFallback ? 3 : 0,
     });
     return result.toTextStreamResponse()
   } catch (error) {
