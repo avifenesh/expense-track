@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeDateInput } from '@/components/dashboard/dashboard-page'
+import { normalizeDateInput } from '@/utils/date'
 
 describe('normalizeDateInput', () => {
   it('converts ISO date strings to UTC midnight', () => {
