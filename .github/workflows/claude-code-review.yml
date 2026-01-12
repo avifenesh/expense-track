@@ -9,9 +9,77 @@ on:
        - "package.json"
        - "tsconfig.json"
        - ".github/workflows/**"
+  push:
+    tags:
+      - '*'
 
 jobs:
+  check-run-count:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    permissions:
+      actions: read
+      pull-requests: read
+    steps:
+      - name: Check if workflow should run
+        id: check
+        run: |
+          # Run on tag pushes
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # For PRs, count previous runs of this workflow (completed, failed, or cancelled)
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          WORKFLOW_NAME="${{ github.workflow }}"
+          
+          echo "Workflow name: $WORKFLOW_NAME"
+          echo "PR number: $PR_NUMBER"
+          
+          # Query GitHub API for ALL previous runs of this workflow for this PR
+          # We use the workflow ID from the API to ensure we're counting the right workflow
+          API_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?event=pull_request&per_page=100")
+          
+          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Error: API request failed with status $HTTP_CODE"
+            echo "Response: $RESPONSE_BODY"
+            echo "Defaulting to skip execution for safety"
+            RUN_COUNT=999
+          else
+            # Count runs for this specific PR and workflow
+            # Match by workflow name (from YAML header) and PR number (as integer)
+            # Note: .name in API response is the display name from YAML, not the filename
+            # Exclude in_progress and queued runs (count only completed/failed/cancelled)
+            RUN_COUNT=$(echo "$RESPONSE_BODY" | jq --arg wf "Claude Code Review" --argjson pr "$PR_NUMBER" \
+              '[.workflow_runs[] | select(.name == $wf and .status != "in_progress" and .status != "queued" and any(.pull_requests[]?; .number == $pr))] | length' 2>/dev/null || echo "999")
+            
+            # Validate RUN_COUNT is a number
+            if ! [[ "$RUN_COUNT" =~ ^[0-9]+$ ]]; then
+              echo "Error: Invalid RUN_COUNT value: $RUN_COUNT"
+              echo "Defaulting to skip execution for safety"
+              RUN_COUNT=999
+            fi
+          fi
+          
+          echo "Previous runs for this PR: $RUN_COUNT"
+          
+          # Run only on first 2 times (0 and 1 previous runs)
+          if [ "$RUN_COUNT" -lt 2 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "Skipping run - workflow has already run $RUN_COUNT times for this PR"
+          fi
+
   claude-review:
+    needs: check-run-count
+    if: needs.check-run-count.outputs.should_run == 'true' && github.event_name == 'pull_request'
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
