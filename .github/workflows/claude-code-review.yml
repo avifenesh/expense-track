@@ -53,9 +53,10 @@ jobs:
             RUN_COUNT=999
           else
             # Count runs for this specific PR and workflow
-            # Match by workflow name and PR number (as integer)
+            # Match by workflow name (from YAML header) and PR number (as integer)
+            # Note: .name in API response is the display name from YAML, not the filename
             # Exclude in_progress and queued runs (count only completed/failed/cancelled)
-            RUN_COUNT=$(echo "$RESPONSE_BODY" | jq --arg wf "$WORKFLOW_NAME" --argjson pr "$PR_NUMBER" \
+            RUN_COUNT=$(echo "$RESPONSE_BODY" | jq --arg wf "Claude Code Review" --argjson pr "$PR_NUMBER" \
               '[.workflow_runs[] | select(.name == $wf and .status != "in_progress" and .status != "queued" and any(.pull_requests[]?; .number == $pr))] | length' 2>/dev/null || echo "999")
             
             # Validate RUN_COUNT is a number
@@ -78,7 +79,7 @@ jobs:
 
   claude-review:
     needs: check-run-count
-    if: needs.check-run-count.outputs.should_run == 'true'
+    if: needs.check-run-count.outputs.should_run == 'true' && github.event_name == 'pull_request'
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
