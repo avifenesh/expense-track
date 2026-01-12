@@ -9,9 +9,49 @@ on:
        - "package.json"
        - "tsconfig.json"
        - ".github/workflows/**"
+  push:
+    tags:
+      - '*'
 
 jobs:
+  check-run-count:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    permissions:
+      actions: read
+      pull-requests: read
+    steps:
+      - name: Check if workflow should run
+        id: check
+        run: |
+          # Run on tag pushes
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # For PRs, count previous successful/completed runs of this workflow
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          WORKFLOW_NAME="claude-code-review.yml"
+          
+          RUN_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$WORKFLOW_NAME/runs?event=pull_request&status=completed" | \
+            jq "[.workflow_runs[] | select(.pull_requests[]?.number == $PR_NUMBER)] | length")
+          
+          echo "Previous completed runs for this PR: $RUN_COUNT"
+          
+          # Run only on first 2 times (0 and 1 previous runs)
+          if [ "$RUN_COUNT" -lt 2 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "Skipping run - workflow has already run $RUN_COUNT times for this PR"
+          fi
+
   claude-review:
+    needs: check-run-count
+    if: needs.check-run-count.outputs.should_run == 'true'
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
