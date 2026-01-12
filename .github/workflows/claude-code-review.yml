@@ -33,11 +33,30 @@ jobs:
           
           # For PRs, count previous successful/completed runs of this workflow
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          WORKFLOW_NAME="claude-code-review.yml"
+          # Extract workflow filename from workflow_ref (e.g., "refs/heads/main/.github/workflows/claude-code-review.yml@ref")
+          WORKFLOW_NAME=$(echo "${{ github.workflow_ref }}" | sed 's/.*\.github\/workflows\///' | sed 's/@.*//')
           
-          RUN_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$WORKFLOW_NAME/runs?event=pull_request&status=completed" | \
-            jq "[.workflow_runs[] | select(.pull_requests[]?.number == $PR_NUMBER)] | length")
+          # Query GitHub API for previous runs, with error handling
+          API_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$WORKFLOW_NAME/runs?event=pull_request&status=completed")
+          
+          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Error: API request failed with status $HTTP_CODE"
+            echo "Defaulting to skip execution for safety"
+            RUN_COUNT=999
+          else
+            RUN_COUNT=$(echo "$RESPONSE_BODY" | jq "[.workflow_runs[] | select(.pull_requests[]?.number == $PR_NUMBER)] | length" 2>/dev/null || echo "999")
+            
+            # Validate RUN_COUNT is a number
+            if ! [[ "$RUN_COUNT" =~ ^[0-9]+$ ]]; then
+              echo "Error: Invalid RUN_COUNT value: $RUN_COUNT"
+              echo "Defaulting to skip execution for safety"
+              RUN_COUNT=999
+            fi
+          fi
           
           echo "Previous completed runs for this PR: $RUN_COUNT"
           
