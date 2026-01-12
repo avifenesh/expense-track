@@ -1,26 +1,65 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// Test password used for mock users
+const TEST_PASSWORD = 'TestPassword123!'
+
+// Mock prisma to avoid DATABASE_URL requirement
+vi.mock('@/lib/prisma', () => ({
+  prisma: {},
+}))
+
+// Mock auth module with test users (data inlined to avoid hoisting issues)
+vi.mock('@/lib/auth', async () => {
+  const { Currency } = await import('@prisma/client')
+  const bcryptLib = await import('bcryptjs')
+  const hash = bcryptLib.default.hashSync('TestPassword123!', 10)
+
+  const users = [
+    {
+      id: 'avi' as const,
+      email: 'test1@example.com',
+      displayName: 'Test User 1',
+      passwordHash: hash,
+      accountNames: ['Test1'],
+      defaultAccountName: 'Test1',
+      preferredCurrency: Currency.USD,
+    },
+    {
+      id: 'serena' as const,
+      email: 'test2@example.com',
+      displayName: 'Test User 2',
+      passwordHash: hash,
+      accountNames: ['Test2'],
+      defaultAccountName: 'Test2',
+      preferredCurrency: Currency.USD,
+    },
+  ]
+
+  const contacts = users.map((user) => ({
+    email: user.email,
+    label: `${user.displayName} recovery inbox`,
+  }))
+
+  return {
+    AUTH_USERS: users,
+    RECOVERY_CONTACTS: contacts,
+    getAuthUsers: () => users,
+    getRecoveryContacts: () => contacts,
+    SESSION_COOKIE: 'balance_session',
+    USER_COOKIE: 'balance_user',
+    ACCOUNT_COOKIE: 'balance_account',
+  }
+})
+
 import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import { verifyCredentials } from '@/lib/auth-server'
 import { requestPasswordResetAction } from '@/app/actions'
 
-// Test passwords can be configured via env vars (for CI/testing) or default to dev passwords
-const TEST_PASSWORD_1 = process.env.AUTH_USER1_TEST_PASSWORD || process.env.TEST_PASSWORD_AVI
-const TEST_PASSWORD_2 = process.env.AUTH_USER2_TEST_PASSWORD || process.env.TEST_PASSWORD_SERENA
-
 describe('auth credential verification', () => {
-  it('accepts each household credential', async () => {
-    // Skip if test passwords not configured
-    if (!TEST_PASSWORD_1 || !TEST_PASSWORD_2) {
-      console.log('Skipping credential test: TEST_PASSWORD env vars not set')
-      return
-    }
-    await Promise.all(
-      AUTH_USERS.map(async (user) => {
-        const password = user.id === 'avi' ? TEST_PASSWORD_1 : TEST_PASSWORD_2
-        const result = await verifyCredentials({ email: user.email, password })
-        expect(result).toBe(true)
-      }),
-    )
+  it('accepts valid credentials', async () => {
+    const user = AUTH_USERS[0]
+    const result = await verifyCredentials({ email: user.email, password: TEST_PASSWORD })
+    expect(result).toBe(true)
   })
 
   it('rejects a wrong password', async () => {
@@ -30,7 +69,7 @@ describe('auth credential verification', () => {
   })
 
   it('rejects an unexpected email', async () => {
-    const result = await verifyCredentials({ email: 'unauthorized@example.com', password: 'Af!@#$56789' })
+    const result = await verifyCredentials({ email: 'unauthorized@example.com', password: TEST_PASSWORD })
     expect(result).toBe(false)
   })
 })

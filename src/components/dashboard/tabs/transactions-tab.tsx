@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { filterTransactions } from '@/lib/dashboard-ux'
-import { formatCurrency, formatRelativeAmount } from '@/utils/format'
+import { formatRelativeAmount } from '@/utils/format'
 import { normalizeDateInput } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { RequestList } from '@/components/dashboard/request-list'
@@ -25,29 +25,15 @@ import {
   DashboardCategory,
   DashboardAccount,
   DashboardTransaction,
+  DashboardTransactionRequest,
   transactionTypeOptions,
   typeFilterOptions,
   currencyOptions,
 } from './types'
 
-type TransactionRequest = {
-  id: string
-  amount: number
-  currency: Currency
-  date: Date
-  description: string | null
-  status: string
-  categoryId: string
-  categoryName: string
-  fromAccountId: string
-  fromAccountName: string
-  toAccountId: string
-  toAccountName: string
-}
-
 export type TransactionsTabProps = {
   transactions: DashboardTransaction[]
-  transactionRequests: TransactionRequest[]
+  transactionRequests: DashboardTransactionRequest[]
   accounts: DashboardAccount[]
   categories: DashboardCategory[]
   activeAccount: string
@@ -159,8 +145,7 @@ export function TransactionsTab({
   )
 
   const getDefaultCategoryId = useCallback(
-    (type: TransactionType) =>
-      categories.find((category) => category.type === type && !category.isArchived)?.id ?? '',
+    (type: TransactionType) => categories.find((category) => category.type === type && !category.isArchived)?.id ?? '',
     [categories],
   )
 
@@ -569,10 +554,7 @@ export function TransactionsTab({
               {transactionFeedback && (
                 <p
                   role="status"
-                  className={cn(
-                    'text-xs',
-                    transactionFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600',
-                  )}
+                  className={cn('text-xs', transactionFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
                 >
                   {transactionFeedback.message}
                 </p>
@@ -648,9 +630,7 @@ export function TransactionsTab({
                   {transactions.length === 0 ? (
                     <>
                       <p className="text-sm font-medium text-white">No transactions yet</p>
-                      <p className="text-xs text-slate-400">
-                        Record your first expense or income on the left panel.
-                      </p>
+                      <p className="text-xs text-slate-400">Record your first expense or income on the left panel.</p>
                     </>
                   ) : (
                     <>
@@ -689,8 +669,7 @@ export function TransactionsTab({
                       )}
                     >
                       {formatRelativeAmount(
-                        transaction.amount,
-                        transaction.type === TransactionType.EXPENSE,
+                        transaction.type === TransactionType.EXPENSE ? -transaction.amount : transaction.amount,
                         preferredCurrency,
                       )}
                     </span>

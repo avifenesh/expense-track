@@ -38,3 +38,7 @@ next-env.d.ts
 .env
 .env.preview
 .env.production
+
+# temp files
+/tmp
+tmpclaude-*

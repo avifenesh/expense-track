@@ -1,6 +1,6 @@
 // Finance module - handles transactions, budgets, holdings, and dashboard data
 /* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for Holding model */
-import { Prisma, TransactionType, Currency, AccountType } from '@prisma/client'
+import { Prisma, TransactionType, Currency } from '@prisma/client'
 import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { formatMonthLabel, getMonthKey, getMonthStartFromKey } from '@/utils/date'
@@ -122,10 +122,7 @@ function sumByType(tx: Array<{ type: TransactionType; amount: number }>, type: T
   return tx.filter((t) => t.type === type).reduce((acc, curr) => acc + curr.amount, 0)
 }
 
-function buildAccountScopedWhere(
-  base: Prisma.TransactionWhereInput,
-  accountId?: string,
-): Prisma.TransactionWhereInput {
+function buildAccountScopedWhere(base: Prisma.TransactionWhereInput, accountId?: string): Prisma.TransactionWhereInput {
   if (!accountId) {
     return base
   }
@@ -179,12 +176,10 @@ export async function getTransactionsForMonth({
   monthKey,
   accountId,
   preferredCurrency,
-  accountType,
 }: {
   monthKey: string
   accountId?: string
   preferredCurrency?: Currency
-  accountType?: AccountType
 }): Promise<TransactionWithDisplay[]> {
   const monthStart = getMonthStartFromKey(monthKey)
   const nextMonthStart = addMonths(monthStart, 1)
@@ -315,7 +310,6 @@ export async function getDashboardData({
   const monthStart = getMonthStartFromKey(monthKey)
   const previousMonthStart = subMonths(monthStart, 1)
   const accounts = providedAccounts ?? (await getAccounts())
-  const accountRecord = accountId ? accounts.find((account) => account.id === accountId) : undefined
 
   const [
     categories,
@@ -333,7 +327,6 @@ export async function getDashboardData({
       monthKey,
       accountId,
       preferredCurrency,
-      accountType: accountRecord?.type,
     }),
     getTransactionRequests({ accountId, status: 'PENDING' }),
     getRecurringTemplates({ accountId }),

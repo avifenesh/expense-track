@@ -28,7 +28,6 @@ import { Sparkline } from '@/components/dashboard/sparkline'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { Select } from '@/components/ui/select'
 import { DashboardData } from '@/lib/finance'
 import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
@@ -159,11 +158,6 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
     [data.accounts],
-  )
-
-  const activeAccountRecord = useMemo(
-    () => data.accounts.find((account) => account.id === activeAccount) ?? null,
-    [data.accounts, activeAccount],
   )
 
   useEffect(() => {
