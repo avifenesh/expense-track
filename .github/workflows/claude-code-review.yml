@@ -40,7 +40,7 @@ jobs:
           
           # Query GitHub API for ALL previous runs of this workflow for this PR
           # We use the workflow ID from the API to ensure we're counting the right workflow
-          API_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          API_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs?event=pull_request&per_page=100")
           
           HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
@@ -54,6 +54,7 @@ jobs:
           else
             # Count runs for this specific PR and workflow
             # Match by workflow name and PR number (as integer)
+            # Exclude in_progress and queued runs (count only completed/failed/cancelled)
             RUN_COUNT=$(echo "$RESPONSE_BODY" | jq --arg wf "$WORKFLOW_NAME" --argjson pr "$PR_NUMBER" \
               '[.workflow_runs[] | select(.name == $wf and .status != "in_progress" and .status != "queued" and any(.pull_requests[]?; .number == $pr))] | length' 2>/dev/null || echo "999")
             
