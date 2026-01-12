@@ -31,40 +31,31 @@ jobs:
             exit 0
           fi
           
-          # For PRs, count previous successful/completed runs of this workflow
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          # Extract workflow filename from workflow_ref
-          # Example: "owner/repo/.github/workflows/claude-code-review.yml@refs/heads/main"
-          WORKFLOW_NAME=$(basename "${{ github.workflow_ref }}" | sed 's/@.*//')
-          
-          # Validate workflow name
-          if [ -z "$WORKFLOW_NAME" ]; then
-            echo "Error: Could not extract workflow name"
-            echo "Defaulting to skip execution for safety"
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          # For PRs, count previous runs of this workflow (completed, failed, or cancelled)
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          WORKFLOW_NAME="${{ github.workflow }}"
           
           echo "Workflow name: $WORKFLOW_NAME"
+          echo "PR number: $PR_NUMBER"
           
-          # URL encode the workflow name
-          ENCODED_WORKFLOW_NAME=$(echo "$WORKFLOW_NAME" | jq -sRr @uri)
-          
-          # Query GitHub API for previous runs, with error handling
+          # Query GitHub API for ALL previous runs of this workflow for this PR
+          # We use the workflow ID from the API to ensure we're counting the right workflow
           API_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$ENCODED_WORKFLOW_NAME/runs?event=pull_request&status=completed")
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?event=pull_request&per_page=100")
           
           HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
           RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
           
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "Error: API request failed with status $HTTP_CODE"
+            echo "Response: $RESPONSE_BODY"
             echo "Defaulting to skip execution for safety"
             RUN_COUNT=999
           else
             # Count runs for this specific PR and workflow
+            # Match by workflow name and PR number (as integer)
             RUN_COUNT=$(echo "$RESPONSE_BODY" | jq --arg wf "$WORKFLOW_NAME" --argjson pr "$PR_NUMBER" \
-              '[.workflow_runs[] | select(.name == $wf and (.pull_requests[]?.number == $pr))] | length' 2>/dev/null || echo "999")
+              '[.workflow_runs[] | select(.name == $wf and .status != "in_progress" and .status != "queued" and any(.pull_requests[]?; .number == $pr))] | length' 2>/dev/null || echo "999")
             
             # Validate RUN_COUNT is a number
             if ! [[ "$RUN_COUNT" =~ ^[0-9]+$ ]]; then
@@ -74,7 +65,7 @@ jobs:
             fi
           fi
           
-          echo "Previous completed runs for this PR: $RUN_COUNT"
+          echo "Previous runs for this PR: $RUN_COUNT"
           
           # Run only on first 2 times (0 and 1 previous runs)
           if [ "$RUN_COUNT" -lt 2 ]; then
