@@ -79,8 +79,10 @@ describe('createTransactionRequestAction', () => {
       description: 'Groceries',
     })
 
-    expect(result).toHaveProperty('error')
-    expect((result.error as { general?: string[] })?.general).toContain('Your session expired. Please sign in again.')
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general).toContain('Your session expired. Please sign in again.')
+    }
   })
 
   it('successfully creates a request', async () => {

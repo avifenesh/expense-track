@@ -207,7 +207,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     const accountLabel = accountsOptions.find((option) => option.value === value)?.label ?? 'Account'
     startPersistAccount(async () => {
       const result = await persistActiveAccountAction({ accountId: value })
-      if (result?.error) {
+      if ('error' in result && result.error) {
         const firstErrorSet = Object.values(result.error)[0]
         const message: string =
           Array.isArray(firstErrorSet) && firstErrorSet.length > 0

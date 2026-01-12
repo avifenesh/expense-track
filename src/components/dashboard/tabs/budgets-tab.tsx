@@ -83,7 +83,7 @@ export function BudgetsTab({
 
     startBudget(async () => {
       const result = await upsertBudgetAction(payload)
-      if (result?.error) {
+      if ('error' in result) {
         setBudgetFeedback({ type: 'error', message: 'Could not save budget.' })
         return
       }
@@ -100,7 +100,7 @@ export function BudgetsTab({
         accountId: accountIdForBudget,
         monthKey,
       })
-      if (result?.error) {
+      if ('error' in result) {
         setBudgetFeedback({ type: 'error', message: 'Could not remove budget entry.' })
         return
       }
@@ -285,15 +285,7 @@ export function BudgetsTab({
                 <label className="text-xs font-medium text-slate-300" htmlFor="planned">
                   Planned amount
                 </label>
-                <Input
-                  name="planned"
-                  id="planned"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  required
-                />
+                <Input name="planned" id="planned" type="number" min="0" step="0.01" placeholder="0.00" required />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-slate-300" htmlFor="budgetCurrency">

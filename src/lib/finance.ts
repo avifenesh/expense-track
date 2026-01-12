@@ -122,6 +122,25 @@ function sumByType(tx: Array<{ type: TransactionType; amount: number }>, type: T
   return tx.filter((t) => t.type === type).reduce((acc, curr) => acc + curr.amount, 0)
 }
 
+async function convertTransactionAmount(
+  amount: Prisma.Decimal | number,
+  fromCurrency: Currency,
+  toCurrency: Currency | undefined,
+  date: Date,
+  context: string,
+): Promise<number> {
+  const originalAmount = decimalToNumber(amount)
+  if (!toCurrency || fromCurrency === toCurrency) {
+    return originalAmount
+  }
+  try {
+    return await convertAmount(originalAmount, fromCurrency, toCurrency, date)
+  } catch (error) {
+    console.warn(`Currency conversion failed for ${context}:`, error)
+    return originalAmount
+  }
+}
+
 function buildAccountScopedWhere(base: Prisma.TransactionWhereInput, accountId?: string): Prisma.TransactionWhereInput {
   if (!accountId) {
     return base
@@ -207,22 +226,13 @@ export async function getTransactionsForMonth({
   const converted = await Promise.all(
     transactions.map(async (transaction) => {
       const originalAmount = decimalToNumber(transaction.amount)
-      let convertedAmount = originalAmount
-
-      // Convert if preferred currency is different from transaction currency
-      if (preferredCurrency && transaction.currency !== preferredCurrency) {
-        try {
-          convertedAmount = await convertAmount(
-            originalAmount,
-            transaction.currency,
-            preferredCurrency,
-            transaction.date,
-          )
-        } catch (error) {
-          console.warn(`Currency conversion failed for transaction ${transaction.id}:`, error)
-          // Fall back to original amount
-        }
-      }
+      const convertedAmount = await convertTransactionAmount(
+        transaction.amount,
+        transaction.currency,
+        preferredCurrency,
+        transaction.date,
+        `transaction ${transaction.id}`,
+      )
 
       return {
         ...transaction,
@@ -399,28 +409,16 @@ export async function getDashboardData({
 
   // Convert previous month's transactions to preferred currency
   const previousTransactionsConverted = await Promise.all(
-    previousTransactionsRaw.map(async (transaction) => {
-      const originalAmount = decimalToNumber(transaction.amount)
-      let convertedAmount = originalAmount
-
-      if (preferredCurrency && transaction.currency !== preferredCurrency) {
-        try {
-          convertedAmount = await convertAmount(
-            originalAmount,
-            transaction.currency,
-            preferredCurrency,
-            transaction.date,
-          )
-        } catch (error) {
-          console.warn(`Currency conversion failed for previous transaction:`, error)
-        }
-      }
-
-      return {
-        type: transaction.type,
-        amount: convertedAmount,
-      }
-    }),
+    previousTransactionsRaw.map(async (transaction) => ({
+      type: transaction.type,
+      amount: await convertTransactionAmount(
+        transaction.amount,
+        transaction.currency,
+        preferredCurrency,
+        transaction.date,
+        'previous transaction',
+      ),
+    })),
   )
 
   const previousIncome = sumByType(previousTransactionsConverted, TransactionType.INCOME)
@@ -462,29 +460,17 @@ export async function getDashboardData({
 
   // Convert history transactions to preferred currency
   const historyTransactionsConverted = await Promise.all(
-    historyTransactionsRaw.map(async (transaction) => {
-      const originalAmount = decimalToNumber(transaction.amount)
-      let convertedAmount = originalAmount
-
-      if (preferredCurrency && transaction.currency !== preferredCurrency) {
-        try {
-          convertedAmount = await convertAmount(
-            originalAmount,
-            transaction.currency,
-            preferredCurrency,
-            transaction.date,
-          )
-        } catch (error) {
-          console.warn(`Currency conversion failed for history transaction:`, error)
-        }
-      }
-
-      return {
-        type: transaction.type,
-        amount: convertedAmount,
-        month: transaction.month as Date,
-      }
-    }),
+    historyTransactionsRaw.map(async (transaction) => ({
+      type: transaction.type,
+      amount: await convertTransactionAmount(
+        transaction.amount,
+        transaction.currency,
+        preferredCurrency,
+        transaction.date,
+        'history transaction',
+      ),
+      month: transaction.month as Date,
+    })),
   )
 
   const historySeed = new Map<string, { income: number; expense: number }>()

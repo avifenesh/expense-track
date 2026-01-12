@@ -304,7 +304,7 @@ export function TransactionsTab({
           : await createTransactionAction(payload)
       }
 
-      if (result?.error) {
+      if ('error' in result) {
         setTransactionFeedback({
           type: 'error',
           message: editingTransaction
@@ -330,7 +330,7 @@ export function TransactionsTab({
   const handleTransactionDelete = (id: string) => {
     startTransaction(async () => {
       const result = await deleteTransactionAction({ id })
-      if (result?.error) {
+      if ('error' in result) {
         setTransactionFeedback({ type: 'error', message: 'Could not delete transaction.' })
         return
       }

@@ -20,13 +20,7 @@ export type BalanceFormProps = {
   onClose: () => void
 }
 
-export function BalanceForm({
-  activeAccount,
-  monthKey,
-  preferredCurrency,
-  currentNet,
-  onClose,
-}: BalanceFormProps) {
+export function BalanceForm({ activeAccount, monthKey, preferredCurrency, currentNet, onClose }: BalanceFormProps) {
   const router = useRouter()
   const [balanceAmount, setBalanceAmount] = useState('')
   const [balanceFeedback, setBalanceFeedback] = useState<Feedback | null>(null)
@@ -47,7 +41,7 @@ export function BalanceForm({
         monthKey,
       })
 
-      if (result?.error) {
+      if ('error' in result) {
         const firstErrorSet = Object.values(result.error)[0]
         const message: string =
           Array.isArray(firstErrorSet) && firstErrorSet.length > 0
@@ -57,7 +51,7 @@ export function BalanceForm({
         return
       }
 
-      const adjustment = result?.adjustment ?? 0
+      const adjustment = result.adjustment
       if (adjustment === 0) {
         setBalanceFeedback({ type: 'success', message: 'Balance already matches.' })
       } else {
@@ -91,9 +85,7 @@ export function BalanceForm({
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-300">
             <span>Current net this month</span>
-            <span className="text-sm font-semibold text-white">
-              {formatCurrency(currentNet, preferredCurrency)}
-            </span>
+            <span className="text-sm font-semibold text-white">{formatCurrency(currentNet, preferredCurrency)}</span>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

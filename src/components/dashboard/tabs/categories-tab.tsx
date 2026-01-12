@@ -53,7 +53,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
 
     startCategory(async () => {
       const result = await createCategoryAction(payload)
-      if (result?.error) {
+      if ('error' in result) {
         setCategoryFeedback({ type: 'error', message: 'Could not create category.' })
         return
       }
@@ -66,7 +66,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
   const handleCategoryArchive = (id: string, isArchived: boolean) => {
     startCategory(async () => {
       const result = await archiveCategoryAction({ id, isArchived })
-      if (result?.error) {
+      if ('error' in result) {
         setCategoryFeedback({ type: 'error', message: 'Unable to update category.' })
         return
       }
@@ -132,10 +132,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
               {categoryFeedback && (
                 <p
                   role="status"
-                  className={cn(
-                    'text-xs',
-                    categoryFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600',
-                  )}
+                  className={cn('text-xs', categoryFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
                 >
                   {categoryFeedback.message}
                 </p>

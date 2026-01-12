@@ -3,11 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { Currency } from '@prisma/client'
 import { RefreshCcw, TrendingUp } from 'lucide-react'
-import {
-  createHoldingAction,
-  deleteHoldingAction,
-  refreshHoldingPricesAction,
-} from '@/app/actions'
+import { createHoldingAction, deleteHoldingAction, refreshHoldingPricesAction } from '@/app/actions'
 import type { DashboardData, HoldingWithPrice } from '@/lib/finance'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -122,7 +118,7 @@ export default function HoldingsTab({
 
     startAction(async () => {
       const result = await createHoldingAction(payload)
-      if (result?.error) {
+      if ('error' in result) {
         setFeedback({
           type: 'error',
           message: Object.values(result.error).flat().join(', ') || 'Unable to add holding',
@@ -263,9 +259,7 @@ export default function HoldingsTab({
                 {feedback.message}
               </div>
             )}
-            {error && (
-              <div className="rounded-lg bg-rose-500/20 px-3 py-2 text-xs text-rose-200">{error}</div>
-            )}
+            {error && <div className="rounded-lg bg-rose-500/20 px-3 py-2 text-xs text-rose-200">{error}</div>}
           </form>
         </CardContent>
       </Card>
@@ -380,7 +374,9 @@ export default function HoldingsTab({
                     <div className="text-slate-400">
                       @ {formatCurrency(holding.currentPrice, holding.currency)}
                       {holding.currency !== preferredCurrency && holding.currentPriceConverted && (
-                        <span className="ml-1">({formatCurrency(holding.currentPriceConverted, preferredCurrency)})</span>
+                        <span className="ml-1">
+                          ({formatCurrency(holding.currentPriceConverted, preferredCurrency)})
+                        </span>
                       )}
                     </div>
                   )}

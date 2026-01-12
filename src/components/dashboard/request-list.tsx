@@ -26,7 +26,7 @@ export function RequestList({ requests, preferredCurrency: _preferredCurrency }:
   const handleApprove = (id: string) => {
     startTransition(async () => {
       const result = await approveTransactionRequestAction({ id })
-      if (result?.error) {
+      if ('error' in result) {
         setFeedback({ type: 'error', message: 'Failed to approve request.' })
         return
       }
@@ -38,7 +38,7 @@ export function RequestList({ requests, preferredCurrency: _preferredCurrency }:
   const handleReject = (id: string) => {
     startTransition(async () => {
       const result = await rejectTransactionRequestAction({ id })
-      if (result?.error) {
+      if ('error' in result) {
         setFeedback({ type: 'error', message: 'Failed to reject request.' })
         return
       }

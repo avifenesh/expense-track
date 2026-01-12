@@ -103,7 +103,7 @@ export function RecurringTab({
 
     startRecurring(async () => {
       const result = await upsertRecurringTemplateAction(payload)
-      if (result?.error) {
+      if ('error' in result) {
         setRecurringFeedback({ type: 'error', message: 'Could not save recurring template.' })
         return
       }
@@ -116,7 +116,7 @@ export function RecurringTab({
   const handleRecurringToggle = (template: RecurringTemplateSummary, isActive: boolean) => {
     startRecurring(async () => {
       const result = await toggleRecurringTemplateAction({ id: template.id, isActive })
-      if (result?.error) {
+      if ('error' in result) {
         setRecurringFeedback({ type: 'error', message: 'Could not update recurring template.' })
         return
       }
@@ -128,7 +128,7 @@ export function RecurringTab({
   const handleRecurringApply = () => {
     startRecurring(async () => {
       const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount })
-      if (result?.error) {
+      if ('error' in result) {
         setRecurringFeedback({ type: 'error', message: 'Could not apply recurring items.' })
         return
       }
@@ -302,10 +302,7 @@ export function RecurringTab({
               {recurringFeedback && (
                 <p
                   role="status"
-                  className={cn(
-                    'text-xs',
-                    recurringFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600',
-                  )}
+                  className={cn('text-xs', recurringFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
                 >
                   {recurringFeedback.message}
                 </p>
