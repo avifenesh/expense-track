@@ -33,6 +33,8 @@ jobs:
           cache: npm
 
       - run: npm ci
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
       - run: npm run check-types
 
