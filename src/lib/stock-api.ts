@@ -5,9 +5,35 @@ import { prisma } from '@/lib/prisma'
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY || ''
 const STOCK_PRICE_MAX_AGE_HOURS = Number(process.env.STOCK_PRICE_MAX_AGE_HOURS) || 24
 
+// Warn at module load if API key is missing - feature will fail at runtime
+if (!ALPHA_VANTAGE_API_KEY) {
+  console.warn('[stock-api] ALPHA_VANTAGE_API_KEY not configured - stock price fetching will be disabled')
+}
+
 // In-memory rate limiting (resets on serverless cold start)
 let dailyCallCount = 0
 let lastResetDate = new Date().toDateString()
+
+// Track failed symbols to prevent repeated API calls for invalid symbols
+// Map: symbol -> timestamp of last failure (expires after 24 hours)
+const failedSymbols = new Map<string, number>()
+const FAILED_SYMBOL_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+
+function isSymbolKnownInvalid(symbol: string): boolean {
+  const failedAt = failedSymbols.get(symbol.toUpperCase())
+  if (!failedAt) return false
+  // Check if the failure is still within TTL
+  if (Date.now() - failedAt < FAILED_SYMBOL_TTL_MS) {
+    return true
+  }
+  // Expired - remove from cache
+  failedSymbols.delete(symbol.toUpperCase())
+  return false
+}
+
+function markSymbolAsFailed(symbol: string): void {
+  failedSymbols.set(symbol.toUpperCase(), Date.now())
+}
 
 type AlphaVantageGlobalQuote = {
   'Global Quote': {
@@ -39,6 +65,8 @@ export type RefreshResult = {
   skipped: number
   errors: string[]
 }
+
+export type StockPriceResult = { success: true; data: StockPriceWithMeta } | { success: false; error: string }
 
 function checkRateLimit(): boolean {
   const today = new Date().toDateString()
@@ -83,6 +111,7 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuoteData> {
     incrementCallCount()
 
     if (!data['Global Quote'] || !data['Global Quote']['01. symbol']) {
+      markSymbolAsFailed(symbol)
       throw new Error(`Invalid or unknown symbol: ${symbol}`)
     }
 
@@ -107,9 +136,9 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuoteData> {
 }
 
 /**
- * Get cached stock price or fetch from API if stale
+ * Get cached stock price - returns result object instead of throwing
  */
-export async function getStockPrice(symbol: string): Promise<StockPriceWithMeta> {
+export async function getStockPrice(symbol: string): Promise<StockPriceResult> {
   // Try to get most recent cached price
   const cached = await (prisma as any).stockPrice.findFirst({
     where: { symbol: symbol.toUpperCase() },
@@ -123,16 +152,60 @@ export async function getStockPrice(symbol: string): Promise<StockPriceWithMeta>
     const isStale = hoursSinceUpdate > STOCK_PRICE_MAX_AGE_HOURS
 
     return {
-      price: cached.price.toNumber(),
-      changePercent: cached.changePercent ? cached.changePercent.toNumber() : null,
-      fetchedAt: cached.fetchedAt,
-      isStale,
-      hoursSinceUpdate,
+      success: true,
+      data: {
+        price: cached.price.toNumber(),
+        changePercent: cached.changePercent ? cached.changePercent.toNumber() : null,
+        fetchedAt: cached.fetchedAt,
+        isStale,
+        hoursSinceUpdate,
+      },
     }
   }
 
-  // No cache found - must fetch from API
-  throw new Error(`No cached price found for ${symbol}. Please refresh prices.`)
+  // No cache found
+  return {
+    success: false,
+    error: `No cached price found for ${symbol}. Please refresh prices.`,
+  }
+}
+
+/**
+ * Price cache type for batch operations
+ */
+export type PriceCache = Map<string, StockPriceWithMeta>
+
+/**
+ * Batch load stock prices for multiple symbols in one query (reduces N+1)
+ */
+export async function batchLoadStockPrices(symbols: string[]): Promise<PriceCache> {
+  const cache: PriceCache = new Map()
+  const upperSymbols = symbols.map((s) => s.toUpperCase())
+
+  if (upperSymbols.length === 0) return cache
+
+  // Get most recent price for each symbol in one query
+  const prices = await (prisma as any).stockPrice.findMany({
+    where: { symbol: { in: upperSymbols } },
+    orderBy: { fetchedAt: 'desc' },
+    distinct: ['symbol'],
+  })
+
+  const now = new Date()
+  for (const price of prices) {
+    const hoursSinceUpdate = (now.getTime() - price.fetchedAt.getTime()) / (1000 * 60 * 60)
+    const isStale = hoursSinceUpdate > STOCK_PRICE_MAX_AGE_HOURS
+
+    cache.set(price.symbol.toUpperCase(), {
+      price: price.price.toNumber(),
+      changePercent: price.changePercent ? price.changePercent.toNumber() : null,
+      fetchedAt: price.fetchedAt,
+      isStale,
+      hoursSinceUpdate,
+    })
+  }
+
+  return cache
 }
 
 /**
@@ -146,7 +219,16 @@ export async function refreshStockPrices(symbols: string[]): Promise<RefreshResu
     errors: [],
   }
 
-  for (const symbol of uniqueSymbols) {
+  for (let i = 0; i < uniqueSymbols.length; i++) {
+    const symbol = uniqueSymbols[i]
+
+    // Skip symbols that have previously failed (prevents rate limit abuse)
+    if (isSymbolKnownInvalid(symbol)) {
+      result.skipped++
+      result.errors.push(`${symbol}: Skipped - previously failed (retry after 24h)`)
+      continue
+    }
+
     try {
       if (!checkRateLimit()) {
         result.errors.push(`Rate limit reached - skipped remaining symbols`)
@@ -171,7 +253,7 @@ export async function refreshStockPrices(symbols: string[]): Promise<RefreshResu
       result.updated++
 
       // Rate limiting: sleep 12 seconds between calls (5 calls/minute max)
-      if (uniqueSymbols.indexOf(symbol) < uniqueSymbols.length - 1) {
+      if (i < uniqueSymbols.length - 1) {
         await sleep(12000)
       }
     } catch (error) {

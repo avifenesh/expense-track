@@ -10,16 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { filterBudgets, getBudgetProgress, getBudgetTotals } from '@/lib/dashboard-ux'
+import { createAccountOptions } from '@/lib/select-options'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import {
-  Feedback,
-  DashboardCategory,
-  DashboardAccount,
-  DashboardBudget,
-  typeFilterOptions,
-  currencyOptions,
-} from './types'
+import { useFeedback } from '@/hooks/useFeedback'
+import { DashboardCategory, DashboardAccount, DashboardBudget, typeFilterOptions, currencyOptions } from './types'
 
 export type BudgetsTabProps = {
   budgets: DashboardBudget[]
@@ -43,14 +38,11 @@ export function BudgetsTab({
   // Local state
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(activeAccount)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
-  const [budgetFeedback, setBudgetFeedback] = useState<Feedback | null>(null)
+  const { feedback: budgetFeedback, showSuccess, showError } = useFeedback()
   const [isPendingBudget, startBudget] = useTransition()
 
   // Derived options
-  const accountsOptions = useMemo(
-    () => accounts.map((account) => ({ label: account.name, value: account.id })),
-    [accounts],
-  )
+  const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
 
   const defaultAccountId = activeAccount || accounts[0]?.id || ''
 
@@ -84,10 +76,10 @@ export function BudgetsTab({
     startBudget(async () => {
       const result = await upsertBudgetAction(payload)
       if ('error' in result) {
-        setBudgetFeedback({ type: 'error', message: 'Could not save budget.' })
+        showError('Could not save budget.')
         return
       }
-      setBudgetFeedback({ type: 'success', message: 'Budget updated.' })
+      showSuccess('Budget updated.')
       form.reset()
       router.refresh()
     })
@@ -101,10 +93,10 @@ export function BudgetsTab({
         monthKey,
       })
       if ('error' in result) {
-        setBudgetFeedback({ type: 'error', message: 'Could not remove budget entry.' })
+        showError('Could not remove budget entry.')
         return
       }
-      setBudgetFeedback({ type: 'success', message: 'Budget removed.' })
+      showSuccess('Budget removed.')
       router.refresh()
     })
   }
@@ -265,7 +257,7 @@ export function BudgetsTab({
                   id="budgetAccountId"
                   name="budgetAccountId"
                   defaultValue={defaultAccountId}
-                  options={accounts.map((account) => ({ label: account.name, value: account.id }))}
+                  options={accountsOptions}
                 />
               </div>
               <div className="space-y-2">

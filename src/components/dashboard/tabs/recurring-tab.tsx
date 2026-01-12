@@ -14,11 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { filterRecurringTemplates } from '@/lib/dashboard-ux'
+import { createAccountOptions } from '@/lib/select-options'
 import { RecurringTemplateSummary } from '@/lib/finance'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
+import { useFeedback } from '@/hooks/useFeedback'
 import {
-  Feedback,
   DashboardCategory,
   DashboardAccount,
   DashboardRecurringTemplate,
@@ -50,14 +51,11 @@ export function RecurringTab({
   const [recurringTypeFilter, setRecurringTypeFilter] = useState<'all' | TransactionType>('all')
   const [recurringAccountFilter, setRecurringAccountFilter] = useState<string>(activeAccount)
   const [showInactiveRecurring, setShowInactiveRecurring] = useState(false)
-  const [recurringFeedback, setRecurringFeedback] = useState<Feedback | null>(null)
+  const { feedback: recurringFeedback, showSuccess, showError } = useFeedback()
   const [isPendingRecurring, startRecurring] = useTransition()
 
   // Derived options
-  const accountsOptions = useMemo(
-    () => accounts.map((account) => ({ label: account.name, value: account.id })),
-    [accounts],
-  )
+  const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
 
   const defaultAccountId = activeAccount || accounts[0]?.id || ''
 
@@ -104,10 +102,10 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await upsertRecurringTemplateAction(payload)
       if ('error' in result) {
-        setRecurringFeedback({ type: 'error', message: 'Could not save recurring template.' })
+        showError('Could not save recurring template.')
         return
       }
-      setRecurringFeedback({ type: 'success', message: 'Recurring template saved.' })
+      showSuccess('Recurring template saved.')
       form.reset()
       router.refresh()
     })
@@ -117,10 +115,10 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await toggleRecurringTemplateAction({ id: template.id, isActive })
       if ('error' in result) {
-        setRecurringFeedback({ type: 'error', message: 'Could not update recurring template.' })
+        showError('Could not update recurring template.')
         return
       }
-      setRecurringFeedback({ type: 'success', message: isActive ? 'Template re-activated.' : 'Template paused.' })
+      showSuccess(isActive ? 'Template re-activated.' : 'Template paused.')
       router.refresh()
     })
   }
@@ -129,14 +127,14 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount })
       if ('error' in result) {
-        setRecurringFeedback({ type: 'error', message: 'Could not apply recurring items.' })
+        showError('Could not apply recurring items.')
         return
       }
-      const created = result?.created ?? 0
+      const created = result.data?.created ?? 0
       if (created === 0) {
-        setRecurringFeedback({ type: 'success', message: 'No new recurring items were added for this month.' })
+        showSuccess('No new recurring items were added for this month.')
       } else {
-        setRecurringFeedback({ type: 'success', message: `${created} recurring item${created > 1 ? 's' : ''} added.` })
+        showSuccess(`${created} recurring item${created > 1 ? 's' : ''} added.`)
       }
       router.refresh()
     })
@@ -228,7 +226,7 @@ export function RecurringTab({
                     id="recurringAccountId"
                     name="recurringAccountId"
                     defaultValue={defaultAccountId}
-                    options={accounts.map((account) => ({ label: account.name, value: account.id }))}
+                    options={accountsOptions}
                   />
                 </div>
                 <div className="space-y-2">

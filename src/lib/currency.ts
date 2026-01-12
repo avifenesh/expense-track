@@ -4,6 +4,9 @@ import { startOfDay } from 'date-fns'
 
 const FRANKFURTER_BASE_URL = 'https://api.frankfurter.dev/v1'
 
+// In-flight request deduplication to prevent duplicate API calls
+const inFlightRequests = new Map<string, Promise<FrankfurterResponse>>()
+
 type FrankfurterResponse = {
   amount: number
   base: string
@@ -13,36 +16,51 @@ type FrankfurterResponse = {
 
 /**
  * Fetch exchange rates from Frankfurter API for a specific base currency
+ * Uses request deduplication to prevent duplicate API calls for concurrent requests
  */
 export async function fetchExchangeRates(baseCurrency: Currency): Promise<FrankfurterResponse> {
+  const cacheKey = `rates:${baseCurrency}`
+
+  // Return existing in-flight request if one exists
+  const existing = inFlightRequests.get(cacheKey)
+  if (existing) {
+    return existing
+  }
+
   const symbols = Object.values(Currency)
     .filter((c) => c !== baseCurrency)
     .join(',')
 
   const url = `${FRANKFURTER_BASE_URL}/latest?base=${baseCurrency}&symbols=${symbols}`
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-    },
-  })
+  const fetchPromise = (async () => {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
 
-  if (!response.ok) {
-    throw new Error(`Frankfurter API error: ${response.status} ${response.statusText}`)
-  }
+      if (!response.ok) {
+        throw new Error(`Frankfurter API error: ${response.status} ${response.statusText}`)
+      }
 
-  return await response.json()
+      return await response.json()
+    } finally {
+      // Clean up after request completes (success or failure)
+      inFlightRequests.delete(cacheKey)
+    }
+  })()
+
+  inFlightRequests.set(cacheKey, fetchPromise)
+  return fetchPromise
 }
 
 /**
  * Get exchange rate from cache or fetch if not available
  */
-export async function getExchangeRate(
-  from: Currency,
-  to: Currency,
-  date?: Date
-): Promise<number> {
+export async function getExchangeRate(from: Currency, to: Currency, date?: Date): Promise<number> {
   // Same currency, no conversion needed
   if (from === to) {
     return 1
@@ -122,12 +140,7 @@ export async function getExchangeRate(
 /**
  * Convert an amount from one currency to another
  */
-export async function convertAmount(
-  amount: number,
-  from: Currency,
-  to: Currency,
-  date?: Date
-): Promise<number> {
+export async function convertAmount(amount: number, from: Currency, to: Currency, date?: Date): Promise<number> {
   if (from === to) {
     return amount
   }
@@ -142,11 +155,9 @@ export async function convertAmount(
 /**
  * Refresh all exchange rates for all currency pairs
  */
-export async function refreshExchangeRates(): Promise<{
-  success: boolean
-  updatedAt: Date
-  error?: string
-}> {
+export async function refreshExchangeRates(): Promise<
+  { success: true; updatedAt: Date } | { error: { general: string[] }; updatedAt: Date }
+> {
   const now = new Date()
   const today = startOfDay(now)
 
@@ -195,19 +206,82 @@ export async function refreshExchangeRates(): Promise<{
             date: rate.date,
             fetchedAt: now,
           },
-        })
-      )
+        }),
+      ),
     )
 
     return { success: true, updatedAt: now }
   } catch (error) {
     console.error('Failed to refresh exchange rates:', error)
     return {
-      success: false,
+      error: { general: [error instanceof Error ? error.message : 'Unknown error'] },
       updatedAt: now,
-      error: error instanceof Error ? error.message : 'Unknown error',
     }
   }
+}
+
+/**
+ * Rate cache type for batch operations
+ */
+export type RateCache = Map<string, number>
+
+/**
+ * Create a cache key for rate lookups
+ */
+function rateCacheKey(from: Currency, to: Currency): string {
+  return `${from}:${to}`
+}
+
+/**
+ * Batch load all exchange rates for a given date (reduces N+1 queries)
+ * Returns a Map for O(1) lookups during conversion
+ */
+export async function batchLoadExchangeRates(date?: Date): Promise<RateCache> {
+  const targetDate = date ? startOfDay(date) : startOfDay(new Date())
+  const cache: RateCache = new Map()
+
+  // Load all rates for the target date in one query
+  const rates = await prisma.exchangeRate.findMany({
+    where: { date: targetDate },
+  })
+
+  for (const rate of rates) {
+    cache.set(rateCacheKey(rate.baseCurrency, rate.targetCurrency), rate.rate.toNumber())
+  }
+
+  // If no rates for today, try most recent rates as fallback
+  if (cache.size === 0) {
+    const fallbackRates = await prisma.exchangeRate.findMany({
+      distinct: ['baseCurrency', 'targetCurrency'],
+      orderBy: { date: 'desc' },
+    })
+    for (const rate of fallbackRates) {
+      cache.set(rateCacheKey(rate.baseCurrency, rate.targetCurrency), rate.rate.toNumber())
+    }
+  }
+
+  // Add identity rates for same-currency conversions
+  for (const currency of Object.values(Currency)) {
+    cache.set(rateCacheKey(currency, currency), 1)
+  }
+
+  return cache
+}
+
+/**
+ * Convert amount using a preloaded rate cache (no DB calls)
+ */
+export function convertAmountWithCache(amount: number, from: Currency, to: Currency, cache: RateCache): number {
+  if (from === to) return amount
+
+  const rate = cache.get(rateCacheKey(from, to))
+  if (!rate) {
+    // Fallback: return original amount if rate not found
+    console.warn(`No cached rate for ${from} -> ${to}, returning original amount`)
+    return amount
+  }
+
+  return Math.round(amount * rate * 100) / 100
 }
 
 /**

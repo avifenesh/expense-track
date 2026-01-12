@@ -67,9 +67,9 @@ export default function HoldingsTab({
           throw new Error('Request failed')
         }
 
-        const payload = (await response.json()) as HoldingsResponse
+        const payload = (await response.json()) as HoldingsResponse | null
         if (signal?.aborted) return
-        setHoldings(payload.holdings ?? [])
+        setHoldings(payload?.holdings ?? [])
       } catch (fetchError) {
         if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
           return
@@ -163,7 +163,7 @@ export default function HoldingsTab({
 
       setFeedback({
         type: 'success',
-        message: `Updated ${result.updated ?? 0} price${(result.updated ?? 0) === 1 ? '' : 's'}`,
+        message: `Updated ${result.data.updated ?? 0} price${(result.data.updated ?? 0) === 1 ? '' : 's'}`,
       })
       await loadHoldings(activeAccount)
     })

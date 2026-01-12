@@ -171,16 +171,23 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     return () => window.clearTimeout(timer)
   }, [accountFeedback])
 
-  const historyWithLabels = data.history.map((point) => ({
-    ...point,
-    label: formatMonthLabel(point.month),
-  }))
+  const historyWithLabels = useMemo(
+    () =>
+      data.history.map((point) => ({
+        ...point,
+        label: formatMonthLabel(point.month),
+      })),
+    [data.history],
+  )
 
-  const netHistory = historyWithLabels.map((point) => point.net)
-  const latestHistory = historyWithLabels.at(-1)
-  const previousHistory = historyWithLabels.at(-2)
-  const netDelta = latestHistory && previousHistory ? latestHistory.net - previousHistory.net : 0
-  const netStat = data.stats.find((stat) => stat.label.toLowerCase().includes('net'))
+  const { netHistory, latestHistory, netDelta, netStat } = useMemo(() => {
+    const history = historyWithLabels.map((point) => point.net)
+    const latest = historyWithLabels.at(-1)
+    const previous = historyWithLabels.at(-2)
+    const delta = latest && previous ? latest.net - previous.net : 0
+    const stat = data.stats.find((s) => s.label.toLowerCase().includes('net'))
+    return { netHistory: history, latestHistory: latest, netDelta: delta, netStat: stat }
+  }, [historyWithLabels, data.stats])
 
   const handleParamUpdate = (key: string, value?: string) => {
     const params = new URLSearchParams(searchParams.toString())

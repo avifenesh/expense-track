@@ -51,6 +51,23 @@ vi.mock('@/lib/auth', async () => {
   }
 })
 
+// Mock auth-server to avoid SESSION_SECRET requirement
+vi.mock('@/lib/auth-server', async () => {
+  const bcryptLib = await import('bcryptjs')
+  const authModule = await import('@/lib/auth')
+
+  return {
+    verifyCredentials: async ({ email, password }: { email: string; password: string }) => {
+      const normalizedEmail = email.trim().toLowerCase()
+      const authUser = authModule.AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
+      if (!authUser) return false
+      return bcryptLib.default.compare(password, authUser.passwordHash)
+    },
+    requireSession: vi.fn(),
+    getAuthUserFromSession: vi.fn(),
+  }
+})
+
 import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import { verifyCredentials } from '@/lib/auth-server'
 import { requestPasswordResetAction } from '@/app/actions'

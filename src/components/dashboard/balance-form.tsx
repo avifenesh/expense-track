@@ -51,7 +51,7 @@ export function BalanceForm({ activeAccount, monthKey, preferredCurrency, curren
         return
       }
 
-      const adjustment = result.adjustment
+      const adjustment = result.data.adjustment
       if (adjustment === 0) {
         setBalanceFeedback({ type: 'success', message: 'Balance already matches.' })
       } else {

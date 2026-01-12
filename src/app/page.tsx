@@ -75,7 +75,7 @@ export default async function Page({ searchParams }: PageProps) {
   if (session.accountId !== accountId) {
     const updateResult = await updateSessionAccount(accountId)
     if ('error' in updateResult) {
-      console.error('updateSessionAccount failed', updateResult.error)
+      console.error('updateSessionAccount failed', updateResult.error.general)
       redirect('/login?reason=account-access')
     }
   }

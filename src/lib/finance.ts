@@ -4,7 +4,13 @@ import { Prisma, TransactionType, Currency } from '@prisma/client'
 import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { formatMonthLabel, getMonthKey, getMonthStartFromKey } from '@/utils/date'
-import { convertAmount, getLastUpdateTime } from '@/lib/currency'
+import {
+  convertAmount,
+  getLastUpdateTime,
+  batchLoadExchangeRates,
+  convertAmountWithCache,
+  type RateCache,
+} from '@/lib/currency'
 
 export type MonetaryStat = {
   label: string
@@ -122,6 +128,22 @@ function sumByType(tx: Array<{ type: TransactionType; amount: number }>, type: T
   return tx.filter((t) => t.type === type).reduce((acc, curr) => acc + curr.amount, 0)
 }
 
+/**
+ * Convert transaction amount using batch-loaded rate cache (sync) or individual lookup (async)
+ */
+function convertTransactionAmountSync(
+  amount: Prisma.Decimal | number,
+  fromCurrency: Currency,
+  toCurrency: Currency | undefined,
+  rateCache: RateCache,
+): number {
+  const originalAmount = decimalToNumber(amount)
+  if (!toCurrency || fromCurrency === toCurrency) {
+    return originalAmount
+  }
+  return convertAmountWithCache(originalAmount, fromCurrency, toCurrency, rateCache)
+}
+
 async function convertTransactionAmount(
   amount: Prisma.Decimal | number,
   fromCurrency: Currency,
@@ -223,26 +245,26 @@ export async function getTransactionsForMonth({
     },
   })
 
-  const converted = await Promise.all(
-    transactions.map(async (transaction) => {
-      const originalAmount = decimalToNumber(transaction.amount)
-      const convertedAmount = await convertTransactionAmount(
-        transaction.amount,
-        transaction.currency,
-        preferredCurrency,
-        transaction.date,
-        `transaction ${transaction.id}`,
-      )
+  // Batch load exchange rates in one query (fixes N+1)
+  const rateCache = await batchLoadExchangeRates()
 
-      return {
-        ...transaction,
-        amount: originalAmount,
-        convertedAmount,
-        displayCurrency: preferredCurrency || transaction.currency,
-        month: getMonthKey(transaction.month),
-      } satisfies TransactionWithDisplay
-    }),
-  )
+  const converted = transactions.map((transaction) => {
+    const originalAmount = decimalToNumber(transaction.amount)
+    const convertedAmount = convertTransactionAmountSync(
+      transaction.amount,
+      transaction.currency,
+      preferredCurrency,
+      rateCache,
+    )
+
+    return {
+      ...transaction,
+      amount: originalAmount,
+      convertedAmount,
+      displayCurrency: preferredCurrency || transaction.currency,
+      month: getMonthKey(transaction.month),
+    } satisfies TransactionWithDisplay
+  })
 
   return converted
 }
@@ -442,7 +464,7 @@ export async function getDashboardData({
       budget.category.type === TransactionType.EXPENSE
         ? (expensesByCategory.get(budget.categoryId) ?? 0)
         : (incomeByCategory.get(budget.categoryId) ?? 0)
-    const remaining = budget.category.type === TransactionType.EXPENSE ? planned - actual : planned - actual
+    const remaining = planned - actual
 
     return {
       budgetId: budget.id,
@@ -555,99 +577,82 @@ export async function getHoldingsWithPrices({
   accountId?: string
   preferredCurrency?: Currency
 }): Promise<HoldingWithPrice[]> {
-  try {
-    const where: any = {} // Type assertion workaround for Prisma.HoldingWhereInput
-    if (accountId) {
-      where.accountId = accountId
+  const where: any = {} // Type assertion workaround for Prisma.HoldingWhereInput
+  if (accountId) {
+    where.accountId = accountId
+  }
+
+  const holdings = await (prisma as any).holding.findMany({
+    where,
+    include: {
+      account: true,
+      category: true,
+    },
+    orderBy: {
+      symbol: 'asc',
+    },
+  })
+
+  // Batch load all prices and rates in parallel (fixes N+1)
+  const { batchLoadStockPrices } = await import('@/lib/stock-api')
+  const symbols = holdings.map((h: any) => h.symbol as string)
+  const [priceCache, rateCache] = await Promise.all([batchLoadStockPrices(symbols), batchLoadExchangeRates()])
+
+  const enriched = holdings.map((holding: any) => {
+    // Get price from cache
+    const priceData = priceCache.get(holding.symbol.toUpperCase())
+    const currentPrice = priceData?.price ?? null
+    const changePercent = priceData?.changePercent ?? null
+    const priceAge = priceData?.fetchedAt ?? null
+    const isStale = priceData?.isStale ?? false
+
+    const quantity = decimalToNumber(holding.quantity)
+    const averageCost = decimalToNumber(holding.averageCost)
+    const costBasis = quantity * averageCost
+    const marketValue = currentPrice !== null ? quantity * currentPrice : costBasis
+    const gainLoss = marketValue - costBasis
+    const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0
+
+    // Currency conversion using batch-loaded rates
+    let currentPriceConverted: number | null = null
+    let marketValueConverted = marketValue
+    let costBasisConverted = costBasis
+    let gainLossConverted = gainLoss
+
+    if (preferredCurrency && holding.currency !== preferredCurrency) {
+      if (currentPrice !== null) {
+        currentPriceConverted = convertAmountWithCache(currentPrice, holding.currency, preferredCurrency, rateCache)
+      }
+      marketValueConverted = convertAmountWithCache(marketValue, holding.currency, preferredCurrency, rateCache)
+      costBasisConverted = convertAmountWithCache(costBasis, holding.currency, preferredCurrency, rateCache)
+      gainLossConverted = marketValueConverted - costBasisConverted
     }
 
-    const holdings = await (prisma as any).holding.findMany({
-      where,
-      include: {
-        account: true,
-        category: true,
-      },
-      orderBy: {
-        symbol: 'asc',
-      },
-    })
+    return {
+      id: holding.id,
+      accountId: holding.accountId,
+      accountName: holding.account.name,
+      categoryId: holding.categoryId,
+      categoryName: holding.category.name,
+      symbol: holding.symbol,
+      quantity,
+      averageCost,
+      currency: holding.currency,
+      notes: holding.notes,
+      currentPrice,
+      changePercent,
+      marketValue,
+      costBasis,
+      gainLoss,
+      gainLossPercent,
+      priceAge,
+      isStale,
+      currentPriceConverted,
+      marketValueConverted,
+      costBasisConverted,
+      gainLossConverted,
+    }
+  })
 
-    const { getStockPrice } = await import('@/lib/stock-api')
-
-    const enriched = await Promise.all(
-      holdings.map(async (holding: any) => {
-        // Type assertion: Prisma-generated Holding type
-        let currentPrice: number | null = null
-        let changePercent: number | null = null
-        let priceAge: Date | null = null
-        let isStale = false
-
-        try {
-          const priceData = await getStockPrice(holding.symbol)
-          currentPrice = priceData.price
-          changePercent = priceData.changePercent
-          priceAge = priceData.fetchedAt
-          isStale = priceData.isStale
-        } catch (error) {
-          console.warn(`Failed to get price for ${holding.symbol}:`, error)
-        }
-
-        const quantity = decimalToNumber(holding.quantity)
-        const averageCost = decimalToNumber(holding.averageCost)
-        const costBasis = quantity * averageCost
-        const marketValue = currentPrice !== null ? quantity * currentPrice : costBasis
-        const gainLoss = marketValue - costBasis
-        const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0
-
-        // Currency conversion
-        let currentPriceConverted: number | null = null
-        let marketValueConverted = marketValue
-        let costBasisConverted = costBasis
-        let gainLossConverted = gainLoss
-
-        if (preferredCurrency && holding.currency !== preferredCurrency) {
-          try {
-            if (currentPrice !== null) {
-              currentPriceConverted = await convertAmount(currentPrice, holding.currency, preferredCurrency, new Date())
-            }
-            marketValueConverted = await convertAmount(marketValue, holding.currency, preferredCurrency, new Date())
-            costBasisConverted = await convertAmount(costBasis, holding.currency, preferredCurrency, new Date())
-            gainLossConverted = marketValueConverted - costBasisConverted
-          } catch (error) {
-            console.warn(`Currency conversion failed for holding ${holding.symbol}:`, error)
-          }
-        }
-
-        return {
-          id: holding.id,
-          accountId: holding.accountId,
-          accountName: holding.account.name,
-          categoryId: holding.categoryId,
-          categoryName: holding.category.name,
-          symbol: holding.symbol,
-          quantity,
-          averageCost,
-          currency: holding.currency,
-          notes: holding.notes,
-          currentPrice,
-          changePercent,
-          marketValue,
-          costBasis,
-          gainLoss,
-          gainLossPercent,
-          priceAge,
-          isStale,
-          currentPriceConverted,
-          marketValueConverted,
-          costBasisConverted,
-          gainLossConverted,
-        }
-      }),
-    )
-
-    return enriched
-  } catch (error) {
-    console.error('Failed to fetch holdings:', error)
-    return []
-  }
+  return enriched
 }

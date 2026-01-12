@@ -3,10 +3,27 @@ import 'server-only'
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { cookies } from 'next/headers'
-import { ACCOUNT_COOKIE, AUTH_USERS, SESSION_COOKIE, USER_COOKIE, type AuthSession, type AuthUser } from '@/lib/auth'
+import {
+  ACCOUNT_COOKIE,
+  AUTH_USERS,
+  SESSION_COOKIE,
+  SESSION_MAX_AGE_MS,
+  SESSION_TS_COOKIE,
+  USER_COOKIE,
+  type AuthSession,
+  type AuthUser,
+} from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-const SESSION_SECRET = process.env.AUTH_SESSION_SECRET ?? 'balance-beacon-hardcoded-secret'
+function getSessionSecret(): string {
+  const secret = process.env.AUTH_SESSION_SECRET
+  if (!secret) {
+    throw new Error('AUTH_SESSION_SECRET environment variable is required')
+  }
+  return secret
+}
+
+const SESSION_SECRET = getSessionSecret()
 
 type MutableCookies = Awaited<ReturnType<typeof cookies>> & {
   set: (name: string, value: string, options?: Record<string, unknown>) => void
@@ -19,13 +36,34 @@ async function getCookieStore(): Promise<MutableCookies> {
   return store
 }
 
-function createSessionToken(username: string) {
-  return crypto.createHmac('sha256', SESSION_SECRET).update(username).digest('hex')
+function createSessionToken(username: string, timestamp: number) {
+  // Include timestamp in HMAC to prevent token prediction
+  const payload = `${username}:${timestamp}`
+  return crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('hex')
 }
 
-function isSessionTokenValid({ token, username }: { token?: string; username?: string }) {
-  if (!token || !username) return false
-  const expected = createSessionToken(username)
+function isSessionTokenValid({
+  token,
+  username,
+  timestamp,
+}: {
+  token?: string
+  username?: string
+  timestamp?: string
+}) {
+  if (!token || !username || !timestamp) return false
+
+  // Parse and validate timestamp
+  const ts = parseInt(timestamp, 10)
+  if (isNaN(ts)) return false
+
+  // Check session expiry
+  const now = Date.now()
+  if (now - ts > SESSION_MAX_AGE_MS) {
+    return false
+  }
+
+  const expected = createSessionToken(username, ts)
   if (expected.length !== token.length) return false
 
   try {
@@ -43,13 +81,7 @@ const baseCookieConfig = {
   path: '/',
 }
 
-export async function verifyCredentials({
-  email,
-  password,
-}: {
-  email: string
-  password: string
-}) {
+export async function verifyCredentials({ email, password }: { email: string; password: string }) {
   const normalizedEmail = email.trim().toLowerCase()
   const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
   if (!authUser) {
@@ -67,31 +99,35 @@ export async function verifyCredentials({
 
 export async function establishSession({ userEmail, accountId }: { userEmail: string; accountId: string }) {
   const cookieStore = await getCookieStore()
-  const token = createSessionToken(userEmail)
+  const timestamp = Date.now()
+  const token = createSessionToken(userEmail, timestamp)
   cookieStore.set(USER_COOKIE, userEmail, baseCookieConfig)
   cookieStore.set(SESSION_COOKIE, token, baseCookieConfig)
+  cookieStore.set(SESSION_TS_COOKIE, String(timestamp), baseCookieConfig)
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
   return { token }
 }
 
-export async function updateSessionAccount(accountId: string) {
+export async function updateSessionAccount(
+  accountId: string,
+): Promise<{ success: true } | { error: { general: string[] } }> {
   const cookieStore = await getCookieStore()
   const session = await getSession()
   if (!session) {
-    return { error: 'No active session' }
+    return { error: { general: ['No active session'] } }
   }
   const authUser = getAuthUserFromSession(session)
   if (!authUser) {
-    return { error: 'User record not found' }
+    return { error: { general: ['User record not found'] } }
   }
 
   const account = await prisma.account.findUnique({ where: { id: accountId } })
   if (!account) {
-    return { error: 'Account not found' }
+    return { error: { general: ['Account not found'] } }
   }
 
   if (!authUser.accountNames.includes(account.name)) {
-    return { error: 'Account is not available for this user' }
+    return { error: { general: ['Account is not available for this user'] } }
   }
 
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
@@ -102,6 +138,7 @@ export async function clearSession() {
   const cookieStore = await getCookieStore()
   cookieStore.delete(USER_COOKIE)
   cookieStore.delete(SESSION_COOKIE)
+  cookieStore.delete(SESSION_TS_COOKIE)
   cookieStore.delete(ACCOUNT_COOKIE)
 }
 
@@ -109,9 +146,10 @@ export async function getSession(): Promise<AuthSession | null> {
   const cookieStore = await getCookieStore()
   const userEmail = cookieStore.get(USER_COOKIE)?.value
   const token = cookieStore.get(SESSION_COOKIE)?.value
+  const timestamp = cookieStore.get(SESSION_TS_COOKIE)?.value
   const accountId = cookieStore.get(ACCOUNT_COOKIE)?.value
 
-  if (!isSessionTokenValid({ token, username: userEmail })) {
+  if (!isSessionTokenValid({ token, username: userEmail, timestamp })) {
     return null
   }
   const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === userEmail!.toLowerCase())

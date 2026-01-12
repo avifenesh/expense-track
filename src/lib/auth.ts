@@ -14,16 +14,16 @@ export type AuthUser = {
 function parseAuthUsers(): AuthUser[] {
   const user1Email = process.env.AUTH_USER1_EMAIL?.trim()
   const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME?.trim()
-  // Strip quotes, whitespace, and unescape backslashes that might be added by environment variable storage
+  // Strip quotes, whitespace, and unescape \$ that might be added by environment variable storage
   const user1PasswordHashRaw = process.env.AUTH_USER1_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
-  const user1PasswordHash = user1PasswordHashRaw?.replace(/\\(.)/g, '$1') // Unescape \$ -> $
+  const user1PasswordHash = user1PasswordHashRaw?.replace(/\\\$/g, '$') // Unescape \$ -> $
   const user1PreferredCurrency = (process.env.AUTH_USER1_PREFERRED_CURRENCY as Currency) || Currency.USD
 
   const user2Email = process.env.AUTH_USER2_EMAIL?.trim()
   const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME?.trim()
-  // Strip quotes, whitespace, and unescape backslashes that might be added by environment variable storage
+  // Strip quotes, whitespace, and unescape \$ that might be added by environment variable storage
   const user2PasswordHashRaw = process.env.AUTH_USER2_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
-  const user2PasswordHash = user2PasswordHashRaw?.replace(/\\(.)/g, '$1') // Unescape \$ -> $
+  const user2PasswordHash = user2PasswordHashRaw?.replace(/\\\$/g, '$') // Unescape \$ -> $
   const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
 
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
@@ -94,6 +94,10 @@ export const RECOVERY_CONTACTS = new Proxy([] as ReturnType<typeof getRecoveryCo
 export const SESSION_COOKIE = 'balance_session'
 export const USER_COOKIE = 'balance_user'
 export const ACCOUNT_COOKIE = 'balance_account'
+export const SESSION_TS_COOKIE = 'balance_session_ts' // Timestamp nonce for session token
+
+// Session expires after 30 days
+export const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
 export type AuthSession = {
   userEmail: string

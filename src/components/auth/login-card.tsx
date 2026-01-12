@@ -41,7 +41,7 @@ export function LoginCard() {
         return
       }
 
-      const nextAccount = result.accountId
+      const nextAccount = result.data.accountId
       router.push(nextAccount ? `/?account=${nextAccount}` : '/')
       router.refresh()
     })

@@ -6,35 +6,21 @@ import { Currency } from '@prisma/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utils/cn'
-
-type Message = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-}
-
-type ChatSession = {
-  id: string
-  title: string
-  messages: Message[]
-  createdAt: string
-  updatedAt: string
-  isCustomTitle: boolean
-}
+import {
+  type Message,
+  type ChatSession,
+  OPEN_STATE_KEY,
+  createTitleFromMessage,
+  createSession,
+  loadSessionsFromStorage,
+  generateMessageId,
+  quickPrompts,
+} from './chat-utils'
 
 interface ChatWidgetProps {
   accountId: string
   monthKey: string
   preferredCurrency?: Currency
-}
-
-const OPEN_STATE_KEY = 'balance-ai-chat-open'
-
-function createTitleFromMessage(message: Message | undefined) {
-  if (!message) return null
-  const trimmed = message.content.trim()
-  if (!trimmed) return null
-  return `${trimmed.slice(0, 40)}${trimmed.length > 40 ? '…' : ''}`
 }
 
 export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidgetProps) {
@@ -44,38 +30,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
   const [isOpen, setIsOpen] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 
-  const createSession = useCallback(
-    (title: string, isCustomTitle = false): ChatSession => ({
-      id: crypto.randomUUID?.() ?? `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      title,
-      messages: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isCustomTitle,
-    }),
-    [],
-  )
-
-  const loadSessions = useCallback((): ChatSession[] => {
-    if (typeof window === 'undefined') {
-      return [createSession('Conversation 1')]
-    }
-
-    try {
-      const raw = window.localStorage.getItem(storageKey)
-      if (!raw) {
-        return [createSession('Conversation 1')]
-      }
-      const parsed = JSON.parse(raw) as ChatSession[]
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
-      }
-    } catch (error) {
-      console.warn('Failed to load chat sessions', error)
-    }
-
-    return [createSession('Conversation 1')]
-  }, [createSession, storageKey])
+  const loadSessions = useCallback((): ChatSession[] => loadSessionsFromStorage(storageKey), [storageKey])
 
   const [sessions, setSessions] = useState<ChatSession[]>([])
 
@@ -86,6 +41,10 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+
+  // Throttled streaming: track pending content and use RAF to batch updates
+  const streamingContentRef = useRef<{ sessionId: string; messageId: string; content: string } | null>(null)
+  const rafIdRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -198,6 +157,38 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
     [setSessionsWithPersist],
   )
 
+  // Throttled message content update using requestAnimationFrame
+  // Reduces re-renders from ~hundreds per response to ~60fps
+  const scheduleStreamingUpdate = useCallback(
+    (sessionId: string, messageId: string, content: string) => {
+      streamingContentRef.current = { sessionId, messageId, content }
+
+      if (rafIdRef.current !== null) return // Already scheduled
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        const pending = streamingContentRef.current
+        if (pending) {
+          applyMessagesUpdate(pending.sessionId, (existing) =>
+            existing.map((message) =>
+              message.id === pending.messageId ? { ...message, content: pending.content } : message,
+            ),
+          )
+        }
+        rafIdRef.current = null
+      })
+    },
+    [applyMessagesUpdate],
+  )
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+    }
+  }, [])
+
   const renameSession = useCallback(
     (session: ChatSession) => {
       const proposed = window.prompt('Rename conversation', session.title)
@@ -243,13 +234,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
     setSessionsWithPersist((prev) => [...prev, newSession])
     updateActiveSessionId(newSession.id)
     queueMicrotask(() => inputRef.current?.focus())
-  }, [createSession, sessions.length, setSessionsWithPersist, updateActiveSessionId])
-
-  const quickPrompts = [
-    'Summarize this month in 3 bullets',
-    'Where did our grocery spend land?',
-    'Suggest ways to stay on budget next month',
-  ]
+  }, [sessions.length, setSessionsWithPersist, updateActiveSessionId])
 
   const handlePromptClick = (prompt: string) => {
     setInput(prompt)
@@ -264,7 +249,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
     const sessionId = currentSession.id
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: generateMessageId(),
       role: 'user',
       content: input.trim(),
     }
@@ -304,7 +289,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
           {
-            id: Date.now().toString(),
+            id: generateMessageId(),
             role: 'assistant',
             content: `Server error (HTTP ${response.status}). ${errText || 'No error body.'}`,
           },
@@ -313,11 +298,22 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
       }
 
       const reader = response.body?.getReader()
+      if (!reader) {
+        applyMessagesUpdate(sessionId, (existing) => [
+          ...existing,
+          {
+            id: generateMessageId(),
+            role: 'assistant',
+            content: 'Error: Unable to read response stream',
+          },
+        ])
+        return
+      }
       const decoder = new TextDecoder()
       let assistantContent = ''
 
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: generateMessageId(),
         role: 'assistant',
         content: '',
       }
@@ -345,12 +341,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
             const data = JSON.parse(line.slice(2))
             if (data.type === 'text-delta' && data.textDelta) {
               assistantContent += data.textDelta
-              const latest = assistantContent
-              applyMessagesUpdate(sessionId, (existing) =>
-                existing.map((message) =>
-                  message.id === assistantMessage.id ? { ...message, content: latest } : message,
-                ),
-              )
+              scheduleStreamingUpdate(sessionId, assistantMessage.id, assistantContent)
               handledStructured = true
             }
           } catch {
@@ -391,12 +382,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
                   const data2 = JSON.parse(line2.slice(2))
                   if (data2.type === 'text-delta' && data2.textDelta) {
                     assistantContent += data2.textDelta
-                    const latest2 = assistantContent
-                    applyMessagesUpdate(sessionId, (existing) =>
-                      existing.map((message) =>
-                        message.id === assistantMessage.id ? { ...message, content: latest2 } : message,
-                      ),
-                    )
+                    scheduleStreamingUpdate(sessionId, assistantMessage.id, assistantContent)
                   }
                 } catch {
                   // Ignore JSON parse errors for malformed stream lines
@@ -411,10 +397,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         // Fallback: append raw text chunks when no structured parts are present
         if (!handledStructured && diag) {
           assistantContent += diag
-          const latest = assistantContent
-          applyMessagesUpdate(sessionId, (existing) =>
-            existing.map((message) => (message.id === assistantMessage.id ? { ...message, content: latest } : message)),
-          )
+          scheduleStreamingUpdate(sessionId, assistantMessage.id, assistantContent)
         }
       }
     } catch (error: unknown) {
@@ -422,7 +405,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
           {
-            id: Date.now().toString(),
+            id: generateMessageId(),
             role: 'assistant',
             content: 'Generation stopped.',
           },
@@ -432,7 +415,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
           {
-            id: Date.now().toString(),
+            id: generateMessageId(),
             role: 'assistant',
             content: 'Sorry, I encountered an error. Please try again.',
           },
@@ -563,11 +546,11 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
               <div className="flex flex-wrap justify-center gap-2 text-xs">
                 {quickPrompts.map((prompt) => (
                   <button
-                    key={prompt}
-                    onClick={() => handlePromptClick(prompt)}
+                    key={prompt.label}
+                    onClick={() => handlePromptClick(prompt.text)}
                     className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200 transition hover:border-sky-300/40 hover:bg-sky-500/10 hover:text-white"
                   >
-                    {prompt}
+                    {prompt.label}
                   </button>
                 ))}
               </div>

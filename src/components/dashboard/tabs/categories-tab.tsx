@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { filterCategories } from '@/lib/dashboard-ux'
+import { useFeedback } from '@/hooks/useFeedback'
 import { cn } from '@/utils/cn'
-import { Feedback, DashboardCategory, transactionTypeOptions, typeFilterOptions, TypeFilterValue } from './types'
+import { DashboardCategory, transactionTypeOptions, typeFilterOptions, TypeFilterValue } from './types'
 
 export type CategoriesTabProps = {
   categories: DashboardCategory[]
@@ -25,7 +26,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<TypeFilterValue>('all')
   const [showArchivedCategories, setShowArchivedCategories] = useState(false)
   const [visibleCategoriesCount, setVisibleCategoriesCount] = useState(10)
-  const [categoryFeedback, setCategoryFeedback] = useState<Feedback | null>(null)
+  const { feedback: categoryFeedback, showSuccess, showError } = useFeedback()
   const [isPendingCategory, startCategory] = useTransition()
 
   // Computed
@@ -54,10 +55,10 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
     startCategory(async () => {
       const result = await createCategoryAction(payload)
       if ('error' in result) {
-        setCategoryFeedback({ type: 'error', message: 'Could not create category.' })
+        showError('Could not create category.')
         return
       }
-      setCategoryFeedback({ type: 'success', message: 'Category added.' })
+      showSuccess('Category added.')
       form.reset()
       router.refresh()
     })
@@ -67,10 +68,10 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
     startCategory(async () => {
       const result = await archiveCategoryAction({ id, isArchived })
       if ('error' in result) {
-        setCategoryFeedback({ type: 'error', message: 'Unable to update category.' })
+        showError('Unable to update category.')
         return
       }
-      setCategoryFeedback({ type: 'success', message: isArchived ? 'Category archived.' : 'Category reactivated.' })
+      showSuccess(isArchived ? 'Category archived.' : 'Category reactivated.')
       router.refresh()
     })
   }

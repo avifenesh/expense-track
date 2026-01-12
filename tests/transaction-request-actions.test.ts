@@ -148,7 +148,7 @@ describe('approveTransactionRequestAction', () => {
 
     const result = await approveTransactionRequestAction({ id: 'req-id' })
 
-    expect(result).toEqual({ error: { general: ['Transaction request not found'] } })
+    expect(result).toEqual({ success: false, error: { general: ['Transaction request not found'] } })
   })
 
   it('successfully approves a request and creates a transaction', async () => {

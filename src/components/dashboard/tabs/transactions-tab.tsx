@@ -16,12 +16,13 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { filterTransactions } from '@/lib/dashboard-ux'
+import { createAccountOptions } from '@/lib/select-options'
 import { formatRelativeAmount } from '@/utils/format'
 import { normalizeDateInput } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { RequestList } from '@/components/dashboard/request-list'
+import { useFeedback } from '@/hooks/useFeedback'
 import {
-  Feedback,
   DashboardCategory,
   DashboardAccount,
   DashboardTransaction,
@@ -52,11 +53,13 @@ export function TransactionsTab({
 }: TransactionsTabProps) {
   const router = useRouter()
 
-  // Derived values
-  const defaultExpenseCategoryId =
-    categories.find((category) => category.type === TransactionType.EXPENSE && !category.isArchived)?.id ?? ''
+  // Derived values (memoized to prevent unnecessary re-renders)
+  const defaultExpenseCategoryId = useMemo(
+    () => categories.find((category) => category.type === TransactionType.EXPENSE && !category.isArchived)?.id ?? '',
+    [categories],
+  )
 
-  const transactionLoggableAccounts = useMemo(() => accounts, [accounts])
+  const transactionLoggableAccounts = accounts // Direct reference is stable from parent
 
   const resolveLoggableAccountId = useCallback(
     (preferredAccountId?: string) => {
@@ -68,12 +71,9 @@ export function TransactionsTab({
     [transactionLoggableAccounts],
   )
 
-  const accountsOptions = useMemo(
-    () => accounts.map((account) => ({ label: account.name, value: account.id })),
-    [accounts],
-  )
+  const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
 
-  const defaultAccountId = activeAccount || accounts[0]?.id || ''
+  const defaultAccountId = useMemo(() => activeAccount || accounts[0]?.id || '', [activeAccount, accounts])
 
   // Local state
   const [transactionFormState, setTransactionFormState] = useState<{
@@ -106,7 +106,7 @@ export function TransactionsTab({
   })
 
   const [editingTransaction, setEditingTransaction] = useState<DashboardTransaction | null>(null)
-  const [transactionFeedback, setTransactionFeedback] = useState<Feedback | null>(null)
+  const { feedback: transactionFeedback, showSuccess, showError, clear: clearFeedback } = useFeedback()
   const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
   const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(activeAccount)
   const [transactionSearch, setTransactionSearch] = useState('')
@@ -125,12 +125,10 @@ export function TransactionsTab({
     [filteredCategories],
   )
 
-  const transactionFormAccountOptions = useMemo(() => {
-    return transactionLoggableAccounts.map((account) => ({
-      label: account.name,
-      value: account.id,
-    }))
-  }, [transactionLoggableAccounts])
+  const transactionFormAccountOptions = useMemo(
+    () => createAccountOptions(transactionLoggableAccounts),
+    [transactionLoggableAccounts],
+  )
 
   const transactionAccountOptions = accountsOptions
 
@@ -228,45 +226,48 @@ export function TransactionsTab({
     [categories, getDefaultCategoryId],
   )
 
-  const handleTransactionEdit = useCallback((transaction: DashboardTransaction) => {
-    setEditingTransaction(transaction)
-    const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
-    setTransactionFormState({
-      type: transaction.type,
-      accountId: transaction.accountId,
-      categoryId: transaction.categoryId,
-      amount: transaction.amount.toFixed(2),
-      currency: transaction.currency,
-      date: isoDate,
-      description: transaction.description ?? '',
-      isRecurring: transaction.isRecurring,
-      isRequest: false,
-    })
-    setTransactionFeedback(null)
-  }, [])
+  const handleTransactionEdit = useCallback(
+    (transaction: DashboardTransaction) => {
+      setEditingTransaction(transaction)
+      const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
+      setTransactionFormState({
+        type: transaction.type,
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        amount: transaction.amount.toFixed(2),
+        currency: transaction.currency,
+        date: isoDate,
+        description: transaction.description ?? '',
+        isRecurring: transaction.isRecurring,
+        isRequest: false,
+      })
+      clearFeedback()
+    },
+    [clearFeedback],
+  )
 
   const handleCancelTransactionEdit = useCallback(() => {
     resetTransactionForm()
-    setTransactionFeedback(null)
-  }, [resetTransactionForm])
+    clearFeedback()
+  }, [resetTransactionForm, clearFeedback])
 
   const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
 
     if (!transactionFormState.categoryId) {
-      setTransactionFeedback({ type: 'error', message: 'Please select a category.' })
+      showError('Please select a category.')
       return
     }
 
     const dateInput = normalizeDateInput(transactionFormState.date)
     if (!dateInput) {
-      setTransactionFeedback({ type: 'error', message: 'Please select a valid date.' })
+      showError('Please select a valid date.')
       return
     }
 
     const parsedAmount = Number.parseFloat(transactionFormState.amount)
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setTransactionFeedback({ type: 'error', message: 'Enter an amount greater than zero.' })
+      showError('Enter an amount greater than zero.')
       return
     }
 
@@ -277,7 +278,7 @@ export function TransactionsTab({
       if (transactionFormState.isRequest && !editingTransaction) {
         const partnerAccount = accounts.find((acc) => acc.type === AccountType.PARTNER)
         if (!partnerAccount) {
-          setTransactionFeedback({ type: 'error', message: 'Partner account not found.' })
+          showError('Partner account not found.')
           return
         }
         result = await createTransactionRequestAction({
@@ -305,23 +306,21 @@ export function TransactionsTab({
       }
 
       if ('error' in result) {
-        setTransactionFeedback({
-          type: 'error',
-          message: editingTransaction
+        showError(
+          editingTransaction
             ? 'Unable to update transaction. Please check required fields.'
             : 'Unable to save transaction. Please check required fields.',
-        })
+        )
         return
       }
 
-      setTransactionFeedback({
-        type: 'success',
-        message: transactionFormState.isRequest
+      showSuccess(
+        transactionFormState.isRequest
           ? 'Request sent to partner.'
           : editingTransaction
             ? 'Transaction updated.'
             : 'Transaction saved.',
-      })
+      )
       resetTransactionForm()
       router.refresh()
     })
@@ -331,13 +330,13 @@ export function TransactionsTab({
     startTransaction(async () => {
       const result = await deleteTransactionAction({ id })
       if ('error' in result) {
-        setTransactionFeedback({ type: 'error', message: 'Could not delete transaction.' })
+        showError('Could not delete transaction.')
         return
       }
       if (editingTransaction?.id === id) {
         resetTransactionForm()
       }
-      setTransactionFeedback({ type: 'success', message: 'Transaction removed.' })
+      showSuccess('Transaction removed.')
       router.refresh()
     })
   }
