@@ -33,12 +33,26 @@ jobs:
           
           # For PRs, count previous successful/completed runs of this workflow
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          # Extract workflow filename from workflow_ref (e.g., "refs/heads/main/.github/workflows/claude-code-review.yml@ref")
-          WORKFLOW_NAME=$(echo "${{ github.workflow_ref }}" | sed 's/.*\.github\/workflows\///' | sed 's/@.*//')
+          # Extract workflow filename from workflow_ref
+          # Example: "owner/repo/.github/workflows/claude-code-review.yml@refs/heads/main"
+          WORKFLOW_NAME=$(basename "${{ github.workflow_ref }}" | sed 's/@.*//')
+          
+          # Validate workflow name
+          if [ -z "$WORKFLOW_NAME" ]; then
+            echo "Error: Could not extract workflow name"
+            echo "Defaulting to skip execution for safety"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Workflow name: $WORKFLOW_NAME"
+          
+          # URL encode the workflow name
+          ENCODED_WORKFLOW_NAME=$(echo "$WORKFLOW_NAME" | jq -sRr @uri)
           
           # Query GitHub API for previous runs, with error handling
           API_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$WORKFLOW_NAME/runs?event=pull_request&status=completed")
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$ENCODED_WORKFLOW_NAME/runs?event=pull_request&status=completed")
           
           HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
           RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
@@ -48,7 +62,9 @@ jobs:
             echo "Defaulting to skip execution for safety"
             RUN_COUNT=999
           else
-            RUN_COUNT=$(echo "$RESPONSE_BODY" | jq "[.workflow_runs[] | select(.pull_requests[]?.number == $PR_NUMBER)] | length" 2>/dev/null || echo "999")
+            # Count runs for this specific PR and workflow
+            RUN_COUNT=$(echo "$RESPONSE_BODY" | jq --arg wf "$WORKFLOW_NAME" --argjson pr "$PR_NUMBER" \
+              '[.workflow_runs[] | select(.name == $wf and (.pull_requests[]?.number == $pr))] | length' 2>/dev/null || echo "999")
             
             # Validate RUN_COUNT is a number
             if ! [[ "$RUN_COUNT" =~ ^[0-9]+$ ]]; then
