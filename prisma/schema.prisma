@@ -175,6 +175,19 @@ model TransactionRequest {
   category    Category        @relation(fields: [categoryId], references: [id])
 }
 
+model RefreshToken {
+  id        String   @id @default(cuid())
+  jti       String   @unique
+  userId    String
+  email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([jti])
+  @@index([expiresAt])
+}
+
 enum RequestStatus {
   PENDING
   APPROVED

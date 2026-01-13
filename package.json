@@ -26,10 +26,12 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "ai": "^6.0.5",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.562.0",
     "next": "^16.1.1",
     "pg": "^8.16.3",
@@ -54,7 +56,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "magicast": "^0.5.0",
+    "magicast": "^0.5.1",
     "postcss": "^8",
     "prettier": "^3.7.4",
     "prisma": "^7.2.0",
@@ -75,5 +77,8 @@
     "**/*.{js,jsx,json,md}": [
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "magicast": "^0.5.1"
   }
 }
