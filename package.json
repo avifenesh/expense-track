@@ -54,6 +54,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "magicast": "^0.3.5",
     "postcss": "^8",
     "prettier": "^3.7.4",
     "prisma": "^7.2.0",
