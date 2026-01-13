@@ -65,7 +65,7 @@ describe('upsertBudgetAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Your session expired')
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
     }
   })
 
@@ -215,7 +215,7 @@ describe('deleteBudgetAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Your session expired')
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
     }
   })
 
@@ -287,7 +287,7 @@ describe('deleteBudgetAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Budget entry not found')
+      expect(result.error.general.some((msg: string) => msg.includes('Budget entry not found'))).toBe(true)
     }
   })
 })

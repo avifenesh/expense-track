@@ -70,7 +70,7 @@ describe('refreshExchangeRatesAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Your session expired')
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
     }
   })
 
@@ -106,7 +106,7 @@ describe('refreshExchangeRatesAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('API rate limit exceeded')
+      expect(result.error.general.some((msg: string) => msg.includes('API rate limit exceeded'))).toBe(true)
     }
   })
 
@@ -121,7 +121,7 @@ describe('refreshExchangeRatesAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Unable to refresh exchange rates')
+      expect(result.error.general.some((msg: string) => msg.includes('Unable to refresh exchange rates'))).toBe(true)
     }
   })
 })
@@ -144,7 +144,7 @@ describe('setBalanceAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Your session expired')
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
     }
   })
 
@@ -368,8 +368,22 @@ describe('setBalanceAction', () => {
     } as any)
 
     vi.mocked(prisma.transaction.findMany).mockResolvedValue([
-      { type: TransactionType.INCOME, amount: { toNumber: () => 100.5 } },
-      { type: TransactionType.EXPENSE, amount: { toNumber: () => 25.25 } },
+      {
+        type: TransactionType.INCOME,
+        amount: {
+          toNumber: () => 100.5,
+          valueOf: () => 100.5,
+          toString: () => '100.5',
+        },
+      },
+      {
+        type: TransactionType.EXPENSE,
+        amount: {
+          toNumber: () => 25.25,
+          valueOf: () => 25.25,
+          toString: () => '25.25',
+        },
+      },
     ] as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
