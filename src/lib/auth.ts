@@ -2,7 +2,7 @@
 import { Currency } from '@prisma/client'
 
 export type AuthUser = {
-  id: 'avi' | 'serena'
+  id: string
   email: string
   displayName: string
   passwordHash: string

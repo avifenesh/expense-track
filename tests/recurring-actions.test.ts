@@ -69,7 +69,7 @@ describe('upsertRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -107,7 +107,7 @@ describe('upsertRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -206,7 +206,7 @@ describe('upsertRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -249,7 +249,7 @@ describe('toggleRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -288,7 +288,7 @@ describe('toggleRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -320,7 +320,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -367,7 +367,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -418,7 +418,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -463,7 +463,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -495,7 +495,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
