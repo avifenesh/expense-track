@@ -13,6 +13,11 @@ vi.mock('@/lib/auth-server', () => ({
   getAuthUserFromSession: vi.fn(),
 }))
 
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {
@@ -67,6 +72,7 @@ describe('createTransactionAction', () => {
       amount: 50,
       currency: Currency.USD,
       date: new Date(),
+      csrfToken: 'test-token',
       description: 'Test transaction',
       isRecurring: false,
       recurringTemplateId: null,
@@ -109,6 +115,7 @@ describe('createTransactionAction', () => {
       description: 'Groceries',
       isRecurring: false,
       recurringTemplateId: null,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -146,6 +153,7 @@ describe('createTransactionAction', () => {
       description: 'Salary',
       isRecurring: false,
       recurringTemplateId: null,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -159,6 +167,7 @@ describe('createTransactionAction', () => {
       amount: -50,
       currency: Currency.USD,
       date: new Date(),
+      csrfToken: 'test-token',
       description: null,
       isRecurring: false,
       recurringTemplateId: null,
@@ -198,6 +207,7 @@ describe('createTransactionAction', () => {
       amount: 25,
       currency: Currency.EUR,
       date: new Date(),
+      csrfToken: 'test-token',
       description: null,
       isRecurring: false,
       recurringTemplateId: null,
@@ -234,6 +244,7 @@ describe('createTransactionAction', () => {
       amount: 100,
       currency: Currency.USD,
       date: new Date(),
+      csrfToken: 'test-token',
       description: 'Rent',
       isRecurring: true,
       recurringTemplateId: 'template-1',
@@ -271,6 +282,7 @@ describe('updateTransactionAction', () => {
       amount: 50,
       currency: Currency.USD,
       date: new Date(),
+      csrfToken: 'test-token',
       description: 'Updated',
       isRecurring: false,
       recurringTemplateId: null,
@@ -316,6 +328,7 @@ describe('updateTransactionAction', () => {
       amount: 75,
       currency: Currency.USD,
       date: new Date(),
+      csrfToken: 'test-token',
       description: 'Updated',
       isRecurring: false,
       recurringTemplateId: null,
@@ -365,6 +378,7 @@ describe('updateTransactionAction', () => {
       amount: 75,
       currency: Currency.USD,
       date: new Date(),
+      csrfToken: 'test-token',
       description: 'Moved to different account',
       isRecurring: false,
       recurringTemplateId: null,
@@ -394,7 +408,7 @@ describe('deleteTransactionAction', () => {
 
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue(null)
 
-    const result = await deleteTransactionAction({ id: 'tx-1' })
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
@@ -428,7 +442,7 @@ describe('deleteTransactionAction', () => {
 
     vi.mocked(prisma.transaction.delete).mockResolvedValue({} as any)
 
-    const result = await deleteTransactionAction({ id: 'tx-1' })
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: true })
     expect(prisma.transaction.delete).toHaveBeenCalledWith({
@@ -460,7 +474,7 @@ describe('deleteTransactionAction', () => {
       type: 'SELF',
     } as any)
 
-    const result = await deleteTransactionAction({ id: 'tx-1' })
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
     expect('error' in result).toBe(true)
     if ('error' in result) {

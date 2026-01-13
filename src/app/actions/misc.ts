@@ -9,7 +9,7 @@ import { getMonthStartFromKey } from '@/utils/date'
 import { refreshExchangeRates } from '@/lib/currency'
 import { success, generalError } from '@/lib/action-result'
 import { requireSession } from '@/lib/auth-server'
-import { parseInput, toDecimalString, ensureAccountAccess } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { setBalanceSchema } from '@/schemas'
 
 export async function refreshExchangeRatesAction() {
@@ -36,7 +36,10 @@ export async function refreshExchangeRatesAction() {
 export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) {
   const parsed = parseInput(setBalanceSchema, input)
   if ('error' in parsed) return parsed
-  const { accountId, targetBalance, currency, monthKey } = parsed.data
+  const { accountId, targetBalance, currency, monthKey, csrfToken } = parsed.data
+
+  const csrfCheck = await requireCsrfToken(csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(accountId)
   if ('error' in access) {

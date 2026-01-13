@@ -14,6 +14,7 @@ import { createAccountOptions } from '@/lib/select-options'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { DashboardCategory, DashboardAccount, DashboardBudget, typeFilterOptions, currencyOptions } from './types'
 
 export type BudgetsTabProps = {
@@ -34,6 +35,7 @@ export function BudgetsTab({
   preferredCurrency,
 }: BudgetsTabProps) {
   const router = useRouter()
+  const csrfToken = useCsrfToken()
 
   // Local state
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(activeAccount)
@@ -71,6 +73,7 @@ export function BudgetsTab({
       planned: Number(formData.get('planned') || 0),
       currency: (formData.get('budgetCurrency') as Currency) || Currency.USD,
       notes: (formData.get('notes') as string) || undefined,
+      csrfToken,
     }
 
     startBudget(async () => {
@@ -91,6 +94,7 @@ export function BudgetsTab({
         categoryId,
         accountId: accountIdForBudget,
         monthKey,
+        csrfToken,
       })
       if ('error' in result) {
         showError('Could not remove budget entry.')

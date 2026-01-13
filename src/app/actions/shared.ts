@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import type { AuthUser } from '@/lib/auth'
 import { getAuthUserFromSession, requireSession } from '@/lib/auth-server'
+import { validateCsrfToken } from '@/lib/csrf'
 
 // Currency precision: 2 decimal places (cents), scale factor 100
 const DECIMAL_PRECISION = 2
@@ -20,6 +21,20 @@ export function parseInput<T>(
     return { error: parsed.error.flatten().fieldErrors as Record<string, string[]> }
   }
   return { data: parsed.data }
+}
+
+export async function requireCsrfToken(
+  token: string | undefined | null,
+): Promise<{ success: true } | { error: Record<string, string[]> }> {
+  const valid = await validateCsrfToken(token)
+  if (!valid) {
+    return {
+      error: {
+        general: ['Security validation failed. Please refresh the page and try again.'],
+      },
+    }
+  }
+  return { success: true }
 }
 
 type AuthUserResult = { authUser: AuthUser } | { error: Record<string, string[]> }

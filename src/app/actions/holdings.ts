@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
-import { parseInput, toDecimalString, ensureAccountAccess } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import {
   holdingSchema,
   updateHoldingSchema,
@@ -22,6 +22,10 @@ export async function createHoldingAction(input: HoldingInput) {
   })
   if ('error' in parsed) return parsed
   const data = parsed.data
+
+  const csrfCheck = await requireCsrfToken(data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   const access = await ensureAccountAccess(data.accountId)
   if ('error' in access) {
     return access
@@ -80,6 +84,9 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
   const parsed = parseInput(updateHoldingSchema, input)
   if ('error' in parsed) return parsed
 
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   try {
     const holding = await (prisma as any).holding.findUnique({
       where: { id: parsed.data.id },
@@ -115,6 +122,9 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
   const parsed = parseInput(deleteHoldingSchema, input)
   if ('error' in parsed) return parsed
 
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   try {
     const holding = await (prisma as any).holding.findUnique({
       where: { id: parsed.data.id },
@@ -144,6 +154,9 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
 export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHoldingPricesSchema>) {
   const parsed = parseInput(refreshHoldingPricesSchema, input)
   if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(parsed.data.accountId)
   if ('error' in access) {
