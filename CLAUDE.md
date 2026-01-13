@@ -56,9 +56,12 @@ Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
 
 ### When Asked "What's Next?"
 
-1. Run `gh issue list --state open` to see pending tasks
-2. Pick the highest priority issue or ask user which to work on
-3. Reference the issue number in commits: `fix: implement X (closes #N)`
+1. Run `/next` to analyze open issues and get prioritized recommendations
+2. User approves a task to work on
+3. **Create worktree** for the task (see Worktree Policy)
+4. **Enter plan mode** after cd to worktree
+5. **Start Ralph Loop** with appropriate max-iterations
+6. Reference the issue number in commits: `fix: implement X (closes #N)`
 
 ### During Development
 
@@ -72,7 +75,8 @@ Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
 2. Run tests: `npm test`
 3. Commit with issue reference: `git commit -m "feat: ... (closes #N)"`
 4. Push and verify CI passes
-5. The issue auto-closes when merged to main
+5. Open PR and merge (see Worktree Policy)
+6. The issue auto-closes when merged to main
 
 ## Worktree Policy
 
@@ -92,10 +96,47 @@ Use git worktrees for feature development to keep main branch clean and enable p
 
 ### Development in Worktree
 
-- Commit often with descriptive messages
-- Reference issue number in commits
-- Run tests before pushing: `npm test`
-- Push regularly to create/update PR
+**Ralph Loop Workflow (Required for each task):**
+
+1. **After `cd` to worktree, enter plan mode first**
+   - Use plan mode to understand the codebase and design the approach
+   - Read relevant files, understand patterns, design implementation
+   - Get user approval on the plan before starting
+
+2. **Start Ralph Loop after plan approval**
+
+   ```bash
+   /ralph-loop --max-iterations <N> --completion-promise "<PROMISE>"
+   ```
+
+   - Set `max-iterations` higher than expected (e.g., if task needs ~5 iterations, set 8-10)
+   - Define clear completion promise (e.g., "FEATURE COMPLETE", "TESTS PASSING", "REFACTOR DONE")
+
+3. **During Ralph Loop execution**
+   - Commit often with descriptive messages
+   - Reference issue number in commits
+   - Run tests before pushing: `npm test`
+   - Push regularly to create/update PR
+   - Output `<promise>COMPLETION PROMISE</promise>` when done
+
+**Example workflow:**
+
+```bash
+# After getting task from /next
+cd ../expense-track-holdings-refresh
+
+# Enter plan mode, explore codebase, design solution
+# Get user approval
+
+# Start Ralph Loop
+/ralph-loop --max-iterations 10 --completion-promise "HOLDINGS REFRESH COMPLETE"
+
+# Ralph Loop iterates until:
+# - Feature implemented with tests
+# - All tests passing
+# - Changes committed
+# - Outputs: <promise>HOLDINGS REFRESH COMPLETE</promise>
+```
 
 ### Opening a PR
 
