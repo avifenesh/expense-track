@@ -84,27 +84,25 @@ describe('Middleware', () => {
   })
 
   it('sets Strict-Transport-Security in production', async () => {
-    const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
+    vi.stubEnv('NODE_ENV', 'production')
 
     const request = new NextRequest(new URL('http://localhost:3000/'))
     const response = await middleware(request)
 
     expect(response.headers.get('Strict-Transport-Security')).toBe('max-age=31536000; includeSubDomains')
 
-    process.env.NODE_ENV = originalEnv
+    vi.unstubAllEnvs()
   })
 
   it('does not set Strict-Transport-Security in development', async () => {
-    const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
+    vi.stubEnv('NODE_ENV', 'development')
 
     const request = new NextRequest(new URL('http://localhost:3000/'))
     const response = await middleware(request)
 
     expect(response.headers.get('Strict-Transport-Security')).toBeNull()
 
-    process.env.NODE_ENV = originalEnv
+    vi.unstubAllEnvs()
   })
 
   it('returns NextResponse that allows request to continue', async () => {

@@ -99,7 +99,7 @@ describe('auth credential verification', () => {
 describe('password reset action', () => {
   it('returns a friendly confirmation for known inboxes', async () => {
     const target = RECOVERY_CONTACTS[0]
-    const response = await requestPasswordResetAction({ email: target.email, csrfToken: 'test-token' })
+    const response = await requestPasswordResetAction({ email: target.email })
     expect(response).toEqual({
       success: true,
       message: expect.stringContaining(target.email),
@@ -107,7 +107,7 @@ describe('password reset action', () => {
   })
 
   it('flags unknown inboxes', async () => {
-    const response = await requestPasswordResetAction({ email: 'unknown@example.com', csrfToken: 'test-token' })
+    const response = await requestPasswordResetAction({ email: 'unknown@example.com' })
     expect(response).toEqual({
       error: {
         email: ['Email is not registered. Reach out to the finance team to restore access.'],
