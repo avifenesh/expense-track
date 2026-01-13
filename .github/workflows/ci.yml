@@ -44,3 +44,9 @@ jobs:
       - run: npm run lint
 
       - run: npm test
+        env:
+          AUTH_SESSION_SECRET: test-secret-for-ci-only
+          AUTH_USER1_NAME: testuser1
+          AUTH_USER1_PASSWORD: testpass1
+          AUTH_USER2_NAME: testuser2
+          AUTH_USER2_PASSWORD: testpass2
