@@ -1,14 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Prisma, TransactionType, Currency } from '@prisma/client'
-import type {
-  Account,
-  Category,
-  Transaction,
-  TransactionRequest,
-  Budget,
-  RecurringTemplate,
-  Holding,
-} from '@prisma/client'
+import type { Account, Category, Transaction, TransactionRequest, Budget, RecurringTemplate } from '@prisma/client'
 
 // Mock dependencies BEFORE imports
 vi.mock('@/lib/prisma', () => ({
@@ -53,6 +45,14 @@ import { prisma } from '@/lib/prisma'
 import * as currencyLib from '@/lib/currency'
 import * as financeLib from '@/lib/finance'
 import type { RateCache } from '@/lib/currency'
+
+// Type for mocked prisma with holding support
+type MockedPrisma = typeof prisma & {
+  holding: {
+    findMany: ReturnType<typeof vi.fn>
+  }
+}
+const mockedPrisma = prisma as MockedPrisma
 
 describe('finance.ts', () => {
   // Mock data fixtures
@@ -806,6 +806,8 @@ describe('finance.ts', () => {
         averageCost: new Prisma.Decimal(150),
         currency: Currency.USD,
         notes: null,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
         account: mockAccounts[0],
         category: mockCategories[0],
       },
@@ -818,6 +820,8 @@ describe('finance.ts', () => {
         averageCost: new Prisma.Decimal(2000),
         currency: Currency.USD,
         notes: 'Tech stock',
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
         account: mockAccounts[0],
         category: mockCategories[0],
       },
@@ -864,9 +868,7 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue(mockHoldings)
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue(mockHoldings)
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -903,9 +905,7 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(new Map())
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -925,9 +925,7 @@ describe('finance.ts', () => {
         ...mockHoldings[0],
         averageCost: new Prisma.Decimal(0),
       }
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([holdingWithZeroCost])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([holdingWithZeroCost])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -939,9 +937,7 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({
         preferredCurrency: Currency.EUR,
@@ -958,9 +954,7 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({
         preferredCurrency: Currency.USD,
@@ -977,16 +971,12 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([])
 
       await financeLib.getHoldingsWithPrices({ accountId: 'acc1' })
 
-      const callArg = vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mock.calls[0][0]
-      expect(callArg.where).toMatchObject({
+      const callArg = vi.mocked(mockedPrisma.holding.findMany).mock.calls[0]?.[0]
+      expect(callArg?.where).toMatchObject({
         accountId: 'acc1',
       })
     })
@@ -995,9 +985,7 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([mockHoldings[1]])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[1]])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -1022,9 +1010,7 @@ describe('finance.ts', () => {
       ])
       vi.mocked(batchLoadStockPrices).mockResolvedValue(pricesWithLoss)
 
-      vi.mocked(
-        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
-      ).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
