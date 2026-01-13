@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart } from '@/utils/date'
 import { successVoid, generalError } from '@/lib/action-result'
-import { parseInput, toDecimalString, requireAuthUser, ensureAccountAccess } from './shared'
+import { parseInput, toDecimalString, requireAuthUser, ensureAccountAccess, requireCsrfToken } from './shared'
 import {
   transactionSchema,
   transactionUpdateSchema,
@@ -23,6 +23,9 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
   const parsed = parseInput(transactionRequestSchema, input)
   if ('error' in parsed) return parsed
   const data = parsed.data
+
+  const csrfCheck = await requireCsrfToken(data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
@@ -62,6 +65,9 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
 export async function approveTransactionRequestAction(input: z.infer<typeof idSchema>) {
   const parsed = parseInput(idSchema, input)
   if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
@@ -120,6 +126,9 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
   const parsed = parseInput(idSchema, input)
   if ('error' in parsed) return parsed
 
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
   const { authUser } = auth
@@ -160,6 +169,9 @@ export async function createTransactionAction(input: TransactionInput) {
   const data = parsed.data
   const monthStart = getMonthStart(data.date)
 
+  const csrfCheck = await requireCsrfToken(data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   const access = await ensureAccountAccess(data.accountId)
   if ('error' in access) {
     return access
@@ -194,6 +206,9 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   if ('error' in parsed) return parsed
   const data = parsed.data
   const monthStart = getMonthStart(data.date)
+
+  const csrfCheck = await requireCsrfToken(data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const existing = await prisma.transaction.findUnique({
     where: { id: data.id },
@@ -245,6 +260,9 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
 export async function deleteTransactionAction(input: z.infer<typeof deleteTransactionSchema>) {
   const parsed = parseInput(deleteTransactionSchema, input)
   if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   try {
     const transaction = await prisma.transaction.findUnique({
