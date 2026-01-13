@@ -12,6 +12,16 @@ Personal finance app for two partners. Next.js 16 App Router + Prisma + PostgreS
 - **Target 90%+ coverage** across actions, schemas, and lib code
 - **Be concise** - no filler phrases or social pleasantries, focus on what's relevant
 
+## Legacy 2-User Architecture
+
+**Important Context**: This codebase was originally built for exactly 2 users (two partners). Some code reflects this:
+
+- **Hardcoded auth**: `AUTH_USER1_*` and `AUTH_USER2_*` env vars in `src/lib/auth.ts`
+- **Account assumptions**: Code may assume specific account names or structures
+- **No userId isolation**: Database queries don't filter by user (multi-tenant transformation in progress)
+
+**Before testing/fixing**: Understand that some patterns need refactoring for multi-user SaaS (Sprint 2+). When writing tests for Sprint 1, you may need to adapt or fix code to be testable.
+
 ## Commands
 
 ```bash
@@ -85,13 +95,26 @@ Use git worktrees for feature development to keep main branch clean and enable p
 ### Creating a Worktree
 
 1. **Comment on the issue** with your approach before starting
-2. **Create worktree** from main branch:
+2. **Create worktree using the script** (automatically copies .env):
+
    ```bash
-   git worktree add -b feature/<name> ../expense-track-<name>
+   # Windows PowerShell
+   .\scripts\create-worktree.ps1 <branch-name>
+
+   # Linux/Mac/Git Bash
+   ./scripts/create-worktree.sh <branch-name>
+
+   # Example
+   .\scripts\create-worktree.ps1 finance-tests
    ```
+
 3. **Switch to worktree directory**:
    ```bash
-   cd ../expense-track-<name>
+   cd ../expense-track-<branch-name>
+   ```
+4. **Install dependencies**:
+   ```bash
+   npm install
    ```
 
 ### Development in Worktree
