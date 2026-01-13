@@ -10,9 +10,10 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
     coverage: {
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'json-summary'],
       reportsDirectory: 'coverage',
-      include: ['src/lib/**/*.{ts,tsx}'],
+      include: ['src/lib/**/*.{ts,tsx}', 'src/app/actions/**/*.ts', 'src/schemas/**/*.ts'],
+      exclude: ['**/*.test.ts', '**/*.spec.ts', '**/types.ts'],
     },
   },
   resolve: {
