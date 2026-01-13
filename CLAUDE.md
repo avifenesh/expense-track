@@ -74,6 +74,72 @@ Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
 4. Push and verify CI passes
 5. The issue auto-closes when merged to main
 
+## Worktree Policy
+
+Use git worktrees for feature development to keep main branch clean and enable parallel work.
+
+### Creating a Worktree
+
+1. **Comment on the issue** with your approach before starting
+2. **Create worktree** from main branch:
+   ```bash
+   git worktree add -b feature/<name> ../expense-track-<name>
+   ```
+3. **Switch to worktree directory**:
+   ```bash
+   cd ../expense-track-<name>
+   ```
+
+### Development in Worktree
+
+- Commit often with descriptive messages
+- Reference issue number in commits
+- Run tests before pushing: `npm test`
+- Push regularly to create/update PR
+
+### Opening a PR
+
+```bash
+gh pr create --title "feat: implement X" --body "Closes #N"
+```
+
+### Merging to Main
+
+1. Address any PR review comments
+2. Ensure all tests pass
+3. Merge PR with squash:
+   ```bash
+   gh pr merge <PR_NUMBER> --squash --delete-branch
+   ```
+
+### Cleanup After Merge
+
+```bash
+# Return to main directory
+cd ../expense-track
+
+# Update main
+git checkout main
+git pull
+
+# Remove worktree
+git worktree remove ../expense-track-<name>
+
+# Prune remote tracking branches
+git fetch --prune
+```
+
+### Direct Work on Main
+
+**Only for fixes/hotfixes:**
+
+- Small bug fixes
+- Typo corrections
+- Documentation updates
+- Emergency hotfixes
+
+**Everything else** should go through worktree → PR → merge workflow.
+
 ## Testing
 
 Write tests to find bugs, not just to pass coverage metrics. Tests should verify real behavior and edge cases, not just happy paths.
