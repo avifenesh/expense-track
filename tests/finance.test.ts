@@ -865,9 +865,6 @@ describe('finance.ts', () => {
     })
 
     it('should calculate holdings with prices correctly', async () => {
-      const { batchLoadStockPrices } = await import('@/lib/stock-api')
-      vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
-
       vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue(mockHoldings)
 
       const result = await financeLib.getHoldingsWithPrices({})
@@ -918,9 +915,6 @@ describe('finance.ts', () => {
     })
 
     it('should handle zero cost basis safely', async () => {
-      const { batchLoadStockPrices } = await import('@/lib/stock-api')
-      vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
-
       const holdingWithZeroCost = {
         ...mockHoldings[0],
         averageCost: new Prisma.Decimal(0),
@@ -934,9 +928,6 @@ describe('finance.ts', () => {
     })
 
     it('should convert currencies correctly', async () => {
-      const { batchLoadStockPrices } = await import('@/lib/stock-api')
-      vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
-
       vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({
@@ -951,9 +942,6 @@ describe('finance.ts', () => {
     })
 
     it('should not convert when currencies match', async () => {
-      const { batchLoadStockPrices } = await import('@/lib/stock-api')
-      vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
-
       vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({
@@ -968,9 +956,6 @@ describe('finance.ts', () => {
     })
 
     it('should filter by accountId', async () => {
-      const { batchLoadStockPrices } = await import('@/lib/stock-api')
-      vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
-
       vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([])
 
       await financeLib.getHoldingsWithPrices({ accountId: 'acc1' })
@@ -982,9 +967,6 @@ describe('finance.ts', () => {
     })
 
     it('should normalize symbols to uppercase for price lookup', async () => {
-      const { batchLoadStockPrices } = await import('@/lib/stock-api')
-      vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
-
       vi.mocked(mockedPrisma.holding.findMany).mockResolvedValue([mockHoldings[1]])
 
       const result = await financeLib.getHoldingsWithPrices({})
