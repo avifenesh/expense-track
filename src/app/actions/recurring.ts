@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
-import { parseInput, toDecimalString, ensureAccountAccess } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import {
   recurringTemplateSchema,
   toggleRecurringSchema,
@@ -25,6 +25,9 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
   if (endMonth && endMonth < startMonth) {
     return failure({ endMonthKey: ['End month must be after the start month'] })
   }
+
+  const csrfCheck = await requireCsrfToken(data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(data.accountId)
   if ('error' in access) {
@@ -66,6 +69,9 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
   const parsed = parseInput(toggleRecurringSchema, input)
   if ('error' in parsed) return parsed
 
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   try {
     const template = await prisma.recurringTemplate.findUnique({ where: { id: parsed.data.id } })
     if (!template) {
@@ -93,8 +99,11 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
 export async function applyRecurringTemplatesAction(input: z.infer<typeof applyRecurringSchema>) {
   const parsed = parseInput(applyRecurringSchema, input)
   if ('error' in parsed) return parsed
-  const { monthKey, accountId, templateIds } = parsed.data
+  const { monthKey, accountId, templateIds, csrfToken } = parsed.data
   const monthStart = getMonthStartFromKey(monthKey)
+
+  const csrfCheck = await requireCsrfToken(csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(accountId)
   if ('error' in access) {

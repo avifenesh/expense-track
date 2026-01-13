@@ -19,6 +19,7 @@ import { RecurringTemplateSummary } from '@/lib/finance'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 import {
   DashboardCategory,
   DashboardAccount,
@@ -46,6 +47,7 @@ export function RecurringTab({
   preferredCurrency,
 }: RecurringTabProps) {
   const router = useRouter()
+  const csrfToken = useCsrfToken()
 
   // Local state
   const [recurringTypeFilter, setRecurringTypeFilter] = useState<'all' | TransactionType>('all')
@@ -97,6 +99,7 @@ export function RecurringTab({
       startMonthKey: formData.get('startMonth') as string,
       endMonthKey: (formData.get('endMonth') as string) || undefined,
       isActive: true,
+      csrfToken,
     }
 
     startRecurring(async () => {
@@ -113,7 +116,7 @@ export function RecurringTab({
 
   const handleRecurringToggle = (template: RecurringTemplateSummary, isActive: boolean) => {
     startRecurring(async () => {
-      const result = await toggleRecurringTemplateAction({ id: template.id, isActive })
+      const result = await toggleRecurringTemplateAction({ id: template.id, isActive, csrfToken })
       if ('error' in result) {
         showError('Could not update recurring template.')
         return
@@ -125,7 +128,7 @@ export function RecurringTab({
 
   const handleRecurringApply = () => {
     startRecurring(async () => {
-      const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount })
+      const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount, csrfToken })
       if ('error' in result) {
         showError('Could not apply recurring items.')
         return

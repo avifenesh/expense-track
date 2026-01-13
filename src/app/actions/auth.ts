@@ -5,7 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import { clearSession, establishSession, updateSessionAccount, verifyCredentials } from '@/lib/auth-server'
 import { success, successVoid, failure } from '@/lib/action-result'
-import { parseInput, ensureAccountAccess } from './shared'
+import { parseInput, ensureAccountAccess, requireCsrfToken } from './shared'
+import { rotateCsrfToken } from '@/lib/csrf'
 import { loginSchema, recoverySchema, accountSelectionSchema } from '@/schemas'
 
 export async function loginAction(input: z.infer<typeof loginSchema>) {
@@ -43,6 +44,7 @@ export async function loginAction(input: z.infer<typeof loginSchema>) {
   const defaultAccount = accounts.find((account) => account.name === authUser.defaultAccountName) ?? accounts[0]
 
   await establishSession({ userEmail: authUser.email, accountId: defaultAccount.id })
+  await rotateCsrfToken()
   return success({ accountId: defaultAccount.id })
 }
 
@@ -76,6 +78,9 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
 export async function persistActiveAccountAction(input: z.infer<typeof accountSelectionSchema>) {
   const parsed = parseInput(accountSelectionSchema, input)
   if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(parsed.data.accountId)
   if ('error' in access) {

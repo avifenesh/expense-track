@@ -22,6 +22,7 @@ import { normalizeDateInput } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { RequestList } from '@/components/dashboard/request-list'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 import {
   DashboardCategory,
   DashboardAccount,
@@ -52,6 +53,7 @@ export function TransactionsTab({
   preferredCurrency,
 }: TransactionsTabProps) {
   const router = useRouter()
+  const csrfToken = useCsrfToken()
 
   // Derived values (memoized to prevent unnecessary re-renders)
   const defaultExpenseCategoryId = useMemo(
@@ -288,6 +290,7 @@ export function TransactionsTab({
           currency: transactionFormState.currency,
           date: dateInput,
           description: description.length > 0 ? description : undefined,
+          csrfToken,
         })
       } else {
         const payload = {
@@ -299,6 +302,7 @@ export function TransactionsTab({
           date: dateInput,
           description: description.length > 0 ? description : undefined,
           isRecurring: transactionFormState.isRecurring,
+          csrfToken,
         }
         result = editingTransaction
           ? await updateTransactionAction({ id: editingTransaction.id, ...payload })
@@ -328,7 +332,7 @@ export function TransactionsTab({
 
   const handleTransactionDelete = (id: string) => {
     startTransaction(async () => {
-      const result = await deleteTransactionAction({ id })
+      const result = await deleteTransactionAction({ id, csrfToken })
       if ('error' in result) {
         showError('Could not delete transaction.')
         return

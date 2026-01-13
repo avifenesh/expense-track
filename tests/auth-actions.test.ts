@@ -68,6 +68,11 @@ vi.mock('@/lib/auth-server', async () => {
   }
 })
 
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
 import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import { verifyCredentials } from '@/lib/auth-server'
 import { requestPasswordResetAction } from '@/app/actions'

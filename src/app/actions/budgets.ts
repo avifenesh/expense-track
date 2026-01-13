@@ -6,14 +6,17 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { successVoid, generalError } from '@/lib/action-result'
-import { parseInput, toDecimalString, ensureAccountAccess } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { budgetSchema, deleteBudgetSchema, type BudgetInput } from '@/schemas'
 
 export async function upsertBudgetAction(input: BudgetInput) {
   const parsed = parseInput(budgetSchema, input)
   if ('error' in parsed) return parsed
-  const { accountId, categoryId, monthKey, planned, currency, notes } = parsed.data
+  const { accountId, categoryId, monthKey, planned, currency, notes, csrfToken } = parsed.data
   const month = getMonthStartFromKey(monthKey)
+
+  const csrfCheck = await requireCsrfToken(csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(accountId)
   if ('error' in access) {
@@ -55,8 +58,11 @@ export async function upsertBudgetAction(input: BudgetInput) {
 export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchema>) {
   const parsed = parseInput(deleteBudgetSchema, input)
   if ('error' in parsed) return parsed
-  const { accountId, categoryId, monthKey } = parsed.data
+  const { accountId, categoryId, monthKey, csrfToken } = parsed.data
   const month = getMonthStartFromKey(monthKey)
+
+  const csrfCheck = await requireCsrfToken(csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   const access = await ensureAccountAccess(accountId)
   if ('error' in access) {

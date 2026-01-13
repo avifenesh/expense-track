@@ -4,12 +4,15 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { successVoid, generalError } from '@/lib/action-result'
-import { parseInput } from './shared'
+import { parseInput, requireCsrfToken } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
 
 export async function createCategoryAction(input: z.infer<typeof categorySchema>) {
   const parsed = parseInput(categorySchema, input)
   if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   try {
     await prisma.category.create({
@@ -31,6 +34,9 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
 export async function archiveCategoryAction(input: z.infer<typeof archiveCategorySchema>) {
   const parsed = parseInput(archiveCategorySchema, input)
   if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
 
   try {
     await prisma.category.update({

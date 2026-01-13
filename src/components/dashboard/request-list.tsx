@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 
 type TransactionRequest = DashboardData['transactionRequests'][number]
 
@@ -20,12 +21,13 @@ type RequestListProps = {
 
 export function RequestList({ requests, preferredCurrency: _preferredCurrency }: RequestListProps) {
   const router = useRouter()
+  const csrfToken = useCsrfToken()
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   const handleApprove = (id: string) => {
     startTransition(async () => {
-      const result = await approveTransactionRequestAction({ id })
+      const result = await approveTransactionRequestAction({ id, csrfToken })
       if ('error' in result) {
         setFeedback({ type: 'error', message: 'Failed to approve request.' })
         return
@@ -37,7 +39,7 @@ export function RequestList({ requests, preferredCurrency: _preferredCurrency }:
 
   const handleReject = (id: string) => {
     startTransition(async () => {
-      const result = await rejectTransactionRequestAction({ id })
+      const result = await rejectTransactionRequestAction({ id, csrfToken })
       if ('error' in result) {
         setFeedback({ type: 'error', message: 'Failed to reject request.' })
         return

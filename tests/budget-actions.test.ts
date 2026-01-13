@@ -13,6 +13,11 @@ vi.mock('@/lib/auth-server', () => ({
   getAuthUserFromSession: vi.fn(),
 }))
 
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {
@@ -59,6 +64,7 @@ describe('upsertBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2026-01',
       planned: 1000,
+      csrfToken: 'test-token',
       currency: Currency.USD,
       notes: 'Test budget',
     })
@@ -93,6 +99,7 @@ describe('upsertBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2026-01',
       planned: 1000,
+      csrfToken: 'test-token',
       currency: Currency.USD,
       notes: 'Test budget',
     })
@@ -129,6 +136,7 @@ describe('upsertBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2026-01',
       planned: 1000,
+      csrfToken: 'test-token',
       currency: Currency.USD,
       notes: 'Test budget',
     })
@@ -153,6 +161,7 @@ describe('upsertBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2026-01',
       planned: -100,
+      csrfToken: 'test-token',
       currency: Currency.USD,
       notes: null,
     })
@@ -189,6 +198,7 @@ describe('upsertBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2026-01',
       planned: 2000,
+      csrfToken: 'test-token',
       currency: Currency.EUR,
       notes: 'Updated budget',
     })
@@ -211,6 +221,7 @@ describe('deleteBudgetAction', () => {
       accountId: 'acc-1',
       categoryId: 'cat-1',
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -244,6 +255,7 @@ describe('deleteBudgetAction', () => {
       accountId: 'acc-1',
       categoryId: 'cat-1',
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -283,6 +295,7 @@ describe('deleteBudgetAction', () => {
       accountId: 'acc-1',
       categoryId: 'cat-1',
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)

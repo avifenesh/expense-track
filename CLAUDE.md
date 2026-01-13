@@ -62,6 +62,11 @@ Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
 - Amounts: `Decimal(12,2)` in DB
 - Auth env vars required, no fallbacks
 
+## Security
+
+- **CSRF Protection**: All mutating server actions require CSRF tokens validated via `requireCsrfToken()`. Double-submit cookie pattern with HMAC-SHA256 signing.
+- **Security Headers**: Middleware sets CSP, X-Frame-Options, HSTS, and other security headers on all responses.
+
 ## GitHub Issues Workflow
 
 ### When Asked "What's Next?"

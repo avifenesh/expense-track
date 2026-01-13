@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/utils/cn'
 import { formatCurrency } from '@/utils/format'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 
@@ -43,6 +44,7 @@ export default function HoldingsTab({
   preferredCurrency,
   onSelectAccount,
 }: HoldingsTabProps) {
+  const csrfToken = useCsrfToken()
   const [holdings, setHoldings] = useState<HoldingWithPrice[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
@@ -112,6 +114,7 @@ export default function HoldingsTab({
       averageCost: Number(formData.get('averageCost') || 0),
       currency: (formData.get('currency') as Currency) || Currency.USD,
       notes: (formData.get('notes') as string) || undefined,
+      csrfToken,
     }
 
     setFeedback(null)
@@ -140,7 +143,7 @@ export default function HoldingsTab({
     setFeedback(null)
 
     startAction(async () => {
-      const result = await deleteHoldingAction({ id: holdingId })
+      const result = await deleteHoldingAction({ id: holdingId, csrfToken })
       if ('error' in result) {
         setFeedback({ type: 'error', message: 'Failed to delete holding' })
         return
@@ -155,7 +158,7 @@ export default function HoldingsTab({
     setFeedback(null)
 
     startAction(async () => {
-      const result = await refreshHoldingPricesAction({ accountId: activeAccount })
+      const result = await refreshHoldingPricesAction({ accountId: activeAccount, csrfToken })
       if ('error' in result) {
         setFeedback({ type: 'error', message: 'Failed to refresh prices' })
         return

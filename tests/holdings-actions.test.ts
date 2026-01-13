@@ -41,6 +41,11 @@ vi.mock('@prisma/client', async (importOriginal) => {
   }
 })
 
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
@@ -106,6 +111,7 @@ describe('createHoldingAction', () => {
       averageCost: 150,
       currency: Currency.USD,
       notes: 'Tech stocks',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -144,6 +150,7 @@ describe('createHoldingAction', () => {
       averageCost: 150,
       currency: Currency.USD,
       notes: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -189,6 +196,7 @@ describe('createHoldingAction', () => {
       averageCost: 150,
       currency: Currency.USD,
       notes: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -234,6 +242,7 @@ describe('createHoldingAction', () => {
       averageCost: 2400,
       currency: Currency.USD,
       notes: null,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -248,6 +257,7 @@ describe('createHoldingAction', () => {
       averageCost: 150,
       currency: Currency.USD,
       notes: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -265,6 +275,7 @@ describe('createHoldingAction', () => {
       averageCost: -150,
       currency: Currency.USD,
       notes: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -310,6 +321,7 @@ describe('updateHoldingAction', () => {
       quantity: 15,
       averageCost: 155,
       notes: 'Increased position',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -336,6 +348,7 @@ describe('updateHoldingAction', () => {
       quantity: 15,
       averageCost: 155,
       notes: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -376,7 +389,7 @@ describe('deleteHoldingAction', () => {
 
     vi.mocked(prisma.holding.delete).mockResolvedValue({} as any)
 
-    const result = await deleteHoldingAction({ id: 'holding-1' })
+    const result = await deleteHoldingAction({ id: 'holding-1', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: true })
     expect(prisma.holding.delete).toHaveBeenCalledWith({
@@ -422,7 +435,7 @@ describe('refreshHoldingPricesAction', () => {
       errors: [],
     })
 
-    const result = await refreshHoldingPricesAction({ accountId: 'acc-1' })
+    const result = await refreshHoldingPricesAction({ accountId: 'acc-1', csrfToken: 'test-token' })
 
     expect('success' in result && result.success).toBe(true)
     if ('success' in result && result.success) {
@@ -451,7 +464,7 @@ describe('refreshHoldingPricesAction', () => {
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([])
 
-    const result = await refreshHoldingPricesAction({ accountId: 'acc-1' })
+    const result = await refreshHoldingPricesAction({ accountId: 'acc-1', csrfToken: 'test-token' })
 
     expect('success' in result && result.success).toBe(true)
     if ('success' in result && result.success) {
@@ -492,7 +505,7 @@ describe('refreshHoldingPricesAction', () => {
       errors: [],
     })
 
-    const result = await refreshHoldingPricesAction({ accountId: 'acc-1' })
+    const result = await refreshHoldingPricesAction({ accountId: 'acc-1', csrfToken: 'test-token' })
 
     expect('success' in result && result.success).toBe(true)
     expect(refreshStockPrices).toHaveBeenCalledWith(['AAPL', 'GOOGL'])
