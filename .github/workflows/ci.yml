@@ -39,6 +39,11 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
+      - name: Security audit
+        run: npm audit --audit-level=moderate || true
+        # Note: Using || true to make this warning-only initially.
+        # Change to --audit-level=high and remove || true to make blocking.
+
       - run: npm run check-types
 
       - run: npm run lint
