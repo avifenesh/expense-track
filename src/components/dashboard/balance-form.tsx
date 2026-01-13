@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 
@@ -22,6 +23,7 @@ export type BalanceFormProps = {
 
 export function BalanceForm({ activeAccount, monthKey, preferredCurrency, currentNet, onClose }: BalanceFormProps) {
   const router = useRouter()
+  const csrfToken = useCsrfToken()
   const [balanceAmount, setBalanceAmount] = useState('')
   const [balanceFeedback, setBalanceFeedback] = useState<Feedback | null>(null)
   const [isPendingBalance, startBalance] = useTransition()
@@ -39,6 +41,7 @@ export function BalanceForm({ activeAccount, monthKey, preferredCurrency, curren
         targetBalance: parsedAmount,
         currency: preferredCurrency,
         monthKey,
+        csrfToken,
       })
 
       if ('error' in result) {

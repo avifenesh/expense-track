@@ -115,6 +115,7 @@ describe('createTransactionAction', () => {
       description: 'Groceries',
       isRecurring: false,
       recurringTemplateId: null,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -152,6 +153,7 @@ describe('createTransactionAction', () => {
       description: 'Salary',
       isRecurring: false,
       recurringTemplateId: null,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })

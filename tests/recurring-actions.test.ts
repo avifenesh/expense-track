@@ -101,6 +101,7 @@ describe('upsertRecurringTemplateAction', () => {
       startMonthKey: '2026-01',
       endMonthKey: null,
       isActive: true,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -140,6 +141,7 @@ describe('upsertRecurringTemplateAction', () => {
       startMonthKey: '2026-01',
       endMonthKey: null,
       isActive: true,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -158,6 +160,7 @@ describe('upsertRecurringTemplateAction', () => {
       startMonthKey: '2026-12',
       endMonthKey: '2026-01',
       isActive: true,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -178,6 +181,7 @@ describe('upsertRecurringTemplateAction', () => {
       startMonthKey: '2026-01',
       endMonthKey: null,
       isActive: true,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -198,6 +202,7 @@ describe('upsertRecurringTemplateAction', () => {
       startMonthKey: '2026-01',
       endMonthKey: null,
       isActive: true,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -238,6 +243,7 @@ describe('upsertRecurringTemplateAction', () => {
       startMonthKey: '2026-06',
       endMonthKey: '2026-06',
       isActive: true,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -279,6 +285,7 @@ describe('toggleRecurringTemplateAction', () => {
     const result = await toggleRecurringTemplateAction({
       id: 'template-1',
       isActive: false,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -306,6 +313,7 @@ describe('toggleRecurringTemplateAction', () => {
     const result = await toggleRecurringTemplateAction({
       id: 'nonexistent',
       isActive: false,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -359,6 +367,7 @@ describe('applyRecurringTemplatesAction', () => {
     const result = await applyRecurringTemplatesAction({
       monthKey: '2026-02',
       accountId: 'acc-1',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -410,6 +419,7 @@ describe('applyRecurringTemplatesAction', () => {
     const result = await applyRecurringTemplatesAction({
       monthKey: '2026-02',
       accountId: 'acc-1',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -458,6 +468,7 @@ describe('applyRecurringTemplatesAction', () => {
     const result = await applyRecurringTemplatesAction({
       monthKey: '2026-02',
       accountId: 'acc-1',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -487,6 +498,7 @@ describe('applyRecurringTemplatesAction', () => {
     const result = await applyRecurringTemplatesAction({
       monthKey: '2026-02',
       accountId: 'acc-1',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -535,6 +547,7 @@ describe('applyRecurringTemplatesAction', () => {
       monthKey: '2026-02',
       accountId: 'acc-1',
       templateIds: ['template-2'],
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)

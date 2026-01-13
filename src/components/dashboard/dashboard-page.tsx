@@ -32,6 +32,7 @@ import { DashboardData } from '@/lib/finance'
 import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
 import { cn } from '@/utils/cn'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { ChatWidget } from '@/components/ai/chat-widget'
 import { BudgetsTab, CategoriesTab, OverviewTab, RecurringTab, TransactionsTab } from '@/components/dashboard/tabs'
 
@@ -141,6 +142,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const csrfToken = useCsrfToken()
 
   // Get user's preferred currency for formatting
   const preferredCurrency = data.preferredCurrency || Currency.USD
@@ -213,7 +215,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
     handleParamUpdate('account', value)
     const accountLabel = accountsOptions.find((option) => option.value === value)?.label ?? 'Account'
     startPersistAccount(async () => {
-      const result = await persistActiveAccountAction({ accountId: value })
+      const result = await persistActiveAccountAction({ accountId: value, csrfToken })
       if ('error' in result && result.error) {
         const firstErrorSet = Object.values(result.error)[0]
         const message: string =

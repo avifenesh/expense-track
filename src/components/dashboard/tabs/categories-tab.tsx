@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { filterCategories } from '@/lib/dashboard-ux'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { cn } from '@/utils/cn'
 import { DashboardCategory, transactionTypeOptions, typeFilterOptions, TypeFilterValue } from './types'
 
@@ -20,6 +21,7 @@ export type CategoriesTabProps = {
 
 export function CategoriesTab({ categories }: CategoriesTabProps) {
   const router = useRouter()
+  const csrfToken = useCsrfToken()
 
   // Local state
   const [categorySearch, setCategorySearch] = useState('')
@@ -50,6 +52,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
       name: formData.get('categoryName') as string,
       type: formData.get('categoryType') as TransactionType,
       color: (formData.get('categoryColor') as string) || undefined,
+      csrfToken,
     }
 
     startCategory(async () => {
@@ -66,7 +69,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
 
   const handleCategoryArchive = (id: string, isArchived: boolean) => {
     startCategory(async () => {
-      const result = await archiveCategoryAction({ id, isArchived })
+      const result = await archiveCategoryAction({ id, isArchived, csrfToken })
       if ('error' in result) {
         showError('Unable to update category.')
         return

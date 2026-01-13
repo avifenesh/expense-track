@@ -82,6 +82,7 @@ describe('createTransactionRequestAction', () => {
       currency: Currency.USD,
       date: new Date(),
       description: 'Groceries',
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -117,6 +118,7 @@ describe('createTransactionRequestAction', () => {
       currency: Currency.USD,
       date: new Date('2026-01-01'),
       description: 'Dinner',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -151,7 +153,7 @@ describe('approveTransactionRequestAction', () => {
 
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(null)
 
-    const result = await approveTransactionRequestAction({ id: 'req-id' })
+    const result = await approveTransactionRequestAction({ id: 'req-id', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: false, error: { general: ['Transaction request not found'] } })
   })
@@ -190,7 +192,7 @@ describe('approveTransactionRequestAction', () => {
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
 
-    const result = await approveTransactionRequestAction({ id: 'req-id' })
+    const result = await approveTransactionRequestAction({ id: 'req-id', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: true })
     expect(prisma.transactionRequest.update).toHaveBeenCalledWith({
@@ -234,7 +236,7 @@ describe('rejectTransactionRequestAction', () => {
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)
 
-    const result = await rejectTransactionRequestAction({ id: 'req-id' })
+    const result = await rejectTransactionRequestAction({ id: 'req-id', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: true })
     expect(prisma.transactionRequest.update).toHaveBeenCalledWith({

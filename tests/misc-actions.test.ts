@@ -145,6 +145,7 @@ describe('setBalanceAction', () => {
       targetBalance: 1000,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -192,6 +193,7 @@ describe('setBalanceAction', () => {
       targetBalance: 1000,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -246,6 +248,7 @@ describe('setBalanceAction', () => {
       targetBalance: 300,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -292,6 +295,7 @@ describe('setBalanceAction', () => {
       targetBalance: 800,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -336,6 +340,7 @@ describe('setBalanceAction', () => {
       targetBalance: 1000,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -398,6 +403,7 @@ describe('setBalanceAction', () => {
       targetBalance: 100,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)
@@ -444,6 +450,7 @@ describe('setBalanceAction', () => {
       targetBalance: -200,
       currency: Currency.USD,
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('success' in result && result.success).toBe(true)

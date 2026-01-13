@@ -8,6 +8,11 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {
@@ -47,6 +52,7 @@ describe('createCategoryAction', () => {
       name: 'Groceries',
       type: TransactionType.EXPENSE,
       color: '#FF0000',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -73,6 +79,7 @@ describe('createCategoryAction', () => {
       name: 'Salary',
       type: TransactionType.INCOME,
       color: null,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -90,6 +97,7 @@ describe('createCategoryAction', () => {
       name: 'A',
       type: TransactionType.EXPENSE,
       color: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -105,6 +113,7 @@ describe('createCategoryAction', () => {
       name: 'Groceries',
       type: TransactionType.EXPENSE,
       color: null,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -127,6 +136,7 @@ describe('createCategoryAction', () => {
       name: 'Freelance',
       type: TransactionType.INCOME,
       color: '#00FF00',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -151,6 +161,7 @@ describe('archiveCategoryAction', () => {
     const result = await archiveCategoryAction({
       id: 'cat-1',
       isArchived: true,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -173,6 +184,7 @@ describe('archiveCategoryAction', () => {
     const result = await archiveCategoryAction({
       id: 'cat-1',
       isArchived: false,
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -188,6 +200,7 @@ describe('archiveCategoryAction', () => {
     const result = await archiveCategoryAction({
       id: 'nonexistent-id',
       isArchived: true,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -200,6 +213,7 @@ describe('archiveCategoryAction', () => {
     const result = await archiveCategoryAction({
       id: '',
       isArchived: true,
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)

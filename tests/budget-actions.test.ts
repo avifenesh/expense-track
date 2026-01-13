@@ -221,6 +221,7 @@ describe('deleteBudgetAction', () => {
       accountId: 'acc-1',
       categoryId: 'cat-1',
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
@@ -254,6 +255,7 @@ describe('deleteBudgetAction', () => {
       accountId: 'acc-1',
       categoryId: 'cat-1',
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect(result).toEqual({ success: true })
@@ -293,6 +295,7 @@ describe('deleteBudgetAction', () => {
       accountId: 'acc-1',
       categoryId: 'cat-1',
       monthKey: '2026-01',
+      csrfToken: 'test-token',
     })
 
     expect('error' in result).toBe(true)
