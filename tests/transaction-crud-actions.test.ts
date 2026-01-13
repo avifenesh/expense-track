@@ -74,7 +74,7 @@ describe('createTransactionAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Your session expired')
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
     }
   })
 
@@ -278,7 +278,7 @@ describe('updateTransactionAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Transaction not found')
+      expect(result.error.general.some((msg: string) => msg.includes('Transaction not found'))).toBe(true)
     }
   })
 
@@ -398,7 +398,7 @@ describe('deleteTransactionAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Transaction not found')
+      expect(result.error.general.some((msg: string) => msg.includes('Transaction not found'))).toBe(true)
     }
   })
 
@@ -464,7 +464,7 @@ describe('deleteTransactionAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.accountId).toContain('You do not have access')
+      expect(result.error.accountId?.some((msg: string) => msg.includes('You do not have access'))).toBe(true)
     }
   })
 })

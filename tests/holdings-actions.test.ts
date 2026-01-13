@@ -148,7 +148,9 @@ describe('createHoldingAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.categoryId).toContain('must be marked as a holding category')
+      expect(result.error.categoryId?.some((msg: string) => msg.includes('must be marked as a holding category'))).toBe(
+        true,
+      )
     }
   })
 
@@ -338,7 +340,7 @@ describe('updateHoldingAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Holding not found')
+      expect(result.error.general?.some((msg: string) => msg.includes('Holding not found'))).toBe(true)
     }
   })
 })
