@@ -41,6 +41,11 @@ vi.mock('@prisma/client', async (importOriginal) => {
   }
 })
 
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
