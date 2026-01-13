@@ -115,7 +115,7 @@ export async function getExchangeRate(from: Currency, to: Currency, date?: Date)
 
     return rate
   } catch (error) {
-    console.error(`Failed to fetch exchange rate ${from} -> ${to}:`, error)
+    console.error('Failed to fetch exchange rate %s -> %s:', from, to, error)
 
     // Fallback: try to get the most recent cached rate
     const fallback = await prisma.exchangeRate.findFirst({
