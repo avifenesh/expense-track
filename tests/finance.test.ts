@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Prisma, TransactionType, Currency } from '@prisma/client'
+import type {
+  Account,
+  Category,
+  Transaction,
+  TransactionRequest,
+  Budget,
+  RecurringTemplate,
+  Holding,
+} from '@prisma/client'
 
 // Mock dependencies BEFORE imports
 vi.mock('@/lib/prisma', () => ({
@@ -80,7 +89,7 @@ describe('finance.ts', () => {
 
   describe('getAccounts', () => {
     it('should return accounts sorted by name', async () => {
-      vi.mocked(prisma.account.findMany).mockResolvedValue(mockAccounts as any)
+      vi.mocked(prisma.account.findMany).mockResolvedValue(mockAccounts as unknown as Account[])
 
       const result = await financeLib.getAccounts()
 
@@ -93,7 +102,7 @@ describe('finance.ts', () => {
 
   describe('getCategories', () => {
     it('should return categories sorted by name', async () => {
-      vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as any)
+      vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as unknown as Category[])
 
       const result = await financeLib.getCategories()
 
@@ -118,7 +127,7 @@ describe('finance.ts', () => {
     ]
 
     it('should return all requests when no filters provided', async () => {
-      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as any)
+      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as unknown as TransactionRequest[])
 
       const result = await financeLib.getTransactionRequests()
 
@@ -136,7 +145,7 @@ describe('finance.ts', () => {
     })
 
     it('should filter by accountId', async () => {
-      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as any)
+      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as unknown as TransactionRequest[])
 
       await financeLib.getTransactionRequests({ accountId: 'acc1' })
 
@@ -153,7 +162,7 @@ describe('finance.ts', () => {
     })
 
     it('should filter by status', async () => {
-      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as any)
+      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as unknown as TransactionRequest[])
 
       await financeLib.getTransactionRequests({ status: 'APPROVED' })
 
@@ -170,7 +179,7 @@ describe('finance.ts', () => {
     })
 
     it('should filter by both accountId and status', async () => {
-      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as any)
+      vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue(mockRequests as unknown as TransactionRequest[])
 
       await financeLib.getTransactionRequests({ accountId: 'acc1', status: 'PENDING' })
 
@@ -227,7 +236,7 @@ describe('finance.ts', () => {
     })
 
     it('should return transactions with converted amounts', async () => {
-      vi.mocked(prisma.transaction.findMany).mockResolvedValue(mockTransactions as any)
+      vi.mocked(prisma.transaction.findMany).mockResolvedValue(mockTransactions as unknown as Transaction[])
 
       const result = await financeLib.getTransactionsForMonth({
         monthKey: '2024-01',
@@ -252,7 +261,7 @@ describe('finance.ts', () => {
     })
 
     it('should filter by accountId', async () => {
-      vi.mocked(prisma.transaction.findMany).mockResolvedValue(mockTransactions as any)
+      vi.mocked(prisma.transaction.findMany).mockResolvedValue(mockTransactions as unknown as Transaction[])
 
       await financeLib.getTransactionsForMonth({
         monthKey: '2024-01',
@@ -271,7 +280,7 @@ describe('finance.ts', () => {
         currency: Currency.EUR,
         amount: new Prisma.Decimal(100),
       }
-      vi.mocked(prisma.transaction.findMany).mockResolvedValue([eurTransaction] as any)
+      vi.mocked(prisma.transaction.findMany).mockResolvedValue([eurTransaction] as unknown as Transaction[])
 
       const result = await financeLib.getTransactionsForMonth({
         monthKey: '2024-01',
@@ -335,7 +344,7 @@ describe('finance.ts', () => {
     ]
 
     it('should return budgets for given month', async () => {
-      vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as any)
+      vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as unknown as Budget[])
 
       const result = await financeLib.getBudgetsForMonth({ monthKey: '2024-01' })
 
@@ -349,7 +358,7 @@ describe('finance.ts', () => {
     })
 
     it('should filter by accountId', async () => {
-      vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as any)
+      vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as unknown as Budget[])
 
       await financeLib.getBudgetsForMonth({ monthKey: '2024-01', accountId: 'acc1' })
 
@@ -381,7 +390,7 @@ describe('finance.ts', () => {
     ]
 
     it('should return formatted recurring templates', async () => {
-      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue(mockTemplates as any)
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue(mockTemplates as unknown as RecurringTemplate[])
 
       const result = await financeLib.getRecurringTemplates({})
 
@@ -403,7 +412,7 @@ describe('finance.ts', () => {
     })
 
     it('should filter by accountId', async () => {
-      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue(mockTemplates as any)
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue(mockTemplates as unknown as RecurringTemplate[])
 
       await financeLib.getRecurringTemplates({ accountId: 'acc1' })
 
@@ -419,7 +428,9 @@ describe('finance.ts', () => {
         startMonth: null,
         endMonth: null,
       }
-      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([templateWithNullDates] as any)
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
+        templateWithNullDates,
+      ] as unknown as RecurringTemplate[])
 
       const result = await financeLib.getRecurringTemplates({})
 
@@ -518,18 +529,18 @@ describe('finance.ts', () => {
       vi.mocked(currencyLib.getLastUpdateTime).mockResolvedValue(new Date('2024-01-15'))
 
       // Mock all prisma calls
-      vi.mocked(prisma.account.findMany).mockResolvedValue(mockAccounts as any)
-      vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as any)
+      vi.mocked(prisma.account.findMany).mockResolvedValue(mockAccounts as unknown as Account[])
+      vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as unknown as Category[])
       vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue([])
       vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([])
-      vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as any)
+      vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as unknown as Budget[])
     })
 
     it('should calculate stats correctly', async () => {
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(mockTransactions as any) // current month
-        .mockResolvedValueOnce(mockPreviousTransactions as any) // previous month
-        .mockResolvedValueOnce(mockHistoryTransactions as any) // history
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[]) // current month
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[]) // previous month
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[]) // history
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
@@ -567,9 +578,9 @@ describe('finance.ts', () => {
 
     it('should calculate budget summaries correctly', async () => {
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(mockTransactions as any)
-        .mockResolvedValueOnce(mockPreviousTransactions as any)
-        .mockResolvedValueOnce(mockHistoryTransactions as any)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
@@ -600,9 +611,9 @@ describe('finance.ts', () => {
 
     it('should calculate comparison correctly', async () => {
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(mockTransactions as any)
-        .mockResolvedValueOnce(mockPreviousTransactions as any)
-        .mockResolvedValueOnce(mockHistoryTransactions as any)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
@@ -617,8 +628,8 @@ describe('finance.ts', () => {
 
     it('should seed all 6 months in history', async () => {
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(mockTransactions as any)
-        .mockResolvedValueOnce(mockPreviousTransactions as any)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
         .mockResolvedValueOnce([]) // empty history
 
       const result = await financeLib.getDashboardData({
@@ -644,9 +655,9 @@ describe('finance.ts', () => {
           planned: new Prisma.Decimal(0),
         },
       ]
-      vi.mocked(prisma.budget.findMany).mockResolvedValue(budgetsWithZero as any)
+      vi.mocked(prisma.budget.findMany).mockResolvedValue(budgetsWithZero as unknown as Budget[])
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce([mockTransactions[0]] as any)
+        .mockResolvedValueOnce([mockTransactions[0]] as unknown as Transaction[])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
 
@@ -679,7 +690,7 @@ describe('finance.ts', () => {
     it('should handle no budgets', async () => {
       vi.mocked(prisma.budget.findMany).mockResolvedValue([])
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(mockTransactions as any)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
 
@@ -703,7 +714,7 @@ describe('finance.ts', () => {
         },
       ]
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(negativeTransactions as any)
+        .mockResolvedValueOnce(negativeTransactions as unknown as Transaction[])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
 
@@ -718,9 +729,9 @@ describe('finance.ts', () => {
 
     it('should filter by accountId', async () => {
       vi.mocked(prisma.transaction.findMany)
-        .mockResolvedValueOnce(mockTransactions as any)
-        .mockResolvedValueOnce(mockPreviousTransactions as any)
-        .mockResolvedValueOnce(mockHistoryTransactions as any)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
 
       await financeLib.getDashboardData({
         monthKey: '2024-01',
@@ -742,7 +753,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
-        accounts: mockAccounts as any,
+        accounts: mockAccounts as unknown as Account[],
       })
 
       expect(result.accounts).toEqual(mockAccounts)
@@ -770,7 +781,7 @@ describe('finance.ts', () => {
 
       vi.mocked(prisma.transaction.findMany)
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce(mockPreviousTransactions as any) // Previous month with different currency
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[]) // Previous month with different currency
         .mockResolvedValueOnce([])
 
       const result = await financeLib.getDashboardData({
@@ -853,7 +864,9 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue(mockHoldings)
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue(mockHoldings)
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -890,7 +903,9 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(new Map())
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -910,7 +925,9 @@ describe('finance.ts', () => {
         ...mockHoldings[0],
         averageCost: new Prisma.Decimal(0),
       }
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([holdingWithZeroCost])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([holdingWithZeroCost])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -922,7 +939,9 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({
         preferredCurrency: Currency.EUR,
@@ -939,7 +958,9 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({
         preferredCurrency: Currency.USD,
@@ -956,11 +977,15 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([])
 
       await financeLib.getHoldingsWithPrices({ accountId: 'acc1' })
 
-      const callArg = vi.mocked((prisma as any).holding.findMany).mock.calls[0][0]
+      const callArg = vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mock.calls[0][0]
       expect(callArg.where).toMatchObject({
         accountId: 'acc1',
       })
@@ -970,7 +995,9 @@ describe('finance.ts', () => {
       const { batchLoadStockPrices } = await import('@/lib/stock-api')
       vi.mocked(batchLoadStockPrices).mockResolvedValue(mockStockPrices)
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([mockHoldings[1]])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([mockHoldings[1]])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
@@ -995,7 +1022,9 @@ describe('finance.ts', () => {
       ])
       vi.mocked(batchLoadStockPrices).mockResolvedValue(pricesWithLoss)
 
-      vi.mocked((prisma as any).holding.findMany).mockResolvedValue([mockHoldings[0]])
+      vi.mocked(
+        (prisma as typeof prisma & { holding: { findMany: () => Promise<Holding[]> } }).holding.findMany,
+      ).mockResolvedValue([mockHoldings[0]])
 
       const result = await financeLib.getHoldingsWithPrices({})
 
