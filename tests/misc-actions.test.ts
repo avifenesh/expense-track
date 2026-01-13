@@ -80,6 +80,7 @@ describe('refreshExchangeRatesAction', () => {
 
     const { refreshExchangeRates } = await import('@/lib/currency')
     vi.mocked(refreshExchangeRates).mockResolvedValue({
+      success: true,
       updatedAt: new Date('2026-01-13'),
     })
 
@@ -98,6 +99,7 @@ describe('refreshExchangeRatesAction', () => {
     const { refreshExchangeRates } = await import('@/lib/currency')
     vi.mocked(refreshExchangeRates).mockResolvedValue({
       error: { general: ['API rate limit exceeded'] },
+      updatedAt: new Date('2026-01-13'),
     })
 
     const result = await refreshExchangeRatesAction()
@@ -151,7 +153,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -205,7 +207,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -259,7 +261,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -299,7 +301,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -345,7 +347,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -390,7 +392,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getAuthUserFromSession).mockReturnValue({
       email: 'test@example.com',
-      id: 'user-1',
+      id: 'avi',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
