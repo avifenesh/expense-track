@@ -197,3 +197,4 @@ Write tests to find bugs, not just to pass coverage metrics. Tests should verify
 - DONT CREATE AN MD FILE SUMMERIZING A TASK YOU FINISHED
 - DONT commit without tests for new features
 - DONT skip type checking or linting
+- DONT use `git push --no-verify` or `git commit --no-verify` - always fix the issues instead
