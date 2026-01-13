@@ -58,11 +58,17 @@ describe('finance.ts', () => {
     { id: 'cat3', name: 'Utilities', type: TransactionType.EXPENSE, isArchived: false },
   ]
 
-  const mockExchangeRates: RateCache = {
-    USD: { EUR: 0.85, ILS: 3.6, USD: 1 },
-    EUR: { USD: 1.18, ILS: 4.2, EUR: 1 },
-    ILS: { USD: 0.28, EUR: 0.24, ILS: 1 },
-  }
+  const mockExchangeRates: RateCache = new Map([
+    ['USD:EUR', 0.85],
+    ['USD:ILS', 3.6],
+    ['USD:USD', 1],
+    ['EUR:USD', 1.18],
+    ['EUR:ILS', 4.2],
+    ['EUR:EUR', 1],
+    ['ILS:USD', 0.28],
+    ['ILS:EUR', 0.24],
+    ['ILS:ILS', 1],
+  ])
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -213,9 +219,9 @@ describe('finance.ts', () => {
 
     beforeEach(() => {
       vi.mocked(currencyLib.batchLoadExchangeRates).mockResolvedValue(mockExchangeRates)
-      vi.mocked(currencyLib.convertAmountWithCache).mockImplementation((amount, from, to, cache) => {
+      vi.mocked(currencyLib.convertAmountWithCache).mockImplementation((amount, from, to) => {
         if (from === to) return amount
-        const rate = cache[from]?.[to] ?? 1
+        const rate = mockExchangeRates.get(`${from}:${to}`) ?? 1
         return Math.round(amount * rate * 100) / 100
       })
     })
@@ -253,8 +259,8 @@ describe('finance.ts', () => {
         accountId: 'acc1',
       })
 
-      const callArg = vi.mocked(prisma.transaction.findMany).mock.calls[0][0]
-      expect(callArg.where).toMatchObject({
+      const callArg = vi.mocked(prisma.transaction.findMany).mock.calls[0]?.[0]
+      expect(callArg?.where).toMatchObject({
         accountId: 'acc1',
       })
     })
@@ -293,15 +299,16 @@ describe('finance.ts', () => {
         monthKey: '2024-01',
       })
 
-      const callArg = vi.mocked(prisma.transaction.findMany).mock.calls[0][0]
-      const gteDate = callArg.where?.date?.gte as Date
-      const ltDate = callArg.where?.date?.lt as Date
+      const callArg = vi.mocked(prisma.transaction.findMany).mock.calls[0]?.[0]
+      const dateFilter = callArg?.where?.date as { gte?: Date; lt?: Date }
+      const gteDate = dateFilter?.gte
+      const ltDate = dateFilter?.lt
 
       // Check that dates are for January 2024 (allowing for timezone offset)
-      expect(gteDate.getFullYear()).toBe(2024)
-      expect(gteDate.getMonth()).toBe(0) // January is 0
-      expect(ltDate.getFullYear()).toBe(2024)
-      expect(ltDate.getMonth()).toBe(1) // February is 1
+      expect(gteDate?.getFullYear()).toBe(2024)
+      expect(gteDate?.getMonth()).toBe(0) // January is 0
+      expect(ltDate?.getFullYear()).toBe(2024)
+      expect(ltDate?.getMonth()).toBe(1) // February is 1
     })
   })
 
@@ -332,12 +339,12 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getBudgetsForMonth({ monthKey: '2024-01' })
 
-      const callArg = vi.mocked(prisma.budget.findMany).mock.calls[0][0]
-      const monthDate = callArg.where?.month as Date
+      const callArg = vi.mocked(prisma.budget.findMany).mock.calls[0]?.[0]
+      const monthDate = callArg?.where?.month as Date
 
-      expect(monthDate.getFullYear()).toBe(2024)
-      expect(monthDate.getMonth()).toBe(0) // January is 0
-      expect(callArg.include).toEqual({ category: true, account: true })
+      expect(monthDate?.getFullYear()).toBe(2024)
+      expect(monthDate?.getMonth()).toBe(0) // January is 0
+      expect(callArg?.include).toEqual({ category: true, account: true })
       expect(result).toEqual(mockBudgets)
     })
 
@@ -346,12 +353,12 @@ describe('finance.ts', () => {
 
       await financeLib.getBudgetsForMonth({ monthKey: '2024-01', accountId: 'acc1' })
 
-      const callArg = vi.mocked(prisma.budget.findMany).mock.calls[0][0]
-      const monthDate = callArg.where?.month as Date
+      const callArg = vi.mocked(prisma.budget.findMany).mock.calls[0]?.[0]
+      const monthDate = callArg?.where?.month as Date
 
-      expect(monthDate.getFullYear()).toBe(2024)
-      expect(monthDate.getMonth()).toBe(0)
-      expect(callArg.where?.accountId).toBe('acc1')
+      expect(monthDate?.getFullYear()).toBe(2024)
+      expect(monthDate?.getMonth()).toBe(0)
+      expect(callArg?.where?.accountId).toBe('acc1')
     })
   })
 
@@ -400,8 +407,8 @@ describe('finance.ts', () => {
 
       await financeLib.getRecurringTemplates({ accountId: 'acc1' })
 
-      const callArg = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0][0]
-      expect(callArg.where).toMatchObject({
+      const callArg = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0]?.[0]
+      expect(callArg?.where).toMatchObject({
         accountId: 'acc1',
       })
     })
@@ -722,9 +729,9 @@ describe('finance.ts', () => {
 
       // Check that transaction queries included accountId
       const calls = vi.mocked(prisma.transaction.findMany).mock.calls
-      expect(calls[0][0].where).toMatchObject({ accountId: 'acc1' })
-      expect(calls[1][0].where).toMatchObject({ accountId: 'acc1' })
-      expect(calls[2][0].where).toMatchObject({ accountId: 'acc1' })
+      expect(calls[0]?.[0]?.where).toMatchObject({ accountId: 'acc1' })
+      expect(calls[1]?.[0]?.where).toMatchObject({ accountId: 'acc1' })
+      expect(calls[2]?.[0]?.where).toMatchObject({ accountId: 'acc1' })
     })
 
     it('should use provided accounts', async () => {
@@ -812,6 +819,7 @@ describe('finance.ts', () => {
           price: 175,
           changePercent: 16.67,
           fetchedAt: new Date('2024-01-15'),
+          hoursSinceUpdate: 0.1,
           isStale: false,
         },
       ],
@@ -821,6 +829,7 @@ describe('finance.ts', () => {
           price: 2800,
           changePercent: 40,
           fetchedAt: new Date('2024-01-10'),
+          hoursSinceUpdate: 24,
           isStale: true, // older than 15 min
         },
       ],
@@ -828,9 +837,9 @@ describe('finance.ts', () => {
 
     beforeEach(() => {
       vi.mocked(currencyLib.batchLoadExchangeRates).mockResolvedValue(mockExchangeRates)
-      vi.mocked(currencyLib.convertAmountWithCache).mockImplementation((amount, from, to, cache) => {
+      vi.mocked(currencyLib.convertAmountWithCache).mockImplementation((amount, from, to) => {
         if (from === to) return amount
-        const rate = cache[from]?.[to] ?? 1
+        const rate = mockExchangeRates.get(`${from}:${to}`) ?? 1
         return Math.round(amount * rate * 100) / 100
       })
 
@@ -979,6 +988,7 @@ describe('finance.ts', () => {
             price: 100, // Lower than average cost of 150
             changePercent: -33.33,
             fetchedAt: new Date('2024-01-15'),
+            hoursSinceUpdate: 0.1,
             isStale: false,
           },
         ],
