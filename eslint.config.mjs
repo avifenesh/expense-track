@@ -22,10 +22,10 @@ export default [
     rules: {
       'react/react-in-jsx-scope': 'off',
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'no-empty': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      'no-empty': 'error',
       'prefer-const': 'error',
     },
     settings: {
