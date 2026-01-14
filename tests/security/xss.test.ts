@@ -80,6 +80,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     recurringTemplate: {
       upsert: vi.fn(),
+      create: vi.fn(),
       findFirst: vi.fn(),
     },
   },
@@ -409,7 +410,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           type: TransactionType.EXPENSE,
         } as any)
 
-        vi.mocked(prisma.recurringTemplate.upsert).mockResolvedValueOnce({
+        vi.mocked(prisma.recurringTemplate.create).mockResolvedValueOnce({
           id: 'test-recurring-id',
           accountId: 'test-account-id',
           categoryId: 'test-category-id',
@@ -441,9 +442,9 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
 
         expect('success' in result && result.success).toBe(true)
 
-        // Verify description stored as-is
-        const upsertCall = vi.mocked(prisma.recurringTemplate.upsert).mock.calls[0]
-        expect(upsertCall[0].update.description).toBe(payload)
+        // Verify description stored as-is (action calls .create() when no id)
+        const createCall = vi.mocked(prisma.recurringTemplate.create).mock.calls[0]
+        expect(createCall[0].data.description).toBe(payload)
 
         // Verify React escaping
         const rendered = `<div>${escapeHtmlLikeReact(payload)}</div>`

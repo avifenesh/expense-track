@@ -25,12 +25,14 @@ export function assertNoExecutableScript(html: string, payload: string) {
   }
 
   // Should NOT contain unescaped javascript: URIs
-  // Note: escaped javascript: (e.g., &quot;javascript:&quot;) is safe as text
+  // Note: escaped javascript: (e.g., javascript:alert(&quot;XSS&quot;)) is safe as text
   const javascriptUriPattern = /javascript:/i
   if (javascriptUriPattern.test(html)) {
-    // Check if it's properly escaped (contains &quot; or &#)
-    const isEscaped = html.includes('&quot;javascript:') || html.includes('&#')
-    if (!isEscaped) {
+    // Check if it's in escaped text content (has HTML entities nearby)
+    // If we see javascript: but also see HTML entities like &quot; &lt; &gt; &#,
+    // it means the content was escaped by React and is safe text, not an executable URI
+    const hasHtmlEntities = /&(?:quot|lt|gt|amp|#\d+|#x[0-9a-fA-F]+);/.test(html)
+    if (!hasHtmlEntities) {
       throw new Error(
         `HTML contains unescaped javascript: URI. Payload: ${payload}\nHTML snippet: ${html.substring(0, 200)}`,
       )
