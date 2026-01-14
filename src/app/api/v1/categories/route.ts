@@ -1,0 +1,43 @@
+import { NextRequest } from 'next/server'
+import { requireJwtAuth } from '@/lib/api-auth'
+import { createCategory } from '@/lib/services/category-service'
+import { categorySchema } from '@/schemas'
+import { validationError, authError, serverError, successResponse } from '@/lib/api-helpers'
+
+export async function POST(request: NextRequest) {
+  // 1. Authenticate
+  try {
+    requireJwtAuth(request)
+  } catch (error) {
+    return authError(error instanceof Error ? error.message : 'Unauthorized')
+  }
+
+  // 2. Parse and validate input
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return validationError({ body: ['Invalid JSON'] })
+  }
+
+  const apiSchema = categorySchema.omit({ csrfToken: true })
+  const parsed = apiSchema.safeParse(body)
+
+  if (!parsed.success) {
+    return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
+  }
+
+  const data = parsed.data
+
+  // 3. Execute create (categories are global, no account authorization needed)
+  try {
+    const category = await createCategory({
+      name: data.name,
+      type: data.type,
+      color: data.color,
+    })
+    return successResponse({ id: category.id }, 201)
+  } catch {
+    return serverError('Category already exists')
+  }
+}
