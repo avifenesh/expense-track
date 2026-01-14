@@ -99,38 +99,34 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuoteData> {
 
   const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${ALPHA_VANTAGE_API_KEY}`
 
-  try {
-    const response = await fetch(url)
+  const response = await fetch(url)
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`)
-    }
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`)
+  }
 
-    const data = (await response.json()) as AlphaVantageGlobalQuote
+  const data = (await response.json()) as AlphaVantageGlobalQuote
 
-    incrementCallCount()
+  incrementCallCount()
 
-    if (!data['Global Quote'] || !data['Global Quote']['01. symbol']) {
-      markSymbolAsFailed(symbol)
-      throw new Error(`Invalid or unknown symbol: ${symbol}`)
-    }
+  if (!data['Global Quote'] || !data['Global Quote']['01. symbol']) {
+    markSymbolAsFailed(symbol)
+    throw new Error(`Invalid or unknown symbol: ${symbol}`)
+  }
 
-    const quote = data['Global Quote']
-    const price = parseFloat(quote['05. price'])
-    const changePercentStr = quote['10. change percent']
-    const changePercent = changePercentStr ? parseFloat(changePercentStr.replace('%', '')) : null
-    const volumeStr = quote['06. volume']
-    const volume = volumeStr ? BigInt(volumeStr) : null
+  const quote = data['Global Quote']
+  const price = parseFloat(quote['05. price'])
+  const changePercentStr = quote['10. change percent']
+  const changePercent = changePercentStr ? parseFloat(changePercentStr.replace('%', '')) : null
+  const volumeStr = quote['06. volume']
+  const volume = volumeStr ? BigInt(volumeStr) : null
 
-    return {
-      symbol: quote['01. symbol'],
-      price,
-      changePercent,
-      volume,
-      fetchedAt: new Date(),
-    }
-  } catch (error) {
-    throw error
+  return {
+    symbol: quote['01. symbol'],
+    price,
+    changePercent,
+    volume,
+    fetchedAt: new Date(),
   }
 }
 

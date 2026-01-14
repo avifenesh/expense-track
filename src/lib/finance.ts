@@ -149,7 +149,7 @@ async function convertTransactionAmount(
   fromCurrency: Currency,
   toCurrency: Currency | undefined,
   date: Date,
-  context: string,
+  _context: string,
 ): Promise<number> {
   const originalAmount = decimalToNumber(amount)
   if (!toCurrency || fromCurrency === toCurrency) {
@@ -157,7 +157,7 @@ async function convertTransactionAmount(
   }
   try {
     return await convertAmount(originalAmount, fromCurrency, toCurrency, date)
-  } catch (error) {
+  } catch {
     return originalAmount
   }
 }

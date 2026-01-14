@@ -22,7 +22,7 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
         color: parsed.data.color ?? null,
       },
     })
-  } catch (err) {
+  } catch {
     return generalError('Category already exists')
   }
 
@@ -42,7 +42,7 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
       where: { id: parsed.data.id },
       data: { isArchived: parsed.data.isArchived },
     })
-  } catch (err) {
+  } catch {
     return generalError('Category not found')
   }
 
