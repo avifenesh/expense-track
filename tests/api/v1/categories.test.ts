@@ -14,6 +14,19 @@ describe('Category API Routes', () => {
   })
 
   afterEach(async () => {
+    // Delete holdings first (foreign key constraint)
+    const testCategories = await prisma.category.findMany({
+      where: { name: { contains: 'TEST_' } },
+      select: { id: true },
+    })
+    const categoryIds = testCategories.map((c) => c.id)
+    if (categoryIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (prisma as any).holding.deleteMany({
+        where: { categoryId: { in: categoryIds } },
+      })
+    }
+    // Then delete categories
     await prisma.category.deleteMany({
       where: { name: { contains: 'TEST_' } },
     })
@@ -161,12 +174,18 @@ describe('Category API Routes', () => {
     let categoryId: string
 
     beforeEach(async () => {
-      const category = await prisma.category.create({
-        data: {
-          name: 'TEST_ToArchive',
-          type: 'EXPENSE',
-        },
+      // Find or create the test category
+      let category = await prisma.category.findFirst({
+        where: { name: 'TEST_ToArchive', type: 'EXPENSE' },
       })
+      if (!category) {
+        category = await prisma.category.create({
+          data: {
+            name: 'TEST_ToArchive',
+            type: 'EXPENSE',
+          },
+        })
+      }
       categoryId = category.id
     })
 

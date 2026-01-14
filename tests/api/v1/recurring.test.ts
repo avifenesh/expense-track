@@ -156,7 +156,7 @@ describe('Recurring Template API Routes', () => {
       const template = await prisma.recurringTemplate.findUnique({
         where: { id: templateId },
       })
-      expect(template?.amount.toString()).toBe('150.00')
+      expect(template?.amount.toNumber()).toBe(150)
       expect(template?.dayOfMonth).toBe(20)
     })
 

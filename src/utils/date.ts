@@ -1,25 +1,28 @@
-import { addMonths, format, parseISO, startOfMonth } from 'date-fns';
+import { addMonths, format, startOfMonth } from 'date-fns'
 
 export function getMonthStart(date: Date) {
-  return startOfMonth(date);
+  return startOfMonth(date)
 }
 
 export function getMonthStartFromKey(monthKey: string) {
-  const parsed = parseISO(`${monthKey}-01`);
-  return startOfMonth(parsed);
+  const [yearPart, monthPart] = monthKey.split('-')
+  const year = Number(yearPart)
+  const monthIndex = Number(monthPart) - 1
+  // Return UTC date to match database dates
+  return new Date(Date.UTC(year, monthIndex, 1))
 }
 
 export function getMonthKey(date: Date) {
-  return format(getMonthStart(date), 'yyyy-MM');
+  return format(getMonthStart(date), 'yyyy-MM')
 }
 
 export function formatMonthLabel(monthKey: string) {
-  return format(getMonthStartFromKey(monthKey), 'LLLL yyyy');
+  return format(getMonthStartFromKey(monthKey), 'LLLL yyyy')
 }
 
 export function shiftMonth(monthKey: string, offset: number) {
-  const shifted = addMonths(getMonthStartFromKey(monthKey), offset);
-  return getMonthKey(shifted);
+  const shifted = addMonths(getMonthStartFromKey(monthKey), offset)
+  return getMonthKey(shifted)
 }
 
 /**

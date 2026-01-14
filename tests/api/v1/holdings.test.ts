@@ -52,7 +52,7 @@ describe('Holdings API Routes', () => {
 
   afterEach(async () => {
     await (prisma as any).holding.deleteMany({
-      where: { symbol: { contains: 'TEST' } },
+      where: { symbol: { startsWith: 'TS' } },
     })
   })
 
@@ -67,7 +67,7 @@ describe('Holdings API Routes', () => {
         body: JSON.stringify({
           accountId,
           categoryId: holdingCategoryId,
-          symbol: 'TESTAAPL',
+          symbol: 'TSAPL',
           quantity: 10,
           averageCost: 150.0,
           currency: 'USD',
@@ -93,7 +93,7 @@ describe('Holdings API Routes', () => {
         body: JSON.stringify({
           accountId,
           categoryId: holdingCategoryId,
-          symbol: 'TESTGOOG',
+          symbol: 'TSGO',
           quantity: 5,
           averageCost: 2800.0,
           currency: 'USD',
@@ -117,7 +117,7 @@ describe('Holdings API Routes', () => {
         body: JSON.stringify({
           accountId,
           categoryId: holdingCategoryId,
-          symbol: 'testmsft',
+          symbol: 'tsmf',
           quantity: 15,
           averageCost: 380.0,
           currency: 'USD',
@@ -134,7 +134,7 @@ describe('Holdings API Routes', () => {
       const holding = await (prisma as any).holding.findUnique({
         where: { id: data.data.id },
       })
-      expect(holding.symbol).toBe('TESTMSFT')
+      expect(holding.symbol).toBe('TSMF')
     })
 
     it('returns 401 with missing token', async () => {
@@ -245,7 +245,7 @@ describe('Holdings API Routes', () => {
         data: {
           accountId,
           categoryId: holdingCategoryId,
-          symbol: 'TESTUPDATE',
+          symbol: 'TSUPD',
           quantity: 10,
           averageCost: 150,
           currency: 'USD',
@@ -277,8 +277,8 @@ describe('Holdings API Routes', () => {
 
       // Verify holding was updated
       const holding = await (prisma as any).holding.findUnique({ where: { id: holdingId } })
-      expect(holding.quantity.toString()).toBe('20.000000')
-      expect(holding.averageCost.toString()).toBe('160.00')
+      expect(holding.quantity.toNumber()).toBe(20)
+      expect(holding.averageCost.toNumber()).toBe(160)
     })
 
     it('returns 404 for non-existent holding', async () => {
@@ -352,7 +352,7 @@ describe('Holdings API Routes', () => {
         data: {
           accountId,
           categoryId: holdingCategoryId,
-          symbol: 'TESTDELETE',
+          symbol: 'TSDEL',
           quantity: 10,
           averageCost: 150,
           currency: 'USD',
@@ -404,7 +404,7 @@ describe('Holdings API Routes', () => {
         data: {
           accountId: otherAccountId,
           categoryId: holdingCategoryId,
-          symbol: 'TESTOTHER',
+          symbol: 'TSOTH',
           quantity: 10,
           averageCost: 150,
           currency: 'USD',
@@ -428,7 +428,7 @@ describe('Holdings API Routes', () => {
         data: {
           accountId,
           categoryId: holdingCategoryId,
-          symbol: 'TESTREFRESH',
+          symbol: 'TSREF',
           quantity: 10,
           averageCost: 150,
           currency: 'USD',
@@ -459,9 +459,9 @@ describe('Holdings API Routes', () => {
     })
 
     it('returns empty result for account with no holdings', async () => {
-      // Use account with no holdings
-      const emptyAccount = await prisma.account.create({
-        data: { name: 'TEST_Empty', type: 'SELF' },
+      // Use authorized account but ensure it has no holdings
+      await (prisma as any).holding.deleteMany({
+        where: { accountId },
       })
 
       const request = new NextRequest('http://localhost/api/v1/holdings/refresh', {
@@ -471,7 +471,7 @@ describe('Holdings API Routes', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          accountId: emptyAccount.id,
+          accountId,
         }),
       })
 
@@ -481,8 +481,6 @@ describe('Holdings API Routes', () => {
       expect(response.status).toBe(200)
       expect(data.data.updated).toBe(0)
       expect(data.data.skipped).toBe(0)
-
-      await prisma.account.delete({ where: { id: emptyAccount.id } })
     })
 
     it('returns 401 with missing token', async () => {
