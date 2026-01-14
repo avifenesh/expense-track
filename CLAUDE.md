@@ -66,6 +66,29 @@ Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
 
 - **CSRF Protection**: All mutating server actions require CSRF tokens validated via `requireCsrfToken()`. Double-submit cookie pattern with HMAC-SHA256 signing.
 - **Security Headers**: Middleware sets CSP, X-Frame-Options, HSTS, and other security headers on all responses.
+- **XSS Protection**: Multiple defense layers including React JSX automatic escaping, nonce-based CSP, input validation, and URL parameter sanitization. See `docs/SECURITY.md` for details.
+
+### Security Testing
+
+**XSS Audit**: Comprehensive test suite at `tests/security/` with 70+ attack payloads
+
+```bash
+npm test -- tests/security/xss.test.ts  # Run XSS tests (17 tests)
+```
+
+**Coverage**: All user input surfaces tested against XSS attacks:
+
+- Stored XSS: Transaction descriptions, category names, budget notes, holding notes
+- Reflected XSS: URL parameters (month, account, reason)
+- Error messages: Validation errors across all forms
+- API endpoints: Login and holdings API input validation
+
+**Key Files**:
+
+- `tests/security/xss-payloads.ts` - 70+ XSS attack vectors organized by type
+- `tests/security/xss-helpers.ts` - Validation utilities for XSS prevention
+- `tests/security/xss.test.ts` - Comprehensive XSS test suite
+- `docs/SECURITY.md` - Security documentation and audit findings
 
 ## GitHub Issues Workflow
 
