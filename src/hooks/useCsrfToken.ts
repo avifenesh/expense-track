@@ -13,9 +13,8 @@ export function useCsrfToken(): string {
     fetch('/api/csrf')
       .then((res) => res.json())
       .then((data) => setToken(data.token))
-      .catch((err) => {
+      .catch(() => {
         // Silent fail - server actions will return validation error if token missing
-        console.error('Failed to fetch CSRF token', err)
       })
   }, [])
 

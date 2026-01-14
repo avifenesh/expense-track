@@ -285,7 +285,6 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         } catch {
           // Ignore - errText stays empty
         }
-        console.error('[ChatWidget] /api/chat HTTP', response.status, errText)
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
           {
@@ -329,9 +328,6 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
 
         // Surface any non-protocol diagnostics from the server
         const diag = lines.filter((l) => !l.startsWith('0:')).join('\n')
-        if (diag) {
-          console.debug('[ChatWidget] diag:', diag)
-        }
 
         // Handle AI SDK structured events if present
         let handledStructured = false
@@ -411,7 +407,6 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
           },
         ])
       } else {
-        console.error('Chat error:', error)
         applyMessagesUpdate(sessionId, (existing) => [
           ...existing,
           {
