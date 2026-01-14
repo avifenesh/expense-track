@@ -512,6 +512,85 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
       }
     })
   })
+
+  describe('Error Messages - Reflected XSS', () => {
+    it('should escape XSS payloads in validation error messages', async () => {
+      // Zod validation errors may include user input in error messages
+      // These errors are rendered in React components and must be escaped
+
+      for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 3)) {
+        // Test transaction action with invalid data containing XSS payload
+        const result = await createTransactionAction({
+          accountId: payload, // Invalid account ID
+          categoryId: 'test-category-id',
+          type: TransactionType.EXPENSE,
+          amount: -100, // Also invalid (negative amount)
+          currency: Currency.USD,
+          date: new Date(),
+          description: 'Test',
+          csrfToken: 'valid-csrf-token',
+        } as any)
+
+        // Should return error
+        expect('error' in result).toBe(true)
+
+        if ('error' in result) {
+          // Verify error object structure (not HTML)
+          expect(typeof result.error).toBe('object')
+
+          // Simulate rendering error message in React
+          const errorJson = JSON.stringify(result.error)
+          const rendered = `<div className="error">${escapeHtmlLikeReact(errorJson)}</div>`
+
+          // Verify no executable scripts in rendered errors
+          assertNoExecutableScript(rendered, payload)
+        }
+      }
+    })
+
+    it('should escape XSS in category validation errors', async () => {
+      for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 3)) {
+        // Test with invalid category name (too short)
+        const result = await createCategoryAction({
+          name: payload.substring(0, 1), // Only 1 char (invalid, needs 2+)
+          type: TransactionType.EXPENSE,
+          csrfToken: 'valid-csrf-token',
+        } as any)
+
+        expect('error' in result).toBe(true)
+
+        if ('error' in result) {
+          // Simulate rendering error in React
+          const errorMessage = result.error.name?.[0] || 'Unknown error'
+          const rendered = `<span className="error">${escapeHtmlLikeReact(errorMessage)}</span>`
+
+          assertNoExecutableScript(rendered, 'payload-fragment')
+        }
+      }
+    })
+
+    it('should escape XSS in budget validation errors', async () => {
+      for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 2)) {
+        // Test with invalid budget data
+        const result = await upsertBudgetAction({
+          accountId: payload, // Invalid account ID
+          categoryId: 'test-category-id',
+          monthKey: '2024-01',
+          planned: -1000, // Invalid (negative)
+          currency: Currency.USD,
+          csrfToken: 'valid-csrf-token',
+        } as any)
+
+        expect('error' in result).toBe(true)
+
+        if ('error' in result) {
+          const errorJson = JSON.stringify(result.error)
+          const rendered = `<div>${escapeHtmlLikeReact(errorJson)}</div>`
+          assertNoExecutableScript(rendered, payload)
+        }
+      }
+    })
+  })
 })
 
 /**
