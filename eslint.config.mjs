@@ -27,6 +27,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'error',
       'no-empty': 'error',
       'prefer-const': 'error',
+      'no-console': 'error',
     },
     settings: {
       react: {
@@ -48,6 +49,12 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    files: ['prisma/**/*.{ts,js}'],
+    rules: {
+      'no-console': 'off',
     },
   },
   {
