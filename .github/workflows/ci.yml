@@ -76,9 +76,9 @@ jobs:
           AUTH_USER1_NAME: avi
           AUTH_USER1_DISPLAY_NAME: Avi
           AUTH_USER1_EMAIL: avi@example.com
-          AUTH_USER1_PASSWORD: testpass1
+          AUTH_USER1_PASSWORD_HASH: $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5P5myWU5j5aG2
           AUTH_USER2_NAME: serena
           AUTH_USER2_DISPLAY_NAME: Serena
           AUTH_USER2_EMAIL: serena@example.com
-          AUTH_USER2_PASSWORD: testpass2
+          AUTH_USER2_PASSWORD_HASH: $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5P5myWU5j5aG2
           JWT_SECRET: test-jwt-secret-for-ci-only
