@@ -7,21 +7,21 @@ datasource db {
 }
 
 model Account {
-  id                String              @id @default(cuid())
-  name              String              @unique
-  type              AccountType
-  preferredCurrency Currency?
-  color             String?
-  icon              String?
-  description       String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  budgets           Budget[]
-  holdings          Holding[]
+  id                 String               @id @default(cuid())
+  name               String               @unique
+  type               AccountType
+  preferredCurrency  Currency?
+  color              String?
+  icon               String?
+  description        String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  budgets            Budget[]
+  holdings           Holding[]
   recurringTemplates RecurringTemplate[]
-  transactions      Transaction[]
-  sentRequests      TransactionRequest[] @relation("SentRequests")
-  receivedRequests  TransactionRequest[] @relation("ReceivedRequests")
+  transactions       Transaction[]
+  sentRequests       TransactionRequest[] @relation("SentRequests")
+  receivedRequests   TransactionRequest[] @relation("ReceivedRequests")
 }
 
 model Budget {
@@ -42,18 +42,18 @@ model Budget {
 }
 
 model Category {
-  id                String              @id @default(cuid())
-  name              String
-  type              TransactionType
-  color             String?
-  isHolding         Boolean             @default(false)
-  isArchived        Boolean             @default(false)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  budgets           Budget[]
-  holdings          Holding[]
-  recurringTemplates RecurringTemplate[]
-  transactions      Transaction[]
+  id                  String               @id @default(cuid())
+  name                String
+  type                TransactionType
+  color               String?
+  isHolding           Boolean              @default(false)
+  isArchived          Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  budgets             Budget[]
+  holdings            Holding[]
+  recurringTemplates  RecurringTemplate[]
+  transactions        Transaction[]
   transactionRequests TransactionRequest[]
 
   @@unique([name, type])
@@ -93,21 +93,21 @@ model Holding {
 }
 
 model RecurringTemplate {
-  id          String          @id @default(cuid())
-  accountId   String
-  categoryId  String
-  type        TransactionType
-  amount      Decimal         @db.Decimal(12, 2)
-  currency    Currency        @default(USD)
-  dayOfMonth  Int
-  description String?
-  isActive    Boolean         @default(true)
-  startMonth  DateTime
-  endMonth    DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  account     Account         @relation(fields: [accountId], references: [id])
-  category    Category        @relation(fields: [categoryId], references: [id])
+  id           String          @id @default(cuid())
+  accountId    String
+  categoryId   String
+  type         TransactionType
+  amount       Decimal         @db.Decimal(12, 2)
+  currency     Currency        @default(USD)
+  dayOfMonth   Int
+  description  String?
+  isActive     Boolean         @default(true)
+  startMonth   DateTime
+  endMonth     DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  account      Account         @relation(fields: [accountId], references: [id])
+  category     Category        @relation(fields: [categoryId], references: [id])
   transactions Transaction[]
 
   @@index([isActive])
@@ -152,27 +152,21 @@ model Transaction {
   @@index([month])
 }
 
-enum AccountType {
-  SELF
-  PARTNER
-  OTHER
-}
-
 model TransactionRequest {
-  id          String          @id @default(cuid())
+  id          String        @id @default(cuid())
   fromId      String
   toId        String
   categoryId  String
-  amount      Decimal         @db.Decimal(12, 2)
-  currency    Currency        @default(USD)
+  amount      Decimal       @db.Decimal(12, 2)
+  currency    Currency      @default(USD)
   date        DateTime
   description String?
-  status      RequestStatus   @default(PENDING)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  from        Account         @relation("SentRequests", fields: [fromId], references: [id])
-  to          Account         @relation("ReceivedRequests", fields: [toId], references: [id])
-  category    Category        @relation(fields: [categoryId], references: [id])
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  category    Category      @relation(fields: [categoryId], references: [id])
+  from        Account       @relation("SentRequests", fields: [fromId], references: [id])
+  to          Account       @relation("ReceivedRequests", fields: [toId], references: [id])
 }
 
 model RefreshToken {
@@ -186,6 +180,12 @@ model RefreshToken {
   @@index([userId])
   @@index([jti])
   @@index([expiresAt])
+}
+
+enum AccountType {
+  SELF
+  PARTNER
+  OTHER
 }
 
 enum RequestStatus {

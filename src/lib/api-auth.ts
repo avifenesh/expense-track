@@ -2,6 +2,7 @@ import 'server-only'
 
 import { NextRequest } from 'next/server'
 import { verifyAccessToken } from './jwt'
+import { getAuthUsers, type AuthUser } from './auth'
 
 export interface AuthenticatedUser {
   userId: string
@@ -34,4 +35,19 @@ export function requireJwtAuth(request: NextRequest): AuthenticatedUser {
     }
     throw new Error('Invalid token')
   }
+}
+
+/**
+ * Get full auth user info from userId
+ * @throws Error if user not found
+ */
+export function getUserAuthInfo(userId: string): AuthUser {
+  const authUsers = getAuthUsers()
+  const authUser = authUsers.find((u) => u.id === userId)
+
+  if (!authUser) {
+    throw new Error('User not found')
+  }
+
+  return authUser
 }
