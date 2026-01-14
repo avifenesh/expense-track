@@ -184,7 +184,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
         })
 
         // Should successfully create the transaction
-        expect(result.success).toBe(true)
+        expect('success' in result && result.success).toBe(true)
 
         // Verify payload was stored as-is (no pre-escaping in database)
         const createCall = vi.mocked(prisma.transaction.create).mock.calls[0]
@@ -221,7 +221,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           csrfToken: 'valid-csrf-token',
         } as any)
 
-        expect(result.success).toBe(true)
+        expect('success' in result && result.success).toBe(true)
 
         // Verify React-like escaping would prevent XSS
         const escaped = escapeHtmlLikeReact(payload)
@@ -270,7 +270,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           csrfToken: 'valid-csrf-token',
         })
 
-        expect(result.success).toBe(true)
+        expect('success' in result && result.success).toBe(true)
 
         // Verify category name stored as-is
         const createCall = vi.mocked(prisma.category.create).mock.calls[0]
@@ -334,7 +334,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           csrfToken: 'valid-csrf-token',
         })
 
-        expect(result.success).toBe(true)
+        expect('success' in result && result.success).toBe(true)
 
         // Verify notes stored as-is
         const upsertCall = vi.mocked(prisma.budget.upsert).mock.calls[0]
@@ -439,7 +439,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           csrfToken: 'valid-csrf-token',
         })
 
-        expect(result.success).toBe(true)
+        expect('success' in result && result.success).toBe(true)
 
         // Verify description stored as-is
         const upsertCall = vi.mocked(prisma.recurringTemplate.upsert).mock.calls[0]
