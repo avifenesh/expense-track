@@ -69,7 +69,6 @@ function isSessionTokenValid({
   try {
     return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token))
   } catch (error) {
-    console.error('session validation failed', error)
     return false
   }
 }
@@ -92,7 +91,6 @@ export async function verifyCredentials({ email, password }: { email: string; pa
     const match = await bcrypt.compare(password, authUser.passwordHash)
     return match
   } catch (error) {
-    console.error('verifyCredentials error', error)
     return false
   }
 }

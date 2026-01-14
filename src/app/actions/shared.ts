@@ -73,7 +73,6 @@ export async function ensureAccountAccess(accountId: string): Promise<AccountAcc
   try {
     account = await prisma.account.findUnique({ where: { id: accountId } })
   } catch (err) {
-    console.error('ensureAccountAccess.accountLookup', err)
     return { error: { general: ['Unable to verify the selected account. Try again shortly.'] } }
   }
 

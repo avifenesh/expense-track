@@ -45,7 +45,6 @@ export async function createHoldingAction(input: HoldingInput) {
       return failure({ categoryId: ['Category must be marked as a holding category'] })
     }
   } catch (err) {
-    console.error('createHoldingAction.categoryCheck', err)
     return generalError('Unable to validate category')
   }
 
@@ -72,7 +71,6 @@ export async function createHoldingAction(input: HoldingInput) {
       },
     })
   } catch (err) {
-    console.error('createHoldingAction', err)
     return generalError('Unable to create holding. It may already exist.')
   }
 
@@ -110,7 +108,6 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
       },
     })
   } catch (err) {
-    console.error('updateHoldingAction', err)
     return generalError('Holding not found')
   }
 
@@ -143,7 +140,6 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
       where: { id: parsed.data.id },
     })
   } catch (err) {
-    console.error('deleteHoldingAction', err)
     return generalError('Holding not found')
   }
 
@@ -182,7 +178,6 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
     revalidatePath('/')
     return success(result)
   } catch (err) {
-    console.error('refreshHoldingPricesAction', err)
     return generalError('Unable to refresh stock prices')
   }
 }

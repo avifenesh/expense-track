@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma'
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY || ''
 const STOCK_PRICE_MAX_AGE_HOURS = Number(process.env.STOCK_PRICE_MAX_AGE_HOURS) || 24
 
-// Warn at module load if API key is missing - feature will fail at runtime
+// API key validation - feature will fail at runtime if not configured
 if (!ALPHA_VANTAGE_API_KEY) {
-  console.warn('[stock-api] ALPHA_VANTAGE_API_KEY not configured - stock price fetching will be disabled')
+  // API key not configured - stock price fetching will be disabled
 }
 
 // In-memory rate limiting (resets on serverless cold start)
@@ -130,7 +130,6 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuoteData> {
       fetchedAt: new Date(),
     }
   } catch (error) {
-    console.error(`fetchStockQuote error for ${symbol}:`, error)
     throw error
   }
 }

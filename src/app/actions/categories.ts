@@ -23,7 +23,6 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
       },
     })
   } catch (err) {
-    console.error('createCategoryAction', err)
     return generalError('Category already exists')
   }
 
@@ -44,7 +43,6 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
       data: { isArchived: parsed.data.isArchived },
     })
   } catch (err) {
-    console.error('archiveCategoryAction', err)
     return generalError('Category not found')
   }
 

@@ -28,7 +28,6 @@ export async function refreshExchangeRatesAction() {
     revalidatePath('/')
     return success({ updatedAt: result.updatedAt })
   } catch (err) {
-    console.error('refreshExchangeRatesAction', err)
     return generalError('Unable to refresh exchange rates')
   }
 }
@@ -113,7 +112,6 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
       },
     })
   } catch (err) {
-    console.error('setBalanceAction', err)
     return generalError('Unable to create balance adjustment')
   }
 
