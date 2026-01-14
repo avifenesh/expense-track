@@ -15,6 +15,7 @@ describe('Transaction API Routes', () => {
   let categoryId: string
 
   beforeEach(async () => {
+    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
     const account = await prisma.account.findFirst({ where: { name: 'Avi' } })
     const otherAccount = await prisma.account.findFirst({ where: { name: 'Serena' } })
@@ -38,14 +39,14 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           accountId,
           categoryId,
           type: 'EXPENSE',
-          amount: 50.00,
+          amount: 50.0,
           currency: 'USD',
           date: new Date().toISOString(),
           description: 'TEST_Transaction',
@@ -82,7 +83,7 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -103,7 +104,7 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -124,7 +125,7 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: 'invalid json',
@@ -158,21 +159,21 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/${transactionId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           accountId,
           categoryId,
           type: 'EXPENSE',
-          amount: 75.00,
+          amount: 75.0,
           currency: 'USD',
           date: new Date().toISOString(),
           description: 'TEST_Updated',
         }),
       })
 
-      const response = await UpdateTransaction(request, { params: { id: transactionId } })
+      const response = await UpdateTransaction(request, { params: Promise.resolve({ id: transactionId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -184,7 +185,7 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/nonexistent', {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -197,7 +198,7 @@ describe('Transaction API Routes', () => {
         }),
       })
 
-      const response = await UpdateTransaction(request, { params: { id: 'nonexistent' } })
+      const response = await UpdateTransaction(request, { params: Promise.resolve({ id: 'nonexistent' }) })
       expect(response.status).toBe(404)
     })
 
@@ -215,7 +216,7 @@ describe('Transaction API Routes', () => {
         }),
       })
 
-      const response = await UpdateTransaction(request, { params: { id: transactionId } })
+      const response = await UpdateTransaction(request, { params: Promise.resolve({ id: transactionId }) })
       expect(response.status).toBe(401)
     })
   })
@@ -242,10 +243,10 @@ describe('Transaction API Routes', () => {
     it('deletes transaction with valid JWT', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/${transactionId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${validToken}` },
+        headers: { Authorization: `Bearer ${validToken}` },
       })
 
-      const response = await DeleteTransaction(request, { params: { id: transactionId } })
+      const response = await DeleteTransaction(request, { params: Promise.resolve({ id: transactionId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -258,10 +259,10 @@ describe('Transaction API Routes', () => {
     it('returns 404 for non-existent transaction', async () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/nonexistent', {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${validToken}` },
+        headers: { Authorization: `Bearer ${validToken}` },
       })
 
-      const response = await DeleteTransaction(request, { params: { id: 'nonexistent' } })
+      const response = await DeleteTransaction(request, { params: Promise.resolve({ id: 'nonexistent' }) })
       expect(response.status).toBe(404)
     })
 
@@ -270,7 +271,7 @@ describe('Transaction API Routes', () => {
         method: 'DELETE',
       })
 
-      const response = await DeleteTransaction(request, { params: { id: transactionId } })
+      const response = await DeleteTransaction(request, { params: Promise.resolve({ id: transactionId }) })
       expect(response.status).toBe(401)
     })
   })
@@ -280,13 +281,13 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/requests', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           toId: otherAccountId,
           categoryId,
-          amount: 100.00,
+          amount: 100.0,
           currency: 'USD',
           date: new Date().toISOString(),
           description: 'TEST_Request',
@@ -322,7 +323,7 @@ describe('Transaction API Routes', () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/requests', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${validToken}`,
+          Authorization: `Bearer ${validToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -363,10 +364,10 @@ describe('Transaction API Routes', () => {
     it('approves request with valid JWT and authorization', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${requestId}/approve`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${serenaToken}` },
       })
 
-      const response = await ApproveRequest(request, { params: { id: requestId } })
+      const response = await ApproveRequest(request, { params: Promise.resolve({ id: requestId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -380,20 +381,20 @@ describe('Transaction API Routes', () => {
     it('returns 404 for non-existent request', async () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/requests/nonexistent/approve', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${serenaToken}` },
       })
 
-      const response = await ApproveRequest(request, { params: { id: 'nonexistent' } })
+      const response = await ApproveRequest(request, { params: Promise.resolve({ id: 'nonexistent' }) })
       expect(response.status).toBe(404)
     })
 
     it('returns 403 for unauthorized user', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${requestId}/approve`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${validToken}` },
+        headers: { Authorization: `Bearer ${validToken}` },
       })
 
-      const response = await ApproveRequest(request, { params: { id: requestId } })
+      const response = await ApproveRequest(request, { params: Promise.resolve({ id: requestId }) })
       expect(response.status).toBe(403)
     })
 
@@ -402,7 +403,7 @@ describe('Transaction API Routes', () => {
         method: 'POST',
       })
 
-      const response = await ApproveRequest(request, { params: { id: requestId } })
+      const response = await ApproveRequest(request, { params: Promise.resolve({ id: requestId }) })
       expect(response.status).toBe(401)
     })
   })
@@ -431,10 +432,10 @@ describe('Transaction API Routes', () => {
     it('rejects request with valid JWT and authorization', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${requestId}/reject`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${serenaToken}` },
       })
 
-      const response = await RejectRequest(request, { params: { id: requestId } })
+      const response = await RejectRequest(request, { params: Promise.resolve({ id: requestId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -448,20 +449,20 @@ describe('Transaction API Routes', () => {
     it('returns 404 for non-existent request', async () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/requests/nonexistent/reject', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${serenaToken}` },
       })
 
-      const response = await RejectRequest(request, { params: { id: 'nonexistent' } })
+      const response = await RejectRequest(request, { params: Promise.resolve({ id: 'nonexistent' }) })
       expect(response.status).toBe(404)
     })
 
     it('returns 403 for unauthorized user', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${requestId}/reject`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${validToken}` },
+        headers: { Authorization: `Bearer ${validToken}` },
       })
 
-      const response = await RejectRequest(request, { params: { id: requestId } })
+      const response = await RejectRequest(request, { params: Promise.resolve({ id: requestId }) })
       expect(response.status).toBe(403)
     })
 
@@ -470,7 +471,7 @@ describe('Transaction API Routes', () => {
         method: 'POST',
       })
 
-      const response = await RejectRequest(request, { params: { id: requestId } })
+      const response = await RejectRequest(request, { params: Promise.resolve({ id: requestId }) })
       expect(response.status).toBe(401)
     })
   })

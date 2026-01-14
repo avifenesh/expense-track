@@ -1,11 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
-import {
-  updateTransaction,
-  deleteTransaction,
-  getTransactionById,
-} from '@/lib/services/transaction-service'
-import { transactionUpdateSchema, deleteTransactionSchema } from '@/schemas'
+import { updateTransaction, deleteTransaction, getTransactionById } from '@/lib/services/transaction-service'
+import { transactionUpdateSchema } from '@/schemas'
 import {
   validationError,
   authError,
@@ -16,10 +12,9 @@ import {
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
   // 1. Authenticate
   let user
   try {
@@ -37,7 +32,7 @@ export async function PUT(
   }
 
   const apiSchema = transactionUpdateSchema.omit({ csrfToken: true })
-  const parsed = apiSchema.safeParse({ ...body, id: params.id })
+  const parsed = apiSchema.safeParse({ ...body, id })
 
   if (!parsed.success) {
     return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
@@ -46,7 +41,7 @@ export async function PUT(
   const data = parsed.data
 
   // 3. Check existing transaction
-  const existing = await getTransactionById(params.id)
+  const existing = await getTransactionById(id)
   if (!existing) {
     return notFoundError('Transaction not found')
   }
@@ -74,16 +69,15 @@ export async function PUT(
   // 6. Execute update
   try {
     await updateTransaction(data)
-    return successResponse({ id: params.id })
-  } catch (error) {
+    return successResponse({ id })
+  } catch {
     return serverError('Unable to update transaction')
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
   // 1. Authenticate
   let user
   try {
@@ -93,7 +87,7 @@ export async function DELETE(
   }
 
   // 2. Check existing transaction
-  const existing = await getTransactionById(params.id)
+  const existing = await getTransactionById(id)
   if (!existing) {
     return notFoundError('Transaction not found')
   }
@@ -110,9 +104,9 @@ export async function DELETE(
 
   // 4. Execute delete
   try {
-    await deleteTransaction(params.id)
-    return successResponse({ id: params.id })
-  } catch (error) {
+    await deleteTransaction(id)
+    return successResponse({ id })
+  } catch {
     return serverError('Unable to delete transaction')
   }
 }

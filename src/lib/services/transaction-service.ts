@@ -1,4 +1,4 @@
-import { Prisma, TransactionType, RequestStatus } from '@prisma/client'
+import { Prisma, TransactionType, RequestStatus, Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart } from '@/utils/date'
 import { toDecimalString } from '@/app/actions/shared'
@@ -10,7 +10,7 @@ export interface CreateTransactionInput {
   categoryId: string
   type: TransactionType
   amount: number
-  currency: string
+  currency: Currency
   date: Date
   description?: string | null
   isRecurring?: boolean
@@ -26,7 +26,7 @@ export interface CreateTransactionRequestInput {
   toId: string
   categoryId: string
   amount: number
-  currency: string
+  currency: Currency
   date: Date
   description?: string | null
 }

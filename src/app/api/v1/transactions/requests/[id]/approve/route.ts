@@ -1,22 +1,12 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
-import {
-  approveTransactionRequest,
-  getTransactionRequestById,
-} from '@/lib/services/transaction-service'
-import {
-  authError,
-  forbiddenError,
-  notFoundError,
-  serverError,
-  successResponse,
-} from '@/lib/api-helpers'
+import { approveTransactionRequest, getTransactionRequestById } from '@/lib/services/transaction-service'
+import { authError, forbiddenError, notFoundError, serverError, successResponse } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
   // 1. Authenticate
   let user
   try {
@@ -26,7 +16,7 @@ export async function POST(
   }
 
   // 2. Check request exists
-  const transactionRequest = await getTransactionRequestById(params.id)
+  const transactionRequest = await getTransactionRequestById(id)
   if (!transactionRequest) {
     return notFoundError('Transaction request not found')
   }
@@ -43,8 +33,8 @@ export async function POST(
 
   // 4. Approve request
   try {
-    await approveTransactionRequest(params.id)
-    return successResponse({ id: params.id, status: 'APPROVED' })
+    await approveTransactionRequest(id)
+    return successResponse({ id, status: 'APPROVED' })
   } catch (error) {
     if (error instanceof Error && error.message.includes('already')) {
       return forbiddenError(error.message)
