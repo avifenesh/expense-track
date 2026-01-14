@@ -47,8 +47,8 @@ export function loadSessionsFromStorage(storageKey: string): ChatSession[] {
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed
     }
-  } catch (error) {
-    console.warn('Failed to load chat sessions', error)
+  } catch {
+    // Failed to parse - return default session
   }
 
   return [createSession('Conversation 1')]
