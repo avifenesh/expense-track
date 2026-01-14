@@ -15,11 +15,26 @@ describe('Budget API Routes', () => {
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
-    const account = await prisma.account.findFirst({ where: { name: 'Avi' } })
-    const otherAccount = await prisma.account.findFirst({ where: { name: 'Serena' } })
+
+    // Create or find test accounts
+    let account = await prisma.account.findFirst({ where: { name: 'Avi' } })
+    if (!account) {
+      account = await prisma.account.create({
+        data: { name: 'Avi', type: 'SELF' },
+      })
+    }
+
+    let otherAccount = await prisma.account.findFirst({ where: { name: 'Serena' } })
+    if (!otherAccount) {
+      otherAccount = await prisma.account.create({
+        data: { name: 'Serena', type: 'SELF' },
+      })
+    }
+
     const category = await prisma.category.findFirst({ where: { type: 'EXPENSE' } })
-    accountId = account!.id
-    otherAccountId = otherAccount!.id
+
+    accountId = account.id
+    otherAccountId = otherAccount.id
     categoryId = category!.id
   })
 
@@ -107,7 +122,7 @@ describe('Budget API Routes', () => {
         },
       })
       expect(budgets.length).toBe(1)
-      expect(budgets[0].planned.toString()).toBe('750.00')
+      expect(budgets[0].planned.toNumber()).toBe(750)
     })
 
     it('returns 401 with missing token', async () => {

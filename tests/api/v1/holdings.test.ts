@@ -22,12 +22,32 @@ describe('Holdings API Routes', () => {
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
-    const account = await prisma.account.findFirst({ where: { name: 'Avi' } })
-    const otherAccount = await prisma.account.findFirst({ where: { name: 'Serena' } })
-    const holdingCategory = await prisma.category.findFirst({ where: { isHolding: true } })
-    accountId = account!.id
-    otherAccountId = otherAccount!.id
-    holdingCategoryId = holdingCategory!.id
+
+    // Create or find test accounts
+    let account = await prisma.account.findFirst({ where: { name: 'Avi' } })
+    if (!account) {
+      account = await prisma.account.create({
+        data: { name: 'Avi', type: 'SELF' },
+      })
+    }
+
+    let otherAccount = await prisma.account.findFirst({ where: { name: 'Serena' } })
+    if (!otherAccount) {
+      otherAccount = await prisma.account.create({
+        data: { name: 'Serena', type: 'SELF' },
+      })
+    }
+
+    let holdingCategory = await prisma.category.findFirst({ where: { isHolding: true } })
+    if (!holdingCategory) {
+      holdingCategory = await prisma.category.create({
+        data: { name: 'TEST_Stocks', type: 'EXPENSE', isHolding: true },
+      })
+    }
+
+    accountId = account.id
+    otherAccountId = otherAccount.id
+    holdingCategoryId = holdingCategory.id
   })
 
   afterEach(async () => {
