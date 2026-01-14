@@ -27,6 +27,22 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +52,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
+      - name: Setup database
+        run: npx prisma db push
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
@@ -50,6 +71,7 @@ jobs:
 
       - run: npm test
         env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           AUTH_SESSION_SECRET: test-secret-for-ci-only
           AUTH_USER1_NAME: testuser1
           AUTH_USER1_PASSWORD: testpass1
