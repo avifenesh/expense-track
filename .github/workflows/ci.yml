@@ -73,7 +73,12 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           AUTH_SESSION_SECRET: test-secret-for-ci-only
-          AUTH_USER1_NAME: testuser1
+          AUTH_USER1_NAME: avi
+          AUTH_USER1_DISPLAY_NAME: Avi
+          AUTH_USER1_EMAIL: avi@example.com
           AUTH_USER1_PASSWORD: testpass1
-          AUTH_USER2_NAME: testuser2
+          AUTH_USER2_NAME: serena
+          AUTH_USER2_DISPLAY_NAME: Serena
+          AUTH_USER2_EMAIL: serena@example.com
           AUTH_USER2_PASSWORD: testpass2
+          JWT_SECRET: test-jwt-secret-for-ci-only
