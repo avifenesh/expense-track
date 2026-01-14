@@ -48,6 +48,17 @@ export async function POST(request: NextRequest) {
     return forbiddenError('You do not have access to this account')
   }
 
+  // 3b. If updating, verify existing template belongs to the requested account
+  if (data.id) {
+    const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
+    if (!existing) {
+      return forbiddenError('Template not found')
+    }
+    if (existing.accountId !== data.accountId) {
+      return forbiddenError('Cannot change template account')
+    }
+  }
+
   // 4. Execute upsert
   try {
     const template = await upsertRecurringTemplate({
