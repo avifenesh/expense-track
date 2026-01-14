@@ -535,8 +535,11 @@ describe('auth-server.ts', () => {
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
           name: 'Shared',
-          balance: 1000,
-          currency: 'USD',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+          color: null,
+          icon: null,
+          description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -587,8 +590,11 @@ describe('auth-server.ts', () => {
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-account2',
           name: 'Account2',
-          balance: 1000,
-          currency: 'USD',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+          color: null,
+          icon: null,
+          description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -607,8 +613,11 @@ describe('auth-server.ts', () => {
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
           name: 'Shared',
-          balance: 1000,
-          currency: 'USD',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+          color: null,
+          icon: null,
+          description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -624,8 +633,11 @@ describe('auth-server.ts', () => {
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
           name: 'Shared',
-          balance: 1000,
-          currency: 'USD',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+          color: null,
+          icon: null,
+          description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -643,8 +655,11 @@ describe('auth-server.ts', () => {
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-wrong-case',
           name: 'account1', // lowercase
-          balance: 1000,
-          currency: 'USD',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+          color: null,
+          icon: null,
+          description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -703,8 +718,11 @@ describe('auth-server.ts', () => {
       vi.mocked(prisma.account.findUnique).mockResolvedValue({
         id: 'acc-shared',
         name: 'Shared',
-        balance: 1000,
-        currency: 'USD',
+        type: 'SELF',
+        preferredCurrency: 'USD',
+        color: null,
+        icon: null,
+        description: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
