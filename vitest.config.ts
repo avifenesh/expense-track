@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
+    fileParallelism: false, // Run test files sequentially to avoid database race conditions
     coverage: {
       reporter: ['text', 'html', 'json-summary'],
       reportsDirectory: 'coverage',
