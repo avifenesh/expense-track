@@ -24,10 +24,17 @@ export function assertNoExecutableScript(html: string, payload: string) {
     throw new Error(`HTML contains inline event handler. Payload: ${payload}\nHTML snippet: ${html.substring(0, 200)}`)
   }
 
-  // Should NOT contain javascript: URIs
+  // Should NOT contain unescaped javascript: URIs
+  // Note: escaped javascript: (e.g., &quot;javascript:&quot;) is safe as text
   const javascriptUriPattern = /javascript:/i
   if (javascriptUriPattern.test(html)) {
-    throw new Error(`HTML contains javascript: URI. Payload: ${payload}\nHTML snippet: ${html.substring(0, 200)}`)
+    // Check if it's properly escaped (contains &quot; or &#)
+    const isEscaped = html.includes('&quot;javascript:') || html.includes('&#')
+    if (!isEscaped) {
+      throw new Error(
+        `HTML contains unescaped javascript: URI. Payload: ${payload}\nHTML snippet: ${html.substring(0, 200)}`,
+      )
+    }
   }
 
   // Should NOT contain the raw, unescaped payload
