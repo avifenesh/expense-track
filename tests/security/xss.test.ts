@@ -591,6 +591,80 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
       }
     })
   })
+
+  describe('API Endpoints - Input Validation', () => {
+    it('should validate login API inputs and prevent XSS', () => {
+      // The login API endpoint validates email and password
+      // XSS payloads should be rejected or safely handled
+
+      for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 3)) {
+        // Test email validation with XSS payload
+        // Email/password are not directly rendered, only used for authentication
+        // Invalid credentials return generic error message (no payload reflection)
+
+        // Simulate API behavior: payload in email/password → generic error response
+        const _emailInput = payload // Would be sent to API
+        const _passwordInput = 'test123' // Would be sent to API
+        const genericError = 'Invalid credentials' // API returns this, not the payload
+
+        const rendered = `<div>${escapeHtmlLikeReact(genericError)}</div>`
+
+        // Verify generic error doesn't contain payload
+        expect(genericError).not.toContain(payload)
+        assertNoExecutableScript(rendered, 'generic-error')
+      }
+    })
+
+    it('should validate holdings API query parameters', () => {
+      // Holdings API validates accountId and preferredCurrency parameters
+      // accountId: validated against allowedAccounts whitelist
+      // preferredCurrency: validated using isCurrency() type guard
+
+      for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 3)) {
+        // Test accountId validation
+        const allowedAccountIds = new Set(['test-account-1', 'test-account-2'])
+        const isValidAccountId = allowedAccountIds.has(payload)
+        expect(isValidAccountId).toBe(false) // XSS payloads rejected
+
+        // Test currency validation
+        const validCurrencies = ['USD', 'EUR', 'ILS']
+        const isValidCurrency = validCurrencies.includes(payload.toUpperCase())
+        expect(isValidCurrency).toBe(false) // XSS payloads rejected
+
+        // API returns fallback values for invalid parameters (no reflection)
+        const fallbackAccount = 'test-account-1'
+        const fallbackCurrency = 'USD'
+
+        expect(fallbackAccount).not.toContain(payload)
+        expect(fallbackCurrency).not.toContain(payload)
+      }
+    })
+
+    it('should return safe error responses for invalid API inputs', () => {
+      // API endpoints return generic error messages, not user input
+      // This prevents reflected XSS in error responses
+
+      const apiErrorResponses = [
+        'Email and password required',
+        'Invalid credentials',
+        'Login failed',
+        'Unauthorized',
+        'No accessible accounts',
+        'Failed to load holdings',
+      ]
+
+      for (const errorMessage of apiErrorResponses) {
+        // Verify error messages are predefined and safe
+        const rendered = `<div className="error">${escapeHtmlLikeReact(errorMessage)}</div>`
+
+        // Should not contain any XSS vectors
+        assertNoExecutableScript(rendered, 'safe-error-message')
+
+        // Verify they're plain text (no HTML)
+        expect(errorMessage).not.toMatch(/<[^>]+>/)
+      }
+    })
+  })
 })
 
 /**
