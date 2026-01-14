@@ -56,7 +56,7 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
     } else {
       await prisma.recurringTemplate.create({ data: payload })
     }
-  } catch (err) {
+  } catch {
     return generalError('Unable to save recurring template')
   }
 
@@ -86,7 +86,7 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
       where: { id: parsed.data.id },
       data: { isActive: parsed.data.isActive },
     })
-  } catch (err) {
+  } catch {
     return generalError('Recurring template not found')
   }
 
@@ -166,7 +166,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
 
   try {
     await prisma.transaction.createMany({ data: transactionsToCreate })
-  } catch (err) {
+  } catch {
     return generalError('Unable to create recurring transactions')
   }
 

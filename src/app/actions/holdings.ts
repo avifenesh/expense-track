@@ -44,7 +44,7 @@ export async function createHoldingAction(input: HoldingInput) {
     if (!category.isHolding) {
       return failure({ categoryId: ['Category must be marked as a holding category'] })
     }
-  } catch (err) {
+  } catch {
     return generalError('Unable to validate category')
   }
 
@@ -70,7 +70,7 @@ export async function createHoldingAction(input: HoldingInput) {
         notes: data.notes ?? null,
       },
     })
-  } catch (err) {
+  } catch {
     return generalError('Unable to create holding. It may already exist.')
   }
 
@@ -107,7 +107,7 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
         notes: parsed.data.notes ?? null,
       },
     })
-  } catch (err) {
+  } catch {
     return generalError('Holding not found')
   }
 
@@ -139,7 +139,7 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
     await (prisma as any).holding.delete({
       where: { id: parsed.data.id },
     })
-  } catch (err) {
+  } catch {
     return generalError('Holding not found')
   }
 
@@ -177,7 +177,7 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
 
     revalidatePath('/')
     return success(result)
-  } catch (err) {
+  } catch {
     return generalError('Unable to refresh stock prices')
   }
 }

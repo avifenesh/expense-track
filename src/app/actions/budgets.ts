@@ -46,7 +46,7 @@ export async function upsertBudgetAction(input: BudgetInput) {
         notes: notes ?? null,
       },
     })
-  } catch (err) {
+  } catch {
     return generalError('Unable to save budget')
   }
 
@@ -78,7 +78,7 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
         },
       },
     })
-  } catch (err) {
+  } catch {
     return generalError('Budget entry not found')
   }
 

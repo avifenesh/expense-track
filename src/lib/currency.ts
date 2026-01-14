@@ -114,7 +114,7 @@ export async function getExchangeRate(from: Currency, to: Currency, date?: Date)
     })
 
     return rate
-  } catch (error) {
+  } catch {
     // Fallback: try to get the most recent cached rate
     const fallback = await prisma.exchangeRate.findFirst({
       where: {
