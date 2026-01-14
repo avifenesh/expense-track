@@ -1,18 +1,25 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getCsrfToken } from '@/lib/csrf'
+import { generateNonce } from '@/lib/nonce'
 
 export async function middleware(_request: NextRequest) {
-  const response = NextResponse.next()
+  // Generate unique nonce for this request
+  const nonce = generateNonce()
 
   await getCsrfToken()
 
-  const headers = response.headers
+  const isDev = process.env.NODE_ENV === 'development'
 
+  // Build CSP with nonce
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-    "style-src 'self' 'unsafe-inline'",
+    // Development: Keep unsafe-eval for HMR, add nonce for framework scripts
+    // Production: Use nonce + strict-dynamic for modern browsers
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    // Development: Keep unsafe-inline for Tailwind HMR
+    // Production: Use nonce for any inline styles (though we have none)
+    `style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ''}`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https://api.frankfurter.app",
@@ -20,6 +27,14 @@ export async function middleware(_request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
   ].join('; ')
+
+  // Create response
+  const response = NextResponse.next()
+
+  // Store nonce in request headers for access in Server Components
+  response.headers.set('x-nonce', nonce)
+
+  const headers = response.headers
 
   headers.set('Content-Security-Policy', csp)
   headers.set('X-Frame-Options', 'DENY')
@@ -35,6 +50,14 @@ export async function middleware(_request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    {
+      source: '/((?:(?!_next/static|_next/image|favicon.ico|.*.(svg|png|jpg|jpeg|gif|webp)$)).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
   runtime: 'nodejs',
 }
