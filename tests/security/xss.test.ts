@@ -380,7 +380,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           csrfToken: 'valid-csrf-token',
         })
 
-        if (result.success) {
+        if ('success' in result && result.success) {
           // Verify notes stored as-is
           const createCall = vi.mocked(prisma.holding.create).mock.calls[0]
           expect(createCall[0].data.notes).toBe(payload)
