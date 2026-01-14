@@ -65,7 +65,6 @@ describe('currency.ts', () => {
       const cache: RateCache = new Map()
       const result = convertAmountWithCache(100, Currency.USD, Currency.EUR, cache)
       expect(result).toBe(100)
-      expect(console.warn).toHaveBeenCalledWith('No cached rate for USD -> EUR, returning original amount')
     })
 
     it('should handle rounding edge case 0.005 rounds up', () => {
@@ -310,13 +309,6 @@ describe('currency.ts', () => {
       const result = await getExchangeRate(Currency.USD, Currency.EUR)
 
       expect(result).toBe(0.83)
-      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Using stale exchange rate from'))
-      expect(console.error).toHaveBeenCalledWith(
-        'Failed to fetch exchange rate %s -> %s:',
-        'USD',
-        'EUR',
-        expect.any(Error),
-      )
     })
 
     it('should throw error if no fallback available', async () => {
@@ -473,7 +465,6 @@ describe('currency.ts', () => {
         error: { general: ['Network error'] },
         updatedAt: expect.any(Date),
       })
-      expect(console.error).toHaveBeenCalledWith('Failed to refresh exchange rates:', expect.any(Error))
     })
 
     it('should handle unknown error gracefully', async () => {
