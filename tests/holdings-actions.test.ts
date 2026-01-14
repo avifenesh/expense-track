@@ -283,6 +283,172 @@ describe('createHoldingAction', () => {
       expect(result.error.averageCost).toBeDefined()
     }
   })
+
+  it('should fail when category not found', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.category.findUnique).mockResolvedValue(null)
+
+    const result = await createHoldingAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-nonexistent',
+      symbol: 'AAPL',
+      quantity: 10,
+      averageCost: 150,
+      currency: Currency.USD,
+      notes: null,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.categoryId?.some((msg: string) => msg.includes('Category not found'))).toBe(true)
+    }
+  })
+
+  it('should fail when category lookup throws database error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.category.findUnique).mockRejectedValue(new Error('DB connection lost'))
+
+    const result = await createHoldingAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      symbol: 'AAPL',
+      quantity: 10,
+      averageCost: 150,
+      currency: Currency.USD,
+      notes: null,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to validate category'))).toBe(true)
+    }
+  })
+
+  it('should handle non-Error stock API failures', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.category.findUnique).mockResolvedValue({
+      id: 'cat-1',
+      isHolding: true,
+    } as any)
+
+    const { fetchStockQuote } = await import('@/lib/stock-api')
+    vi.mocked(fetchStockQuote).mockRejectedValue('API quota exceeded')
+
+    const result = await createHoldingAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      symbol: 'INVALID',
+      quantity: 10,
+      averageCost: 150,
+      currency: Currency.USD,
+      notes: null,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.symbol).toBeDefined()
+    }
+  })
+
+  it('should fail when database cannot create holding', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.category.findUnique).mockResolvedValue({
+      id: 'cat-1',
+      isHolding: true,
+    } as any)
+
+    const { fetchStockQuote } = await import('@/lib/stock-api')
+    vi.mocked(fetchStockQuote).mockResolvedValue({ price: 150.5, symbol: 'AAPL' } as any)
+
+    vi.mocked(prisma.holding.create).mockRejectedValue(new Error('Unique constraint violation'))
+
+    const result = await createHoldingAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      symbol: 'AAPL',
+      quantity: 10,
+      averageCost: 150,
+      currency: Currency.USD,
+      notes: null,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to create holding'))).toBe(true)
+    }
+  })
 })
 
 describe('updateHoldingAction', () => {
@@ -356,6 +522,84 @@ describe('updateHoldingAction', () => {
       expect(result.error.general?.some((msg: string) => msg.includes('Holding not found'))).toBe(true)
     }
   })
+
+  it('should fail when user lacks access to holding account', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+      id: 'holding-1',
+      accountId: 'acc-other',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-other',
+      name: 'UnauthorizedAccount',
+      type: 'SELF',
+    } as any)
+
+    const result = await updateHoldingAction({
+      id: 'holding-1',
+      quantity: 15,
+      averageCost: 155,
+      notes: null,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.accountId?.some((msg: string) => msg.includes('You do not have access'))).toBe(true)
+    }
+  })
+
+  it('should fail when database update throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+      id: 'holding-1',
+      accountId: 'acc-1',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.holding.update).mockRejectedValue(new Error('DB error'))
+
+    const result = await updateHoldingAction({
+      id: 'holding-1',
+      quantity: 15,
+      averageCost: 155,
+      notes: null,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Holding not found'))).toBe(true)
+    }
+  })
 })
 
 describe('deleteHoldingAction', () => {
@@ -395,6 +639,40 @@ describe('deleteHoldingAction', () => {
     expect(prisma.holding.delete).toHaveBeenCalledWith({
       where: { id: 'holding-1' },
     })
+  })
+
+  it('should fail when database delete throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+      id: 'holding-1',
+      accountId: 'acc-1',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.holding.delete).mockRejectedValue(new Error('Foreign key constraint'))
+
+    const result = await deleteHoldingAction({ id: 'holding-1', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Holding not found'))).toBe(true)
+    }
   })
 })
 
@@ -509,5 +787,61 @@ describe('refreshHoldingPricesAction', () => {
 
     expect('success' in result && result.success).toBe(true)
     expect(refreshStockPrices).toHaveBeenCalledWith(['AAPL', 'GOOGL'])
+  })
+
+  it('should fail when user lacks account access', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-unauthorized',
+      name: 'UnauthorizedAccount',
+      type: 'SELF',
+    } as any)
+
+    const result = await refreshHoldingPricesAction({ accountId: 'acc-unauthorized', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.accountId?.some((msg: string) => msg.includes('You do not have access'))).toBe(true)
+    }
+  })
+
+  it('should fail when database throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.holding.findMany).mockRejectedValue(new Error('DB timeout'))
+
+    const result = await refreshHoldingPricesAction({ accountId: 'acc-1', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to refresh stock prices'))).toBe(true)
+    }
   })
 })
