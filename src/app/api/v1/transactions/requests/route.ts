@@ -1,16 +1,8 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
-import {
-  createTransactionRequest,
-  getUserPrimaryAccount,
-} from '@/lib/services/transaction-service'
+import { createTransactionRequest, getUserPrimaryAccount } from '@/lib/services/transaction-service'
 import { transactionRequestSchema } from '@/schemas'
-import {
-  validationError,
-  authError,
-  serverError,
-  successResponse,
-} from '@/lib/api-helpers'
+import { validationError, authError, serverError, successResponse } from '@/lib/api-helpers'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -58,7 +50,7 @@ export async function POST(request: NextRequest) {
       description: data.description,
     })
     return successResponse({ id: transactionRequest.id }, 201)
-  } catch (error) {
+  } catch {
     return serverError('Unable to create transaction request')
   }
 }

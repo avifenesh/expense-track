@@ -2,13 +2,7 @@ import { NextRequest } from 'next/server'
 import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
 import { createTransaction } from '@/lib/services/transaction-service'
 import { transactionSchema } from '@/schemas'
-import {
-  validationError,
-  authError,
-  forbiddenError,
-  serverError,
-  successResponse,
-} from '@/lib/api-helpers'
+import { validationError, authError, forbiddenError, serverError, successResponse } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
@@ -53,7 +47,7 @@ export async function POST(request: NextRequest) {
   try {
     const transaction = await createTransaction(data)
     return successResponse({ id: transaction.id }, 201)
-  } catch (error) {
+  } catch {
     return serverError('Unable to create transaction')
   }
 }
