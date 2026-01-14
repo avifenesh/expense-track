@@ -131,4 +131,29 @@ List tasks that can't proceed and why.
 - If a task looks done, grep for implementation before reporting
 - Reference specific file paths and line numbers where relevant
 
+---
+
+## PHASE 6: NEXT STEPS (After User Selects Task)
+
+Once the user approves a task, follow the **Review-Approve-Iterate Workflow** (see CLAUDE.md):
+
+1. **Create worktree** for the task
+2. **Enter plan mode** to design the approach
+3. **Implement** the feature/fix with tests
+4. **Request code review** via code-reviewer agent (Task tool)
+5. **Fix** based on review feedback
+6. **Iterate** review → fix until clean
+7. **Request approval** via approval-checker agent (Task tool)
+8. **Handle result**:
+   - APPROVED → Create PR and merge
+   - BLOCKED → Complete missing pieces, repeat from step 3
+9. **Create PR** and merge when approved
+
+**Key agents to use:**
+
+- `pr-review-toolkit:code-reviewer` - Reviews code for quality, style, and issues (provide git diff)
+- `general-purpose` - For approval checking (provide detailed task verification prompt)
+
+**Important:** Do NOT mention Ralph Loop or autonomous execution. The workflow is now manual, iterative, with explicit review and approval gates at each stage.
+
 Begin Phase 1 now.

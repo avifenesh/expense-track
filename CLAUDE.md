@@ -98,7 +98,7 @@ npm test -- tests/security/xss.test.ts  # Run XSS tests (17 tests)
 2. User approves a task to work on
 3. **Create worktree** for the task (see Worktree Policy)
 4. **Enter plan mode** after cd to worktree
-5. **Start Ralph Loop** with appropriate max-iterations
+5. **Start iterative development** with review-approve workflow
 6. Reference the issue number in commits: `fix: implement X (closes #N)`
 
 ### During Development
@@ -147,46 +147,107 @@ Use git worktrees for feature development to keep main branch clean and enable p
 
 ### Development in Worktree
 
-**Ralph Loop Workflow (Required for each task):**
+**Review-Approve-Iterate Workflow (Required for each task):**
 
 1. **After `cd` to worktree, enter plan mode first**
    - Use plan mode to understand the codebase and design the approach
    - Read relevant files, understand patterns, design implementation
    - Get user approval on the plan before starting
 
-2. **Start Ralph Loop after plan approval**
-
-   ```bash
-   /ralph-loop --max-iterations <N> --completion-promise "<PROMISE>"
-   ```
-
-   - Set `max-iterations` higher than expected (e.g., if task needs ~5 iterations, set 8-10)
-   - Define clear completion promise (e.g., "FEATURE COMPLETE", "TESTS PASSING", "REFACTOR DONE")
-
-3. **During Ralph Loop execution**
+2. **Implement the feature/fix**
+   - Write code following the approved plan
+   - Write tests for new functionality
    - Commit often with descriptive messages
    - Reference issue number in commits
-   - Run tests before pushing: `npm test`
-   - Push regularly to create/update PR
-   - Output `<promise>COMPLETION PROMISE</promise>` when done
+
+3. **Request code review** (after completing a logical chunk of work)
+   - Use Task tool with `subagent_type: "pr-review-toolkit:code-reviewer"`
+   - Provide context: files changed (usually git diff output)
+   - Agent reviews for:
+     - Adherence to project guidelines (CLAUDE.md)
+     - Code quality and best practices
+     - Potential bugs or issues
+     - Style violations
+
+4. **Fix based on review feedback**
+   - Address all review comments
+   - Commit fixes with clear messages
+   - Return to step 3 if significant changes made
+
+5. **Iterate until clean review**
+   - Continue review → fix → review cycle
+   - Goal: Zero blocking issues from code-reviewer
+
+6. **Request approval** (when review is clean)
+   - Use Task tool with `subagent_type: "general-purpose"`
+   - Provide detailed prompt:
+     - Original task requirements (from GitHub issue)
+     - List of what was implemented
+     - Summary of all changes made
+     - Test results and coverage
+     - Ask agent to verify:
+       - All acceptance criteria met
+       - Tests passing
+       - No missing pieces from requirements
+       - Ready for PR
+   - Agent responds with APPROVED or BLOCKED + reasons
+
+7. **Handle approval result**
+   - **If APPROVED**: Continue to PR creation (step 8)
+   - **If BLOCKED**: Go back to step 2, complete missing pieces, then repeat steps 3-6
+
+8. **Create PR and merge** (after approval)
+   - Push changes: `git push -u origin <branch>`
+   - Create PR: `gh pr create`
+   - Merge: `gh pr merge --squash --delete-branch`
 
 **Example workflow:**
 
 ```bash
 # After getting task from /next
-cd ../expense-track-holdings-refresh
+cd ../expense-track-auth-tests
 
 # Enter plan mode, explore codebase, design solution
 # Get user approval
 
-# Start Ralph Loop
-/ralph-loop --max-iterations 10 --completion-promise "HOLDINGS REFRESH COMPLETE"
+# Implement
+# ... write code and tests ...
+git commit -m "test: add auth-server.ts coverage"
 
-# Ralph Loop iterates until:
-# - Feature implemented with tests
-# - All tests passing
-# - Changes committed
-# - Outputs: <promise>HOLDINGS REFRESH COMPLETE</promise>
+# Request review
+# Task tool: subagent_type="pr-review-toolkit:code-reviewer"
+# Provide: git diff output
+# Review identifies: missing edge case tests
+
+# Fix and commit
+# ... add edge case tests ...
+git commit -m "test: add edge case coverage for token expiry"
+
+# Request review again
+# Task tool: subagent_type="pr-review-toolkit:code-reviewer"
+# Review: clean, no issues
+
+# Request approval
+# Task tool: subagent_type="general-purpose"
+# Prompt: "Verify task completion for issue #X: [requirements].
+#         Implemented: [changes]. Tests: [results].
+#         Check all acceptance criteria met."
+# Response: BLOCKED - acceptance criteria requires 90% coverage, only at 85%
+
+# Fix and commit
+# ... add more tests ...
+git commit -m "test: increase coverage to 95%"
+
+# Request review
+# Review: clean
+
+# Request approval
+# Response: APPROVED - all criteria met, ready for PR
+
+# Create PR
+git push -u origin auth-tests
+gh pr create --title "test: achieve 90%+ coverage on auth-server.ts"
+gh pr merge --squash --delete-branch
 ```
 
 ### Opening a PR
