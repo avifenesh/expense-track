@@ -16,26 +16,28 @@ describe('Budget API Routes', () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
 
-    // Create or find test accounts
-    let account = await prisma.account.findFirst({ where: { name: 'Avi' } })
-    if (!account) {
-      account = await prisma.account.create({
-        data: { name: 'Avi', type: 'SELF' },
-      })
-    }
+    // Upsert test accounts (atomic, no race condition)
+    const account = await prisma.account.upsert({
+      where: { name: 'Avi' },
+      update: {},
+      create: { name: 'Avi', type: 'SELF' },
+    })
 
-    let otherAccount = await prisma.account.findFirst({ where: { name: 'Serena' } })
-    if (!otherAccount) {
-      otherAccount = await prisma.account.create({
-        data: { name: 'Serena', type: 'SELF' },
-      })
-    }
+    const otherAccount = await prisma.account.upsert({
+      where: { name: 'Serena' },
+      update: {},
+      create: { name: 'Serena', type: 'SELF' },
+    })
 
-    const category = await prisma.category.findFirst({ where: { type: 'EXPENSE' } })
+    const category = await prisma.category.upsert({
+      where: { name_type: { name: 'TEST_ExpenseCategory', type: 'EXPENSE' } },
+      update: {},
+      create: { name: 'TEST_ExpenseCategory', type: 'EXPENSE' },
+    })
 
     accountId = account.id
     otherAccountId = otherAccount.id
-    categoryId = category!.id
+    categoryId = category.id
   })
 
   afterEach(async () => {
@@ -43,6 +45,9 @@ describe('Budget API Routes', () => {
       where: {
         month: getMonthStartFromKey(testMonthKey),
       },
+    })
+    await prisma.category.deleteMany({
+      where: { name: 'TEST_ExpenseCategory' },
     })
   })
 
