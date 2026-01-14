@@ -158,7 +158,6 @@ async function convertTransactionAmount(
   try {
     return await convertAmount(originalAmount, fromCurrency, toCurrency, date)
   } catch (error) {
-    console.warn(`Currency conversion failed for ${context}:`, error)
     return originalAmount
   }
 }

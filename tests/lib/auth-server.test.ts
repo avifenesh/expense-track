@@ -374,7 +374,6 @@ describe('auth-server.ts', () => {
         const result = await verifyCredentials({ email: 'user1@test.com', password: 'password123' })
 
         expect(result).toBe(false)
-        expect(console.error).toHaveBeenCalledWith('verifyCredentials error', expect.any(Error))
       })
     })
   })

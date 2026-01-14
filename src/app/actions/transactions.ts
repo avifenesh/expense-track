@@ -54,7 +54,6 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
       },
     })
   } catch (err) {
-    console.error('createTransactionRequestAction', err)
     return generalError('Unable to create transaction request')
   }
 
@@ -114,7 +113,6 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
       }),
     ])
   } catch (err) {
-    console.error('approveTransactionRequestAction', err)
     return generalError('Unable to approve transaction request')
   }
 
@@ -155,7 +153,6 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
       data: { status: RequestStatus.REJECTED },
     })
   } catch (err) {
-    console.error('rejectTransactionRequestAction', err)
     return generalError('Unable to reject transaction request')
   }
 
@@ -193,7 +190,6 @@ export async function createTransactionAction(input: TransactionInput) {
       },
     })
   } catch (err) {
-    console.error('createTransactionAction', err)
     return generalError('Unable to create transaction')
   }
 
@@ -249,7 +245,6 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
       },
     })
   } catch (err) {
-    console.error('updateTransactionAction', err)
     return generalError('Unable to update transaction')
   }
 
@@ -280,7 +275,6 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
 
     await prisma.transaction.delete({ where: { id: parsed.data.id } })
   } catch (err) {
-    console.error('deleteTransactionAction', err)
     return generalError('Transaction not found')
   }
   revalidatePath('/')

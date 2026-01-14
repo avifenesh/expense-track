@@ -214,7 +214,6 @@ describe('stock-api.ts', () => {
       mockFetch.mockRejectedValue(new Error('Network error'))
 
       await expect(fetchStockQuote('AAPL')).rejects.toThrow('Network error')
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('fetchStockQuote error'), expect.any(Error))
     })
 
     it('should handle JSON parsing error', async () => {

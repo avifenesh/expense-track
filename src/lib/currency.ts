@@ -115,8 +115,6 @@ export async function getExchangeRate(from: Currency, to: Currency, date?: Date)
 
     return rate
   } catch (error) {
-    console.error('Failed to fetch exchange rate %s -> %s:', from, to, error)
-
     // Fallback: try to get the most recent cached rate
     const fallback = await prisma.exchangeRate.findFirst({
       where: {
@@ -129,7 +127,6 @@ export async function getExchangeRate(from: Currency, to: Currency, date?: Date)
     })
 
     if (fallback) {
-      console.warn(`Using stale exchange rate from ${fallback.date.toISOString()}`)
       return fallback.rate.toNumber()
     }
 
@@ -212,7 +209,6 @@ export async function refreshExchangeRates(): Promise<
 
     return { success: true, updatedAt: now }
   } catch (error) {
-    console.error('Failed to refresh exchange rates:', error)
     return {
       error: { general: [error instanceof Error ? error.message : 'Unknown error'] },
       updatedAt: now,
@@ -277,7 +273,6 @@ export function convertAmountWithCache(amount: number, from: Currency, to: Curre
   const rate = cache.get(rateCacheKey(from, to))
   if (!rate) {
     // Fallback: return original amount if rate not found
-    console.warn(`No cached rate for ${from} -> ${to}, returning original amount`)
     return amount
   }
 
