@@ -252,6 +252,46 @@ describe('createTransactionAction', () => {
 
     expect(result).toEqual({ success: true })
   })
+
+  it('should fail when database create throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.transaction.create).mockRejectedValue(new Error('DB constraint violation'))
+
+    const result = await createTransactionAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 50,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Test',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to create transaction'))).toBe(true)
+    }
+  })
 })
 
 describe('updateTransactionAction', () => {
@@ -386,6 +426,146 @@ describe('updateTransactionAction', () => {
 
     expect(result).toEqual({ success: true })
   })
+
+  it('should fail when user lacks access to existing transaction account', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-unauthorized',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-unauthorized',
+      name: 'UnauthorizedAccount',
+      type: 'SELF',
+    } as any)
+
+    const result = await updateTransactionAction({
+      id: 'tx-1',
+      accountId: 'acc-unauthorized',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 75,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Update attempt on unauthorized transaction',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.accountId?.some((msg: string) => msg.includes('You do not have access'))).toBe(true)
+    }
+  })
+
+  it('should fail when changing to unauthorized account', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique)
+      .mockResolvedValueOnce({
+        id: 'acc-1',
+        name: 'Account1',
+        type: 'SELF',
+      } as any)
+      .mockResolvedValueOnce({
+        id: 'acc-unauthorized',
+        name: 'UnauthorizedAccount',
+        type: 'SELF',
+      } as any)
+
+    const result = await updateTransactionAction({
+      id: 'tx-1',
+      accountId: 'acc-unauthorized',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 75,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Trying to move to unauthorized account',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.accountId?.some((msg: string) => msg.includes('You do not have access'))).toBe(true)
+    }
+  })
+
+  it('should fail when database update throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.transaction.update).mockRejectedValue(new Error('DB deadlock'))
+
+    const result = await updateTransactionAction({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 75,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Updated',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to update transaction'))).toBe(true)
+    }
+  })
 })
 
 describe('deleteTransactionAction', () => {
@@ -479,6 +659,63 @@ describe('deleteTransactionAction', () => {
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error.accountId?.some((msg: string) => msg.includes('You do not have access'))).toBe(true)
+    }
+  })
+
+  it('should fail when database delete throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+    } as any)
+
+    vi.mocked(prisma.transaction.delete).mockRejectedValue(new Error('DB error'))
+
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Transaction not found'))).toBe(true)
+    }
+  })
+
+  it('should fail when database findUnique throws error', async () => {
+    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getAuthUserFromSession).mockReturnValue({
+      email: 'test@example.com',
+      id: 'avi',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockRejectedValue(new Error('DB connection lost'))
+
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Transaction not found'))).toBe(true)
     }
   })
 })
