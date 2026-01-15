@@ -2,6 +2,10 @@
 CREATE TYPE "SubscriptionStatus" AS ENUM ('TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'EXPIRED');
 
 -- CreateTable
+-- Note: trialEndsAt is NOT NULL by design. For users who subscribe directly without
+-- a trial, trialEndsAt marks the moment they converted to paid. This maintains schema
+-- simplicity and provides an audit trail of when each user's trial period ended
+-- (or would have ended for direct conversions).
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,

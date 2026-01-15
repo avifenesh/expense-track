@@ -51,29 +51,22 @@ async function main() {
 
   process.stdout.write(`Found ${usersWithoutSubscription.length} users without subscriptions.\n`)
 
-  // Create trial subscriptions for all users without one
-  const results = await Promise.allSettled(
-    usersWithoutSubscription.map((user) =>
-      prisma.subscription.create({
-        data: {
-          userId: user.id,
-          status: SubscriptionStatus.TRIALING,
-          trialEndsAt,
-        },
-      }),
-    ),
-  )
+  // Use createMany for efficient batch insert
+  const result = await prisma.subscription.createMany({
+    data: usersWithoutSubscription.map((user) => ({
+      userId: user.id,
+      status: SubscriptionStatus.TRIALING,
+      trialEndsAt,
+    })),
+    skipDuplicates: true, // Safety: skip if subscription already exists (race condition)
+  })
 
-  const successful = results.filter((r) => r.status === 'fulfilled').length
-  const failed = results.filter((r) => r.status === 'rejected').length
+  process.stdout.write(`Created ${result.count} trial subscriptions.\n`)
 
-  process.stdout.write(`Created ${successful} trial subscriptions.\n`)
-  if (failed > 0) {
-    process.stdout.write(`Failed to create ${failed} subscriptions.\n`)
-    const failures = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[]
-    for (const failure of failures) {
-      process.stderr.write(`Error: ${failure.reason}\n`)
-    }
+  if (result.count < usersWithoutSubscription.length) {
+    process.stdout.write(
+      `Note: ${usersWithoutSubscription.length - result.count} users were skipped (likely already had subscriptions).\n`,
+    )
   }
 }
 
