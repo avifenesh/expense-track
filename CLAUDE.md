@@ -112,9 +112,8 @@ npm test -- tests/security/xss.test.ts  # Run XSS tests (17 tests)
 1. Ensure all acceptance criteria are met
 2. Run tests: `npm test`
 3. Commit with issue reference: `git commit -m "feat: ... (closes #N)"`
-4. Push and verify CI passes
-5. Open PR and merge (see Worktree Policy)
-6. The issue auto-closes when merged to main
+4. Run `/ship-it` to automate: push, PR creation, review addressing, merge, and validation
+5. The issue auto-closes when PR is merged to main
 
 ## Worktree Policy
 
@@ -193,13 +192,13 @@ Use git worktrees for feature development to keep main branch clean and enable p
    - Agent responds with APPROVED or BLOCKED + reasons
 
 7. **Handle approval result**
-   - **If APPROVED**: Continue to PR creation (step 8)
+   - **If APPROVED**: Continue to step 8
    - **If BLOCKED**: Go back to step 2, complete missing pieces, then repeat steps 3-6
 
-8. **Create PR and merge** (after approval)
-   - Push changes: `git push -u origin <branch>`
-   - Create PR: `gh pr create`
-   - Merge: `gh pr merge --squash --delete-branch`
+8. **Run `/ship-it`** (after approval)
+   - Use the `/ship-it` skill to automate the entire PR workflow
+   - Handles: commit, push, PR creation, review addressing, merge, deploy, and validation
+   - Follow the skill's guidance through each stage until PR is merged to main
 
 **Example workflow:**
 
@@ -244,20 +243,25 @@ git commit -m "test: increase coverage to 95%"
 # Request approval
 # Response: APPROVED - all criteria met, ready for PR
 
-# Create PR
-git push -u origin auth-tests
-gh pr create --title "test: achieve 90%+ coverage on auth-server.ts"
-gh pr merge --squash --delete-branch
+# Run /ship-it to automate PR workflow
+# The skill will handle: push, PR creation, reviews, merge, and validation
+/ship-it
 ```
 
 ### Opening a PR
 
+**Recommended**: Use `/ship-it` skill to automate the entire PR workflow (push, create, review, merge).
+
+**Manual alternative** (if needed):
 ```bash
 gh pr create --title "feat: implement X" --body "Closes #N"
 ```
 
 ### Merging to Main
 
+**Recommended**: The `/ship-it` skill handles merging automatically after review approval.
+
+**Manual alternative** (if needed):
 1. Address any PR review comments
 2. Ensure all tests pass
 3. Merge PR with squash:

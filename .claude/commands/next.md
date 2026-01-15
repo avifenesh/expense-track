@@ -145,9 +145,12 @@ Once the user approves a task, follow the **Review-Approve-Iterate Workflow** (s
 6. **Iterate** review → fix until clean
 7. **Request approval** via approval-checker agent (Task tool)
 8. **Handle result**:
-   - APPROVED → Create PR and merge
+   - APPROVED → Continue to step 9
    - BLOCKED → Complete missing pieces, repeat from step 3
-9. **Create PR** and merge when approved
+9. **Run `/ship-it`** to automate the PR workflow:
+   - The `/ship-it` skill handles: commit, push, PR creation, review addressing, merge, deploy, and validation
+   - Follow the `/ship-it` workflow until the PR is merged to main
+   - The skill will guide you through each stage
 
 **Key agents to use:**
 
