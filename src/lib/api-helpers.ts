@@ -3,14 +3,8 @@ import { NextResponse } from 'next/server'
 /**
  * Standard error response with optional field-level errors
  */
-export function errorResponse(
-  message: string,
-  status: number,
-  fieldErrors?: Record<string, string[]>
-) {
-  const payload = fieldErrors
-    ? { error: message, fields: fieldErrors }
-    : { error: message }
+export function errorResponse(message: string, status: number, fieldErrors?: Record<string, string[]>) {
+  const payload = fieldErrors ? { error: message, fields: fieldErrors } : { error: message }
   return NextResponse.json(payload, { status })
 }
 
@@ -40,6 +34,22 @@ export function forbiddenError(message = 'Forbidden') {
  */
 export function notFoundError(message = 'Resource not found') {
   return errorResponse(message, 404)
+}
+
+/**
+ * 429 Too Many Requests - Rate limit exceeded
+ */
+export function rateLimitError(resetAt: Date) {
+  const retryAfterSeconds = Math.ceil((resetAt.getTime() - Date.now()) / 1000)
+  return NextResponse.json(
+    { error: 'Rate limit exceeded' },
+    {
+      status: 429,
+      headers: {
+        'Retry-After': retryAfterSeconds.toString(),
+      },
+    },
+  )
 }
 
 /**

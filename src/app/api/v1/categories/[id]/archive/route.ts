@@ -2,17 +2,33 @@ import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { archiveCategory, getCategoryById } from '@/lib/services/category-service'
 import { archiveCategorySchema } from '@/schemas'
-import { validationError, authError, notFoundError, serverError, successResponse } from '@/lib/api-helpers'
+import {
+  validationError,
+  authError,
+  notFoundError,
+  serverError,
+  successResponse,
+  rateLimitError,
+} from '@/lib/api-helpers'
+import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   // 1. Authenticate
+  let user
   try {
-    requireJwtAuth(request)
+    user = requireJwtAuth(request)
   } catch (error) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
 
   // 2. Parse and validate input
   let body
