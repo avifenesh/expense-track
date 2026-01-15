@@ -26,7 +26,14 @@ export {
 export { createCategoryAction, archiveCategoryAction } from './actions/categories'
 
 // Auth actions
-export { loginAction, logoutAction, requestPasswordResetAction, persistActiveAccountAction } from './actions/auth'
+export {
+  loginAction,
+  logoutAction,
+  requestPasswordResetAction,
+  persistActiveAccountAction,
+  registerAction,
+  verifyEmailAction,
+} from './actions/auth'
 
 // Holdings actions
 export {
