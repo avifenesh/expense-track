@@ -26,6 +26,11 @@ export async function loginAction(input: z.infer<typeof loginSchema>) {
 
   const credentialsResult = await verifyCredentials({ email, password })
   if (!credentialsResult.valid) {
+    if (credentialsResult.reason === 'email_not_verified') {
+      return failure({
+        credentials: ['Please verify your email before signing in. Check your inbox for the verification link.'],
+      })
+    }
     return failure({ credentials: ['Invalid username or password'] })
   }
 

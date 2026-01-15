@@ -86,7 +86,9 @@ export async function verifyCredentials({
 }: {
   email: string
   password: string
-}): Promise<{ valid: false } | { valid: true; source: 'legacy' | 'database'; userId?: string }> {
+}): Promise<
+  { valid: false; reason?: 'email_not_verified' } | { valid: true; source: 'legacy' | 'database'; userId?: string }
+> {
   const normalizedEmail = email.trim().toLowerCase()
 
   // First, check legacy AUTH_USERS (for backwards compatibility with seeded users)
@@ -112,21 +114,22 @@ export async function verifyCredentials({
     return { valid: false }
   }
 
-  // Check email verification for database users
-  if (!dbUser.emailVerified) {
+  // Check password first before revealing email verification status
+  try {
+    const match = await bcrypt.compare(password, dbUser.passwordHash)
+    if (!match) {
+      return { valid: false }
+    }
+  } catch {
     return { valid: false }
   }
 
-  try {
-    const match = await bcrypt.compare(password, dbUser.passwordHash)
-    if (match) {
-      return { valid: true, source: 'database', userId: dbUser.id }
-    }
-  } catch {
-    // Password comparison failed
+  // Password is correct - now check email verification
+  if (!dbUser.emailVerified) {
+    return { valid: false, reason: 'email_not_verified' }
   }
 
-  return { valid: false }
+  return { valid: true, source: 'database', userId: dbUser.id }
 }
 
 export async function establishSession({ userEmail, accountId }: { userEmail: string; accountId: string }) {
@@ -148,18 +151,31 @@ export async function updateSessionAccount(
   if (!session) {
     return { error: { general: ['No active session'] } }
   }
-  const authUser = getAuthUserFromSession(session)
-  if (!authUser) {
-    return { error: { general: ['User record not found'] } }
-  }
 
   const account = await prisma.account.findUnique({ where: { id: accountId } })
   if (!account) {
     return { error: { general: ['Account not found'] } }
   }
 
-  if (!authUser.accountNames.includes(account.name)) {
-    return { error: { general: ['Account is not available for this user'] } }
+  // Check access for legacy users (AUTH_USERS)
+  const authUser = getAuthUserFromSession(session)
+  if (authUser) {
+    if (!authUser.accountNames.includes(account.name)) {
+      return { error: { general: ['Account is not available for this user'] } }
+    }
+  } else {
+    // Check access for database users
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.userEmail.toLowerCase() },
+      include: { accounts: { select: { id: true } } },
+    })
+    if (!dbUser) {
+      return { error: { general: ['User record not found'] } }
+    }
+    const hasAccess = dbUser.accounts.some((acc) => acc.id === accountId)
+    if (!hasAccess) {
+      return { error: { general: ['Account is not available for this user'] } }
+    }
   }
 
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
@@ -184,11 +200,23 @@ export async function getSession(): Promise<AuthSession | null> {
   if (!isSessionTokenValid({ token, username: userEmail, timestamp })) {
     return null
   }
+
+  // Check if user exists in legacy AUTH_USERS
   const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === userEmail!.toLowerCase())
-  if (!authUser) {
-    return null
+  if (authUser) {
+    return { userEmail: userEmail!, accountId }
   }
-  return { userEmail: userEmail!, accountId }
+
+  // Check if user exists in database
+  const dbUser = await prisma.user.findUnique({
+    where: { email: userEmail!.toLowerCase() },
+    select: { id: true },
+  })
+  if (dbUser) {
+    return { userEmail: userEmail!, accountId }
+  }
+
+  return null
 }
 
 export async function requireSession(): Promise<AuthSession> {
