@@ -58,18 +58,6 @@ export async function requireAuthUser(): Promise<AuthUserResult> {
   return { authUser }
 }
 
-export async function isDatabaseAuthUser(authUser: AuthUser): Promise<boolean> {
-  try {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: authUser.id },
-      select: { id: true },
-    })
-    return Boolean(dbUser)
-  } catch {
-    return false
-  }
-}
-
 type AccountRecord = NonNullable<Awaited<ReturnType<typeof prisma.account.findUnique>>>
 
 export type AccountAccessSuccess = {
@@ -95,12 +83,7 @@ export async function ensureAccountAccess(accountId: string): Promise<AccountAcc
     return { error: { accountId: ['Account not found'] } }
   }
 
-  const isDbUser = await isDatabaseAuthUser(authUser)
-  if (isDbUser) {
-    if (account.userId !== authUser.id) {
-      return { error: { accountId: ['You do not have access to this account'] } }
-    }
-  } else if (!authUser.accountNames.includes(account.name)) {
+  if (account.userId !== authUser.id) {
     return { error: { accountId: ['You do not have access to this account'] } }
   }
 
@@ -117,23 +100,6 @@ export async function requireActiveSubscription(): Promise<
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
   const { authUser } = auth
-
-  // Only check subscription for database users (not legacy hardcoded users)
-  const isDbUser = await isDatabaseAuthUser(authUser)
-  if (!isDbUser) {
-    // Legacy users bypass subscription check during migration period
-    return {
-      success: true,
-      subscriptionState: {
-        status: 'ACTIVE' as const,
-        isActive: true,
-        trialEndsAt: null,
-        currentPeriodEnd: null,
-        daysRemaining: null,
-        canAccessApp: true,
-      },
-    }
-  }
 
   const isActive = await hasActiveSubscription(authUser.id)
   if (!isActive) {

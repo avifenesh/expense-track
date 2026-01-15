@@ -13,7 +13,6 @@ import {
   ensureAccountAccess,
   ensureAccountAccessWithSubscription,
   requireCsrfToken,
-  isDatabaseAuthUser,
   requireActiveSubscription,
 } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
@@ -45,11 +44,9 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
   if ('error' in auth) return auth
   const { authUser } = auth
 
-  const isDbUser = await isDatabaseAuthUser(authUser)
-
   // Determine current user's account ID (the 'from' account)
   const fromAccount = await prisma.account.findFirst({
-    where: isDbUser ? { userId: authUser.id, type: 'SELF' } : { name: { in: authUser.accountNames }, type: 'SELF' },
+    where: { userId: authUser.id, type: 'SELF' },
   })
 
   if (!fromAccount) {
