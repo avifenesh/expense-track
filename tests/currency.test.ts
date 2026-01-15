@@ -67,6 +67,13 @@ describe('currency.ts', () => {
       expect(result).toBe(100)
     })
 
+    it('should log warning when rate not found in cache', () => {
+      const cache: RateCache = new Map()
+      convertAmountWithCache(100, Currency.USD, Currency.EUR, cache)
+      // eslint-disable-next-line no-console
+      expect(console.warn).toHaveBeenCalledWith('CURRENCY_RATE_MISSING', expect.stringContaining('USD'))
+    })
+
     it('should handle rounding edge case 0.005 rounds up', () => {
       const cache: RateCache = new Map([['USD:EUR', 0.00105]])
       const result = convertAmountWithCache(100, Currency.USD, Currency.EUR, cache)
