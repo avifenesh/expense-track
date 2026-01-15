@@ -36,11 +36,23 @@ const loadEnvFile = (filePath: string): Record<string, string> => {
     )
 }
 
-const env = {
-  ...process.env,
-  ...loadEnvFile(path.join(process.cwd(), '.env')),
-  ...loadEnvFile(path.join(process.cwd(), '.env.e2e')),
+const mergeEnv = (...sources: Array<Record<string, string | undefined>>): Record<string, string> => {
+  const merged: Record<string, string> = {}
+  sources.forEach((source) => {
+    Object.entries(source).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        merged[key] = value
+      }
+    })
+  })
+  return merged
 }
+
+const env = mergeEnv(
+  process.env,
+  loadEnvFile(path.join(process.cwd(), '.env')),
+  loadEnvFile(path.join(process.cwd(), '.env.e2e')),
+)
 
 export default defineConfig({
   testDir: './tests/e2e',
