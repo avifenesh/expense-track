@@ -56,17 +56,45 @@ export async function createTestCategory(name: string, type: TransactionType) {
  */
 export async function cleanupTestData() {
   // Delete in order to respect foreign key constraints
+  // Delete transactions by description OR by test category/account reference
   await prisma.transaction.deleteMany({
-    where: { description: { contains: 'TEST_' } },
+    where: {
+      OR: [
+        { description: { contains: 'TEST_' } },
+        { category: { name: { contains: 'TEST_' } } },
+        { account: { name: { contains: 'TEST_' } } },
+      ],
+    },
   })
   await prisma.transactionRequest.deleteMany({
-    where: { description: { contains: 'TEST_' } },
+    where: {
+      OR: [
+        { description: { contains: 'TEST_' } },
+        { category: { name: { contains: 'TEST_' } } },
+        { from: { name: { contains: 'TEST_' } } },
+        { to: { name: { contains: 'TEST_' } } },
+      ],
+    },
   })
+  // Delete budgets by notes OR by test category/account reference
   await prisma.budget.deleteMany({
-    where: { notes: { contains: 'TEST_' } },
+    where: {
+      OR: [
+        { notes: { contains: 'TEST_' } },
+        { category: { name: { contains: 'TEST_' } } },
+        { account: { name: { contains: 'TEST_' } } },
+      ],
+    },
   })
+  // Delete recurring templates by description OR by test category/account reference
   await prisma.recurringTemplate.deleteMany({
-    where: { description: { contains: 'TEST_' } },
+    where: {
+      OR: [
+        { description: { contains: 'TEST_' } },
+        { category: { name: { contains: 'TEST_' } } },
+        { account: { name: { contains: 'TEST_' } } },
+      ],
+    },
   })
   // Delete holdings by notes OR by test category/account reference
   // This ensures we catch any holdings referencing test data even if notes don't match
