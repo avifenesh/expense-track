@@ -1,10 +1,12 @@
 const { withSentryConfig } = require('@sentry/nextjs')
 
+const ALLOWED_DEV_ORIGINS = ['127.0.0.1']
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ALLOWED_DEV_ORIGINS,
   experimental: {
     serverActions: {},
-    instrumentationHook: true, // Enable instrumentation
   },
 }
 
@@ -18,6 +20,5 @@ const sentryWebpackPluginOptions = {
 }
 
 // Only apply Sentry in production builds
-module.exports = process.env.SENTRY_ENABLED === 'true'
-  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
-  : nextConfig
+module.exports =
+  process.env.SENTRY_ENABLED === 'true' ? withSentryConfig(nextConfig, sentryWebpackPluginOptions) : nextConfig

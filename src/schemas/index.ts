@@ -187,6 +187,12 @@ export const refreshHoldingPricesSchema = z.object({
 })
 
 // Balance schemas
+export const refreshExchangeRatesSchema = z.object({
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type RefreshExchangeRatesInput = z.infer<typeof refreshExchangeRatesSchema>
+
 export const setBalanceSchema = z.object({
   accountId: z.string().min(1, 'Account is required'),
   targetBalance: z.coerce.number(),

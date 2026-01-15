@@ -239,7 +239,7 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
   const handleRefreshRates = () => {
     startRates(async () => {
-      await refreshExchangeRatesAction()
+      await refreshExchangeRatesAction({ csrfToken })
       router.refresh()
     })
   }
