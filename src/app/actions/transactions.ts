@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart, getMonthKey } from '@/utils/date'
 import { successVoid, generalError } from '@/lib/action-result'
+import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, toDecimalString, requireAuthUser, ensureAccountAccess, requireCsrfToken } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
@@ -54,8 +55,15 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
         status: RequestStatus.PENDING,
       },
     })
-  } catch {
-    return generalError('Unable to create transaction request')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'createTransactionRequest',
+      userId: authUser.id,
+      input: data,
+      uniqueMessage: 'A similar transaction request already exists',
+      foreignKeyMessage: 'The selected account or category no longer exists',
+      fallbackMessage: 'Unable to create transaction request',
+    })
   }
 
   revalidatePath('/')
@@ -120,8 +128,14 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
       monthKey,
       accountId: request.toId,
     })
-  } catch {
-    return generalError('Unable to approve transaction request')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'approveTransactionRequest',
+      userId: authUser.id,
+      input: { requestId: request.id },
+      notFoundMessage: 'Transaction request not found',
+      fallbackMessage: 'Unable to approve transaction request',
+    })
   }
 
   revalidatePath('/')
@@ -160,8 +174,14 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
       where: { id: request.id },
       data: { status: RequestStatus.REJECTED },
     })
-  } catch {
-    return generalError('Unable to reject transaction request')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'rejectTransactionRequest',
+      userId: authUser.id,
+      input: { requestId: request.id },
+      notFoundMessage: 'Transaction request not found',
+      fallbackMessage: 'Unable to reject transaction request',
+    })
   }
 
   revalidatePath('/')
@@ -204,8 +224,14 @@ export async function createTransactionAction(input: TransactionInput) {
       monthKey,
       accountId: data.accountId,
     })
-  } catch {
-    return generalError('Unable to create transaction')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'createTransaction',
+      accountId: data.accountId,
+      input: data,
+      foreignKeyMessage: 'The selected account or category no longer exists',
+      fallbackMessage: 'Unable to create transaction',
+    })
   }
 
   revalidatePath('/')
@@ -278,8 +304,15 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
       monthKey: newMonthKey,
       accountId: data.accountId,
     })
-  } catch {
-    return generalError('Unable to update transaction')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'updateTransaction',
+      accountId: data.accountId,
+      input: data,
+      notFoundMessage: 'Transaction not found',
+      foreignKeyMessage: 'The selected account or category no longer exists',
+      fallbackMessage: 'Unable to update transaction',
+    })
   }
 
   revalidatePath('/')
@@ -293,20 +326,29 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  let transaction
   try {
-    const transaction = await prisma.transaction.findUnique({
+    transaction = await prisma.transaction.findUnique({
       where: { id: parsed.data.id },
     })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteTransaction.findUnique',
+      input: { id: parsed.data.id },
+      fallbackMessage: 'Unable to delete transaction',
+    })
+  }
 
-    if (!transaction) {
-      return generalError('Transaction not found')
-    }
+  if (!transaction) {
+    return generalError('Transaction not found')
+  }
 
-    const access = await ensureAccountAccess(transaction.accountId)
-    if ('error' in access) {
-      return access
-    }
+  const access = await ensureAccountAccess(transaction.accountId)
+  if ('error' in access) {
+    return access
+  }
 
+  try {
     await prisma.transaction.delete({ where: { id: parsed.data.id } })
 
     // Invalidate dashboard cache for affected month/account
@@ -315,8 +357,14 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
       monthKey,
       accountId: transaction.accountId,
     })
-  } catch {
-    return generalError('Transaction not found')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteTransaction',
+      accountId: transaction.accountId,
+      input: { id: parsed.data.id },
+      notFoundMessage: 'Transaction not found',
+      fallbackMessage: 'Unable to delete transaction',
+    })
   }
   revalidatePath('/')
   return successVoid()

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
+import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
@@ -57,8 +58,15 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
     } else {
       await prisma.recurringTemplate.create({ data: payload })
     }
-  } catch {
-    return generalError('Unable to save recurring template')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'upsertRecurringTemplate',
+      accountId: data.accountId,
+      input: data,
+      notFoundMessage: 'Recurring template not found',
+      foreignKeyMessage: 'The selected account or category no longer exists',
+      fallbackMessage: 'Unable to save recurring template',
+    })
   }
 
   revalidatePath('/')
@@ -72,23 +80,39 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  let template
   try {
-    const template = await prisma.recurringTemplate.findUnique({ where: { id: parsed.data.id } })
-    if (!template) {
-      return generalError('Recurring template not found')
-    }
+    template = await prisma.recurringTemplate.findUnique({ where: { id: parsed.data.id } })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'toggleRecurringTemplate.findUnique',
+      input: parsed.data,
+      fallbackMessage: 'Unable to update recurring template',
+    })
+  }
 
-    const access = await ensureAccountAccess(template.accountId)
-    if ('error' in access) {
-      return access
-    }
+  if (!template) {
+    return generalError('Recurring template not found')
+  }
 
+  const access = await ensureAccountAccess(template.accountId)
+  if ('error' in access) {
+    return access
+  }
+
+  try {
     await prisma.recurringTemplate.update({
       where: { id: parsed.data.id },
       data: { isActive: parsed.data.isActive },
     })
-  } catch {
-    return generalError('Recurring template not found')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'toggleRecurringTemplate',
+      accountId: template.accountId,
+      input: parsed.data,
+      notFoundMessage: 'Recurring template not found',
+      fallbackMessage: 'Unable to update recurring template',
+    })
   }
 
   revalidatePath('/')
@@ -173,8 +197,14 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
       monthKey,
       accountId,
     })
-  } catch {
-    return generalError('Unable to create recurring transactions')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'applyRecurringTemplates',
+      accountId,
+      input: { monthKey, templateIds },
+      foreignKeyMessage: 'Some templates reference accounts or categories that no longer exist',
+      fallbackMessage: 'Unable to create recurring transactions',
+    })
   }
 
   revalidatePath('/')
