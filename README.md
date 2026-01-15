@@ -36,25 +36,30 @@ The script installs dependencies (if needed), writes `.env` with local defaults,
 ### Manual steps
 
 1. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 2. **Configure environment variables**
+
    ```bash
    cp .env.example .env
    ```
+
    - Replace `DATABASE_URL` with your Postgres connection string (Neon will give you one that already includes `sslmode=require`).
    - Set a long, random `AUTH_SESSION_SECRET` (use `openssl rand -hex 32`).
    - Optionally set `NEXT_PUBLIC_APP_URL` for absolute URLs in emails/links.
 
 3. **Start a local Postgres instance (optional)**
    If you don’t already have Postgres running, the repo ships with a Docker compose file:
+
    ```bash
    npm run db:up:local
    # follow logs (Ctrl+C to detach)
    npm run db:logs:local
    ```
+
    Credentials default to `postgres:postgres` with the database `expense_track`. Adjust `.env.docker` if you need different values.
 
 4. **Prepare the database schema**
@@ -69,23 +74,29 @@ The script installs dependencies (if needed), writes `.env` with local defaults,
      ```
 
 5. **Seed core data** (creates the three base accounts and starter categories):
+
    ```bash
    npm run db:seed
    ```
 
 6. **Generate the Prisma client** (runs automatically on `npm install`, but kept for completeness):
+
    ```bash
    npm run prisma:generate
    ```
 
 7. **Start the dev server**
+
    ```bash
    npm run dev
    ```
+
    Or run everything (boot Postgres + dev server) in one go:
+
    ```bash
    npm run dev:local
    ```
+
    Visit [http://localhost:3000](http://localhost:3000) to use the dashboard.
 
 8. **Stop the local database**
@@ -121,18 +132,24 @@ Detailed, step-by-step notes live in [`docs/railway-deployment.md`](docs/railway
 
 ## Scripts Reference
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Next.js dev server |
-| `npm run build` | Production build with type-checking |
-| `npm run start` | Start the compiled production server |
-| `npm run lint` | Run ESLint |
-| `npm run prisma:generate` | Regenerate Prisma client types |
-| `npm run db:push` | Push Prisma schema to the configured database |
-| `npm run db:migrate` | Apply pending migrations in production environments |
-| `npm run db:seed` | Seed baseline accounts and categories |
+| Command                   | Description                                         |
+| ------------------------- | --------------------------------------------------- |
+| `npm run dev`             | Start the Next.js dev server                        |
+| `npm run build`           | Production build with type-checking                 |
+| `npm run start`           | Start the compiled production server                |
+| `npm run lint`            | Run ESLint                                          |
+| `npm run prisma:generate` | Regenerate Prisma client types                      |
+| `npm run db:push`         | Push Prisma schema to the configured database       |
+| `npm run db:migrate`      | Apply pending migrations in production environments |
+| `npm run db:seed`         | Seed baseline accounts and categories               |
+
+## CI Notes
+
+- CI validates migrations against `prisma/schema.prisma` with `prisma migrate diff`.
+- CI applies migrations with `prisma migrate deploy` before running tests.
 
 ## Next Steps & Ideas
+
 - Create analytics widgets (cash flow by quarter, partner split, etc.).
 - Automate monthly rollovers that duplicate all active recurring templates automatically on the 1st.
 
