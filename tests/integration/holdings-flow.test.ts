@@ -26,6 +26,19 @@ vi.mock('@/lib/auth-server', () => ({
   }),
 }))
 
+// Mock subscription to allow access
+vi.mock('@/lib/subscription', () => ({
+  hasActiveSubscription: vi.fn().mockResolvedValue(true),
+  getSubscriptionState: vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    isActive: true,
+    trialEndsAt: null,
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    daysRemaining: 30,
+    canAccessApp: true,
+  }),
+}))
+
 // Mock stock API to avoid real API calls
 vi.mock('@/lib/stock-api', () => ({
   fetchStockQuote: vi.fn().mockResolvedValue({
