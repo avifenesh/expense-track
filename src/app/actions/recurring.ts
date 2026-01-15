@@ -8,6 +8,7 @@ import { getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
   recurringTemplateSchema,
   toggleRecurringSchema,
@@ -166,6 +167,12 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
 
   try {
     await prisma.transaction.createMany({ data: transactionsToCreate })
+
+    // Invalidate dashboard cache for affected month/account
+    await invalidateDashboardCache({
+      monthKey,
+      accountId,
+    })
   } catch {
     return generalError('Unable to create recurring transactions')
   }

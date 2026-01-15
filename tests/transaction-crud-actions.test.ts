@@ -18,6 +18,11 @@ vi.mock('@/lib/csrf', () => ({
   rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
 }))
 
+vi.mock('@/lib/dashboard-cache', () => ({
+  invalidateDashboardCache: vi.fn().mockResolvedValue(undefined),
+  invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {
@@ -350,6 +355,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
+      month: new Date('2024-01-01'),
     } as any)
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
@@ -394,6 +400,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
+      month: new Date('2024-01-01'),
     } as any)
 
     vi.mocked(prisma.account.findUnique)
@@ -487,6 +494,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
+      month: new Date('2024-01-01'),
     } as any)
 
     vi.mocked(prisma.account.findUnique)
@@ -537,6 +545,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
+      month: new Date('2024-01-01'),
     } as any)
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
@@ -612,6 +621,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
+      month: new Date('2024-01-01'),
     } as any)
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
@@ -678,6 +688,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
+      month: new Date('2024-01-01'),
     } as any)
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({

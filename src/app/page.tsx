@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { DashboardPage } from '@/components/dashboard/dashboard-page'
 import { DashboardSkeleton } from '@/components/ui/skeleton'
-import { getAccounts, getDashboardData } from '@/lib/finance'
+import { getAccounts } from '@/lib/finance'
+import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import { getMonthKey } from '@/utils/date'
 import { getSession, updateSessionAccount } from '@/lib/auth-server'
 import { AUTH_USERS } from '@/lib/auth'
@@ -26,7 +27,7 @@ async function DashboardLoader({
   preferredCurrency?: import('@prisma/client').Currency
   allAccounts: Awaited<ReturnType<typeof getAccounts>>
 }) {
-  const data = await getDashboardData({
+  const data = await getCachedDashboardData({
     monthKey,
     accountId,
     preferredCurrency,
