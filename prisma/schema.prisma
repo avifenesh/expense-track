@@ -41,6 +41,7 @@ model Subscription {
 
   @@index([status])
   @@index([trialEndsAt])
+  @@index([currentPeriodEnd])
 }
 
 model Account {
