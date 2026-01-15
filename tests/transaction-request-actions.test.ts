@@ -81,7 +81,7 @@ describe('createTransactionRequestAction', () => {
     vi.mocked(requireSession).mockRejectedValue(new Error('Unauthorized'))
 
     const result = await createTransactionRequestAction({
-      toId: 'partner-id',
+      toId: 'recipient-id',
       categoryId: 'cat-id',
       amount: 50,
       currency: Currency.USD,

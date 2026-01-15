@@ -173,8 +173,8 @@ describe('buildFinancialContext', () => {
       {
         id: 'a2',
         userId: 'test-user',
-        name: 'Partner',
-        type: AccountType.PARTNER,
+        name: 'Secondary',
+        type: AccountType.OTHER,
         description: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-01-01'),
@@ -222,7 +222,7 @@ describe('buildFinancialContext', () => {
       {
         id: 'h1',
         accountId: 'a2',
-        accountName: 'Partner',
+        accountName: 'Secondary',
         symbol: 'AAPL',
         quantity: 10,
         averageCost: 150,
@@ -525,7 +525,7 @@ describe('buildFinancialContext', () => {
       {
         id: 'h1',
         accountId: 'a2',
-        accountName: 'Partner',
+        accountName: 'Secondary',
         symbol: 'UNKNOWN',
         quantity: 5,
         averageCost: 100,

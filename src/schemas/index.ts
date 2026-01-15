@@ -29,7 +29,7 @@ export const deleteTransactionSchema = z.object({
 })
 
 export const transactionRequestSchema = z.object({
-  toId: z.string().min(1, 'Target partner account is required'),
+  toId: z.string().min(1, 'Target account is required'),
   categoryId: z.string().min(1, 'Category is required'),
   amount: z.coerce.number().min(0.01, 'Amount must be positive'),
   currency: z.nativeEnum(Currency).default(Currency.USD),

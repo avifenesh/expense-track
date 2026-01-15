@@ -5,7 +5,7 @@ import { getAccounts } from '@/lib/finance'
 import { getSession, getDbUserAsAuthUser } from '@/lib/auth-server'
 
 export const metadata: Metadata = {
-  title: 'Sign in · Balance Beacon',
+  title: 'Sign in - Balance Beacon',
   description: 'Authenticate with the steward credentials and focus on the account that needs your attention.',
 }
 
@@ -60,7 +60,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Plan confidently, one account at a time
             </h1>
             <p className="max-w-xl text-base text-slate-200/80">
-              Sign in with your credentials to manage your personal finances and track your expenses.
+              Sign in with your personal credentials to focus on your household accounts and shared plans without
+              overlap.
             </p>
           </div>
 

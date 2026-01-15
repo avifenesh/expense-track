@@ -100,10 +100,10 @@ async function main() {
     {
       userId: createdUser2.id,
       name: 'Serena',
-      type: AccountType.PARTNER,
+      type: AccountType.SELF,
       preferredCurrency: Currency.EUR,
       color: '#f472b6',
-      icon: 'Heart',
+      icon: 'User',
     },
   ]
 
@@ -122,8 +122,7 @@ async function main() {
     ),
   )
 
-  // Categories are linked to user1 (Avi) as the default owner
-  // In a multi-tenant SaaS, each user would have their own categories
+  // Categories are linked to user1 (Avi) as the default owner for a simple seed.
   const categoryData = [
     { name: 'Pegasus (Dog)', type: TransactionType.EXPENSE, color: '#fb7185' },
     { name: 'House - New Furnitures', type: TransactionType.EXPENSE, color: '#c084fc' },

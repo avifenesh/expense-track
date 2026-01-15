@@ -90,7 +90,7 @@ export function LoginCard() {
         <CardDescription className="text-slate-400">
           {isRecovery
             ? 'Enter your account email to receive a recovery link and instructions.'
-            : 'Sign in with your personal email to manage your finances and synced partner account.'}
+            : 'Sign in with your personal email to manage your finances and household accounts.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

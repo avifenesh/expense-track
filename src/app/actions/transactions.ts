@@ -6,7 +6,14 @@ import { prisma } from '@/lib/prisma'
 import { getMonthStart, getMonthKey } from '@/utils/date'
 import { successVoid, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { parseInput, toDecimalString, requireAuthUser, ensureAccountAccess, requireCsrfToken } from './shared'
+import {
+  parseInput,
+  toDecimalString,
+  requireAuthUser,
+  ensureAccountAccess,
+  requireCsrfToken,
+  isDatabaseAuthUser,
+} from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
   transactionSchema,
@@ -32,9 +39,11 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
   if ('error' in auth) return auth
   const { authUser } = auth
 
+  const isDbUser = await isDatabaseAuthUser(authUser)
+
   // Determine current user's account ID (the 'from' account)
   const fromAccount = await prisma.account.findFirst({
-    where: { name: { in: authUser.accountNames }, type: 'SELF' },
+    where: isDbUser ? { userId: authUser.id, type: 'SELF' } : { name: { in: authUser.accountNames }, type: 'SELF' },
   })
 
   if (!fromAccount) {

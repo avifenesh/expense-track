@@ -334,8 +334,8 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
             <div className="space-y-2">
               <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Balance Beacon</h1>
               <p className="text-sm leading-relaxed text-slate-200/80">
-                Track personal, partner, and shared spending with insights that highlight what changed and where to
-                focus your next dollar.
+                Track personal spending and shared plans with insights that highlight what changed and where to focus
+                your next dollar.
               </p>
             </div>
             {netStat && (

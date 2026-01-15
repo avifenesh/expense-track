@@ -60,7 +60,7 @@ export function RequestList({ requests, preferredCurrency: _preferredCurrency }:
           <div className="rounded-full bg-sky-500/20 p-2">
             <Bell className="h-4 w-4 text-sky-200" />
           </div>
-          <CardTitle className="text-lg font-semibold text-white">Partner requests</CardTitle>
+          <CardTitle className="text-lg font-semibold text-white">Shared requests</CardTitle>
         </div>
         <span className="rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-bold text-sky-100">
           {requests.length} pending

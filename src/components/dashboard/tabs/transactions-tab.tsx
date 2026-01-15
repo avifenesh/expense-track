@@ -2,14 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { TransactionType, Currency, AccountType } from '@prisma/client'
+import { TransactionType, Currency } from '@prisma/client'
 import { Download, CreditCard } from 'lucide-react'
-import {
-  createTransactionAction,
-  createTransactionRequestAction,
-  updateTransactionAction,
-  deleteTransactionAction,
-} from '@/app/actions'
+import { createTransactionAction, updateTransactionAction, deleteTransactionAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -89,7 +84,6 @@ export function TransactionsTab({
     date: string
     description: string
     isRecurring: boolean
-    isRequest: boolean
   }>(() => {
     const initialLoggableAccountId =
       transactionLoggableAccounts.find((account) => account.id === activeAccount)?.id ??
@@ -105,7 +99,6 @@ export function TransactionsTab({
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
-      isRequest: false,
     }
   })
 
@@ -207,7 +200,6 @@ export function TransactionsTab({
       date: `${monthKey}-01`,
       description: '',
       isRecurring: false,
-      isRequest: false,
     })
     setEditingTransaction(null)
     setFormErrors(null)
@@ -243,7 +235,6 @@ export function TransactionsTab({
       date: isoDate,
       description: transaction.description ?? '',
       isRecurring: transaction.isRecurring,
-      isRequest: false,
     })
   }, [])
 
@@ -279,38 +270,20 @@ export function TransactionsTab({
     const description = transactionFormState.description.trim()
 
     startTransaction(async () => {
-      let result
-      if (transactionFormState.isRequest && !editingTransaction) {
-        const partnerAccount = accounts.find((acc) => acc.type === AccountType.PARTNER)
-        if (!partnerAccount) {
-          setFormErrors({ general: ['Partner account not found.'] })
-          return
-        }
-        result = await createTransactionRequestAction({
-          toId: partnerAccount.id,
-          categoryId: transactionFormState.categoryId,
-          amount: parsedAmount,
-          currency: transactionFormState.currency,
-          date: dateInput!,
-          description: description.length > 0 ? description : undefined,
-          csrfToken,
-        })
-      } else {
-        const payload = {
-          accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
-          categoryId: transactionFormState.categoryId,
-          type: transactionFormState.type,
-          amount: parsedAmount,
-          currency: transactionFormState.currency,
-          date: dateInput!,
-          description: description.length > 0 ? description : undefined,
-          isRecurring: transactionFormState.isRecurring,
-          csrfToken,
-        }
-        result = editingTransaction
-          ? await updateTransactionAction({ id: editingTransaction.id, ...payload })
-          : await createTransactionAction(payload)
+      const payload = {
+        accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
+        categoryId: transactionFormState.categoryId,
+        type: transactionFormState.type,
+        amount: parsedAmount,
+        currency: transactionFormState.currency,
+        date: dateInput!,
+        description: description.length > 0 ? description : undefined,
+        isRecurring: transactionFormState.isRecurring,
+        csrfToken,
       }
+      const result = editingTransaction
+        ? await updateTransactionAction({ id: editingTransaction.id, ...payload })
+        : await createTransactionAction(payload)
 
       if ('error' in result) {
         const serverErrors = result.error as FormErrors
@@ -323,13 +296,7 @@ export function TransactionsTab({
         return
       }
 
-      toast.success(
-        transactionFormState.isRequest
-          ? 'Request sent to partner.'
-          : editingTransaction
-            ? 'Transaction updated.'
-            : 'Transaction saved.',
-      )
+      toast.success(editingTransaction ? 'Transaction updated.' : 'Transaction saved.')
       resetTransactionForm()
       router.refresh()
     })
@@ -550,23 +517,6 @@ export function TransactionsTab({
                   />
                   Recurring
                 </label>
-                {!isEditingTransaction && (
-                  <label className="flex items-center gap-2 text-xs text-slate-300">
-                    <input
-                      type="checkbox"
-                      name="isRequest"
-                      checked={transactionFormState.isRequest}
-                      onChange={(event) =>
-                        setTransactionFormState((prev) => ({
-                          ...prev,
-                          isRequest: event.target.checked,
-                        }))
-                      }
-                      className="size-4 rounded border-slate-600 bg-slate-700 text-sky-500 focus:ring-sky-500"
-                    />
-                    Request from partner
-                  </label>
-                )}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button type="submit" loading={isPendingTransaction} className="flex-1">

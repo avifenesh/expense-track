@@ -24,10 +24,10 @@ const mockAccounts = [
     updatedAt: new Date(),
   },
   {
-    id: 'acc-partner',
+    id: 'acc-secondary',
     userId: 'test-user',
-    name: 'Partner Account',
-    type: AccountType.PARTNER,
+    name: 'Secondary Account',
+    type: AccountType.OTHER,
     preferredCurrency: Currency.EUR,
     color: null,
     icon: null,
@@ -88,8 +88,8 @@ const mockBudgets = [
   },
   {
     budgetId: 'budget-2',
-    accountId: 'acc-partner',
-    accountName: 'Partner Account',
+    accountId: 'acc-secondary',
+    accountName: 'Secondary Account',
     categoryId: 'cat-salary',
     categoryName: 'Salary',
     categoryType: TransactionType.INCOME,
@@ -135,7 +135,7 @@ const mockTransactions = [
   },
   {
     id: 'tx-2',
-    accountId: 'acc-partner',
+    accountId: 'acc-secondary',
     categoryId: 'cat-salary',
     type: TransactionType.INCOME,
     amount: 5000,
@@ -172,14 +172,14 @@ const mockRecurringTemplates = [
   },
   {
     id: 'rec-2',
-    accountId: 'acc-partner',
+    accountId: 'acc-secondary',
     categoryId: 'cat-salary',
     type: TransactionType.INCOME,
     amount: 5000,
     description: 'Monthly salary',
     dayOfMonth: 1,
     isActive: true,
-    accountName: 'Partner Account',
+    accountName: 'Secondary Account',
     categoryName: 'Salary',
     startMonthKey: '2023-06',
     endMonthKey: null,
@@ -299,11 +299,11 @@ describe('RecurringTab filtering logic', () => {
 
   it('filters by account', () => {
     const filtered = filterRecurringTemplates(mockRecurringTemplates, {
-      accountId: 'acc-partner',
+      accountId: 'acc-secondary',
       includeInactive: false,
     })
     expect(filtered).toHaveLength(1)
-    expect(filtered[0].accountName).toBe('Partner Account')
+    expect(filtered[0].accountName).toBe('Secondary Account')
   })
 })
 

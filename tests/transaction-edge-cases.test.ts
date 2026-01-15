@@ -267,7 +267,7 @@ describe('Transaction Edge Cases', () => {
 
   describe('TransactionRequest Edge Cases', () => {
     const requestBase = {
-      toId: 'partner-account',
+      toId: 'recipient-account',
       categoryId: 'cat-456',
       currency: Currency.USD,
       date: new Date('2024-06-15'),

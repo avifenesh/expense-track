@@ -55,7 +55,7 @@ export function OverviewTab({
 
   return (
     <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="space-y-6">
-      {/* Partner requests shown prominently at top */}
+      {/* Shared requests shown prominently at top */}
       {transactionRequests.length > 0 && (
         <RequestList requests={transactionRequests} preferredCurrency={preferredCurrency} />
       )}
@@ -120,7 +120,8 @@ export function OverviewTab({
                 </span>
               </div>
               <p className="mt-2 text-xs text-slate-300">
-                {formatMonthLabel(comparison.previousMonth)} net: {formatCurrency(comparison.previousNet, preferredCurrency)}
+                {formatMonthLabel(comparison.previousMonth)} net:{' '}
+                {formatCurrency(comparison.previousNet, preferredCurrency)}
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
