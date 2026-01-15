@@ -145,7 +145,7 @@ describe('registerAction', () => {
   it('should reject password without uppercase letter', async () => {
     const result = (await registerAction({
       email: 'test@example.com',
-      password: 'password123',
+      password: 'password123', // pragma: allowlist secret
       displayName: 'Test User',
     })) as ActionResult
 
