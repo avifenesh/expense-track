@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { serverLogger } from '@/lib/server-logger'
 
 const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10)
@@ -72,7 +73,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ success: b
     })
 
     return { success: true, messageId: info.messageId }
-  } catch {
+  } catch (error) {
+    serverLogger.error(
+      'Failed to send email',
+      { action: 'sendEmail', input: { to: options.to, subject: options.subject } },
+      error,
+    )
     return { success: false }
   }
 }

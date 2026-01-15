@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { registerAction, verifyEmailAction } from '@/app/actions'
+import { registerAction, verifyEmailAction, resendVerificationEmailAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import { Currency, User } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -66,7 +66,8 @@ describe('registerAction', () => {
     expect(result).toHaveProperty('success', true)
     expect(result).toHaveProperty('data')
     if ('data' in result) {
-      expect(result.data.message).toContain('check your email')
+      // Generic message to prevent email enumeration
+      expect(result.data.message).toContain('verification email')
     }
     expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -104,7 +105,7 @@ describe('registerAction', () => {
     )
   })
 
-  it('should reject registration with existing email', async () => {
+  it('should return generic success for existing email (prevents enumeration)', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(
       createMockUser({
         id: 'existing-user',
@@ -122,10 +123,13 @@ describe('registerAction', () => {
       displayName: 'New User',
     })) as ActionResult
 
-    expect(result).toHaveProperty('error')
-    if ('error' in result) {
-      expect(result.error.email?.[0]).toContain('already registered')
+    // Should return generic success to prevent email enumeration attacks
+    expect(result).toHaveProperty('success', true)
+    if ('data' in result) {
+      expect(result.data.message).toContain('verification email')
     }
+    // Should NOT call prisma.user.create since email exists
+    expect(prisma.user.create).not.toHaveBeenCalled()
   })
 
   it('should reject weak password - too short', async () => {
@@ -440,5 +444,88 @@ describe('verifyCredentials with database users', () => {
     })
 
     expect(result.valid).toBe(false)
+  })
+})
+
+describe('resendVerificationEmailAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return generic success for non-existent email (prevents enumeration)', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+    const result = (await resendVerificationEmailAction({
+      email: 'nonexistent@example.com',
+    })) as ActionResult
+
+    expect(result).toHaveProperty('success', true)
+    if ('data' in result) {
+      expect(result.data.message).toContain('unverified account')
+    }
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('should return generic success for already verified email', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'verified-user',
+        email: 'verified@example.com',
+        emailVerified: true,
+        emailVerificationToken: null,
+      }),
+    )
+
+    const result = (await resendVerificationEmailAction({
+      email: 'verified@example.com',
+    })) as ActionResult
+
+    expect(result).toHaveProperty('success', true)
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('should resend verification email for unverified user', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'unverified-user',
+        email: 'unverified@example.com',
+        emailVerified: false,
+        emailVerificationToken: 'old-token',
+        emailVerificationExpires: new Date(Date.now() - 1000),
+      }),
+    )
+    vi.mocked(prisma.user.update).mockResolvedValue(
+      createMockUser({
+        id: 'unverified-user',
+        email: 'unverified@example.com',
+        emailVerified: false,
+      }),
+    )
+
+    const result = (await resendVerificationEmailAction({
+      email: 'unverified@example.com',
+    })) as ActionResult
+
+    expect(result).toHaveProperty('success', true)
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'unverified-user' },
+        data: expect.objectContaining({
+          emailVerificationToken: expect.any(String),
+          emailVerificationExpires: expect.any(Date),
+        }),
+      }),
+    )
+  })
+
+  it('should reject invalid email format', async () => {
+    const result = (await resendVerificationEmailAction({
+      email: 'not-an-email',
+    })) as ActionResult
+
+    expect(result).toHaveProperty('error')
+    if ('error' in result) {
+      expect(result.error.email).toBeDefined()
+    }
   })
 })

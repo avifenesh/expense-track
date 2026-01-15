@@ -135,6 +135,12 @@ export const verifyEmailSchema = z.object({
 
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
 
+export const resendVerificationSchema = z.object({
+  email: z.string().email('Enter a valid email address'),
+})
+
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>
+
 export const recoverySchema = z.object({
   email: z.string().email('Provide a valid email address'),
 })

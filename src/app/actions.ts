@@ -33,6 +33,7 @@ export {
   persistActiveAccountAction,
   registerAction,
   verifyEmailAction,
+  resendVerificationEmailAction,
 } from './actions/auth'
 
 // Holdings actions
