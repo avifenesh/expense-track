@@ -117,12 +117,27 @@ export async function getCachedDashboardData(params: {
  * Falls back to broad invalidation if context is unclear
  */
 export async function invalidateDashboardCache(params: { monthKey?: string; accountId?: string }): Promise<void> {
+  // Clear matching in-flight requests to prevent race conditions
+  Array.from(inFlightRequests.keys()).forEach((key) => {
+    const [, monthKey, accountId] = key.split(':')
+    const matches =
+      (!params.monthKey || monthKey === params.monthKey) &&
+      (!params.accountId || accountId === params.accountId || accountId === 'ALL')
+    if (matches) {
+      inFlightRequests.delete(key)
+    }
+  })
+
   if (params.monthKey && params.accountId) {
     // Most precise: invalidate specific month+account combinations
+    // Also invalidate "ALL accounts" view since changes affect aggregate totals
     await prisma.dashboardCache.deleteMany({
       where: {
         monthKey: params.monthKey,
-        accountId: params.accountId,
+        OR: [
+          { accountId: params.accountId },
+          { accountId: null }, // "ALL accounts" view
+        ],
       },
     })
   } else if (params.monthKey) {
@@ -146,6 +161,7 @@ export async function invalidateDashboardCache(params: { monthKey?: string; acco
  * Use when broad invalidation is needed (e.g., holdings updates)
  */
 export async function invalidateAllDashboardCache(): Promise<void> {
+  inFlightRequests.clear()
   await prisma.dashboardCache.deleteMany({})
 }
 
