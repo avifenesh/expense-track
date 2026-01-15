@@ -14,7 +14,7 @@ type LoginPageProps = {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  'no-accounts': 'No accounts were found for this login. Please contact support.',
+  'no-accounts': 'No accounts were found for this login. Please contact your administrator to have an account created.',
   'account-access': 'You tried to open an account that is not assigned to your login. Pick one of your accounts.',
 }
 
