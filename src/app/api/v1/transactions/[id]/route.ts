@@ -9,8 +9,10 @@ import {
   notFoundError,
   serverError,
   successResponse,
+  rateLimitError,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -22,6 +24,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
 
   // 2. Parse and validate input
   let body
@@ -85,6 +94,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   } catch (error) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
+
+  // 1.5 Rate limit check
+  const rateLimitCheck = checkRateLimit(user.userId)
+  if (!rateLimitCheck.allowed) {
+    return rateLimitError(rateLimitCheck.resetAt)
+  }
+  incrementRateLimit(user.userId)
 
   // 2. Check existing transaction
   const existing = await getTransactionById(id)

@@ -1,8 +1,16 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
 import { rejectTransactionRequest, getTransactionRequestById } from '@/lib/services/transaction-service'
-import { authError, forbiddenError, notFoundError, serverError, successResponse } from '@/lib/api-helpers'
+import {
+  authError,
+  forbiddenError,
+  notFoundError,
+  serverError,
+  successResponse,
+  rateLimitError,
+} from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -14,6 +22,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
 
   // 2. Check request exists
   const transactionRequest = await getTransactionRequestById(id)
