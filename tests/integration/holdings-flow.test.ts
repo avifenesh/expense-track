@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { prisma } from '@/lib/prisma'
 import { createHoldingAction, updateHoldingAction, deleteHoldingAction } from '@/app/actions/holdings'
 import { Currency, TransactionType } from '@prisma/client'
-import { createTestAccount, cleanupTestData, MOCK_CSRF_TOKEN } from './helpers'
+import { createTestAccount, cleanupTestData, getTestUser, MOCK_CSRF_TOKEN } from './helpers'
 
 // Mock Next.js cache revalidation
 vi.mock('next/cache', () => ({
@@ -40,15 +40,21 @@ describe('Holdings Flow Integration', () => {
   let testCategoryId: string
 
   beforeEach(async () => {
+    // Get test user for userId foreign keys
+    const testUser = await getTestUser()
+
     // Setup test account
     const account = await createTestAccount('TEST_Holdings_Account')
     testAccountId = account.id
 
     // Create a holding category (holdings use EXPENSE type with isHolding flag)
     const category = await prisma.category.upsert({
-      where: { name_type: { name: 'TEST_Holdings_Category', type: TransactionType.EXPENSE } },
+      where: {
+        userId_name_type: { userId: testUser.id, name: 'TEST_Holdings_Category', type: TransactionType.EXPENSE },
+      },
       update: {},
       create: {
+        userId: testUser.id,
         name: 'TEST_Holdings_Category',
         type: TransactionType.EXPENSE,
         isHolding: true,

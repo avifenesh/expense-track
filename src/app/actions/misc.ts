@@ -45,17 +45,19 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
   if ('error' in access) {
     return access
   }
+  const { authUser } = access
 
   const monthStart = getMonthStartFromKey(monthKey)
 
-  // Find or create "Balance Adjustment" category
+  // Find or create "Balance Adjustment" category for this user
   let adjustmentCategory = await prisma.category.findFirst({
-    where: { name: 'Balance Adjustment' },
+    where: { name: 'Balance Adjustment', userId: authUser.id },
   })
 
   if (!adjustmentCategory) {
     adjustmentCategory = await prisma.category.create({
       data: {
+        userId: authUser.id,
         name: 'Balance Adjustment',
         type: TransactionType.INCOME,
       },

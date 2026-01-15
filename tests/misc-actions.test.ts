@@ -351,6 +351,7 @@ describe('setBalanceAction', () => {
     expect('success' in result && result.success).toBe(true)
     expect(prisma.category.create).toHaveBeenCalledWith({
       data: {
+        userId: 'avi',
         name: 'Balance Adjustment',
         type: TransactionType.INCOME,
       },

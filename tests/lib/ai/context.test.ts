@@ -160,6 +160,7 @@ describe('buildFinancialContext', () => {
     accounts: [
       {
         id: 'a1',
+        userId: 'test-user',
         name: 'Joint',
         type: AccountType.SELF,
         description: null,
@@ -171,6 +172,7 @@ describe('buildFinancialContext', () => {
       },
       {
         id: 'a2',
+        userId: 'test-user',
         name: 'Partner',
         type: AccountType.PARTNER,
         description: null,
@@ -184,6 +186,7 @@ describe('buildFinancialContext', () => {
     categories: [
       {
         id: 'c1',
+        userId: 'test-user',
         name: 'Rent',
         type: TransactionType.EXPENSE,
         isArchived: false,
@@ -194,6 +197,7 @@ describe('buildFinancialContext', () => {
       },
       {
         id: 'c2',
+        userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
         isArchived: false,
@@ -204,6 +208,7 @@ describe('buildFinancialContext', () => {
       },
       {
         id: 'c3',
+        userId: 'test-user',
         name: 'Salary',
         type: TransactionType.INCOME,
         isArchived: false,
@@ -440,6 +445,7 @@ describe('buildFinancialContext', () => {
     const categories = [
       {
         id: 'c1',
+        userId: 'test-user',
         name: 'Active Income',
         type: TransactionType.INCOME,
         isArchived: false,
@@ -450,6 +456,7 @@ describe('buildFinancialContext', () => {
       },
       {
         id: 'c2',
+        userId: 'test-user',
         name: 'Archived Income',
         type: TransactionType.INCOME,
         isArchived: true,
@@ -460,6 +467,7 @@ describe('buildFinancialContext', () => {
       },
       {
         id: 'c3',
+        userId: 'test-user',
         name: 'Active Expense',
         type: TransactionType.EXPENSE,
         isArchived: false,
@@ -470,6 +478,7 @@ describe('buildFinancialContext', () => {
       },
       {
         id: 'c4',
+        userId: 'test-user',
         name: 'Archived Expense',
         type: TransactionType.EXPENSE,
         isArchived: true,

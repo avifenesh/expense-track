@@ -108,6 +108,7 @@ import type { Account } from '@prisma/client'
 function mockAccount(partial: Partial<Account>): Account {
   return {
     id: partial.id ?? 'test-id',
+    userId: partial.userId ?? 'test-user',
     name: partial.name ?? 'TestAccount',
     type: partial.type ?? 'SELF',
     preferredCurrency: partial.preferredCurrency ?? null,
