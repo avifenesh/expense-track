@@ -14,7 +14,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
-  getAuthUserFromSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -97,9 +97,9 @@ describe('createTransactionRequestAction', () => {
   })
 
   it('successfully creates a request', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'avi@example.com',
       id: 'avi',
       displayName: 'Avi',
@@ -144,9 +144,9 @@ describe('approveTransactionRequestAction', () => {
   })
 
   it('fails if the request is not found', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'serena@example.com',
       id: 'serena',
       displayName: 'Serena',
@@ -164,9 +164,9 @@ describe('approveTransactionRequestAction', () => {
   })
 
   it('successfully approves a request and creates a transaction', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'serena@example.com',
       id: 'serena',
       displayName: 'Serena',
@@ -214,9 +214,9 @@ describe('rejectTransactionRequestAction', () => {
   })
 
   it('successfully rejects a request', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'serena@example.com',
       id: 'serena',
       displayName: 'Serena',

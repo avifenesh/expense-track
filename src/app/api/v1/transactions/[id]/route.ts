@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const existingAccount = await prisma.account.findUnique({
     where: { id: existing.accountId },
   })
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
 
   if (!existingAccount || !authUser.accountNames.includes(existingAccount.name)) {
     return forbiddenError('You do not have access to this transaction')
@@ -112,7 +112,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const account = await prisma.account.findUnique({
     where: { id: existing.accountId },
   })
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
 
   if (!account || !authUser.accountNames.includes(account.name)) {
     return forbiddenError('You do not have access to this transaction')

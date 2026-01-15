@@ -2,7 +2,8 @@ import 'server-only'
 
 import { NextRequest } from 'next/server'
 import { verifyAccessToken } from './jwt'
-import { getAuthUsers, type AuthUser } from './auth'
+import { prisma } from './prisma'
+import type { AuthUser } from './auth'
 
 export interface AuthenticatedUser {
   userId: string
@@ -38,16 +39,26 @@ export function requireJwtAuth(request: NextRequest): AuthenticatedUser {
 }
 
 /**
- * Get full auth user info from userId
+ * Get full auth user info from userId by querying the database
  * @throws Error if user not found
  */
-export function getUserAuthInfo(userId: string): AuthUser {
-  const authUsers = getAuthUsers()
-  const authUser = authUsers.find((u) => u.id === userId)
+export async function getUserAuthInfo(userId: string): Promise<AuthUser> {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { accounts: { orderBy: { name: 'asc' } } },
+  })
 
-  if (!authUser) {
+  if (!dbUser || dbUser.accounts.length === 0) {
     throw new Error('User not found')
   }
 
-  return authUser
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    displayName: dbUser.displayName,
+    passwordHash: dbUser.passwordHash,
+    accountNames: dbUser.accounts.map((a) => a.name),
+    defaultAccountName: dbUser.accounts[0].name,
+    preferredCurrency: dbUser.preferredCurrency,
+  }
 }

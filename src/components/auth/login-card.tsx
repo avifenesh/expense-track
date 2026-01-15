@@ -67,7 +67,7 @@ export function LoginCard() {
         return
       }
       form.reset()
-      setStatusMessage(result.message ?? 'Reset instructions were sent to your inbox.')
+      setStatusMessage(result.data.message ?? 'Reset instructions were sent to your inbox.')
     })
   }
 

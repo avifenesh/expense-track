@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { successVoid, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { requireSession, getAuthUserFromSession } from '@/lib/auth-server'
+import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
 import { parseInput, requireCsrfToken } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
 
@@ -23,7 +23,7 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
     return generalError('Your session expired. Please sign in again.')
   }
 
-  const authUser = getAuthUserFromSession(session)
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
   if (!authUser) {
     return generalError('User record not found')
   }
@@ -65,7 +65,7 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
     return generalError('Your session expired. Please sign in again.')
   }
 
-  const authUser = getAuthUserFromSession(session)
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
   if (!authUser) {
     return generalError('User record not found')
   }

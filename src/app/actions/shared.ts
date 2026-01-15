@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import type { AuthUser } from '@/lib/auth'
-import { getAuthUserFromSession, getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
+import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
 import { validateCsrfToken } from '@/lib/csrf'
 
 // Currency precision: 2 decimal places (cents), scale factor 100
@@ -47,13 +47,8 @@ export async function requireAuthUser(): Promise<AuthUserResult> {
     return { error: { general: ['Your session expired. Please sign in again.'] } }
   }
 
-  // First check legacy AUTH_USERS
-  let authUser = getAuthUserFromSession(session)
-
-  // If not found, check database users
-  if (!authUser) {
-    authUser = await getDbUserAsAuthUser(session.userEmail)
-  }
+  // Get user from database
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
 
   if (!authUser) {
     return { error: { general: ['We could not resolve your user profile. Please sign in again.'] } }

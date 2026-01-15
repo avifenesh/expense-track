@@ -1,9 +1,8 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { LoginCard } from '@/components/auth/login-card'
-import { AUTH_USERS } from '@/lib/auth'
 import { getAccounts } from '@/lib/finance'
-import { getSession } from '@/lib/auth-server'
+import { getSession, getDbUserAsAuthUser } from '@/lib/auth-server'
 
 export const metadata: Metadata = {
   title: 'Sign in - Balance Beacon',
@@ -15,9 +14,8 @@ type LoginPageProps = {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  'no-accounts': 'No accounts were found for this login. Seed a user account, then sign in again.',
-  'account-access':
-    'You tried to open an account that is not assigned to your login. Pick one of your personal accounts.',
+  'no-accounts': 'No accounts were found for this login. Please contact support.',
+  'account-access': 'You tried to open an account that is not assigned to your login. Pick one of your accounts.',
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -30,7 +28,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const accounts = await getAccounts()
 
   if (session) {
-    const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === session.userEmail.toLowerCase())
+    const authUser = await getDbUserAsAuthUser(session.userEmail)
     if (authUser) {
       const allowedAccounts = accounts.filter((account) => authUser.accountNames.includes(account.name))
       if (allowedAccounts.length > 0) {
@@ -75,8 +73,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             )}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
               <p>
-                Keep your personal password manager in sync after any reset. A confirmation email outlines the process
-                and reiterates the canonical steps so your household stays aligned.
+                Keep your personal password manager in sync after any reset. A confirmation email outlines the process.
               </p>
             </div>
           </dl>

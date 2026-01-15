@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const toAccount = await prisma.account.findUnique({
     where: { id: transactionRequest.toId },
   })
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
 
   if (!toAccount || !authUser.accountNames.includes(toAccount.name)) {
     return forbiddenError('You do not have access to this transaction request')

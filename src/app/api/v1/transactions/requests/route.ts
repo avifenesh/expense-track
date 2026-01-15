@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
 
   // 3. Get user's primary account (the 'from' account)
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
   const fromAccount = await getUserPrimaryAccount(authUser.accountNames)
 
   if (!fromAccount) {

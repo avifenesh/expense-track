@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Currency } from '@prisma/client'
 import { getHoldingsWithPrices, getAccounts } from '@/lib/finance'
-import { requireSession, getAuthUserFromSession } from '@/lib/auth-server'
+import { requireSession, getDbUserAsAuthUser } from '@/lib/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,23 +17,24 @@ export async function GET(request: Request) {
 
   try {
     const session = await requireSession()
-    const authUser = getAuthUserFromSession(session)
+    const authUser = await getDbUserAsAuthUser(session.userEmail)
 
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const accounts = await getAccounts()
-    const allowedAccountNames = new Set(authUser.accountNames.map((name) => name.toLowerCase()))
+    const allowedAccountNames = new Set(authUser.accountNames.map((name: string) => name.toLowerCase()))
     const allowedAccounts = accounts.filter((account) => allowedAccountNames.has(account.name.toLowerCase()))
 
     if (allowedAccounts.length === 0) {
       return NextResponse.json({ error: 'No accessible accounts' }, { status: 404 })
     }
 
-    const resolvedAccountId = accountIdParam && allowedAccounts.some((account) => account.id === accountIdParam)
-      ? accountIdParam
-      : allowedAccounts[0].id
+    const resolvedAccountId =
+      accountIdParam && allowedAccounts.some((account) => account.id === accountIdParam)
+        ? accountIdParam
+        : allowedAccounts[0].id
 
     const preferredCurrencyRaw = preferredCurrencyParam?.toUpperCase() ?? null
     const preferredCurrency = isCurrency(preferredCurrencyRaw)
