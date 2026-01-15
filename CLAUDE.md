@@ -28,14 +28,12 @@ Stack: Next.js 16 App Router + Prisma + PostgreSQL + TypeScript.
 
 See `TRANSFORMATION_PLAN.md` for details. Issues tracked in GitHub Projects.
 
-## Legacy 2-User Architecture
+## Legacy 2-User Architecture (Being Removed)
 
-Originally built for 2 users. Some code still reflects this:
+Historical context - originally built for 2 users. Active refactoring in Sprint 2:
 
-- **Hardcoded auth**: `AUTH_USER1_*` and `AUTH_USER2_*` env vars in `src/lib/auth.ts`
-- **Partial userId isolation**: Schema has User model with userId on Account/Category, but server actions don't fully enforce user filtering yet
-
-Being refactored in Sprint 2 for proper multi-tenant architecture.
+- **Hardcoded auth**: `AUTH_USER1_*` and `AUTH_USER2_*` env vars in `src/lib/auth.ts` → being replaced
+- **Partial userId isolation**: Schema has User model, server actions being updated to enforce filtering
 
 ## Commands
 
@@ -52,9 +50,12 @@ npm run build            # Build production bundle
 ## Structure
 
 - `src/app/actions/` - Server actions by domain (transactions, budgets, recurring, holdings, categories, auth, misc)
+- `src/app/api/v1/` - REST API endpoints (auth, transactions, budgets, holdings, categories, recurring)
+- `src/components/` - React components (dashboard, forms, UI primitives)
 - `src/schemas/` - Zod validation schemas
 - `src/lib/finance.ts` - Financial logic, budget tracking
 - `src/lib/dashboard-ux.ts` - Dashboard data aggregation
+- `src/lib/server-logger.ts` - Logging utility (use instead of console.\*)
 - `src/utils/date.ts` - Use `getMonthStart()` for month normalization
 - `prisma/schema.prisma` - Models: User, Account, Category, Transaction, Budget, RecurringTemplate, Holding
 - `tests/` - Vitest test files
