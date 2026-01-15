@@ -31,18 +31,16 @@ export interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; messageId?: string }> {
-  // Development mode: log to console if SMTP not configured
+  // Development mode: output to stderr if SMTP not configured
   if (!transporter) {
-    // eslint-disable-next-line no-console
-    console.log('\n========== EMAIL (dev mode - SMTP not configured) ==========')
-    // eslint-disable-next-line no-console
-    console.log(`To: ${options.to}`)
-    // eslint-disable-next-line no-console
-    console.log(`Subject: ${options.subject}`)
-    // eslint-disable-next-line no-console
-    console.log(`Text: ${options.text}`)
-    // eslint-disable-next-line no-console
-    console.log('=============================================================\n')
+    const output = [
+      '\n========== EMAIL (dev mode - SMTP not configured) ==========',
+      `To: ${options.to}`,
+      `Subject: ${options.subject}`,
+      `Text: ${options.text}`,
+      '=============================================================\n',
+    ].join('\n')
+    process.stderr.write(output)
     return { success: true, messageId: 'dev-mode-no-send' }
   }
 

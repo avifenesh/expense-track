@@ -231,3 +231,29 @@ export function getAuthUserFromSession(session: AuthSession): AuthUser | undefin
   const normalizedEmail = session.userEmail.toLowerCase()
   return AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
 }
+
+/**
+ * Get database user with their accounts as an AuthUser-compatible object.
+ * Returns undefined if user not found or has no accounts.
+ */
+export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | undefined> {
+  const normalizedEmail = email.toLowerCase()
+  const dbUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: { accounts: { orderBy: { name: 'asc' } } },
+  })
+
+  if (!dbUser || dbUser.accounts.length === 0) {
+    return undefined
+  }
+
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    displayName: dbUser.displayName,
+    passwordHash: dbUser.passwordHash,
+    accountNames: dbUser.accounts.map((a) => a.name),
+    defaultAccountName: dbUser.accounts[0].name,
+    preferredCurrency: dbUser.preferredCurrency,
+  }
+}
