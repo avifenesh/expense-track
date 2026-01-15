@@ -62,6 +62,18 @@ export async function requireAuthUser(): Promise<AuthUserResult> {
   return { authUser }
 }
 
+export async function isDatabaseAuthUser(authUser: AuthUser): Promise<boolean> {
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: authUser.id },
+      select: { id: true },
+    })
+    return Boolean(dbUser)
+  } catch {
+    return false
+  }
+}
+
 type AccountRecord = NonNullable<Awaited<ReturnType<typeof prisma.account.findUnique>>>
 
 export type AccountAccessSuccess = {
@@ -87,7 +99,12 @@ export async function ensureAccountAccess(accountId: string): Promise<AccountAcc
     return { error: { accountId: ['Account not found'] } }
   }
 
-  if (!authUser.accountNames.includes(account.name)) {
+  const isDbUser = await isDatabaseAuthUser(authUser)
+  if (isDbUser) {
+    if (account.userId !== authUser.id) {
+      return { error: { accountId: ['You do not have access to this account'] } }
+    }
+  } else if (!authUser.accountNames.includes(account.name)) {
     return { error: { accountId: ['You do not have access to this account'] } }
   }
 
