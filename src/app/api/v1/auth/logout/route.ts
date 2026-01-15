@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { rateLimitError } from '@/lib/api-helpers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,16 +15,26 @@ export async function POST(request: NextRequest) {
     }
 
     let jti: string
+    let userId: string
     try {
       const payload = verifyRefreshToken(refreshToken)
       jti = payload.jti!
+      userId = payload.userId
     } catch {
-      const decoded = jwt.decode(refreshToken) as { jti?: string } | null
-      if (!decoded?.jti) {
+      const decoded = jwt.decode(refreshToken) as { jti?: string; userId?: string } | null
+      if (!decoded?.jti || !decoded?.userId) {
         return NextResponse.json({ error: 'Invalid refresh token' }, { status: 400 })
       }
       jti = decoded.jti
+      userId = decoded.userId
     }
+
+    // Rate limit check
+    const rateLimit = checkRateLimit(userId)
+    if (!rateLimit.allowed) {
+      return rateLimitError(rateLimit.resetAt)
+    }
+    incrementRateLimit(userId)
 
     await prisma.refreshToken.deleteMany({
       where: { jti },

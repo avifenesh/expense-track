@@ -2,9 +2,17 @@ import { NextRequest } from 'next/server'
 import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
 import { upsertRecurringTemplate } from '@/lib/services/recurring-service'
 import { recurringTemplateSchema } from '@/schemas'
-import { validationError, authError, forbiddenError, serverError, successResponse } from '@/lib/api-helpers'
+import {
+  validationError,
+  authError,
+  forbiddenError,
+  serverError,
+  successResponse,
+  rateLimitError,
+} from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
+import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -14,6 +22,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
 
   // 2. Parse and validate input
   let body
