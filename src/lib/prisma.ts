@@ -51,7 +51,7 @@ export const prisma: PrismaClient =
                 args: sanitizeArgs(args),
               }
 
-              // Structured log for Vercel/production systems
+              // Structured log for Railway/production systems
               // eslint-disable-next-line no-console
               console.warn('SLOW_QUERY', JSON.stringify(logData))
 

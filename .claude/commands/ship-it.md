@@ -371,12 +371,6 @@ sleep 60
 
 Depending on deployment platform:
 
-**For Vercel:**
-
-```bash
-vercel ls --scope <scope> | head -5
-```
-
 **For Railway:**
 
 ```bash
@@ -436,14 +430,13 @@ Based on changes made, test affected functionality:
 
 Monitor for errors:
 
-**Vercel:**
+**Railway:**
 
-```bash
-vercel logs <deployment-url> --follow
-```
+Check via Railway dashboard or CLI tools (railway logs).
 
 **Other platforms:**
-Check via dashboard or CLI tools.
+
+Check via platform-specific dashboard or CLI tools.
 
 Watch for:
 
