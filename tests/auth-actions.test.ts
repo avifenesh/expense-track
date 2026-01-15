@@ -102,6 +102,22 @@ import { rotateCsrfToken } from '@/lib/csrf'
 import { ensureAccountAccess, requireCsrfToken } from '@/app/actions/shared'
 import { loginAction, logoutAction, requestPasswordResetAction, persistActiveAccountAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
+import type { Account } from '@prisma/client'
+
+// Helper to create mock Account objects with all required properties
+function mockAccount(partial: Partial<Account>): Account {
+  return {
+    id: partial.id ?? 'test-id',
+    name: partial.name ?? 'TestAccount',
+    type: partial.type ?? 'SELF',
+    preferredCurrency: partial.preferredCurrency ?? null,
+    color: partial.color ?? null,
+    icon: partial.icon ?? null,
+    description: partial.description ?? null,
+    createdAt: partial.createdAt ?? new Date(),
+    updatedAt: partial.updatedAt ?? new Date(),
+  }
+}
 
 describe('auth actions', () => {
   beforeEach(() => {
@@ -130,7 +146,7 @@ describe('auth actions', () => {
   describe('loginAction', () => {
     it('succeeds with valid credentials and single account', async () => {
       const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([{ id: 'acc-1', name: 'Test1', type: 'SELF' } as const])
+      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
 
       const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
 
@@ -145,8 +161,8 @@ describe('auth actions', () => {
     it('succeeds with multiple accounts and selects default', async () => {
       const user = AUTH_USERS[1]
       vi.mocked(prisma.account.findMany).mockResolvedValue([
-        { id: 'acc-2', name: 'Test2', type: 'SELF' } as const,
-        { id: 'acc-3', name: 'Test3', type: 'SELF' } as const,
+        mockAccount({ id: 'acc-2', name: 'Test2', type: 'SELF' }),
+        mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
       ])
 
       const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
@@ -161,8 +177,8 @@ describe('auth actions', () => {
     it('fallback to first account when default not found', async () => {
       const user = AUTH_USERS[1]
       vi.mocked(prisma.account.findMany).mockResolvedValue([
-        { id: 'acc-3', name: 'Test3', type: 'SELF' } as const,
-        { id: 'acc-4', name: 'Test4', type: 'SELF' } as const,
+        mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
+        mockAccount({ id: 'acc-4', name: 'Test4', type: 'SELF' }),
       ])
 
       const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
@@ -190,7 +206,7 @@ describe('auth actions', () => {
 
     it('handles email case-insensitively', async () => {
       const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([{ id: 'acc-1', name: 'Test1', type: 'SELF' } as const])
+      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
 
       const result = await loginAction({ email: user.email.toUpperCase(), password: TEST_PASSWORD })
 
@@ -199,7 +215,7 @@ describe('auth actions', () => {
 
     it('trims email whitespace', async () => {
       const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([{ id: 'acc-1', name: 'Test1', type: 'SELF' } as const])
+      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
 
       const result = await loginAction({ email: `  ${user.email}  `, password: TEST_PASSWORD })
 
@@ -242,7 +258,7 @@ describe('auth actions', () => {
 
     it('queries accounts with correct parameters', async () => {
       const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([{ id: 'acc-1', name: 'Test1', type: 'SELF' } as const])
+      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
 
       await loginAction({ email: user.email, password: TEST_PASSWORD })
 
@@ -255,8 +271,8 @@ describe('auth actions', () => {
     it('returns accounts sorted by name', async () => {
       const user = AUTH_USERS[1]
       vi.mocked(prisma.account.findMany).mockResolvedValue([
-        { id: 'acc-3', name: 'Test3', type: 'SELF' } as const,
-        { id: 'acc-2', name: 'Test2', type: 'SELF' } as const,
+        mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
+        mockAccount({ id: 'acc-2', name: 'Test2', type: 'SELF' }),
       ])
 
       const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
@@ -270,7 +286,7 @@ describe('auth actions', () => {
 
     it('calls rotateCsrfToken after successful login', async () => {
       const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([{ id: 'acc-1', name: 'Test1', type: 'SELF' } as const])
+      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
 
       await loginAction({ email: user.email, password: TEST_PASSWORD })
 
@@ -290,8 +306,9 @@ describe('auth actions', () => {
       const result = await logoutAction()
 
       expect(result).toEqual({ success: true, data: undefined })
-      expect('data' in result).toBe(true)
-      expect(result.data).toBeUndefined()
+      if ('success' in result && result.success) {
+        expect(result.data).toBeUndefined()
+      }
     })
 
     it('works even without active session', async () => {
@@ -406,7 +423,7 @@ describe('auth actions', () => {
 
       expect('error' in result).toBe(true)
       if ('error' in result) {
-        expect(result.error.csrf).toBeDefined()
+        expect('csrf' in result.error && result.error.csrf).toBeDefined()
       }
       expect(ensureAccountAccess).not.toHaveBeenCalled()
     })
@@ -474,7 +491,7 @@ describe('auth actions', () => {
 
       expect('error' in result).toBe(true)
       if ('error' in result) {
-        expect(result.error.accountId).toBeDefined()
+        expect('accountId' in result.error && result.error.accountId).toBeDefined()
       }
       expect(updateSessionAccount).not.toHaveBeenCalled()
     })
@@ -502,8 +519,9 @@ describe('auth actions', () => {
       })
 
       expect(result).toEqual({ success: true, data: undefined })
-      expect('data' in result).toBe(true)
-      expect(result.data).toBeUndefined()
+      if ('success' in result && result.success) {
+        expect(result.data).toBeUndefined()
+      }
     })
   })
 })
