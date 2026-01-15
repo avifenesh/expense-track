@@ -196,17 +196,12 @@ export async function verifyEmailAction(input: z.infer<typeof verifyEmailSchema>
 
   const { token } = parsed.data
 
-  // Find user by token
-  const user = await prisma.user.findFirst({
-    where: {
-      emailVerificationToken: token,
-      emailVerificationExpires: {
-        gt: new Date(),
-      },
-    },
+  // Find user by unique token
+  const user = await prisma.user.findUnique({
+    where: { emailVerificationToken: token },
   })
 
-  if (!user) {
+  if (!user || !user.emailVerificationExpires || user.emailVerificationExpires < new Date()) {
     return failure({ token: ['Invalid or expired verification token'] })
   }
 

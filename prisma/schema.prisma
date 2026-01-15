@@ -13,7 +13,7 @@ model User {
   passwordHash             String
   preferredCurrency        Currency  @default(USD)
   emailVerified            Boolean   @default(false)
-  emailVerificationToken   String?
+  emailVerificationToken   String?   @unique
   emailVerificationExpires DateTime?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
@@ -23,7 +23,6 @@ model User {
   refreshTokens RefreshToken[]
 
   @@index([email])
-  @@index([emailVerificationToken])
 }
 
 model Account {

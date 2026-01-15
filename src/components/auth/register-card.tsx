@@ -53,7 +53,7 @@ export function RegisterCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <label htmlFor="displayName" className="text-xs font-medium uppercase tracking-wide text-slate-300">
               Display name
@@ -112,7 +112,7 @@ export function RegisterCard() {
                 {errors.password[0]}
               </p>
             )}
-            <p className="text-xs text-slate-400">At least 8 characters, with an uppercase letter and a number.</p>
+            <p className="text-xs text-slate-400">At least 8 characters with uppercase, lowercase, and a number.</p>
           </div>
 
           {errors?.general && (

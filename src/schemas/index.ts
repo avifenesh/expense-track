@@ -122,6 +122,7 @@ export const registrationSchema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+    .regex(/[a-z]/, 'Password must contain a lowercase letter')
     .regex(/[0-9]/, 'Password must contain a number'),
   displayName: z.string().min(2, 'Display name must be at least 2 characters').max(100, 'Display name too long'),
 })

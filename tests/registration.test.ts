@@ -1,9 +1,27 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { registerAction, verifyEmailAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
-import { Currency } from '@prisma/client'
+import { Currency, User } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+
+// Helper to create a mock User object
+function createMockUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    passwordHash: 'hashed',
+    preferredCurrency: Currency.USD,
+    emailVerified: false,
+    emailVerificationToken: 'token',
+    emailVerificationExpires: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  }
+}
+
+type ActionResult = { success: true; data: { message: string } } | { error: Record<string, string[]> }
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -31,28 +49,25 @@ describe('registerAction', () => {
 
   it('should successfully register a new user', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null) // No existing user
-    vi.mocked(prisma.user.create).mockResolvedValue({
-      id: 'new-user-id',
-      email: 'new@example.com',
-      displayName: 'New User',
-      passwordHash: 'hashed',
-      preferredCurrency: Currency.USD,
-      emailVerified: false,
-      emailVerificationToken: 'token',
-      emailVerificationExpires: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.create).mockResolvedValue(
+      createMockUser({
+        id: 'new-user-id',
+        email: 'new@example.com',
+        displayName: 'New User',
+      }),
+    )
 
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'new@example.com',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'New User',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('success', true)
     expect(result).toHaveProperty('data')
-    expect((result as any).data.message).toContain('check your email')
+    if ('data' in result) {
+      expect(result.data.message).toContain('check your email')
+    }
     expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -66,22 +81,17 @@ describe('registerAction', () => {
 
   it('should normalize email to lowercase', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.user.create).mockResolvedValue({
-      id: 'new-user-id',
-      email: 'new@example.com',
-      displayName: 'New User',
-      passwordHash: 'hashed',
-      preferredCurrency: Currency.USD,
-      emailVerified: false,
-      emailVerificationToken: 'token',
-      emailVerificationExpires: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.create).mockResolvedValue(
+      createMockUser({
+        id: 'new-user-id',
+        email: 'new@example.com',
+        displayName: 'New User',
+      }),
+    )
 
     await registerAction({
       email: '  NEW@EXAMPLE.COM  ',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'New User',
     })
 
@@ -95,105 +105,124 @@ describe('registerAction', () => {
   })
 
   it('should reject registration with existing email', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: 'existing-user',
-      email: 'existing@example.com',
-      displayName: 'Existing',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      emailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationExpires: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'existing-user',
+        email: 'existing@example.com',
+        displayName: 'Existing',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      }),
+    )
 
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'existing@example.com',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'New User',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.email[0]).toContain('already registered')
+    if ('error' in result) {
+      expect(result.error.email?.[0]).toContain('already registered')
+    }
   })
 
   it('should reject weak password - too short', async () => {
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'test@example.com',
-      password: 'Pass1',
+      password: 'Pa1a',
       displayName: 'Test User',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.password).toBeDefined()
-    expect((result as any).error.password[0]).toContain('8 characters')
+    if ('error' in result) {
+      expect(result.error.password).toBeDefined()
+      expect(result.error.password?.[0]).toContain('8 characters')
+    }
   })
 
   it('should reject password without uppercase letter', async () => {
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'test@example.com',
       password: 'password123',
       displayName: 'Test User',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.password).toBeDefined()
-    expect((result as any).error.password[0]).toContain('uppercase')
+    if ('error' in result) {
+      expect(result.error.password).toBeDefined()
+      expect(result.error.password?.[0]).toContain('uppercase')
+    }
+  })
+
+  it('should reject password without lowercase letter', async () => {
+    const result = (await registerAction({
+      email: 'test@example.com',
+      password: 'PASSWORD123',
+      displayName: 'Test User',
+    })) as ActionResult
+
+    expect(result).toHaveProperty('error')
+    if ('error' in result) {
+      expect(result.error.password).toBeDefined()
+      expect(result.error.password?.[0]).toContain('lowercase')
+    }
   })
 
   it('should reject password without number', async () => {
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'test@example.com',
       password: 'PasswordABC',
       displayName: 'Test User',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.password).toBeDefined()
-    expect((result as any).error.password[0]).toContain('number')
+    if ('error' in result) {
+      expect(result.error.password).toBeDefined()
+      expect(result.error.password?.[0]).toContain('number')
+    }
   })
 
   it('should reject short display name', async () => {
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'test@example.com',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'A',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.displayName).toBeDefined()
+    if ('error' in result) {
+      expect(result.error.displayName).toBeDefined()
+    }
   })
 
   it('should reject invalid email format', async () => {
-    const result = await registerAction({
+    const result = (await registerAction({
       email: 'not-an-email',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'Test User',
-    })
+    })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.email).toBeDefined()
+    if ('error' in result) {
+      expect(result.error.email).toBeDefined()
+    }
   })
 
   it('should hash password with bcrypt', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.user.create).mockResolvedValue({
-      id: 'new-user-id',
-      email: 'test@example.com',
-      displayName: 'Test User',
-      passwordHash: 'hashed',
-      preferredCurrency: Currency.USD,
-      emailVerified: false,
-      emailVerificationToken: 'token',
-      emailVerificationExpires: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.create).mockResolvedValue(
+      createMockUser({
+        id: 'new-user-id',
+        email: 'test@example.com',
+        displayName: 'Test User',
+      }),
+    )
 
     await registerAction({
       email: 'test@example.com',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'Test User',
     })
 
@@ -206,22 +235,17 @@ describe('registerAction', () => {
 
   it('should create default Personal account for new user', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.user.create).mockResolvedValue({
-      id: 'new-user-id',
-      email: 'test@example.com',
-      displayName: 'Test User',
-      passwordHash: 'hashed',
-      preferredCurrency: Currency.USD,
-      emailVerified: false,
-      emailVerificationToken: 'token',
-      emailVerificationExpires: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.create).mockResolvedValue(
+      createMockUser({
+        id: 'new-user-id',
+        email: 'test@example.com',
+        displayName: 'Test User',
+      }),
+    )
 
     await registerAction({
       email: 'test@example.com',
-      password: 'Password123',
+      password: 'Password123a',
       displayName: 'Test User',
     })
 
@@ -247,36 +271,34 @@ describe('verifyEmailAction', () => {
 
   it('should verify valid token', async () => {
     const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-    vi.mocked(prisma.user.findFirst).mockResolvedValue({
-      id: 'user-1',
-      email: 'test@example.com',
-      displayName: 'Test',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      emailVerified: false,
-      emailVerificationToken: 'valid-token',
-      emailVerificationExpires: futureDate,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        displayName: 'Test',
+        emailVerified: false,
+        emailVerificationToken: 'valid-token',
+        emailVerificationExpires: futureDate,
+      }),
+    )
 
-    vi.mocked(prisma.user.update).mockResolvedValue({
-      id: 'user-1',
-      email: 'test@example.com',
-      displayName: 'Test',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      emailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationExpires: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    vi.mocked(prisma.user.update).mockResolvedValue(
+      createMockUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        displayName: 'Test',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      }),
+    )
 
-    const result = await verifyEmailAction({ token: 'valid-token' })
+    const result = (await verifyEmailAction({ token: 'valid-token' })) as ActionResult
 
     expect(result).toHaveProperty('success', true)
-    expect((result as any).data.message).toContain('verified')
+    if ('data' in result) {
+      expect(result.data.message).toContain('verified')
+    }
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: {
@@ -288,30 +310,41 @@ describe('verifyEmailAction', () => {
   })
 
   it('should reject expired token', async () => {
-    // Token not found because expiry check in where clause fails
-    vi.mocked(prisma.user.findFirst).mockResolvedValue(null)
+    // Token found but expired
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        emailVerificationToken: 'expired-token',
+        emailVerificationExpires: new Date(Date.now() - 1000), // Expired
+      }),
+    )
 
-    const result = await verifyEmailAction({ token: 'expired-token' })
+    const result = (await verifyEmailAction({ token: 'expired-token' })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.token).toBeDefined()
-    expect((result as any).error.token[0]).toContain('Invalid or expired')
+    if ('error' in result) {
+      expect(result.error.token).toBeDefined()
+      expect(result.error.token?.[0]).toContain('Invalid or expired')
+    }
   })
 
   it('should reject invalid token', async () => {
-    vi.mocked(prisma.user.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
-    const result = await verifyEmailAction({ token: 'nonexistent-token' })
+    const result = (await verifyEmailAction({ token: 'nonexistent-token' })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.token[0]).toContain('Invalid or expired')
+    if ('error' in result) {
+      expect(result.error.token?.[0]).toContain('Invalid or expired')
+    }
   })
 
   it('should reject empty token', async () => {
-    const result = await verifyEmailAction({ token: '' })
+    const result = (await verifyEmailAction({ token: '' })) as ActionResult
 
     expect(result).toHaveProperty('error')
-    expect((result as any).error.token).toBeDefined()
+    if ('error' in result) {
+      expect(result.error.token).toBeDefined()
+    }
   })
 })
 
@@ -323,23 +356,22 @@ describe('verifyCredentials with database users', () => {
   it('should verify database user with correct password', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    const passwordHash = await bcrypt.hash('CorrectPassword123', 12)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: 'db-user-1',
-      email: 'dbuser@example.com',
-      displayName: 'DB User',
-      passwordHash,
-      preferredCurrency: Currency.USD,
-      emailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationExpires: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    const passwordHash = await bcrypt.hash('CorrectPassword123a', 12)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'db-user-1',
+        email: 'dbuser@example.com',
+        displayName: 'DB User',
+        passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      }),
+    )
 
     const result = await verifyCredentials({
       email: 'dbuser@example.com',
-      password: 'CorrectPassword123',
+      password: 'CorrectPassword123a',
     })
 
     expect(result.valid).toBe(true)
@@ -352,19 +384,18 @@ describe('verifyCredentials with database users', () => {
   it('should reject database user with wrong password', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    const passwordHash = await bcrypt.hash('CorrectPassword123', 12)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: 'db-user-1',
-      email: 'dbuser@example.com',
-      displayName: 'DB User',
-      passwordHash,
-      preferredCurrency: Currency.USD,
-      emailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationExpires: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    const passwordHash = await bcrypt.hash('CorrectPassword123a', 12)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'db-user-1',
+        email: 'dbuser@example.com',
+        displayName: 'DB User',
+        passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      }),
+    )
 
     const result = await verifyCredentials({
       email: 'dbuser@example.com',
@@ -377,23 +408,22 @@ describe('verifyCredentials with database users', () => {
   it('should reject unverified email user', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    const passwordHash = await bcrypt.hash('Password123', 12)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
-      id: 'db-user-1',
-      email: 'unverified@example.com',
-      displayName: 'Unverified User',
-      passwordHash,
-      preferredCurrency: Currency.USD,
-      emailVerified: false, // Not verified
-      emailVerificationToken: 'some-token',
-      emailVerificationExpires: new Date(Date.now() + 86400000),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
+    const passwordHash = await bcrypt.hash('Password123a', 12)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      createMockUser({
+        id: 'db-user-1',
+        email: 'unverified@example.com',
+        displayName: 'Unverified User',
+        passwordHash,
+        emailVerified: false, // Not verified
+        emailVerificationToken: 'some-token',
+        emailVerificationExpires: new Date(Date.now() + 86400000),
+      }),
+    )
 
     const result = await verifyCredentials({
       email: 'unverified@example.com',
-      password: 'Password123',
+      password: 'Password123a',
     })
 
     expect(result.valid).toBe(false)
@@ -406,7 +436,7 @@ describe('verifyCredentials with database users', () => {
 
     const result = await verifyCredentials({
       email: 'nobody@example.com',
-      password: 'SomePassword123',
+      password: 'SomePassword123a',
     })
 
     expect(result.valid).toBe(false)

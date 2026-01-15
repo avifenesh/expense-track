@@ -4,8 +4,26 @@ const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10)
 const SMTP_USER = process.env.SMTP_USER
 const SMTP_PASS = process.env.SMTP_PASS
-const SMTP_FROM = process.env.SMTP_FROM || 'noreply@expense-track.com'
-const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+const SMTP_FROM = process.env.SMTP_FROM || 'noreply@balancebeacon.com'
+
+// APP_URL validation: require HTTPS in production
+const _rawAppUrl = process.env.APP_URL || 'http://localhost:3000'
+if (process.env.NODE_ENV === 'production' && _rawAppUrl.startsWith('http://')) {
+  throw new Error('APP_URL must use HTTPS in production')
+}
+const APP_URL = _rawAppUrl
+
+/**
+ * Escape HTML special characters for safe insertion into HTML attributes and content
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 // Check if email is configured
 const isEmailConfigured = SMTP_HOST && SMTP_USER && SMTP_PASS
@@ -64,23 +82,24 @@ export async function sendVerificationEmail(
   token: string,
 ): Promise<{ success: boolean; messageId?: string }> {
   const verificationUrl = `${APP_URL}/verify-email?token=${encodeURIComponent(token)}`
+  const safeUrl = escapeHtml(verificationUrl)
 
   return sendEmail({
     to,
-    subject: 'Verify your email address - Expense Track',
-    text: `Welcome to Expense Track!\n\nPlease verify your email address by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create an account, you can safely ignore this email.`,
+    subject: 'Verify your email address - Balance Beacon',
+    text: `Welcome to Balance Beacon!\n\nPlease verify your email address by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create an account, you can safely ignore this email.`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Welcome to Expense Track!</h1>
+        <h1 style="color: #333;">Welcome to Balance Beacon!</h1>
         <p>Please verify your email address by clicking the button below:</p>
         <p style="margin: 24px 0;">
-          <a href="${verificationUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+          <a href="${safeUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
             Verify Email Address
           </a>
         </p>
         <p style="color: #666; font-size: 14px;">
           Or copy and paste this link into your browser:<br/>
-          <a href="${verificationUrl}" style="color: #0070f3;">${verificationUrl}</a>
+          <a href="${safeUrl}" style="color: #0070f3;">${safeUrl}</a>
         </p>
         <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
         <p style="color: #999; font-size: 12px; margin-top: 32px;">

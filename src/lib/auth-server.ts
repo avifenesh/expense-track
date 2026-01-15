@@ -207,12 +207,12 @@ export async function getSession(): Promise<AuthSession | null> {
     return { userEmail: userEmail!, accountId }
   }
 
-  // Check if user exists in database
+  // Check if user exists in database and has verified email
   const dbUser = await prisma.user.findUnique({
     where: { email: userEmail!.toLowerCase() },
-    select: { id: true },
+    select: { id: true, emailVerified: true },
   })
-  if (dbUser) {
+  if (dbUser && dbUser.emailVerified) {
     return { userEmail: userEmail!, accountId }
   }
 
