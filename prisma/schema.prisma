@@ -21,8 +21,26 @@ model User {
   accounts      Account[]
   categories    Category[]
   refreshTokens RefreshToken[]
+  subscription  Subscription?
 
   @@index([email])
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  status             SubscriptionStatus @default(TRIALING)
+  trialEndsAt        DateTime
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([trialEndsAt])
 }
 
 model Account {
@@ -251,4 +269,12 @@ enum Currency {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
 }
