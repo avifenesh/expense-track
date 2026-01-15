@@ -30,6 +30,9 @@ function generateCacheKey(params: { monthKey: string; accountId?: string; prefer
 /**
  * Get cached dashboard data or compute and cache if missing/stale
  * Implements request deduplication to prevent thundering herd
+ *
+ * Note: If accounts are pre-fetched and provided, caching is bypassed
+ * to avoid cache key complexity with arrays
  */
 export async function getCachedDashboardData(params: {
   monthKey: string
@@ -37,6 +40,11 @@ export async function getCachedDashboardData(params: {
   preferredCurrency?: Currency
   accounts?: Awaited<ReturnType<typeof getAccounts>>
 }): Promise<DashboardData> {
+  // If accounts are explicitly provided, bypass cache (used for pre-fetched data optimization)
+  if (params.accounts) {
+    return getDashboardData(params)
+  }
+
   const cacheKey = generateCacheKey(params)
 
   // 1. Check in-flight request deduplication
