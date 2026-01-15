@@ -146,7 +146,7 @@ Transform personal finance app into commercial multi-tenant service with mobile 
 ### 3.4 Monitoring & Observability
 
 - Error tracking (Sentry)
-- Performance monitoring (Vercel Analytics)
+- Performance monitoring (Railway metrics)
 - Database query monitoring
 - User analytics (PostHog/Mixpanel)
 - Uptime monitoring
