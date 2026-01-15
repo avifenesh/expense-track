@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const account = await prisma.account.findUnique({ where: { id: existing.accountId } })
   if (!account) return notFoundError('Account not found')
 
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
   if (!authUser.accountNames.includes(account.name)) {
     return forbiddenError('You do not have access to this account')
   }
@@ -101,7 +101,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const account = await prisma.account.findUnique({ where: { id: existing.accountId } })
   if (!account) return notFoundError('Account not found')
 
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
   if (!authUser.accountNames.includes(account.name)) {
     return forbiddenError('You do not have access to this account')
   }

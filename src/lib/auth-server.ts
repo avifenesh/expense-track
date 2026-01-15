@@ -5,7 +5,6 @@ import crypto from 'node:crypto'
 import { cookies } from 'next/headers'
 import {
   ACCOUNT_COOKIE,
-  AUTH_USERS,
   SESSION_COOKIE,
   SESSION_MAX_AGE_MS,
   SESSION_TS_COOKIE,
@@ -80,29 +79,18 @@ const baseCookieConfig = {
   path: '/',
 }
 
+/**
+ * Verify user credentials against the database.
+ * Returns validation result with userId on success.
+ */
 export async function verifyCredentials({
   email,
   password,
 }: {
   email: string
   password: string
-}): Promise<
-  { valid: false; reason?: 'email_not_verified' } | { valid: true; source: 'legacy' | 'database'; userId?: string }
-> {
+}): Promise<{ valid: false; reason?: 'email_not_verified' } | { valid: true; userId: string }> {
   const normalizedEmail = email.trim().toLowerCase()
-
-  // First, check legacy AUTH_USERS (for backwards compatibility with seeded users)
-  const legacyUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
-  if (legacyUser) {
-    try {
-      const match = await bcrypt.compare(password, legacyUser.passwordHash)
-      if (match) {
-        return { valid: true, source: 'legacy' }
-      }
-    } catch {
-      // Fall through to database check
-    }
-  }
 
   // Check database users
   const dbUser = await prisma.user.findUnique({
@@ -129,7 +117,7 @@ export async function verifyCredentials({
     return { valid: false, reason: 'email_not_verified' }
   }
 
-  return { valid: true, source: 'database', userId: dbUser.id }
+  return { valid: true, userId: dbUser.id }
 }
 
 export async function establishSession({ userEmail, accountId }: { userEmail: string; accountId: string }) {
@@ -157,25 +145,17 @@ export async function updateSessionAccount(
     return { error: { general: ['Account not found'] } }
   }
 
-  // Check access for legacy users (AUTH_USERS)
-  const authUser = getAuthUserFromSession(session)
-  if (authUser) {
-    if (!authUser.accountNames.includes(account.name)) {
-      return { error: { general: ['Account is not available for this user'] } }
-    }
-  } else {
-    // Check access for database users
-    const dbUser = await prisma.user.findUnique({
-      where: { email: session.userEmail.toLowerCase() },
-      include: { accounts: { select: { id: true } } },
-    })
-    if (!dbUser) {
-      return { error: { general: ['User record not found'] } }
-    }
-    const hasAccess = dbUser.accounts.some((acc) => acc.id === accountId)
-    if (!hasAccess) {
-      return { error: { general: ['Account is not available for this user'] } }
-    }
+  // Check access for database users
+  const dbUser = await prisma.user.findUnique({
+    where: { email: session.userEmail.toLowerCase() },
+    include: { accounts: { select: { id: true } } },
+  })
+  if (!dbUser) {
+    return { error: { general: ['User record not found'] } }
+  }
+  const hasAccess = dbUser.accounts.some((acc) => acc.id === accountId)
+  if (!hasAccess) {
+    return { error: { general: ['Account is not available for this user'] } }
   }
 
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
@@ -201,12 +181,6 @@ export async function getSession(): Promise<AuthSession | null> {
     return null
   }
 
-  // Check if user exists in legacy AUTH_USERS
-  const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === userEmail!.toLowerCase())
-  if (authUser) {
-    return { userEmail: userEmail!, accountId }
-  }
-
   // Check if user exists in database and has verified email
   const dbUser = await prisma.user.findUnique({
     where: { email: userEmail!.toLowerCase() },
@@ -225,11 +199,6 @@ export async function requireSession(): Promise<AuthSession> {
     throw new Error('Unauthenticated')
   }
   return session
-}
-
-export function getAuthUserFromSession(session: AuthSession): AuthUser | undefined {
-  const normalizedEmail = session.userEmail.toLowerCase()
-  return AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
 }
 
 /**

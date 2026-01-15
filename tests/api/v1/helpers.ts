@@ -5,8 +5,12 @@ import { Currency } from '@prisma/client'
 // Tests use generateAccessToken('avi', ...) which sets userId='avi'
 export const TEST_USER_ID = 'avi'
 
-// Cache test user for API tests
+// Second user ID for testing unauthorized access scenarios
+export const OTHER_USER_ID = 'other-user'
+
+// Cache test users for API tests
 let testUser: Awaited<ReturnType<typeof prisma.user.upsert>> | null = null
+let otherUser: Awaited<ReturnType<typeof prisma.user.upsert>> | null = null
 
 /**
  * Get or create a test user for API tests
@@ -34,8 +38,34 @@ export async function getApiTestUser() {
 }
 
 /**
+ * Get or create a secondary test user for unauthorized access testing
+ * This user owns accounts that the primary test user should NOT have access to
+ */
+export async function getOtherTestUser() {
+  if (otherUser) {
+    const existing = await prisma.user.findUnique({ where: { id: otherUser.id } })
+    if (existing) return existing
+  }
+
+  const user = await prisma.user.upsert({
+    where: { id: OTHER_USER_ID },
+    update: {},
+    create: {
+      id: OTHER_USER_ID,
+      email: 'other@example.com',
+      displayName: 'Other Test User',
+      passwordHash: '$2b$10$placeholder', // Not used for auth
+      preferredCurrency: Currency.USD,
+    },
+  })
+  otherUser = user
+  return user
+}
+
+/**
  * Reset cached test user (call in cleanup)
  */
 export function resetApiTestUser() {
   testUser = null
+  otherUser = null
 }

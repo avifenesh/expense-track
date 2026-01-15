@@ -5,8 +5,7 @@ import { DashboardSkeleton } from '@/components/ui/skeleton'
 import { getAccounts } from '@/lib/finance'
 import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import { getMonthKey } from '@/utils/date'
-import { getSession, updateSessionAccount } from '@/lib/auth-server'
-import { AUTH_USERS } from '@/lib/auth'
+import { getSession, updateSessionAccount, getDbUserAsAuthUser } from '@/lib/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,11 +42,10 @@ export default async function Page({ searchParams }: PageProps) {
     redirect('/login')
   }
 
-  const authUserRecord = AUTH_USERS.find((user) => user.email.toLowerCase() === session.userEmail.toLowerCase())
-  if (!authUserRecord) {
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
+  if (!authUser) {
     redirect('/login?reason=unknown-user')
   }
-  const authUser = authUserRecord
 
   const currentMonth = getMonthKey(new Date())
   const resolvedSearchParams = searchParams ? await searchParams : {}

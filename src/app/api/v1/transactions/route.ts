@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     return forbiddenError('Account not found')
   }
 
-  const authUser = getUserAuthInfo(user.userId)
+  const authUser = await getUserAuthInfo(user.userId)
   if (!authUser.accountNames.includes(account.name)) {
     return forbiddenError('You do not have access to this account')
   }

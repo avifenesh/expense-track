@@ -9,15 +9,20 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-// Mock auth to return user with access to both accounts
+// Mock auth to return user with access to both accounts (database-driven)
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn().mockResolvedValue({
-    user: { username: 'testuser', email: 'test@example.com' },
+    userEmail: 'test@example.com',
+    accountId: 'test-account-id',
   }),
-  getAuthUserFromSession: vi.fn().mockReturnValue({
-    username: 'testuser',
+  getDbUserAsAuthUser: vi.fn().mockResolvedValue({
+    id: 'test-user-id',
     email: 'test@example.com',
+    displayName: 'Test User',
+    passwordHash: 'hash',
     accountNames: ['TEST_Account_A', 'TEST_Account_B'],
+    defaultAccountName: 'TEST_Account_A',
+    preferredCurrency: 'USD',
   }),
 }))
 

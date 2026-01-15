@@ -16,29 +16,8 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-// Mock auth module with test users
-// Pre-generated bcrypt hashes for testing (bcrypt.hashSync('password123', 10) and bcrypt.hashSync('securePass456', 10))
+// Mock auth module - no longer has AUTH_USERS
 vi.mock('@/lib/auth', () => ({
-  AUTH_USERS: [
-    {
-      id: 'user1',
-      email: 'user1@test.com',
-      displayName: 'User One',
-      passwordHash: '$2b$10$42pR.56jnFNCaH9LXdV1y.7lHi2jmTU1LQOf5IxtnfPZOQHvce3d2', // password123
-      accountNames: ['Account1', 'Shared'],
-      defaultAccountName: 'Account1',
-      preferredCurrency: 'USD',
-    },
-    {
-      id: 'user2',
-      email: 'user2@test.com',
-      displayName: 'User Two',
-      passwordHash: '$2b$10$fxmRGkj/pcH/j4fab6ucAeWUrWpRE7D6b3yYcCU1EteYd62dvRZ6u', // securePass456
-      accountNames: ['Account2', 'Shared'],
-      defaultAccountName: 'Account2',
-      preferredCurrency: 'EUR',
-    },
-  ],
   SESSION_COOKIE: 'balance_session',
   USER_COOKIE: 'balance_user',
   ACCOUNT_COOKIE: 'balance_account',
@@ -66,6 +45,41 @@ function createMockCookieStore() {
     }),
     _store: store, // For test assertions
   }
+}
+
+// Test user data - pre-generated bcrypt hashes
+const TEST_USER_1 = {
+  id: 'user1',
+  email: 'user1@test.com',
+  displayName: 'User One',
+  passwordHash: '$2b$10$42pR.56jnFNCaH9LXdV1y.7lHi2jmTU1LQOf5IxtnfPZOQHvce3d2', // password123
+  emailVerified: true,
+  emailVerificationToken: null,
+  emailVerificationExpires: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const TEST_USER_2 = {
+  id: 'user2',
+  email: 'user2@test.com',
+  displayName: 'User Two',
+  passwordHash: '$2b$10$fxmRGkj/pcH/j4fab6ucAeWUrWpRE7D6b3yYcCU1EteYd62dvRZ6u', // securePass456
+  emailVerified: true,
+  emailVerificationToken: null,
+  emailVerificationExpires: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+// Helper to mock database user lookup
+function mockDbUser(email: string) {
+  const users: Record<string, typeof TEST_USER_1> = {
+    'user1@test.com': TEST_USER_1,
+    'user2@test.com': TEST_USER_2,
+  }
+  const user = users[email.toLowerCase()]
+  vi.mocked(prisma.user.findUnique).mockResolvedValue(user ? (user as never) : null)
 }
 
 describe('auth-server.ts', () => {
@@ -150,6 +164,9 @@ describe('auth-server.ts', () => {
       it('should return valid session when all cookies present and valid', async () => {
         const { establishSession, getSession } = await import('@/lib/auth-server')
 
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
+
         // First establish a session
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
 
@@ -203,6 +220,9 @@ describe('auth-server.ts', () => {
       it('should return session even when ACCOUNT_COOKIE missing (optional)', async () => {
         const { establishSession, getSession } = await import('@/lib/auth-server')
 
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
+
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
 
         // Delete ACCOUNT_COOKIE
@@ -236,8 +256,11 @@ describe('auth-server.ts', () => {
         // The try/catch provides safety for unexpected crypto errors but is not reliably triggerable in tests
       })
 
-      it('should return null when user email not in AUTH_USERS', async () => {
+      it('should return null when user email not in database', async () => {
         const { establishSession, getSession } = await import('@/lib/auth-server')
+
+        // Mock database to return null (no user found)
+        vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
 
@@ -250,6 +273,9 @@ describe('auth-server.ts', () => {
 
       it('should successfully validate with original email casing', async () => {
         const { establishSession, getSession } = await import('@/lib/auth-server')
+
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
 
         // Establish session with specific casing
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
@@ -276,6 +302,9 @@ describe('auth-server.ts', () => {
       it('should return valid session at 29 days (within expiry window)', async () => {
         const { establishSession, getSession } = await import('@/lib/auth-server')
 
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
+
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
 
         // Advance time by 29 days
@@ -294,6 +323,9 @@ describe('auth-server.ts', () => {
       it('should return true for valid email and password', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
 
+        // Mock database user lookup with password hash
+        mockDbUser('user1@test.com')
+
         const result = await verifyCredentials({ email: 'user1@test.com', password: 'password123' })
 
         expect(result.valid).toBe(true)
@@ -301,6 +333,9 @@ describe('auth-server.ts', () => {
 
       it('should return false for valid email but wrong password', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
+
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
 
         const result = await verifyCredentials({ email: 'user1@test.com', password: 'wrongpassword' })
 
@@ -310,6 +345,9 @@ describe('auth-server.ts', () => {
       it('should return false for unregistered email', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
 
+        // No mockDbUser call - database returns null for unknown email
+        vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
         const result = await verifyCredentials({ email: 'unknown@test.com', password: 'password123' })
 
         expect(result.valid).toBe(false)
@@ -317,6 +355,9 @@ describe('auth-server.ts', () => {
 
       it('should normalize email: trim whitespace', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
+
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
 
         const result = await verifyCredentials({ email: '  user1@test.com  ', password: 'password123' })
 
@@ -326,6 +367,9 @@ describe('auth-server.ts', () => {
       it('should normalize email: case-insensitive', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
 
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
+
         const result = await verifyCredentials({ email: 'USER1@TEST.COM', password: 'password123' })
 
         expect(result.valid).toBe(true)
@@ -333,6 +377,9 @@ describe('auth-server.ts', () => {
 
       it('should handle whitespace in email and still fail for unknown user', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
+
+        // No mockDbUser call - database returns null for unknown email
+        vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
         const result = await verifyCredentials({ email: '  unknown@test.com  ', password: 'password123' })
 
@@ -342,6 +389,9 @@ describe('auth-server.ts', () => {
       it('should handle empty email string', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
 
+        // No mockDbUser call - database returns null for empty email
+        vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
         const result = await verifyCredentials({ email: '', password: 'password123' })
 
         expect(result.valid).toBe(false)
@@ -350,6 +400,9 @@ describe('auth-server.ts', () => {
       it('should handle empty password string', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
 
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
+
         const result = await verifyCredentials({ email: 'user1@test.com', password: '' })
 
         expect(result.valid).toBe(false)
@@ -357,6 +410,9 @@ describe('auth-server.ts', () => {
 
       it('should work for second user with different password', async () => {
         const { verifyCredentials } = await import('@/lib/auth-server')
+
+        // Mock database user lookup for user2
+        mockDbUser('user2@test.com')
 
         const result = await verifyCredentials({ email: 'user2@test.com', password: 'securePass456' })
 
@@ -426,6 +482,9 @@ describe('auth-server.ts', () => {
       it('should return session when authenticated', async () => {
         const { establishSession, requireSession } = await import('@/lib/auth-server')
 
+        // Mock database user lookup
+        mockDbUser('user1@test.com')
+
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
 
         const session = await requireSession()
@@ -468,12 +527,25 @@ describe('auth-server.ts', () => {
       })
     })
 
-    describe('getAuthUserFromSession()', () => {
-      it('should return user for valid session', async () => {
-        const { getAuthUserFromSession } = await import('@/lib/auth-server')
+    describe('getDbUserAsAuthUser()', () => {
+      it('should return user for valid email', async () => {
+        const { getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
-        const session = { userEmail: 'user1@test.com', accountId: 'acc123' }
-        const user = getAuthUserFromSession(session)
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          id: 'user1',
+          email: 'user1@test.com',
+          displayName: 'User One',
+          passwordHash: 'hash',
+          preferredCurrency: 'USD',
+          emailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          accounts: [{ name: 'Account1' }, { name: 'Shared' }],
+        } as ReturnType<typeof prisma.user.findUnique> extends Promise<infer T> ? T : never)
+
+        const user = await getDbUserAsAuthUser('user1@test.com')
 
         expect(user).toBeDefined()
         expect(user?.id).toBe('user1')
@@ -483,44 +555,58 @@ describe('auth-server.ts', () => {
       })
 
       it('should return undefined for unknown email', async () => {
-        const { getAuthUserFromSession } = await import('@/lib/auth-server')
+        const { getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
-        const session = { userEmail: 'unknown@test.com', accountId: 'acc123' }
-        const user = getAuthUserFromSession(session)
+        vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+        const user = await getDbUserAsAuthUser('unknown@test.com')
 
         expect(user).toBeUndefined()
       })
 
       it('should be case-insensitive for email lookup', async () => {
-        const { getAuthUserFromSession } = await import('@/lib/auth-server')
+        const { getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
-        const session = { userEmail: 'USER1@TEST.COM', accountId: 'acc123' }
-        const user = getAuthUserFromSession(session)
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          id: 'user1',
+          email: 'user1@test.com',
+          displayName: 'User One',
+          passwordHash: 'hash',
+          preferredCurrency: 'USD',
+          emailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          accounts: [{ name: 'Account1' }],
+        } as ReturnType<typeof prisma.user.findUnique> extends Promise<infer T> ? T : never)
+
+        const user = await getDbUserAsAuthUser('USER1@TEST.COM')
 
         expect(user).toBeDefined()
         expect(user?.id).toBe('user1')
       })
 
-      it('should work for second user', async () => {
-        const { getAuthUserFromSession } = await import('@/lib/auth-server')
+      it('should return undefined for user with no accounts', async () => {
+        const { getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
-        const session = { userEmail: 'user2@test.com', accountId: 'acc456' }
-        const user = getAuthUserFromSession(session)
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          id: 'user1',
+          email: 'user1@test.com',
+          displayName: 'User One',
+          passwordHash: 'hash',
+          preferredCurrency: 'USD',
+          emailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          accounts: [],
+        } as ReturnType<typeof prisma.user.findUnique> extends Promise<infer T> ? T : never)
 
-        expect(user).toBeDefined()
-        expect(user?.id).toBe('user2')
-        expect(user?.displayName).toBe('User Two')
-        expect(user?.accountNames).toEqual(['Account2', 'Shared'])
-      })
+        const user = await getDbUserAsAuthUser('user1@test.com')
 
-      it('should handle email with whitespace (after normalization)', async () => {
-        const { getAuthUserFromSession } = await import('@/lib/auth-server')
-
-        // getAuthUserFromSession expects already-normalized email from session
-        const session = { userEmail: 'user1@test.com', accountId: 'acc123' }
-        const user = getAuthUserFromSession(session)
-
-        expect(user).toBeDefined()
+        expect(user).toBeUndefined()
       })
     })
   })
@@ -530,10 +616,13 @@ describe('auth-server.ts', () => {
       it('should successfully update account for valid switch', async () => {
         const { establishSession, updateSessionAccount } = await import('@/lib/auth-server')
 
+        // Mock database user lookup for getSession validation
+        mockDbUser('user1@test.com')
+
         // Establish session for user1
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
-        // Mock account exists and user has access
+        // Mock account exists
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
           userId: 'test-user',
@@ -546,6 +635,12 @@ describe('auth-server.ts', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         })
+
+        // Mock user with access to the account
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          ...TEST_USER_1,
+          accounts: [{ id: 'acc-account1' }, { id: 'acc-shared' }],
+        } as never)
 
         const result = await updateSessionAccount('acc-shared')
 
@@ -565,6 +660,9 @@ describe('auth-server.ts', () => {
 
       it('should return error when account does not exist in database', async () => {
         const { establishSession, updateSessionAccount } = await import('@/lib/auth-server')
+
+        // Mock database user lookup for getSession validation
+        mockDbUser('user1@test.com')
 
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
@@ -587,9 +685,12 @@ describe('auth-server.ts', () => {
       it('should return error when account not in user authorized accounts', async () => {
         const { establishSession, updateSessionAccount } = await import('@/lib/auth-server')
 
+        // Mock database user lookup for getSession validation
+        mockDbUser('user1@test.com')
+
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
-        // Mock Account2 which user1 doesn't have access to
+        // Mock Account2 which exists but user1 doesn't have access to
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-account2',
           userId: 'test-user',
@@ -603,6 +704,12 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
         })
 
+        // Mock user without access to acc-account2
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          ...TEST_USER_1,
+          accounts: [{ id: 'acc-account1' }], // User only has access to account1
+        } as never)
+
         const result = await updateSessionAccount('acc-account2')
 
         expect(result).toEqual({ error: { general: ['Account is not available for this user'] } })
@@ -610,6 +717,9 @@ describe('auth-server.ts', () => {
 
       it('should allow switching to shared account for both users', async () => {
         const { establishSession, updateSessionAccount } = await import('@/lib/auth-server')
+
+        // Mock database user lookup for getSession validation
+        mockDbUser('user1@test.com')
 
         // Test with user1
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
@@ -627,12 +737,22 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
         })
 
+        // Mock user with access to the shared account
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          ...TEST_USER_1,
+          accounts: [{ id: 'acc-account1' }, { id: 'acc-shared' }],
+        } as never)
+
         const result1 = await updateSessionAccount('acc-shared')
         expect(result1).toEqual({ success: true })
 
         // Now test with user2
         vi.clearAllMocks()
         mockCookies._store.clear()
+
+        // Mock database user lookup for getSession validation
+        mockDbUser('user2@test.com')
+
         await establishSession({ userEmail: 'user2@test.com', accountId: 'acc-account2' })
 
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
@@ -648,6 +768,12 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
         })
 
+        // Mock user2 with access to the shared account
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          ...TEST_USER_2,
+          accounts: [{ id: 'acc-account2' }, { id: 'acc-shared' }],
+        } as never)
+
         const result2 = await updateSessionAccount('acc-shared')
         expect(result2).toEqual({ success: true })
       })
@@ -655,9 +781,12 @@ describe('auth-server.ts', () => {
       it('should enforce exact case-sensitive account name matching', async () => {
         const { establishSession, updateSessionAccount } = await import('@/lib/auth-server')
 
+        // Mock database user lookup for getSession validation
+        mockDbUser('user1@test.com')
+
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
-        // Mock account with lowercase name (user1 has 'Account1' not 'account1')
+        // Mock account with lowercase name
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-wrong-case',
           userId: 'test-user',
@@ -671,6 +800,12 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
         })
 
+        // Mock user without access to acc-wrong-case
+        vi.mocked(prisma.user.findUnique).mockResolvedValue({
+          ...TEST_USER_1,
+          accounts: [{ id: 'acc-account1' }], // User only has access to account1, not wrong-case
+        } as never)
+
         const result = await updateSessionAccount('acc-wrong-case')
 
         expect(result).toEqual({ error: { general: ['Account is not available for this user'] } })
@@ -680,7 +815,19 @@ describe('auth-server.ts', () => {
 
   describe('Phase 5: Integration - End-to-end workflows', () => {
     it('should complete full login workflow: establish → get → verify', async () => {
-      const { establishSession, getSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+      const { establishSession, getSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+
+      // Mock the database user lookup
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user1',
+        email: 'user1@test.com',
+        displayName: 'User One',
+        passwordHash: 'hash',
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [{ id: 'acc123', name: 'Account1' }],
+      } as never)
 
       // 1. Establish session
       const { token } = await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
@@ -691,14 +838,17 @@ describe('auth-server.ts', () => {
       expect(session).not.toBeNull()
       expect(session?.userEmail).toBe('user1@test.com')
 
-      // 3. Verify user
-      const user = getAuthUserFromSession(session!)
+      // 3. Verify user from database
+      const user = await getDbUserAsAuthUser(session!.userEmail)
       expect(user?.id).toBe('user1')
       expect(user?.displayName).toBe('User One')
     })
 
     it('should complete full logout workflow: establish → clear → get', async () => {
       const { establishSession, clearSession, getSession } = await import('@/lib/auth-server')
+
+      // Mock database user lookup
+      mockDbUser('user1@test.com')
 
       // 1. Establish session
       await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
@@ -715,6 +865,9 @@ describe('auth-server.ts', () => {
 
     it('should complete account switching workflow: establish → switch → verify', async () => {
       const { establishSession, updateSessionAccount, getSession } = await import('@/lib/auth-server')
+
+      // Mock database user lookup
+      mockDbUser('user1@test.com')
 
       // 1. Establish session with Account1
       await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
@@ -735,10 +888,17 @@ describe('auth-server.ts', () => {
         updatedAt: new Date(),
       })
 
+      // Mock user with access to the shared account
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        ...TEST_USER_1,
+        accounts: [{ id: 'acc-account1' }, { id: 'acc-shared' }],
+      } as never)
+
       const result = await updateSessionAccount('acc-shared')
       expect(result).toEqual({ success: true })
 
       // 3. Verify account changed
+      mockDbUser('user1@test.com') // Reset to basic user mock for getSession
       const session2 = await getSession()
       expect(session2?.accountId).toBe('acc-shared')
       expect(session2?.userEmail).toBe('user1@test.com') // User unchanged
@@ -746,6 +906,9 @@ describe('auth-server.ts', () => {
 
     it('should handle session expiry simulation across 31 days', async () => {
       const { establishSession, getSession } = await import('@/lib/auth-server')
+
+      // Mock database user lookup
+      mockDbUser('user1@test.com')
 
       // Day 1: Establish session
       vi.setSystemTime(new Date('2024-01-01T12:00:00Z'))
@@ -769,6 +932,9 @@ describe('auth-server.ts', () => {
 
     it('should enforce authentication with requireSession throughout workflow', async () => {
       const { establishSession, requireSession, clearSession } = await import('@/lib/auth-server')
+
+      // Mock database user lookup
+      mockDbUser('user1@test.com')
 
       // Before login: should throw
       await expect(requireSession()).rejects.toThrow('Unauthenticated')
