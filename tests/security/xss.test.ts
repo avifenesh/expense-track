@@ -20,6 +20,7 @@ vi.mock('@/lib/auth-server', () => ({
     defaultAccountName: 'Test Account',
     preferredCurrency: 'USD',
   }),
+  getDbUserAsAuthUser: vi.fn().mockResolvedValue(null),
 }))
 
 // Mock CSRF validation - must be at top
@@ -88,7 +89,16 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findFirst: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
   },
+}))
+
+// Mock email service
+vi.mock('@/lib/email', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test-id' }),
 }))
 
 // Imports after mocks
@@ -98,6 +108,7 @@ import {
   upsertBudgetAction,
   createHoldingAction,
   upsertRecurringTemplateAction,
+  registerAction,
 } from '@/app/actions'
 import { Currency, TransactionType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
@@ -395,6 +406,84 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           const rendered = `<p>${escapeHtmlLikeReact(payload)}</p>`
           assertNoExecutableScript(rendered, payload)
         }
+      }
+    })
+  })
+
+  describe('User Display Name - Stored XSS', () => {
+    it('should safely store and escape XSS payloads in user displayName', async () => {
+      for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 5)) {
+        vi.clearAllMocks()
+
+        // Mock user not existing yet
+        vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+
+        // Mock successful user creation
+        vi.mocked(prisma.user.create).mockResolvedValueOnce({
+          id: 'test-user-id',
+          email: 'test@example.com',
+          displayName: payload,
+          passwordHash: 'hashed',
+          preferredCurrency: Currency.USD,
+          emailVerified: false,
+          emailVerificationToken: 'token',
+          emailVerificationExpires: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any)
+
+        const result = await registerAction({
+          email: 'test-xss@example.com',
+          password: 'ValidPassword123',
+          displayName: payload,
+        })
+
+        // Should successfully create or fail validation for very short payloads
+        if (payload.length >= 2) {
+          expect('success' in result || 'data' in result).toBe(true)
+
+          // Verify displayName stored as-is if successful
+          const createCall = vi.mocked(prisma.user.create).mock.calls[0]
+          if (createCall) {
+            expect(createCall[0].data.displayName).toBe(payload)
+          }
+
+          // Simulate rendering displayName in React
+          const rendered = `<span class="user-name">${escapeHtmlLikeReact(payload)}</span>`
+
+          // Verify no executable scripts in rendered output
+          assertNoExecutableScript(rendered, payload)
+        }
+      }
+    })
+
+    it('should reject displayName shorter than 2 characters', async () => {
+      // Schema requires min 2 chars for displayName
+      const result = await registerAction({
+        email: 'test@example.com',
+        password: 'ValidPassword123',
+        displayName: '<', // Only 1 char
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.displayName).toBeDefined()
+      }
+    })
+
+    it('should reject displayName longer than 100 characters', async () => {
+      // Schema requires max 100 chars for displayName
+      const longPayload = '<script>alert("XSS")</script>'.repeat(5) // > 100 chars
+
+      const result = await registerAction({
+        email: 'test@example.com',
+        password: 'ValidPassword123',
+        displayName: longPayload,
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.displayName).toBeDefined()
       }
     })
   })

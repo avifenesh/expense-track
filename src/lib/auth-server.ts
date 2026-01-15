@@ -80,19 +80,56 @@ const baseCookieConfig = {
   path: '/',
 }
 
-export async function verifyCredentials({ email, password }: { email: string; password: string }) {
+export async function verifyCredentials({
+  email,
+  password,
+}: {
+  email: string
+  password: string
+}): Promise<
+  { valid: false; reason?: 'email_not_verified' } | { valid: true; source: 'legacy' | 'database'; userId?: string }
+> {
   const normalizedEmail = email.trim().toLowerCase()
-  const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
-  if (!authUser) {
-    return false
+
+  // First, check legacy AUTH_USERS (for backwards compatibility with seeded users)
+  const legacyUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
+  if (legacyUser) {
+    try {
+      const match = await bcrypt.compare(password, legacyUser.passwordHash)
+      if (match) {
+        return { valid: true, source: 'legacy' }
+      }
+    } catch {
+      // Fall through to database check
+    }
   }
 
-  try {
-    const match = await bcrypt.compare(password, authUser.passwordHash)
-    return match
-  } catch {
-    return false
+  // Check database users
+  const dbUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, passwordHash: true, emailVerified: true },
+  })
+
+  if (!dbUser) {
+    return { valid: false }
   }
+
+  // Check password first before revealing email verification status
+  try {
+    const match = await bcrypt.compare(password, dbUser.passwordHash)
+    if (!match) {
+      return { valid: false }
+    }
+  } catch {
+    return { valid: false }
+  }
+
+  // Password is correct - now check email verification
+  if (!dbUser.emailVerified) {
+    return { valid: false, reason: 'email_not_verified' }
+  }
+
+  return { valid: true, source: 'database', userId: dbUser.id }
 }
 
 export async function establishSession({ userEmail, accountId }: { userEmail: string; accountId: string }) {
@@ -114,18 +151,31 @@ export async function updateSessionAccount(
   if (!session) {
     return { error: { general: ['No active session'] } }
   }
-  const authUser = getAuthUserFromSession(session)
-  if (!authUser) {
-    return { error: { general: ['User record not found'] } }
-  }
 
   const account = await prisma.account.findUnique({ where: { id: accountId } })
   if (!account) {
     return { error: { general: ['Account not found'] } }
   }
 
-  if (!authUser.accountNames.includes(account.name)) {
-    return { error: { general: ['Account is not available for this user'] } }
+  // Check access for legacy users (AUTH_USERS)
+  const authUser = getAuthUserFromSession(session)
+  if (authUser) {
+    if (!authUser.accountNames.includes(account.name)) {
+      return { error: { general: ['Account is not available for this user'] } }
+    }
+  } else {
+    // Check access for database users
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.userEmail.toLowerCase() },
+      include: { accounts: { select: { id: true } } },
+    })
+    if (!dbUser) {
+      return { error: { general: ['User record not found'] } }
+    }
+    const hasAccess = dbUser.accounts.some((acc) => acc.id === accountId)
+    if (!hasAccess) {
+      return { error: { general: ['Account is not available for this user'] } }
+    }
   }
 
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
@@ -150,11 +200,23 @@ export async function getSession(): Promise<AuthSession | null> {
   if (!isSessionTokenValid({ token, username: userEmail, timestamp })) {
     return null
   }
+
+  // Check if user exists in legacy AUTH_USERS
   const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === userEmail!.toLowerCase())
-  if (!authUser) {
-    return null
+  if (authUser) {
+    return { userEmail: userEmail!, accountId }
   }
-  return { userEmail: userEmail!, accountId }
+
+  // Check if user exists in database and has verified email
+  const dbUser = await prisma.user.findUnique({
+    where: { email: userEmail!.toLowerCase() },
+    select: { id: true, emailVerified: true },
+  })
+  if (dbUser && dbUser.emailVerified) {
+    return { userEmail: userEmail!, accountId }
+  }
+
+  return null
 }
 
 export async function requireSession(): Promise<AuthSession> {
@@ -168,4 +230,30 @@ export async function requireSession(): Promise<AuthSession> {
 export function getAuthUserFromSession(session: AuthSession): AuthUser | undefined {
   const normalizedEmail = session.userEmail.toLowerCase()
   return AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
+}
+
+/**
+ * Get database user with their accounts as an AuthUser-compatible object.
+ * Returns undefined if user not found or has no accounts.
+ */
+export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | undefined> {
+  const normalizedEmail = email.toLowerCase()
+  const dbUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: { accounts: { orderBy: { name: 'asc' } } },
+  })
+
+  if (!dbUser || dbUser.accounts.length === 0) {
+    return undefined
+  }
+
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    displayName: dbUser.displayName,
+    passwordHash: dbUser.passwordHash,
+    accountNames: dbUser.accounts.map((a) => a.name),
+    defaultAccountName: dbUser.accounts[0].name,
+    preferredCurrency: dbUser.preferredCurrency,
+  }
 }

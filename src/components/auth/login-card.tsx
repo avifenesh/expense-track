@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { loginAction, requestPasswordResetAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -189,6 +190,13 @@ export function LoginCard() {
             <Button type="submit" className="w-full" loading={isPending}>
               Enter Balance Beacon
             </Button>
+
+            <div className="text-center text-sm text-slate-400">
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="font-medium text-sky-300 transition hover:text-sky-200">
+                Create one
+              </Link>
+            </div>
           </form>
         ) : (
           <form onSubmit={handleResetSubmit} className="space-y-4" noValidate>

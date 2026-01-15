@@ -20,15 +20,27 @@ describe('Category API Routes', () => {
   })
 
   afterEach(async () => {
-    // Delete holdings first (foreign key constraint)
+    // Delete all references to test categories (foreign key constraints)
     const testCategories = await prisma.category.findMany({
       where: { name: { contains: 'TEST_' } },
       select: { id: true },
     })
     const categoryIds = testCategories.map((c) => c.id)
     if (categoryIds.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (prisma as any).holding.deleteMany({
+      // Delete in order of foreign key dependencies
+      await prisma.transaction.deleteMany({
+        where: { categoryId: { in: categoryIds } },
+      })
+      await prisma.transactionRequest.deleteMany({
+        where: { categoryId: { in: categoryIds } },
+      })
+      await prisma.budget.deleteMany({
+        where: { categoryId: { in: categoryIds } },
+      })
+      await prisma.recurringTemplate.deleteMany({
+        where: { categoryId: { in: categoryIds } },
+      })
+      await prisma.holding.deleteMany({
         where: { categoryId: { in: categoryIds } },
       })
     }
