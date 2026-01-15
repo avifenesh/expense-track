@@ -1,26 +1,41 @@
 # CLAUDE.md
 
-Personal finance app for two partners. Next.js 16 App Router + Prisma + PostgreSQL + TypeScript.
+Personal finance SaaS (in development, public launch soon). Web + mobile apps. 14-day trial, $5/month.
+
+**Vision:** Individual-first expense tracking. Users manage their own finances with optional expense sharing (splitting costs with roommates, partners, friends). Clarity over complexity - understand your finances in 30 seconds.
+
+Stack: Next.js 16 App Router + Prisma + PostgreSQL + TypeScript.
 
 ## Core Principles
 
 - **Ask first** when task, goal, or implementation is unclear
 - **Verify** - never assume code is correct; validate logic and run tests
 - **No stubs** - complete implementations only, no TODOs or placeholders
+- **No omissions** - never output `// ... styles remain same` or `// ... logic here`
 - **Commit often** - checkpoint after each completed task
-- **Features are incomplete without tests** - no feature is done until it has test coverage
-- **Target 90%+ coverage** across actions, schemas, and lib code
-- **Be concise** - no filler phrases or social pleasantries, focus on what's relevant
+- **Features need tests** - target 90%+ coverage across actions, schemas, and lib
+- **Be concise** - no filler phrases, focus on what's relevant
+- **NEVER kill all node processes** - only kill specific PIDs if necessary
+
+## Transformation Roadmap
+
+4-sprint plan to transform from personal app to multi-tenant SaaS with mobile:
+
+- **Sprint 1**: Production readiness - 90%+ test coverage, bug fixes, UX polish
+- **Sprint 2**: Multi-tenant - user auth, data isolation, subscriptions, OAuth
+- **Sprint 3**: Scale - Redis caching, monitoring, performance, security hardening
+- **Sprint 4**: Mobile - React Native app (Expo), REST API, iOS/Android deployment
+
+See `TRANSFORMATION_PLAN.md` for details. Issues tracked in GitHub Projects.
 
 ## Legacy 2-User Architecture
 
-**Important Context**: This codebase was originally built for exactly 2 users (two partners). Some code reflects this:
+Originally built for 2 users. Some code still reflects this:
 
 - **Hardcoded auth**: `AUTH_USER1_*` and `AUTH_USER2_*` env vars in `src/lib/auth.ts`
-- **Account assumptions**: Code may assume specific account names or structures
-- **No userId isolation**: Database queries don't filter by user (multi-tenant transformation in progress)
+- **Partial userId isolation**: Schema has User model with userId on Account/Category, but server actions don't fully enforce user filtering yet
 
-**Before testing/fixing**: Understand that some patterns need refactoring for multi-user SaaS (Sprint 2+). When writing tests for Sprint 1, you may need to adapt or fix code to be testable.
+Being refactored in Sprint 2 for proper multi-tenant architecture.
 
 ## Commands
 
@@ -32,7 +47,6 @@ npm run db:migrate       # Apply migrations (prod)
 npm test                 # Vitest
 npm run check-types      # TypeScript check
 npm run build            # Build production bundle
-gh issue list            # List open GitHub issues
 ```
 
 ## Structure
@@ -42,18 +56,15 @@ gh issue list            # List open GitHub issues
 - `src/lib/finance.ts` - Financial logic, budget tracking
 - `src/lib/dashboard-ux.ts` - Dashboard data aggregation
 - `src/utils/date.ts` - Use `getMonthStart()` for month normalization
-- `prisma/schema.prisma` - Data models: Account, Category, Transaction, Budget, RecurringTemplate, Holding
+- `prisma/schema.prisma` - Models: User, Account, Category, Transaction, Budget, RecurringTemplate, Holding
 - `tests/` - Vitest test files
 
 ## Patterns
 
-Server actions return `{ success: true, data }` or `{ success: false, error }`.
-
-After schema changes: `npm run db:push && npm run prisma:generate`
-
-Transactions store both `date` and `month` (first day of month) for aggregation.
-
-Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
+- Server actions return `{ success: true, data }` or `{ success: false, error }`
+- After schema changes: `npm run db:push && npm run prisma:generate`
+- Transactions store both `date` and `month` (first day of month) for aggregation
+- Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API
 
 ## Constraints
 
@@ -64,253 +75,124 @@ Multi-currency: USD, EUR, ILS. Exchange rates cached in DB from Frankfurter API.
 
 ## Security
 
-- **CSRF Protection**: All mutating server actions require CSRF tokens validated via `requireCsrfToken()`. Double-submit cookie pattern with HMAC-SHA256 signing.
-- **Security Headers**: Middleware sets CSP, X-Frame-Options, HSTS, and other security headers on all responses.
-- **XSS Protection**: Multiple defense layers including React JSX automatic escaping, nonce-based CSP, input validation, and URL parameter sanitization. See `docs/SECURITY.md` for details.
+- **CSRF**: All mutating server actions require tokens via `requireCsrfToken()`. Double-submit cookie with HMAC-SHA256.
+- **Headers**: Middleware sets CSP, X-Frame-Options, HSTS on all responses.
+- **XSS**: React JSX escaping, nonce-based CSP, input validation, URL sanitization.
 
 ### Security Testing
 
-**XSS Audit**: Comprehensive test suite at `tests/security/` with 70+ attack payloads
+XSS test suite at `tests/security/` with 70+ attack payloads:
 
 ```bash
-npm test -- tests/security/xss.test.ts  # Run XSS tests (17 tests)
+npm test -- tests/security/xss.test.ts
 ```
 
-**Coverage**: All user input surfaces tested against XSS attacks:
+Key files:
 
-- Stored XSS: Transaction descriptions, category names, budget notes, holding notes
-- Reflected XSS: URL parameters (month, account, reason)
-- Error messages: Validation errors across all forms
-- API endpoints: Login and holdings API input validation
-
-**Key Files**:
-
-- `tests/security/xss-payloads.ts` - 70+ XSS attack vectors organized by type
-- `tests/security/xss-helpers.ts` - Validation utilities for XSS prevention
-- `tests/security/xss.test.ts` - Comprehensive XSS test suite
-- `docs/SECURITY.md` - Security documentation and audit findings
+- `tests/security/xss-payloads.ts` - Attack vectors
+- `tests/security/xss-helpers.ts` - Validation utilities
+- `tests/security/xss.test.ts` - Test suite
+- `docs/SECURITY.md` - Full documentation
 
 ## GitHub Issues Workflow
 
-### When Asked "What's Next?"
-
-1. Run `/next` to analyze open issues and get prioritized recommendations
-2. User approves a task to work on
-3. **Create worktree** for the task (see Worktree Policy)
-4. **Enter plan mode** after cd to worktree
-5. **Start iterative development** with review-approve workflow
-6. Reference the issue number in commits: `fix: implement X (closes #N)`
-
-### During Development
-
-- **Start work**: Comment on the issue with your approach
-- **Progress updates**: Update issue with checkboxes as you complete subtasks
-- **New tasks discovered**: Create new issues with `gh issue create`
-
-### Completing Tasks
-
-1. Ensure all acceptance criteria are met
-2. Run tests: `npm test`
-3. Commit with issue reference: `git commit -m "feat: ... (closes #N)"`
-4. Run `/ship-it` to automate: push, PR creation, review addressing, merge, and validation
-5. The issue auto-closes when PR is merged to main
+1. Run `gh issue list` to see open issues
+2. Comment on issue with your approach before starting
+3. Create worktree for the task
+4. Implement with review-approve workflow
+5. Reference issue in commits: `fix: implement X (closes #N)`
+6. Push and create PR, merge when approved
 
 ## Worktree Policy
 
-Use git worktrees for feature development to keep main branch clean and enable parallel work.
+Use git worktrees for feature development to keep main clean.
 
 ### Creating a Worktree
 
-1. **Comment on the issue** with your approach before starting
-2. **Create worktree using the script** (automatically copies .env):
-
-   ```bash
-   # Windows PowerShell
-   .\scripts\create-worktree.ps1 <branch-name>
-
-   # Linux/Mac/Git Bash
-   ./scripts/create-worktree.sh <branch-name>
-
-   # Example
-   .\scripts\create-worktree.ps1 finance-tests
-   ```
-
-3. **Switch to worktree directory**:
-   ```bash
-   cd ../expense-track-<branch-name>
-   ```
-4. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-### Development in Worktree
-
-**Review-Approve-Iterate Workflow (Required for each task):**
-
-1. **After `cd` to worktree, enter plan mode first**
-   - Use plan mode to understand the codebase and design the approach
-   - Read relevant files, understand patterns, design implementation
-   - Get user approval on the plan before starting
-
-2. **Implement the feature/fix**
-   - Write code following the approved plan
-   - Write tests for new functionality
-   - Commit often with descriptive messages
-   - Reference issue number in commits
-
-3. **Request code review** (after completing a logical chunk of work)
-   - Use Task tool with `subagent_type: "pr-review-toolkit:code-reviewer"`
-   - Provide context: files changed (usually git diff output)
-   - Agent reviews for:
-     - Adherence to project guidelines (CLAUDE.md)
-     - Code quality and best practices
-     - Potential bugs or issues
-     - Style violations
-
-4. **Fix based on review feedback**
-   - Address all review comments
-   - Commit fixes with clear messages
-   - Return to step 3 if significant changes made
-
-5. **Iterate until clean review**
-   - Continue review → fix → review cycle
-   - Goal: Zero blocking issues from code-reviewer
-
-6. **Request approval** (when review is clean)
-   - Use Task tool with `subagent_type: "general-purpose"`
-   - Provide detailed prompt:
-     - Original task requirements (from GitHub issue)
-     - List of what was implemented
-     - Summary of all changes made
-     - Test results and coverage
-     - Ask agent to verify:
-       - All acceptance criteria met
-       - Tests passing
-       - No missing pieces from requirements
-       - Ready for PR
-   - Agent responds with APPROVED or BLOCKED + reasons
-
-7. **Handle approval result**
-   - **If APPROVED**: Continue to step 8
-   - **If BLOCKED**: Go back to step 2, complete missing pieces, then repeat steps 3-6
-
-8. **Run `/ship-it`** (after approval)
-   - Use the `/ship-it` skill to automate the entire PR workflow
-   - Handles: commit, push, PR creation, review addressing, merge, deploy, and validation
-   - Follow the skill's guidance through each stage until PR is merged to main
-
-**Example workflow:**
-
 ```bash
-# After getting task from /next
-cd ../expense-track-auth-tests
+# Windows PowerShell
+.\scripts\create-worktree.ps1 <branch-name>
 
-# Enter plan mode, explore codebase, design solution
-# Get user approval
+# Linux/Mac/Git Bash
+./scripts/create-worktree.sh <branch-name>
 
-# Implement
-# ... write code and tests ...
-git commit -m "test: add auth-server.ts coverage"
-
-# Request review
-# Task tool: subagent_type="pr-review-toolkit:code-reviewer"
-# Provide: git diff output
-# Review identifies: missing edge case tests
-
-# Fix and commit
-# ... add edge case tests ...
-git commit -m "test: add edge case coverage for token expiry"
-
-# Request review again
-# Task tool: subagent_type="pr-review-toolkit:code-reviewer"
-# Review: clean, no issues
-
-# Request approval
-# Task tool: subagent_type="general-purpose"
-# Prompt: "Verify task completion for issue #X: [requirements].
-#         Implemented: [changes]. Tests: [results].
-#         Check all acceptance criteria met."
-# Response: BLOCKED - acceptance criteria requires 90% coverage, only at 85%
-
-# Fix and commit
-# ... add more tests ...
-git commit -m "test: increase coverage to 95%"
-
-# Request review
-# Review: clean
-
-# Request approval
-# Response: APPROVED - all criteria met, ready for PR
-
-# Run /ship-it to automate PR workflow
-# The skill will handle: push, PR creation, reviews, merge, and validation
-/ship-it
+# Then
+cd ../expense-track-<branch-name>
+npm install
 ```
+
+### Development Workflow
+
+1. **Plan first** - understand codebase, design approach, get approval
+2. **Implement** - write code and tests, commit often, reference issue numbers
+3. **Review** - request code review, fix feedback, iterate until clean
+4. **Approval** - verify all acceptance criteria met, tests passing
+5. **Ship** - push, create PR, merge when approved
 
 ### Opening a PR
 
-**Recommended**: Use `/ship-it` skill to automate the entire PR workflow (push, create, review, merge).
-
-**Manual alternative** (if needed):
 ```bash
 gh pr create --title "feat: implement X" --body "Closes #N"
 ```
 
-### Merging to Main
-
-**Recommended**: The `/ship-it` skill handles merging automatically after review approval.
-
-**Manual alternative** (if needed):
-1. Address any PR review comments
-2. Ensure all tests pass
-3. Merge PR with squash:
-   ```bash
-   gh pr merge <PR_NUMBER> --squash --delete-branch
-   ```
-
-### Cleanup After Merge
+### Merging
 
 ```bash
-# Return to main directory
+gh pr merge <PR_NUMBER> --squash --delete-branch
+```
+
+### Cleanup
+
+```bash
 cd ../expense-track
-
-# Update main
-git checkout main
-git pull
-
-# Remove worktree
+git checkout main && git pull
 git worktree remove ../expense-track-<name>
-
-# Prune remote tracking branches
 git fetch --prune
 ```
 
 ### Direct Work on Main
 
-**Only for fixes/hotfixes:**
-
-- Small bug fixes
-- Typo corrections
-- Documentation updates
-- Emergency hotfixes
-
-**Everything else** should go through worktree → PR → merge workflow.
+Only for small fixes, typos, docs, or emergency hotfixes. Everything else goes through worktree workflow.
 
 ## Testing
 
-Write tests to find bugs, not just to pass coverage metrics. Tests should verify real behavior and edge cases, not just happy paths.
+Write tests to find bugs, not just pass coverage. Verify real behavior and edge cases, not just happy paths.
 
 ## Style
 
-- Be concise, no filler phrases or social pleasantries
-- Focus on what's relevant to the task
+- Be concise, no filler phrases
+- Focus on task relevance
 - Reference issue numbers in commits and PRs
+- Follow CI until green, test manually after implementation
 - Never use `console.*` - use proper logging or remove debug statements
 
-## DONT
+## Technical Standards
 
-- DONT CREATE AN MD FILE SUMMERIZING A TASK YOU FINISHED
-- DONT commit without tests for new features
-- DONT skip type checking or linting
-- DONT use `git push --no-verify` or `git commit --no-verify` - always fix the issues instead
+**Frontend ("Looks Good")**
+
+- Visual polish: Broken/raw UI is a bug
+- Media handling: Loading states, skeletons, error fallbacks required
+- Mobile-first: Primary user is mid-range Android with unstable internet
+
+**Backend ("No Bugs")**
+
+- Role security: Validate user roles on every request
+- Data integrity: Soft delete, maintain referential integrity
+- Validation: Server-side validation always; never trust client
+
+## Definition of Done
+
+A task is complete when:
+
+1. Database schema supports it
+2. API handles success AND error states
+3. UI feedback (toasts, spinners, errors) visible to user
+4. Tests cover the functionality
+5. CI passes
+
+## Don'ts
+
+- Don't create summary MD files after tasks
+- Don't commit without tests for new features
+- Don't skip type checking or linting
+- Don't use `--no-verify` flags - fix issues instead
