@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyCredentials } from '@/lib/auth-server'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
 import { rateLimitError } from '@/lib/api-helpers'
 
 export async function POST(request: NextRequest) {
@@ -16,12 +16,13 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.trim().toLowerCase()
 
-    // Rate limit login attempts by normalized email
-    const rateLimit = checkRateLimit(normalizedEmail)
+    // Rate limit login attempts by normalized email (5/min for brute force protection)
+    const rateLimit = checkRateLimitTyped(normalizedEmail, 'login')
     if (!rateLimit.allowed) {
       return rateLimitError(rateLimit.resetAt)
     }
-    incrementRateLimit(normalizedEmail)
+    // Increment on every attempt (before validation) to count failed attempts
+    incrementRateLimitTyped(normalizedEmail, 'login')
 
     const result = await verifyCredentials({ email, password })
     if (!result.valid) {
