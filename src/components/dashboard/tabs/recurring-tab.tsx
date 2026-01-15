@@ -18,7 +18,7 @@ import { createAccountOptions } from '@/lib/select-options'
 import { RecurringTemplateSummary } from '@/lib/finance'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { useFeedback } from '@/hooks/useFeedback'
+import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import {
   DashboardCategory,
@@ -53,7 +53,6 @@ export function RecurringTab({
   const [recurringTypeFilter, setRecurringTypeFilter] = useState<'all' | TransactionType>('all')
   const [recurringAccountFilter, setRecurringAccountFilter] = useState<string>(activeAccount)
   const [showInactiveRecurring, setShowInactiveRecurring] = useState(false)
-  const { feedback: recurringFeedback, showSuccess, showError } = useFeedback()
   const [isPendingRecurring, startRecurring] = useTransition()
 
   // Derived options
@@ -105,10 +104,10 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await upsertRecurringTemplateAction(payload)
       if ('error' in result) {
-        showError('Could not save recurring template.')
+        toast.error('Could not save recurring template.')
         return
       }
-      showSuccess('Recurring template saved.')
+      toast.success('Recurring template saved.')
       form.reset()
       router.refresh()
     })
@@ -118,10 +117,10 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await toggleRecurringTemplateAction({ id: template.id, isActive, csrfToken })
       if ('error' in result) {
-        showError('Could not update recurring template.')
+        toast.error('Could not update recurring template.')
         return
       }
-      showSuccess(isActive ? 'Template re-activated.' : 'Template paused.')
+      toast.success(isActive ? 'Template re-activated.' : 'Template paused.')
       router.refresh()
     })
   }
@@ -130,14 +129,14 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount, csrfToken })
       if ('error' in result) {
-        showError('Could not apply recurring items.')
+        toast.error('Could not apply recurring items.')
         return
       }
       const created = result.data?.created ?? 0
       if (created === 0) {
-        showSuccess('No new recurring items were added for this month.')
+        toast.success('No new recurring items were added for this month.')
       } else {
-        showSuccess(`${created} recurring item${created > 1 ? 's' : ''} added.`)
+        toast.success(`${created} recurring item${created > 1 ? 's' : ''} added.`)
       }
       router.refresh()
     })
@@ -300,14 +299,6 @@ export function RecurringTab({
                   </Button>
                 </div>
               </form>
-              {recurringFeedback && (
-                <p
-                  role="status"
-                  className={cn('text-xs', recurringFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
-                >
-                  {recurringFeedback.message}
-                </p>
-              )}
             </div>
 
             <div className="space-y-3">

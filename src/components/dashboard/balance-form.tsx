@@ -8,10 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/utils/format'
-import { cn } from '@/utils/cn'
+import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
-
-type Feedback = { type: 'success' | 'error'; message: string }
 
 export type BalanceFormProps = {
   activeAccount: string
@@ -25,13 +23,12 @@ export function BalanceForm({ activeAccount, monthKey, preferredCurrency, curren
   const router = useRouter()
   const csrfToken = useCsrfToken()
   const [balanceAmount, setBalanceAmount] = useState('')
-  const [balanceFeedback, setBalanceFeedback] = useState<Feedback | null>(null)
   const [isPendingBalance, startBalance] = useTransition()
 
   const handleSetBalance = () => {
     const parsedAmount = Number.parseFloat(balanceAmount)
     if (!Number.isFinite(parsedAmount)) {
-      setBalanceFeedback({ type: 'error', message: 'Enter a valid amount.' })
+      toast.error('Enter a valid amount.')
       return
     }
 
@@ -50,19 +47,16 @@ export function BalanceForm({ activeAccount, monthKey, preferredCurrency, curren
           Array.isArray(firstErrorSet) && firstErrorSet.length > 0
             ? (firstErrorSet[0] ?? 'Unable to set balance.')
             : 'Unable to set balance.'
-        setBalanceFeedback({ type: 'error', message })
+        toast.error(message)
         return
       }
 
       const adjustment = result.data.adjustment
       if (adjustment === 0) {
-        setBalanceFeedback({ type: 'success', message: 'Balance already matches.' })
+        toast.success('Balance already matches.')
       } else {
         const sign = adjustment > 0 ? '+' : ''
-        setBalanceFeedback({
-          type: 'success',
-          message: `Balance set. Adjustment: ${sign}${formatCurrency(adjustment, preferredCurrency)}`,
-        })
+        toast.success(`Balance set. Adjustment: ${sign}${formatCurrency(adjustment, preferredCurrency)}`)
       }
       setBalanceAmount('')
       onClose()
@@ -73,7 +67,6 @@ export function BalanceForm({ activeAccount, monthKey, preferredCurrency, curren
   const handleCancel = () => {
     onClose()
     setBalanceAmount('')
-    setBalanceFeedback(null)
   }
 
   return (
@@ -114,14 +107,6 @@ export function BalanceForm({ activeAccount, monthKey, preferredCurrency, curren
             </Button>
           </div>
         </div>
-        {balanceFeedback && (
-          <p
-            role="status"
-            className={cn('text-xs', balanceFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
-          >
-            {balanceFeedback.message}
-          </p>
-        )}
       </CardContent>
     </Card>
   )
