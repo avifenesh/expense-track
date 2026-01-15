@@ -71,6 +71,7 @@ model DashboardCache {
   updatedAt         DateTime  @updatedAt
 
   @@index([monthKey, accountId])
+  @@index([accountId])
   @@index([fetchedAt])
   @@index([monthKey])
 }
