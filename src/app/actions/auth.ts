@@ -4,7 +4,6 @@ import { z } from 'zod'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import { clearSession, establishSession, updateSessionAccount, verifyCredentials } from '@/lib/auth-server'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
 import { parseInput, ensureAccountAccess, requireCsrfToken } from './shared'
@@ -42,34 +41,7 @@ export async function loginAction(input: z.infer<typeof loginSchema>) {
     return failure({ credentials: ['Invalid username or password'] })
   }
 
-  // Handle legacy users (from AUTH_USERS env vars)
-  if (credentialsResult.source === 'legacy') {
-    const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
-    if (!authUser) {
-      return failure({ credentials: ['Invalid username or password'] })
-    }
-
-    const accounts = await prisma.account.findMany({
-      where: { name: { in: authUser.accountNames } },
-      orderBy: { name: 'asc' },
-    })
-
-    if (accounts.length === 0) {
-      return {
-        error: {
-          general: ['No accounts are provisioned for this user. Please contact support.'],
-        },
-      }
-    }
-
-    const defaultAccount = accounts.find((account) => account.name === authUser.defaultAccountName) ?? accounts[0]
-
-    await establishSession({ userEmail: authUser.email, accountId: defaultAccount.id })
-    await rotateCsrfToken()
-    return success({ accountId: defaultAccount.id })
-  }
-
-  // Handle database users
+  // Get user with their accounts from database
   const dbUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
     include: { accounts: { orderBy: { name: 'asc' } } },
@@ -99,22 +71,26 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
   const parsed = parseInput(recoverySchema, input)
   if ('error' in parsed) return parsed
 
-  const recoveryContact = RECOVERY_CONTACTS.find(
-    (contact) => contact.email.toLowerCase() === parsed.data.email.trim().toLowerCase(),
-  )
+  const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
-  if (!recoveryContact) {
-    return {
-      error: {
-        email: ['Email is not registered. Reach out to the finance team to restore access.'],
-      },
-    }
+  // Check if user exists in database
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, email: true },
+  })
+
+  if (!user) {
+    // Return generic message to prevent email enumeration
+    return success({
+      message: 'If this email is registered, you will receive a password reset link shortly.',
+    })
   }
 
-  return {
-    success: true,
-    message: `A reset link was sent to ${recoveryContact.email}. Use the standard password after completing the guided reset.`,
-  }
+  // TODO: Implement actual password reset email sending in #33
+  // For now, return a success message indicating the feature is coming
+  return success({
+    message: 'If this email is registered, you will receive a password reset link shortly.',
+  })
 }
 
 export async function persistActiveAccountAction(input: z.infer<typeof accountSelectionSchema>) {

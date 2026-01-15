@@ -10,7 +10,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
-  getAuthUserFromSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -172,9 +172,9 @@ describe('setBalanceAction', () => {
   })
 
   it('should create positive adjustment when target is higher', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -227,9 +227,9 @@ describe('setBalanceAction', () => {
   })
 
   it('should create negative adjustment when target is lower', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -282,9 +282,9 @@ describe('setBalanceAction', () => {
   })
 
   it('should skip adjustment when balance is already correct', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -323,9 +323,9 @@ describe('setBalanceAction', () => {
   })
 
   it('should create Balance Adjustment category if not exists', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -371,9 +371,9 @@ describe('setBalanceAction', () => {
   })
 
   it('should handle decimal amounts properly', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -431,9 +431,9 @@ describe('setBalanceAction', () => {
   })
 
   it('should handle negative target balance', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',

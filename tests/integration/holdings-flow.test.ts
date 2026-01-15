@@ -9,15 +9,20 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-// Mock auth to return test user
+// Mock auth to return test user (database-driven)
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn().mockResolvedValue({
-    user: { username: 'testuser', email: 'test@example.com' },
+    userEmail: 'test@example.com',
+    accountId: 'test-account-id',
   }),
-  getAuthUserFromSession: vi.fn().mockReturnValue({
-    username: 'testuser',
+  getDbUserAsAuthUser: vi.fn().mockResolvedValue({
+    id: 'test-user-id',
     email: 'test@example.com',
+    displayName: 'Test User',
+    passwordHash: 'hash',
     accountNames: ['TEST_Holdings_Account'],
+    defaultAccountName: 'TEST_Holdings_Account',
+    preferredCurrency: 'USD',
   }),
 }))
 

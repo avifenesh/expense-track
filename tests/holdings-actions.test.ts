@@ -15,7 +15,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
-  getAuthUserFromSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -80,9 +80,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should successfully create a holding', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -124,9 +124,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should fail when category is not a holding category', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -167,9 +167,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should fail with invalid stock symbol', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -211,9 +211,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should convert symbol to uppercase', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -290,9 +290,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should fail when category not found', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -328,9 +328,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should fail when category lookup throws database error', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -366,9 +366,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should handle non-Error stock API failures', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -410,9 +410,9 @@ describe('createHoldingAction', () => {
   })
 
   it('should fail when database cannot create holding', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -462,9 +462,9 @@ describe('updateHoldingAction', () => {
   })
 
   it('should successfully update a holding', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -500,9 +500,9 @@ describe('updateHoldingAction', () => {
   })
 
   it('should fail when holding not found', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -529,9 +529,9 @@ describe('updateHoldingAction', () => {
   })
 
   it('should fail when user lacks access to holding account', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -567,9 +567,9 @@ describe('updateHoldingAction', () => {
   })
 
   it('should fail when database update throws error', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -613,9 +613,9 @@ describe('deleteHoldingAction', () => {
   })
 
   it('should successfully delete a holding', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -647,9 +647,9 @@ describe('deleteHoldingAction', () => {
   })
 
   it('should fail when database delete throws error', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -687,9 +687,9 @@ describe('refreshHoldingPricesAction', () => {
   })
 
   it('should successfully refresh prices for all holdings', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -727,9 +727,9 @@ describe('refreshHoldingPricesAction', () => {
   })
 
   it('should return zero when no holdings found', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -757,9 +757,9 @@ describe('refreshHoldingPricesAction', () => {
   })
 
   it('should handle duplicate symbols', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -795,9 +795,9 @@ describe('refreshHoldingPricesAction', () => {
   })
 
   it('should fail when user lacks account access', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -822,9 +822,9 @@ describe('refreshHoldingPricesAction', () => {
   })
 
   it('should fail when database throws error', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',

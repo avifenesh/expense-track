@@ -10,7 +10,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
-  getAuthUserFromSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/csrf', () => ({
@@ -81,9 +81,9 @@ describe('upsertBudgetAction', () => {
   })
 
   it('should fail when user does not have access to account', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -116,9 +116,9 @@ describe('upsertBudgetAction', () => {
   })
 
   it('should successfully create a new budget', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -178,9 +178,9 @@ describe('upsertBudgetAction', () => {
   })
 
   it('should handle budget update', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -236,9 +236,9 @@ describe('deleteBudgetAction', () => {
   })
 
   it('should successfully delete a budget', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -276,9 +276,9 @@ describe('deleteBudgetAction', () => {
   })
 
   it('should handle database error gracefully', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',

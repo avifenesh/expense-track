@@ -409,6 +409,32 @@ describe('API Rate Limiting Integration', () => {
       const user1Token = generateAccessToken('avi', 'avi@example.com')
       const user2Token = generateAccessToken('serena', 'serena@example.com')
 
+      // Create second user 'serena' with their own account
+      const user2 = await prisma.user.upsert({
+        where: { id: 'serena' },
+        update: {},
+        create: {
+          id: 'serena',
+          email: 'serena@example.com',
+          displayName: 'Serena Test User',
+          passwordHash: '$2b$10$placeholder',
+          preferredCurrency: 'USD',
+        },
+      })
+
+      const user2AccountId = 'test-account-serena'
+      await prisma.account.upsert({
+        where: { id: user2AccountId },
+        update: {},
+        create: {
+          id: user2AccountId,
+          userId: user2.id,
+          name: 'Serena Checking Rate Limit Test',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+        },
+      })
+
       const categoryId = 'test-category-multi-user'
       await prisma.category.upsert({
         where: { id: categoryId },
@@ -417,6 +443,19 @@ describe('API Rate Limiting Integration', () => {
           id: categoryId,
           userId: testUserId,
           name: 'Test Category Multi User',
+          type: 'EXPENSE',
+        },
+      })
+
+      // Create category for user2 as well
+      const user2CategoryId = 'test-category-multi-user-2'
+      await prisma.category.upsert({
+        where: { id: user2CategoryId },
+        update: {},
+        create: {
+          id: user2CategoryId,
+          userId: user2.id,
+          name: 'Test Category Multi User 2',
           type: 'EXPENSE',
         },
       })
@@ -464,7 +503,7 @@ describe('API Rate Limiting Integration', () => {
       )
       expect(user1Response.status).toBe(429)
 
-      // User 2 should still be allowed
+      // User 2 should still be allowed (using their own account)
       const user2Response = await transactionsPost(
         new NextRequest('http://localhost/api/v1/transactions', {
           method: 'POST',
@@ -473,10 +512,10 @@ describe('API Rate Limiting Integration', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            accountId: testAccountId,
-            categoryId,
+            accountId: user2AccountId,
+            categoryId: user2CategoryId,
             amount: 10,
-            currency: 'ILS',
+            currency: 'USD',
             type: 'EXPENSE',
             date: new Date().toISOString(),
             description: 'USER2_TEST allowed',
