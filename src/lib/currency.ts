@@ -1,5 +1,6 @@
 import { Currency, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { serverLogger } from '@/lib/server-logger'
 import { startOfDay } from 'date-fns'
 
 const FRANKFURTER_BASE_URL = 'https://api.frankfurter.dev/v1'
@@ -273,17 +274,12 @@ export function convertAmountWithCache(amount: number, from: Currency, to: Curre
 
   const rate = cache.get(rateCacheKey(from, to))
   if (!rate) {
-    // Log warning for missing exchange rate - this could indicate stale cache or missing data
-    // eslint-disable-next-line no-console
-    console.warn(
-      'CURRENCY_RATE_MISSING',
-      JSON.stringify({
-        from,
-        to,
-        amount,
-        message: `No exchange rate found for ${from} -> ${to}, returning original amount`,
-      }),
-    )
+    serverLogger.warn('CURRENCY_RATE_MISSING', {
+      from,
+      to,
+      amount,
+      message: `No exchange rate found for ${from} -> ${to}, returning original amount`,
+    })
     return amount
   }
 
