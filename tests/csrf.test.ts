@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const mockCookies = {
   get: vi.fn(),
@@ -15,9 +15,18 @@ process.env.AUTH_SESSION_SECRET = 'test-secret-key-for-csrf-testing-only'
 import { getCsrfToken, validateCsrfToken, rotateCsrfToken, CSRF_COOKIE } from '@/lib/csrf'
 
 describe('CSRF Token Library', () => {
+  const originalNodeEnv = process.env.NODE_ENV
+
   beforeEach(() => {
+    // Force production mode for CSRF tests (integration tests use 'test' mode to skip validation)
+    process.env.NODE_ENV = 'production'
     vi.clearAllMocks()
     mockCookies.get.mockReturnValue(undefined)
+  })
+
+  afterEach(() => {
+    // Restore original NODE_ENV
+    process.env.NODE_ENV = originalNodeEnv
   })
 
   describe('getCsrfToken', () => {
