@@ -266,13 +266,24 @@ export async function batchLoadExchangeRates(date?: Date): Promise<RateCache> {
 
 /**
  * Convert amount using a preloaded rate cache (no DB calls)
+ * Returns the converted amount, or the original amount if no rate is found (with warning)
  */
 export function convertAmountWithCache(amount: number, from: Currency, to: Currency, cache: RateCache): number {
   if (from === to) return amount
 
   const rate = cache.get(rateCacheKey(from, to))
   if (!rate) {
-    // Fallback: return original amount if rate not found
+    // Log warning for missing exchange rate - this could indicate stale cache or missing data
+    // eslint-disable-next-line no-console
+    console.warn(
+      'CURRENCY_RATE_MISSING',
+      JSON.stringify({
+        from,
+        to,
+        amount,
+        message: `No exchange rate found for ${from} -> ${to}, returning original amount`,
+      }),
+    )
     return amount
   }
 
