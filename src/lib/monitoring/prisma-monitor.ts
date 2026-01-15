@@ -1,11 +1,8 @@
 import 'server-only'
 import * as Sentry from '@sentry/nextjs'
 
-const SLOW_QUERY_THRESHOLD_MS = parseInt(
-  process.env.SLOW_QUERY_THRESHOLD_MS || '1000',
-  10
-)
-const QUERY_MONITORING_ENABLED = process.env.QUERY_MONITORING_ENABLED !== 'false'
+export const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '1000', 10)
+export const QUERY_MONITORING_ENABLED = process.env.QUERY_MONITORING_ENABLED !== 'false'
 
 interface QueryMetrics {
   model?: string
@@ -26,7 +23,10 @@ interface MiddlewareParams {
  * Tracks query execution time and logs slow queries.
  * Integrates with Sentry for alerting on performance issues.
  */
-export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (params: MiddlewareParams) => Promise<unknown>): Promise<unknown> => {
+export const queryMonitorMiddleware = async (
+  params: MiddlewareParams,
+  next: (params: MiddlewareParams) => Promise<unknown>,
+): Promise<unknown> => {
   if (!QUERY_MONITORING_ENABLED) {
     return next(params)
   }
@@ -71,13 +71,10 @@ export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (pa
 
       // Critical threshold: 5x the slow query threshold
       if (duration > SLOW_QUERY_THRESHOLD_MS * 5) {
-        Sentry.captureMessage(
-          `Critical slow query: ${params.model}.${params.action} (${duration}ms)`,
-          {
-            level: 'warning',
-            extra: logData,
-          }
-        )
+        Sentry.captureMessage(`Critical slow query: ${params.model}.${params.action} (${duration}ms)`, {
+          level: 'warning',
+          extra: logData,
+        })
       }
     }
 
@@ -87,12 +84,15 @@ export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (pa
 
     // Log query errors with timing
     // eslint-disable-next-line no-console
-    console.error('QUERY_ERROR', JSON.stringify({
-      model: params.model,
-      action: params.action,
-      duration,
-      error: error instanceof Error ? error.message : String(error),
-    }))
+    console.error(
+      'QUERY_ERROR',
+      JSON.stringify({
+        model: params.model,
+        action: params.action,
+        duration,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    )
 
     throw error
   }
@@ -102,7 +102,7 @@ export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (pa
  * Sanitize query arguments to remove sensitive data.
  * Recursively removes password hashes and other sensitive fields.
  */
-function sanitizeArgs(args: unknown): unknown {
+export function sanitizeArgs(args: unknown): unknown {
   if (typeof args !== 'object' || args === null) {
     return args
   }
