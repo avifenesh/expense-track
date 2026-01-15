@@ -24,9 +24,9 @@ const basePrisma = new PrismaClient({
 })
 
 // Apply query monitoring extension
-export const prisma =
-  global.prisma ??
-  basePrisma.$extends({
+export const prisma: PrismaClient =
+  (global.prisma as PrismaClient) ??
+  (basePrisma.$extends({
     query: {
       $allModels: {
         async $allOperations({ operation, model, args, query }) {
@@ -98,7 +98,7 @@ export const prisma =
         },
       },
     },
-  })
+  }) as PrismaClient)
 
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma
