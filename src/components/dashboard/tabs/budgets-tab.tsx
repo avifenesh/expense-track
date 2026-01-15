@@ -317,7 +317,6 @@ export function BudgetsTab({
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="0.00"
                   required
                   aria-describedby={formErrors?.planned ? 'budget-planned-error' : undefined}
                 />
