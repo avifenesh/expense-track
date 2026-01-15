@@ -23,7 +23,7 @@ describe('Transaction API Routes', () => {
     const testUser = await getApiTestUser()
 
     // Create 'serena' user for transaction request approval tests
-    // This user owns the 'other' account and can approve/reject requests
+    // This user owns the 'SerenaAccount' account and can approve/reject requests
     const serenaUser = await prisma.user.upsert({
       where: { id: 'serena' },
       update: {},

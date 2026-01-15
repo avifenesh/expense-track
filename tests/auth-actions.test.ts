@@ -162,7 +162,7 @@ describe('auth actions', () => {
       expect(rotateCsrfToken).toHaveBeenCalled()
     })
 
-    it('succeeds with multiple accounts and selects first by name order', async () => {
+    it('succeeds with multiple accounts and chooses a default account', async () => {
       vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_2.id })
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         id: TEST_USER_2.id,
@@ -417,37 +417,22 @@ describe('auth actions', () => {
   })
 
   describe('requestPasswordResetAction', () => {
-    it('returns generic message for known users (no email enumeration)', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValue({
-        id: 'user-1',
-        email: 'test1@example.com',
-        displayName: 'Test User 1',
-        passwordHash: testPasswordHash,
-        preferredCurrency: Currency.USD,
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationExpires: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-
+    it('returns honest message that feature is not yet implemented', async () => {
       const response = await requestPasswordResetAction({ email: 'test1@example.com' })
 
       expect('success' in response && response.success).toBe(true)
       if ('success' in response && response.success) {
-        expect(response.data.message).toContain('If this email is registered')
+        expect(response.data.message).toContain('Password reset via email is not yet available')
       }
     })
 
-    it('returns same generic message for unknown emails (prevents enumeration)', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-
+    it('returns same message for any email (feature not implemented)', async () => {
       const response = await requestPasswordResetAction({ email: 'unknown@example.com' })
 
-      // Should return success with generic message to prevent email enumeration
+      // Should return success with honest message about feature status
       expect('success' in response && response.success).toBe(true)
       if ('success' in response && response.success) {
-        expect(response.data.message).toContain('If this email is registered')
+        expect(response.data.message).toContain('Password reset via email is not yet available')
       }
     })
 
@@ -458,21 +443,9 @@ describe('auth actions', () => {
     })
 
     it('handles email case-insensitively', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValue({
-        id: 'user-1',
-        email: 'test1@example.com',
-        displayName: 'Test User 1',
-        passwordHash: testPasswordHash,
-        preferredCurrency: Currency.USD,
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationExpires: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-
       const response = await requestPasswordResetAction({ email: 'TEST1@EXAMPLE.COM' })
 
+      // Should succeed regardless of email case
       expect('success' in response && response.success).toBe(true)
     })
 

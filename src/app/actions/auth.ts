@@ -73,23 +73,17 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
 
   const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
-  // Check if user exists in database
-  const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-    select: { id: true, email: true },
+  // TODO: Implement actual password reset email sending in #33
+  // For now, log the request and return an honest message about the feature status.
+  // The DB query will be added when we actually send reset emails.
+  serverLogger.warn('Password reset requested, but reset flow is not yet implemented (see issue #33).', {
+    action: 'requestPasswordResetAction',
+    input: { email: normalizedEmail },
   })
 
-  if (!user) {
-    // Return generic message to prevent email enumeration
-    return success({
-      message: 'If this email is registered, you will receive a password reset link shortly.',
-    })
-  }
-
-  // TODO: Implement actual password reset email sending in #33
-  // For now, return a success message indicating the feature is coming
   return success({
-    message: 'If this email is registered, you will receive a password reset link shortly.',
+    message:
+      'Password reset via email is not yet available. Please contact support if you need assistance accessing your account.',
   })
 }
 
