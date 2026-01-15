@@ -42,6 +42,15 @@ vi.mock('@/lib/email', () => ({
   sendVerificationEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test-message-id' }),
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  createTrialSubscription: vi.fn().mockResolvedValue({
+    id: 'test-sub-id',
+    userId: 'new-user-id',
+    status: 'TRIALING',
+    trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+  }),
+}))
+
 describe('registerAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()

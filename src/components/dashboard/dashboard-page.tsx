@@ -35,6 +35,7 @@ import { cn } from '@/utils/cn'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { ChatWidget } from '@/components/ai/chat-widget'
 import { BudgetsTab, CategoriesTab, OverviewTab, RecurringTab, TransactionsTab } from '@/components/dashboard/tabs'
+import { SubscriptionBanner, type SubscriptionBannerData } from '@/components/subscription'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories' | 'holdings'
@@ -43,6 +44,7 @@ type DashboardPageProps = {
   data: DashboardData
   monthKey: string
   accountId: string
+  subscription: SubscriptionBannerData | null
 }
 
 const HoldingsTab = dynamic(() => import('./holdings-tab'), {
@@ -138,7 +140,7 @@ function resolveStatIcon(label: string) {
   return TrendingUp
 }
 
-export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps) {
+export function DashboardPage({ data, monthKey, accountId, subscription }: DashboardPageProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -248,6 +250,17 @@ export function DashboardPage({ data, monthKey, accountId }: DashboardPageProps)
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-14 lg:gap-6 lg:px-6 lg:pt-16">
+      {/* Subscription banner */}
+      {subscription && (
+        <SubscriptionBanner
+          subscription={subscription}
+          onUpgrade={() => {
+            // TODO: Navigate to upgrade page when implemented
+            window.open('/upgrade', '_blank')
+          }}
+        />
+      )}
+
       {/* Floating top bar */}
       <div className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-slate-900/95 px-4 py-2.5 backdrop-blur-md lg:px-6 lg:py-3">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">

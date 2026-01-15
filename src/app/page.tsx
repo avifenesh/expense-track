@@ -6,6 +6,8 @@ import { getAccounts } from '@/lib/finance'
 import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import { getMonthKey } from '@/utils/date'
 import { getSession, updateSessionAccount, getDbUserAsAuthUser } from '@/lib/auth-server'
+import { getSubscriptionState } from '@/lib/subscription'
+import type { SubscriptionBannerData } from '@/components/subscription'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,12 +21,14 @@ async function DashboardLoader({
   allowedAccounts,
   preferredCurrency,
   allAccounts,
+  subscription,
 }: {
   monthKey: string
   accountId: string
   allowedAccounts: Awaited<ReturnType<typeof getAccounts>>
   preferredCurrency?: import('@prisma/client').Currency
   allAccounts: Awaited<ReturnType<typeof getAccounts>>
+  subscription: SubscriptionBannerData | null
 }) {
   const data = await getCachedDashboardData({
     monthKey,
@@ -33,7 +37,14 @@ async function DashboardLoader({
     accounts: allAccounts,
   })
 
-  return <DashboardPage data={{ ...data, accounts: allowedAccounts }} monthKey={monthKey} accountId={accountId} />
+  return (
+    <DashboardPage
+      data={{ ...data, accounts: allowedAccounts }}
+      monthKey={monthKey}
+      accountId={accountId}
+      subscription={subscription}
+    />
+  )
 }
 
 export default async function Page({ searchParams }: PageProps) {
@@ -78,6 +89,21 @@ export default async function Page({ searchParams }: PageProps) {
     }
   }
 
+  // Fetch subscription state for the banner
+  let subscription: SubscriptionBannerData | null = null
+  try {
+    const subState = await getSubscriptionState(authUser.id)
+    subscription = {
+      status: subState.status,
+      daysRemaining: subState.daysRemaining,
+      trialEndsAt: subState.trialEndsAt?.toISOString() ?? null,
+      currentPeriodEnd: subState.currentPeriodEnd?.toISOString() ?? null,
+    }
+  } catch {
+    // If subscription check fails, don't block the dashboard
+    subscription = null
+  }
+
   if (accountId && typeof accountParam === 'string' && accountParam !== accountId) {
     const nextParams = new URLSearchParams()
     nextParams.set('account', accountId)
@@ -96,6 +122,7 @@ export default async function Page({ searchParams }: PageProps) {
         allowedAccounts={allowedAccounts}
         preferredCurrency={authUser.preferredCurrency}
         allAccounts={accounts}
+        subscription={subscription}
       />
     </Suspense>
   )

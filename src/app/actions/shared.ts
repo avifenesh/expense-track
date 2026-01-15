@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import type { AuthUser } from '@/lib/auth'
 import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
 import { validateCsrfToken } from '@/lib/csrf'
+import { hasActiveSubscription, getSubscriptionState, type SubscriptionState } from '@/lib/subscription'
 
 // Currency precision: 2 decimal places (cents), scale factor 100
 const DECIMAL_PRECISION = 2
@@ -104,4 +105,64 @@ export async function ensureAccountAccess(accountId: string): Promise<AccountAcc
   }
 
   return { account, authUser }
+}
+
+/**
+ * Require an active subscription (trial or paid) to proceed with mutating actions.
+ * Returns error if subscription is expired/canceled.
+ */
+export async function requireActiveSubscription(): Promise<
+  { success: true; subscriptionState: SubscriptionState } | { error: Record<string, string[]> }
+> {
+  const auth = await requireAuthUser()
+  if ('error' in auth) return auth
+  const { authUser } = auth
+
+  // Only check subscription for database users (not legacy hardcoded users)
+  const isDbUser = await isDatabaseAuthUser(authUser)
+  if (!isDbUser) {
+    // Legacy users bypass subscription check during migration period
+    return {
+      success: true,
+      subscriptionState: {
+        status: 'ACTIVE' as const,
+        isActive: true,
+        trialEndsAt: null,
+        currentPeriodEnd: null,
+        daysRemaining: null,
+        canAccessApp: true,
+      },
+    }
+  }
+
+  const isActive = await hasActiveSubscription(authUser.id)
+  if (!isActive) {
+    return {
+      error: {
+        subscription: ['Your subscription has expired. Please upgrade to continue using the app.'],
+      },
+    }
+  }
+
+  const subscriptionState = await getSubscriptionState(authUser.id)
+  return { success: true, subscriptionState }
+}
+
+/**
+ * Combined check for account access AND active subscription.
+ * Use this for all mutating operations.
+ */
+export async function ensureAccountAccessWithSubscription(
+  accountId: string,
+): Promise<(AccountAccessSuccess & { subscriptionState: SubscriptionState }) | AccountAccessError> {
+  const accountAccess = await ensureAccountAccess(accountId)
+  if ('error' in accountAccess) return accountAccess
+
+  const subscriptionCheck = await requireActiveSubscription()
+  if ('error' in subscriptionCheck) return subscriptionCheck
+
+  return {
+    ...accountAccess,
+    subscriptionState: subscriptionCheck.subscriptionState,
+  }
 }
