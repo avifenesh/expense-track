@@ -175,7 +175,7 @@ describe('archiveCategoryAction', () => {
 
     expect(result).toEqual({ success: true })
     expect(prisma.category.update).toHaveBeenCalledWith({
-      where: { id: 'cat-1' },
+      where: { id: 'cat-1', userId: 'test-user' },
       data: { isArchived: true },
     })
   })
@@ -198,7 +198,7 @@ describe('archiveCategoryAction', () => {
 
     expect(result).toEqual({ success: true })
     expect(prisma.category.update).toHaveBeenCalledWith({
-      where: { id: 'cat-1' },
+      where: { id: 'cat-1', userId: 'test-user' },
       data: { isArchived: false },
     })
   })

@@ -51,9 +51,24 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  let session
+  try {
+    session = await requireSession()
+  } catch {
+    return generalError('Your session expired. Please sign in again.')
+  }
+
+  const authUser = getAuthUserFromSession(session)
+  if (!authUser) {
+    return generalError('User record not found')
+  }
+
   try {
     await prisma.category.update({
-      where: { id: parsed.data.id },
+      where: {
+        id: parsed.data.id,
+        userId: authUser.id, // Ensure category belongs to user
+      },
       data: { isArchived: parsed.data.isArchived },
     })
   } catch {
