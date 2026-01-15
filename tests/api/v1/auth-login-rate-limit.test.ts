@@ -3,21 +3,7 @@ import { NextRequest } from 'next/server'
 import { resetAllRateLimits } from '@/lib/rate-limit'
 
 vi.mock('@/lib/auth-server', () => ({
-  verifyCredentials: vi.fn().mockResolvedValue(false),
-}))
-
-vi.mock('@/lib/auth', () => ({
-  AUTH_USERS: [
-    {
-      id: 'avi',
-      email: 'user@example.com',
-      displayName: 'Test User',
-      passwordHash: 'hash',
-      accountNames: [],
-      defaultAccountName: 'Test',
-      preferredCurrency: 'USD',
-    },
-  ],
+  verifyCredentials: vi.fn().mockResolvedValue({ valid: false, reason: 'invalid_credentials' }),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -36,7 +22,7 @@ describe('Auth login rate limiting', () => {
     vi.clearAllMocks()
   })
 
-  it('returns 429 after 100 attempts for the same email', async () => {
+  it('returns 429 after 5 failed attempts for the same email (brute force protection)', async () => {
     const buildRequest = () =>
       new NextRequest('http://localhost/api/v1/auth/login', {
         method: 'POST',
@@ -44,12 +30,62 @@ describe('Auth login rate limiting', () => {
         body: JSON.stringify({ email: 'USER@example.com', password: 'bad-password' }),
       })
 
-    for (let i = 0; i < 100; i++) {
+    // First 5 attempts should not be rate limited (may return 401 for invalid credentials)
+    for (let i = 0; i < 5; i++) {
       const response = await loginPost(buildRequest())
       expect(response.status).not.toBe(429)
     }
 
+    // 6th attempt should be rate limited
     const response = await loginPost(buildRequest())
     expect(response.status).toBe(429)
+    expect(response.headers.get('Retry-After')).toBeTruthy()
+  })
+
+  it('rate limits are case-insensitive for email', async () => {
+    const emails = ['User@Example.com', 'USER@EXAMPLE.COM', 'user@example.com', 'UsEr@ExAmPlE.CoM', 'USER@example.COM']
+
+    for (let i = 0; i < 5; i++) {
+      const response = await loginPost(
+        new NextRequest('http://localhost/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emails[i], password: 'bad-password' }),
+        }),
+      )
+      expect(response.status).not.toBe(429)
+    }
+
+    // Next attempt (same email, different case) should be rate limited
+    const response = await loginPost(
+      new NextRequest('http://localhost/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'user@example.com', password: 'bad-password' }),
+      }),
+    )
+    expect(response.status).toBe(429)
+  })
+
+  it('does not rate limit different emails', async () => {
+    const buildRequest = (email: string) =>
+      new NextRequest('http://localhost/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'bad-password' }),
+      })
+
+    // Hit rate limit for user1
+    for (let i = 0; i < 5; i++) {
+      await loginPost(buildRequest('user1@example.com'))
+    }
+
+    // user1 should be rate limited
+    const user1Response = await loginPost(buildRequest('user1@example.com'))
+    expect(user1Response.status).toBe(429)
+
+    // user2 should not be rate limited
+    const user2Response = await loginPost(buildRequest('user2@example.com'))
+    expect(user2Response.status).not.toBe(429)
   })
 })

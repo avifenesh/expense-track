@@ -5,6 +5,10 @@ import {
   getRateLimitHeaders,
   resetRateLimit,
   resetAllRateLimits,
+  checkRateLimitTyped,
+  incrementRateLimitTyped,
+  resetRateLimitTyped,
+  type RateLimitType,
 } from '@/lib/rate-limit'
 
 describe('Rate Limiting', () => {
@@ -354,6 +358,123 @@ describe('Rate Limiting', () => {
       // Should have new window
       result = checkRateLimit(userId)
       expect(result.remaining).toBe(100)
+    })
+  })
+
+  describe('checkRateLimitTyped - auth-specific limits', () => {
+    const testCases: Array<{ type: RateLimitType; maxRequests: number; windowMs: number; description: string }> = [
+      { type: 'login', maxRequests: 5, windowMs: 60 * 1000, description: '5/min for brute force protection' },
+      { type: 'registration', maxRequests: 3, windowMs: 60 * 1000, description: '3/min for spam prevention' },
+      { type: 'password_reset', maxRequests: 3, windowMs: 60 * 60 * 1000, description: '3/hour for abuse prevention' },
+      {
+        type: 'resend_verification',
+        maxRequests: 3,
+        windowMs: 15 * 60 * 1000,
+        description: '3/15min for spam prevention',
+      },
+    ]
+
+    testCases.forEach(({ type, maxRequests, windowMs, description }) => {
+      describe(`${type} (${description})`, () => {
+        it(`allows ${maxRequests} requests then blocks`, () => {
+          const identifier = `test-${type}@example.com`
+
+          // Make maxRequests requests - all should be allowed
+          for (let i = 0; i < maxRequests; i++) {
+            const result = checkRateLimitTyped(identifier, type)
+            expect(result.allowed).toBe(true)
+            expect(result.limit).toBe(maxRequests)
+            incrementRateLimitTyped(identifier, type)
+          }
+
+          // Next request should be blocked
+          const result = checkRateLimitTyped(identifier, type)
+          expect(result.allowed).toBe(false)
+          expect(result.remaining).toBe(0)
+        })
+
+        it(`resets after ${windowMs / 1000} seconds`, () => {
+          const identifier = `test-${type}@example.com`
+
+          // Hit the limit
+          for (let i = 0; i < maxRequests; i++) {
+            checkRateLimitTyped(identifier, type)
+            incrementRateLimitTyped(identifier, type)
+          }
+
+          // Should be blocked
+          let result = checkRateLimitTyped(identifier, type)
+          expect(result.allowed).toBe(false)
+
+          // Advance time past window
+          vi.advanceTimersByTime(windowMs + 1000)
+
+          // Should be allowed again
+          result = checkRateLimitTyped(identifier, type)
+          expect(result.allowed).toBe(true)
+          expect(result.remaining).toBe(maxRequests)
+        })
+      })
+    })
+
+    it('isolates rate limits by type', () => {
+      const identifier = 'user@example.com'
+
+      // Hit login limit (5 requests)
+      for (let i = 0; i < 5; i++) {
+        checkRateLimitTyped(identifier, 'login')
+        incrementRateLimitTyped(identifier, 'login')
+      }
+
+      // Login should be blocked
+      expect(checkRateLimitTyped(identifier, 'login').allowed).toBe(false)
+
+      // But registration should still be allowed (different type bucket)
+      expect(checkRateLimitTyped(identifier, 'registration').allowed).toBe(true)
+
+      // And password reset should be allowed
+      expect(checkRateLimitTyped(identifier, 'password_reset').allowed).toBe(true)
+    })
+
+    it('isolates rate limits by identifier', () => {
+      // Hit login limit for user1
+      for (let i = 0; i < 5; i++) {
+        checkRateLimitTyped('user1@example.com', 'login')
+        incrementRateLimitTyped('user1@example.com', 'login')
+      }
+
+      // user1 should be blocked
+      expect(checkRateLimitTyped('user1@example.com', 'login').allowed).toBe(false)
+
+      // user2 should still be allowed
+      expect(checkRateLimitTyped('user2@example.com', 'login').allowed).toBe(true)
+    })
+  })
+
+  describe('resetRateLimitTyped', () => {
+    it('resets only the specific type for an identifier', () => {
+      const identifier = 'user@example.com'
+
+      // Hit both login and registration limits
+      for (let i = 0; i < 5; i++) {
+        checkRateLimitTyped(identifier, 'login')
+        incrementRateLimitTyped(identifier, 'login')
+      }
+      for (let i = 0; i < 3; i++) {
+        checkRateLimitTyped(identifier, 'registration')
+        incrementRateLimitTyped(identifier, 'registration')
+      }
+
+      // Both should be blocked
+      expect(checkRateLimitTyped(identifier, 'login').allowed).toBe(false)
+      expect(checkRateLimitTyped(identifier, 'registration').allowed).toBe(false)
+
+      // Reset only login
+      resetRateLimitTyped(identifier, 'login')
+
+      // Login should be allowed, registration still blocked
+      expect(checkRateLimitTyped(identifier, 'login').allowed).toBe(true)
+      expect(checkRateLimitTyped(identifier, 'registration').allowed).toBe(false)
     })
   })
 })
