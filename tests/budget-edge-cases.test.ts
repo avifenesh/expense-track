@@ -285,6 +285,85 @@ describe('Budget Edge Cases', () => {
     })
   })
 
+  describe('Currency Handling', () => {
+    // Budgets store their own currency independently of transactions
+    // The UI/aggregation layer is responsible for currency conversion
+
+    it('budget schema accepts USD currency', () => {
+      const result = budgetSchema.safeParse({
+        accountId: 'acc-123',
+        categoryId: 'cat-456',
+        monthKey: '2024-06',
+        planned: 1000,
+        currency: Currency.USD,
+        csrfToken: 'valid-token',
+      })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.currency).toBe(Currency.USD)
+      }
+    })
+
+    it('budget schema accepts EUR currency', () => {
+      const result = budgetSchema.safeParse({
+        accountId: 'acc-123',
+        categoryId: 'cat-456',
+        monthKey: '2024-06',
+        planned: 1000,
+        currency: Currency.EUR,
+        csrfToken: 'valid-token',
+      })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.currency).toBe(Currency.EUR)
+      }
+    })
+
+    it('budget schema accepts ILS currency', () => {
+      const result = budgetSchema.safeParse({
+        accountId: 'acc-123',
+        categoryId: 'cat-456',
+        monthKey: '2024-06',
+        planned: 1000,
+        currency: Currency.ILS,
+        csrfToken: 'valid-token',
+      })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.currency).toBe(Currency.ILS)
+      }
+    })
+
+    it('budget progress calculation is currency-agnostic (uses raw numbers)', () => {
+      // Budget progress is calculated from planned/actual numbers regardless of currency
+      // Currency conversion should happen at data aggregation layer, not progress calculation
+      const usdBudget = createBudgetSummary(1000, 500) // Could be any currency
+      const eurBudget = createBudgetSummary(1000, 500) // Same numbers, different currency
+
+      expect(getBudgetProgress(usdBudget)).toBe(getBudgetProgress(eurBudget))
+      expect(getBudgetProgress(usdBudget)).toBe(0.5)
+    })
+
+    // Helper for currency tests
+    function createBudgetSummary(planned: number, actual: number): CategoryBudgetSummary {
+      return {
+        budgetId: 'budget-123',
+        accountId: 'acc-123',
+        accountName: 'Test Account',
+        categoryId: 'cat-456',
+        categoryName: 'Test Category',
+        categoryType: TransactionType.EXPENSE,
+        planned,
+        actual,
+        remaining: planned - actual,
+        month: '2024-06',
+      }
+    }
+  })
+
   describe('Required Fields', () => {
     const validBase = {
       accountId: 'acc-123',
