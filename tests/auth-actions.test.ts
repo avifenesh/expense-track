@@ -65,8 +65,10 @@ vi.mock('@/lib/auth-server', async () => {
     verifyCredentials: async ({ email, password }: { email: string; password: string }) => {
       const normalizedEmail = email.trim().toLowerCase()
       const authUser = authModule.AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
-      if (!authUser) return false
-      return bcryptLib.default.compare(password, authUser.passwordHash)
+      if (!authUser) return { valid: false }
+      const isValid = await bcryptLib.default.compare(password, authUser.passwordHash)
+      if (!isValid) return { valid: false }
+      return { valid: true, source: 'legacy' as const }
     },
     requireSession: vi.fn(),
     getAuthUserFromSession: vi.fn(),
@@ -129,18 +131,21 @@ describe('auth actions', () => {
     it('accepts valid credentials', async () => {
       const user = AUTH_USERS[0]
       const result = await verifyCredentials({ email: user.email, password: TEST_PASSWORD })
-      expect(result).toBe(true)
+      expect(result.valid).toBe(true)
+      if (result.valid) {
+        expect(result.source).toBe('legacy')
+      }
     })
 
     it('rejects a wrong password', async () => {
       const user = AUTH_USERS[0]
       const result = await verifyCredentials({ email: user.email, password: 'wrong-pass' })
-      expect(result).toBe(false)
+      expect(result.valid).toBe(false)
     })
 
     it('rejects an unexpected email', async () => {
       const result = await verifyCredentials({ email: 'unauthorized@example.com', password: TEST_PASSWORD })
-      expect(result).toBe(false)
+      expect(result.valid).toBe(false)
     })
   })
 

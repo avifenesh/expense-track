@@ -10,6 +10,9 @@ vi.mock('@/lib/prisma', () => ({
     account: {
       findUnique: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn().mockResolvedValue(null), // By default, no DB user found (legacy users only)
+    },
   },
 }))
 
@@ -293,7 +296,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'user1@test.com', password: 'password123' })
 
-        expect(result).toBe(true)
+        expect(result.valid).toBe(true)
       })
 
       it('should return false for valid email but wrong password', async () => {
@@ -301,7 +304,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'user1@test.com', password: 'wrongpassword' })
 
-        expect(result).toBe(false)
+        expect(result.valid).toBe(false)
       })
 
       it('should return false for unregistered email', async () => {
@@ -309,7 +312,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'unknown@test.com', password: 'password123' })
 
-        expect(result).toBe(false)
+        expect(result.valid).toBe(false)
       })
 
       it('should normalize email: trim whitespace', async () => {
@@ -317,7 +320,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: '  user1@test.com  ', password: 'password123' })
 
-        expect(result).toBe(true)
+        expect(result.valid).toBe(true)
       })
 
       it('should normalize email: case-insensitive', async () => {
@@ -325,7 +328,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'USER1@TEST.COM', password: 'password123' })
 
-        expect(result).toBe(true)
+        expect(result.valid).toBe(true)
       })
 
       it('should handle whitespace in email and still fail for unknown user', async () => {
@@ -333,7 +336,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: '  unknown@test.com  ', password: 'password123' })
 
-        expect(result).toBe(false)
+        expect(result.valid).toBe(false)
       })
 
       it('should handle empty email string', async () => {
@@ -341,7 +344,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: '', password: 'password123' })
 
-        expect(result).toBe(false)
+        expect(result.valid).toBe(false)
       })
 
       it('should handle empty password string', async () => {
@@ -349,7 +352,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'user1@test.com', password: '' })
 
-        expect(result).toBe(false)
+        expect(result.valid).toBe(false)
       })
 
       it('should work for second user with different password', async () => {
@@ -357,7 +360,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'user2@test.com', password: 'securePass456' })
 
-        expect(result).toBe(true)
+        expect(result.valid).toBe(true)
       })
 
       it('should return false and log error when bcrypt throws exception', async () => {
@@ -373,7 +376,7 @@ describe('auth-server.ts', () => {
 
         const result = await verifyCredentials({ email: 'user1@test.com', password: 'password123' })
 
-        expect(result).toBe(false)
+        expect(result.valid).toBe(false)
       })
     })
   })
