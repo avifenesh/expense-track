@@ -1,15 +1,16 @@
-import { config } from 'dotenv';
-import { defineConfig } from 'prisma/config';
+import { config } from 'dotenv'
+import { defineConfig } from 'prisma/config'
 
 // Load .env file
-config();
+config()
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
     url: process.env.DATABASE_URL,
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
   migrations: {
     seed: 'npx ts-node --compiler-options {"module":"commonjs"} prisma/seed.ts',
   },
-});
+})
