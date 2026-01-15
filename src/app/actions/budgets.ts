@@ -5,7 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
-import { successVoid, generalError } from '@/lib/action-result'
+import { successVoid } from '@/lib/action-result'
+import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { budgetSchema, deleteBudgetSchema, type BudgetInput } from '@/schemas'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
@@ -53,8 +54,14 @@ export async function upsertBudgetAction(input: BudgetInput) {
       monthKey,
       accountId,
     })
-  } catch {
-    return generalError('Unable to save budget')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'upsertBudget',
+      accountId,
+      input: { categoryId, monthKey, planned },
+      foreignKeyMessage: 'The selected category no longer exists',
+      fallbackMessage: 'Unable to save budget',
+    })
   }
 
   revalidatePath('/')
@@ -91,8 +98,14 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
       monthKey,
       accountId,
     })
-  } catch {
-    return generalError('Budget entry not found')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteBudget',
+      accountId,
+      input: { categoryId, monthKey },
+      notFoundMessage: 'Budget entry not found',
+      fallbackMessage: 'Unable to delete budget',
+    })
   }
 
   revalidatePath('/')

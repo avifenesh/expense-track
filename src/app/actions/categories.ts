@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { successVoid, generalError } from '@/lib/action-result'
+import { handlePrismaError } from '@/lib/prisma-errors'
 import { requireSession, getAuthUserFromSession } from '@/lib/auth-server'
 import { parseInput, requireCsrfToken } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
@@ -36,8 +37,14 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
         color: parsed.data.color ?? null,
       },
     })
-  } catch {
-    return generalError('Category already exists')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'createCategory',
+      userId: authUser.id,
+      input: parsed.data,
+      uniqueMessage: 'A category with this name already exists',
+      fallbackMessage: 'Unable to create category',
+    })
   }
 
   revalidatePath('/')
@@ -71,8 +78,14 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
       },
       data: { isArchived: parsed.data.isArchived },
     })
-  } catch {
-    return generalError('Category not found')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'archiveCategory',
+      userId: authUser.id,
+      input: parsed.data,
+      notFoundMessage: 'Category not found',
+      fallbackMessage: 'Unable to update category',
+    })
   }
 
   revalidatePath('/')
