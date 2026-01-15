@@ -48,6 +48,11 @@ vi.mock('@/lib/csrf', () => ({
   rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
 }))
 
+vi.mock('@/lib/dashboard-cache', () => ({
+  invalidateDashboardCache: vi.fn().mockResolvedValue(undefined),
+  invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn((calls) => Promise.all(calls)),

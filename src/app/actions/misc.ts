@@ -11,6 +11,7 @@ import { success, generalError } from '@/lib/action-result'
 import { requireSession } from '@/lib/auth-server'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { setBalanceSchema } from '@/schemas'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 
 export async function refreshExchangeRatesAction() {
   try {
@@ -110,6 +111,12 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
         description: 'Balance adjustment',
         isRecurring: false,
       },
+    })
+
+    // Invalidate dashboard cache for affected month/account
+    await invalidateDashboardCache({
+      monthKey,
+      accountId,
     })
   } catch {
     return generalError('Unable to create balance adjustment')

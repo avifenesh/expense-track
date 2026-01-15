@@ -1,4 +1,4 @@
-import { getDashboardData } from '@/lib/finance'
+import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import { formatMonthLabel } from '@/utils/date'
 import { Currency } from '@prisma/client'
 
@@ -7,8 +7,8 @@ export async function buildFinancialContext(
   monthKey: string,
   preferredCurrency?: Currency,
 ): Promise<string> {
-  // Get the same dashboard data the user sees
-  const data = await getDashboardData({
+  // Get the same dashboard data the user sees (cached)
+  const data = await getCachedDashboardData({
     monthKey,
     accountId,
     preferredCurrency,

@@ -1,18 +1,18 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { TransactionType, Currency, AccountType } from '@prisma/client'
 import { buildFinancialContext } from '@/lib/ai/context'
-import * as finance from '@/lib/finance'
+import * as dashboardCache from '@/lib/dashboard-cache'
 import type { DashboardData } from '@/lib/finance'
 
-vi.mock('@/lib/finance', async () => {
-  const actual = await vi.importActual('@/lib/finance')
+vi.mock('@/lib/dashboard-cache', async () => {
+  const actual = await vi.importActual('@/lib/dashboard-cache')
   return {
     ...actual,
-    getDashboardData: vi.fn(),
+    getCachedDashboardData: vi.fn(),
   }
 })
 
-const mockGetDashboardData = vi.mocked(finance.getDashboardData)
+const mockGetDashboardData = vi.mocked(dashboardCache.getCachedDashboardData)
 
 describe('buildFinancialContext', () => {
   beforeEach(() => {

@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
   holdingSchema,
   updateHoldingSchema,
@@ -70,6 +71,11 @@ export async function createHoldingAction(input: HoldingInput) {
         notes: data.notes ?? null,
       },
     })
+
+    // Invalidate dashboard cache for this account (holdings affect portfolio value across all months)
+    await invalidateDashboardCache({
+      accountId: data.accountId,
+    })
   } catch {
     return generalError('Unable to create holding. It may already exist.')
   }
@@ -107,6 +113,11 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
         notes: parsed.data.notes ?? null,
       },
     })
+
+    // Invalidate dashboard cache for this account (holdings affect portfolio value across all months)
+    await invalidateDashboardCache({
+      accountId: holding.accountId,
+    })
   } catch {
     return generalError('Holding not found')
   }
@@ -138,6 +149,11 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
 
     await (prisma as any).holding.delete({
       where: { id: parsed.data.id },
+    })
+
+    // Invalidate dashboard cache for this account (holdings affect portfolio value across all months)
+    await invalidateDashboardCache({
+      accountId: holding.accountId,
     })
   } catch {
     return generalError('Holding not found')
