@@ -43,6 +43,7 @@ describe('category-service.ts', () => {
   describe('Phase 1: createCategory()', () => {
     it('should create category with all fields', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
         color: '#FF5733',
@@ -50,6 +51,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-1',
+        userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
         color: '#FF5733',
@@ -65,6 +67,7 @@ describe('category-service.ts', () => {
 
       expect(prisma.category.create).toHaveBeenCalledWith({
         data: {
+          userId: 'test-user',
           name: 'Groceries',
           type: TransactionType.EXPENSE,
           color: '#FF5733',
@@ -75,12 +78,14 @@ describe('category-service.ts', () => {
 
     it('should create category without color (null)', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Salary',
         type: TransactionType.INCOME,
       }
 
       const mockCategory = {
         id: 'cat-2',
+        userId: 'test-user',
         name: 'Salary',
         type: TransactionType.INCOME,
         color: null,
@@ -96,6 +101,7 @@ describe('category-service.ts', () => {
 
       expect(prisma.category.create).toHaveBeenCalledWith({
         data: {
+          userId: 'test-user',
           name: 'Salary',
           type: TransactionType.INCOME,
           color: null,
@@ -106,6 +112,7 @@ describe('category-service.ts', () => {
 
     it('should create category with explicit null color', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Transport',
         type: TransactionType.EXPENSE,
         color: null,
@@ -113,6 +120,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-3',
+        userId: 'test-user',
         name: 'Transport',
         type: TransactionType.EXPENSE,
         color: null,
@@ -128,6 +136,7 @@ describe('category-service.ts', () => {
 
       expect(prisma.category.create).toHaveBeenCalledWith({
         data: {
+          userId: 'test-user',
           name: 'Transport',
           type: TransactionType.EXPENSE,
           color: null,
@@ -137,6 +146,7 @@ describe('category-service.ts', () => {
 
     it('should create INCOME type category', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Freelance',
         type: TransactionType.INCOME,
         color: '#00FF00',
@@ -144,6 +154,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-4',
+        userId: 'test-user',
         name: 'Freelance',
         type: TransactionType.INCOME,
         color: '#00FF00',
@@ -162,6 +173,7 @@ describe('category-service.ts', () => {
 
     it('should create EXPENSE type category', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Utilities',
         type: TransactionType.EXPENSE,
         color: '#0000FF',
@@ -169,6 +181,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-5',
+        userId: 'test-user',
         name: 'Utilities',
         type: TransactionType.EXPENSE,
         color: '#0000FF',
@@ -187,6 +200,7 @@ describe('category-service.ts', () => {
 
     it('should handle Prisma unique constraint violation', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
       }
@@ -201,6 +215,7 @@ describe('category-service.ts', () => {
 
     it('should handle Prisma connection error', async () => {
       const input: CreateCategoryInput = {
+        userId: 'test-user',
         name: 'Test',
         type: TransactionType.EXPENSE,
       }
@@ -221,6 +236,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-1',
+        userId: 'test-user',
         name: 'Old Category',
         type: TransactionType.EXPENSE,
         color: '#FF5733',
@@ -249,6 +265,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-1',
+        userId: 'test-user',
         name: 'Restored Category',
         type: TransactionType.EXPENSE,
         color: '#FF5733',
@@ -277,6 +294,7 @@ describe('category-service.ts', () => {
 
       const mockCategory = {
         id: 'cat-1',
+        userId: 'test-user',
         name: 'Already Archived',
         type: TransactionType.EXPENSE,
         color: '#FF5733',
@@ -325,6 +343,7 @@ describe('category-service.ts', () => {
     it('should find existing category', async () => {
       const mockCategory = {
         id: 'cat-1',
+        userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
         color: '#FF5733',

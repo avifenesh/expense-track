@@ -4,13 +4,19 @@ import { POST as CreateCategory } from '@/app/api/v1/categories/route'
 import { PATCH as ArchiveCategory } from '@/app/api/v1/categories/[id]/archive/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
+import { getApiTestUser } from './helpers'
 
 describe('Category API Routes', () => {
   let validToken: string
+  let testUserId: string
 
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
+
+    // Get test user for userId foreign keys
+    const testUser = await getApiTestUser()
+    testUserId = testUser.id
   })
 
   afterEach(async () => {
@@ -176,11 +182,12 @@ describe('Category API Routes', () => {
     beforeEach(async () => {
       // Find or create the test category
       let category = await prisma.category.findFirst({
-        where: { name: 'TEST_ToArchive', type: 'EXPENSE' },
+        where: { name: 'TEST_ToArchive', type: 'EXPENSE', userId: testUserId },
       })
       if (!category) {
         category = await prisma.category.create({
           data: {
+            userId: testUserId,
             name: 'TEST_ToArchive',
             type: 'EXPENSE',
           },

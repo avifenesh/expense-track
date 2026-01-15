@@ -533,6 +533,7 @@ describe('auth-server.ts', () => {
         // Mock account exists and user has access
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
+          userId: 'test-user',
           name: 'Shared',
           type: 'SELF',
           preferredCurrency: 'USD',
@@ -588,6 +589,7 @@ describe('auth-server.ts', () => {
         // Mock Account2 which user1 doesn't have access to
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-account2',
+          userId: 'test-user',
           name: 'Account2',
           type: 'SELF',
           preferredCurrency: 'USD',
@@ -611,6 +613,7 @@ describe('auth-server.ts', () => {
 
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
+          userId: 'test-user',
           name: 'Shared',
           type: 'SELF',
           preferredCurrency: 'USD',
@@ -631,6 +634,7 @@ describe('auth-server.ts', () => {
 
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-shared',
+          userId: 'test-user',
           name: 'Shared',
           type: 'SELF',
           preferredCurrency: 'USD',
@@ -653,6 +657,7 @@ describe('auth-server.ts', () => {
         // Mock account with lowercase name (user1 has 'Account1' not 'account1')
         vi.mocked(prisma.account.findUnique).mockResolvedValue({
           id: 'acc-wrong-case',
+          userId: 'test-user',
           name: 'account1', // lowercase
           type: 'SELF',
           preferredCurrency: 'USD',
@@ -716,6 +721,7 @@ describe('auth-server.ts', () => {
       // 2. Switch to Shared account
       vi.mocked(prisma.account.findUnique).mockResolvedValue({
         id: 'acc-shared',
+        userId: 'test-user',
         name: 'Shared',
         type: 'SELF',
         preferredCurrency: 'USD',

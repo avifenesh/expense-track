@@ -2,6 +2,7 @@ import { TransactionType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 export interface CreateCategoryInput {
+  userId: string
   name: string
   type: TransactionType
   color?: string | null
@@ -18,6 +19,7 @@ export interface ArchiveCategoryInput {
 export async function createCategory(input: CreateCategoryInput) {
   return await prisma.category.create({
     data: {
+      userId: input.userId,
       name: input.name,
       type: input.type,
       color: input.color ?? null,

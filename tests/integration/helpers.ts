@@ -1,14 +1,41 @@
 import { prisma } from '@/lib/prisma'
 import { TransactionType, Currency, AccountType } from '@prisma/client'
 
+// Cache test user ID for integration tests
+let testUserId: string | null = null
+
+/**
+ * Get or create a test user for integration tests
+ */
+export async function getTestUser() {
+  if (testUserId) {
+    const existing = await prisma.user.findUnique({ where: { id: testUserId } })
+    if (existing) return existing
+  }
+
+  const user = await prisma.user.upsert({
+    where: { email: 'test-integration@example.com' },
+    update: {},
+    create: {
+      email: 'test-integration@example.com',
+      displayName: 'Integration Test User',
+      passwordHash: '$2b$10$placeholder', // Not used for auth
+      preferredCurrency: Currency.USD,
+    },
+  })
+  testUserId = user.id
+  return user
+}
+
 /**
  * Create a test account (upsert to avoid duplicates)
  */
 export async function createTestAccount(name: string, type: AccountType = 'SELF') {
+  const user = await getTestUser()
   return prisma.account.upsert({
-    where: { name },
+    where: { userId_name: { userId: user.id, name } },
     update: {},
-    create: { name, type, preferredCurrency: Currency.USD },
+    create: { userId: user.id, name, type, preferredCurrency: Currency.USD },
   })
 }
 
@@ -16,10 +43,11 @@ export async function createTestAccount(name: string, type: AccountType = 'SELF'
  * Create a test category (upsert to avoid duplicates)
  */
 export async function createTestCategory(name: string, type: TransactionType) {
+  const user = await getTestUser()
   return prisma.category.upsert({
-    where: { name_type: { name, type } },
+    where: { userId_name_type: { userId: user.id, name, type } },
     update: {},
-    create: { name, type },
+    create: { userId: user.id, name, type },
   })
 }
 
@@ -58,6 +86,12 @@ export async function cleanupTestData() {
   await prisma.account.deleteMany({
     where: { name: { contains: 'TEST_' } },
   })
+  // Clean up test users (integration test user)
+  await prisma.user.deleteMany({
+    where: { email: { contains: 'test-integration' } },
+  })
+  // Reset cached test user ID
+  testUserId = null
 }
 
 /**

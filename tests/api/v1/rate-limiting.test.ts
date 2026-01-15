@@ -6,11 +6,13 @@ import { POST as holdingsPost } from '@/app/api/v1/holdings/route'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { resetAllRateLimits } from '@/lib/rate-limit'
+import { getApiTestUser } from './helpers'
 
 describe('API Rate Limiting Integration', () => {
   let validToken: string
   let refreshToken: string
   let testAccountId: string
+  let testUserId: string
 
   beforeEach(async () => {
     vi.useFakeTimers()
@@ -19,11 +21,15 @@ describe('API Rate Limiting Integration', () => {
     // Generate test JWT token
     validToken = generateAccessToken('avi', 'avi@example.com')
 
+    // Get test user for userId foreign keys
+    const testUser = await getApiTestUser()
+    testUserId = testUser.id
+
     // Create refresh token for testing
     const { token, jti, expiresAt } = generateRefreshToken('avi', 'avi@example.com')
     refreshToken = token
     await prisma.refreshToken.create({
-      data: { jti, userId: 'avi', email: 'avi@example.com', expiresAt },
+      data: { jti, userId: testUser.id, email: 'avi@example.com', expiresAt },
     })
 
     // Setup test account
@@ -33,6 +39,7 @@ describe('API Rate Limiting Integration', () => {
       update: {},
       create: {
         id: testAccountId,
+        userId: testUser.id,
         name: 'Avi Checking Rate Limit Test',
         type: 'SELF',
         preferredCurrency: 'ILS',
@@ -63,6 +70,7 @@ describe('API Rate Limiting Integration', () => {
         update: {},
         create: {
           id: categoryId,
+          userId: testUserId,
           name: 'Test Category Rate Limit 1',
           type: 'EXPENSE',
         },
@@ -100,6 +108,7 @@ describe('API Rate Limiting Integration', () => {
         update: {},
         create: {
           id: categoryId,
+          userId: testUserId,
           name: 'Test Category Rate Limit 2',
           type: 'EXPENSE',
         },
@@ -160,6 +169,7 @@ describe('API Rate Limiting Integration', () => {
         update: {},
         create: {
           id: categoryId,
+          userId: testUserId,
           name: 'Test Category Rate Limit 3',
           type: 'EXPENSE',
         },
@@ -222,6 +232,7 @@ describe('API Rate Limiting Integration', () => {
         update: {},
         create: {
           id: categoryId,
+          userId: testUserId,
           name: 'Test Category Rate Limit 4',
           type: 'EXPENSE',
         },
@@ -342,6 +353,7 @@ describe('API Rate Limiting Integration', () => {
         update: {},
         create: {
           id: categoryId,
+          userId: testUserId,
           name: 'Test Stocks Rate Limit',
           type: 'EXPENSE',
         },
@@ -403,6 +415,7 @@ describe('API Rate Limiting Integration', () => {
         update: {},
         create: {
           id: categoryId,
+          userId: testUserId,
           name: 'Test Category Multi User',
           type: 'EXPENSE',
         },

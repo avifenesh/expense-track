@@ -13,6 +13,13 @@ vi.mock('@/lib/csrf', () => ({
   rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
 }))
 
+vi.mock('@/lib/auth-server', () => ({
+  requireSession: vi.fn().mockResolvedValue({ userEmail: 'test@example.com', accountId: 'acc-1' }),
+  getAuthUserFromSession: vi
+    .fn()
+    .mockReturnValue({ id: 'test-user', email: 'test@example.com', accountNames: ['TestAccount'] }),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {
@@ -58,6 +65,7 @@ describe('createCategoryAction', () => {
     expect(result).toEqual({ success: true })
     expect(prisma.category.create).toHaveBeenCalledWith({
       data: {
+        userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
         color: '#FF0000',
@@ -85,6 +93,7 @@ describe('createCategoryAction', () => {
     expect(result).toEqual({ success: true })
     expect(prisma.category.create).toHaveBeenCalledWith({
       data: {
+        userId: 'test-user',
         name: 'Salary',
         type: TransactionType.INCOME,
         color: null,
@@ -166,7 +175,7 @@ describe('archiveCategoryAction', () => {
 
     expect(result).toEqual({ success: true })
     expect(prisma.category.update).toHaveBeenCalledWith({
-      where: { id: 'cat-1' },
+      where: { id: 'cat-1', userId: 'test-user' },
       data: { isArchived: true },
     })
   })
@@ -189,7 +198,7 @@ describe('archiveCategoryAction', () => {
 
     expect(result).toEqual({ success: true })
     expect(prisma.category.update).toHaveBeenCalledWith({
-      where: { id: 'cat-1' },
+      where: { id: 'cat-1', userId: 'test-user' },
       data: { isArchived: false },
     })
   })

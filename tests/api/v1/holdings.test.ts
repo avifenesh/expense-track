@@ -6,6 +6,7 @@ import { PUT as UpdateHolding, DELETE as DeleteHolding } from '@/app/api/v1/hold
 import { POST as RefreshPrices } from '@/app/api/v1/holdings/refresh/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
+import { getApiTestUser } from './helpers'
 
 // Mock stock API
 vi.mock('@/lib/stock-api', () => ({
@@ -23,23 +24,26 @@ describe('Holdings API Routes', () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
 
+    // Get test user for userId foreign keys
+    const testUser = await getApiTestUser()
+
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
-      where: { name: 'Avi' },
+      where: { userId_name: { userId: testUser.id, name: 'Avi' } },
       update: {},
-      create: { name: 'Avi', type: 'SELF' },
+      create: { userId: testUser.id, name: 'Avi', type: 'SELF' },
     })
 
     const otherAccount = await prisma.account.upsert({
-      where: { name: 'Serena' },
+      where: { userId_name: { userId: testUser.id, name: 'Serena' } },
       update: {},
-      create: { name: 'Serena', type: 'SELF' },
+      create: { userId: testUser.id, name: 'Serena', type: 'SELF' },
     })
 
     const holdingCategory = await prisma.category.upsert({
-      where: { name_type: { name: 'TEST_Stocks', type: 'EXPENSE' } },
+      where: { userId_name_type: { userId: testUser.id, name: 'TEST_Stocks', type: 'EXPENSE' } },
       update: {},
-      create: { name: 'TEST_Stocks', type: 'EXPENSE', isHolding: true },
+      create: { userId: testUser.id, name: 'TEST_Stocks', type: 'EXPENSE', isHolding: true },
     })
 
     accountId = account.id
