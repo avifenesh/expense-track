@@ -375,8 +375,9 @@ describe('recurring-service.ts', () => {
 
       await applyRecurringTemplates(input)
 
-      const call = vi.mocked(prisma.transaction.createMany).mock.calls[0][0]
-      const transaction = call.data[0] as { date: Date }
+      const call = vi.mocked(prisma.transaction.createMany).mock.calls[0]?.[0]
+      const data = Array.isArray(call?.data) ? call.data : []
+      const transaction = data[0] as { date: Date }
       expect(transaction.date.getUTCDate()).toBe(29) // 2024 is leap year
     })
 
@@ -440,8 +441,9 @@ describe('recurring-service.ts', () => {
 
       await applyRecurringTemplates(input)
 
-      const call = vi.mocked(prisma.transaction.createMany).mock.calls[0][0]
-      const transaction = call.data[0] as { isRecurring: boolean }
+      const call = vi.mocked(prisma.transaction.createMany).mock.calls[0]?.[0]
+      const data = Array.isArray(call?.data) ? call.data : []
+      const transaction = data[0] as { isRecurring: boolean }
       expect(transaction.isRecurring).toBe(true)
     })
 
@@ -456,8 +458,8 @@ describe('recurring-service.ts', () => {
 
       await applyRecurringTemplates(input)
 
-      const call = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0][0]
-      expect(call.where?.id).toEqual({ in: ['tmpl-1', 'tmpl-2'] })
+      const call = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0]?.[0]
+      expect(call?.where?.id).toEqual({ in: ['tmpl-1', 'tmpl-2'] })
     })
 
     it('should return created count', async () => {

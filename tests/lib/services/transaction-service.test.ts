@@ -657,7 +657,7 @@ describe('transaction-service.ts', () => {
       await approveTransactionRequest('req-1')
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(1)
-      const txnArray = vi.mocked(prisma.$transaction).mock.calls[0][0] as unknown[]
+      const txnArray = vi.mocked(prisma.$transaction).mock.calls[0]?.[0] as unknown as unknown[]
       expect(txnArray).toHaveLength(2)
     })
 
@@ -681,7 +681,7 @@ describe('transaction-service.ts', () => {
       // Capture the transaction array
       let capturedTxn: unknown[] = []
       vi.mocked(prisma.$transaction).mockImplementation(async (txn) => {
-        capturedTxn = txn as unknown[]
+        capturedTxn = txn as unknown as unknown[]
         return [mockRequest, {}] as never
       })
 

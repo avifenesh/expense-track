@@ -185,7 +185,7 @@ describe('holding-service.ts', () => {
 
       const call = vi.mocked(prisma.holding.create).mock.calls[0][0]
       // Check that toFixed(6) was used
-      expect((call.data.quantity as { value: string }).value).toBe('100.123456')
+      expect((call.data.quantity as unknown as { value: string }).value).toBe('100.123456')
     })
 
     it('should create without notes (null)', async () => {
