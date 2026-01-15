@@ -14,6 +14,8 @@ import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { DashboardCategory, transactionTypeOptions, typeFilterOptions, TypeFilterValue } from './types'
 
+type FormErrors = Partial<Record<string, string[]>>
+
 export type CategoriesTabProps = {
   categories: DashboardCategory[]
 }
@@ -28,6 +30,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
   const [showArchivedCategories, setShowArchivedCategories] = useState(false)
   const [visibleCategoriesCount, setVisibleCategoriesCount] = useState(10)
   const [isPendingCategory, startCategory] = useTransition()
+  const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
 
   // Computed
   const filteredCategoryList = useMemo(
@@ -43,11 +46,24 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
   // Handlers
   const handleCategorySubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
+    setFormErrors(null)
     const form = event.currentTarget
     const formData = new FormData(form)
 
+    const errors: FormErrors = {}
+    const name = (formData.get('categoryName') as string)?.trim()
+
+    if (!name || name.length === 0) {
+      errors.name = ['Please enter a category name.']
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+
     const payload = {
-      name: formData.get('categoryName') as string,
+      name,
       type: formData.get('categoryType') as TransactionType,
       color: (formData.get('categoryColor') as string) || undefined,
       csrfToken,
@@ -56,10 +72,13 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
     startCategory(async () => {
       const result = await createCategoryAction(payload)
       if ('error' in result) {
+        const serverErrors = result.error as FormErrors
+        setFormErrors(serverErrors)
         toast.error('Could not create category.')
         return
       }
       toast.success('Category added.')
+      setFormErrors(null)
       form.reset()
       router.refresh()
     })
@@ -103,12 +122,24 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
                 <h3 className="text-sm font-semibold text-white">Add new category</h3>
                 <p className="text-xs text-slate-400">Segment transactions with meaningful labels.</p>
               </div>
+              {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="categoryName">
                     Name
                   </label>
-                  <Input name="categoryName" id="categoryName" placeholder="e.g. Car Leasing" required />
+                  <Input
+                    name="categoryName"
+                    id="categoryName"
+                    placeholder="e.g. Car Leasing"
+                    required
+                    aria-describedby={formErrors?.name ? 'categoryName-error' : undefined}
+                  />
+                  {formErrors?.name && (
+                    <p id="categoryName-error" className="text-xs text-rose-300">
+                      {formErrors.name[0]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="categoryType">

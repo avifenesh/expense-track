@@ -299,13 +299,33 @@ export function BudgetsTab({
                     .filter((category) => category.type === TransactionType.EXPENSE && !category.isArchived)
                     .map((category) => ({ label: category.name, value: category.id }))}
                   required
+                  aria-describedby={formErrors?.categoryId ? 'budget-categoryId-error' : undefined}
                 />
+                {formErrors?.categoryId && (
+                  <p id="budget-categoryId-error" className="text-xs text-rose-300">
+                    {formErrors.categoryId[0]}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-slate-300" htmlFor="planned">
                   Planned amount
                 </label>
-                <Input name="planned" id="planned" type="number" min="0" step="0.01" placeholder="0.00" required />
+                <Input
+                  name="planned"
+                  id="planned"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                  aria-describedby={formErrors?.planned ? 'budget-planned-error' : undefined}
+                />
+                {formErrors?.planned && (
+                  <p id="budget-planned-error" className="text-xs text-rose-300">
+                    {formErrors.planned[0]}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-slate-300" htmlFor="budgetCurrency">

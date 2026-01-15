@@ -29,6 +29,8 @@ import {
   currencyOptions,
 } from './types'
 
+type FormErrors = Partial<Record<string, string[]>>
+
 export type RecurringTabProps = {
   recurringTemplates: DashboardRecurringTemplate[]
   accounts: DashboardAccount[]
@@ -54,6 +56,7 @@ export function RecurringTab({
   const [recurringAccountFilter, setRecurringAccountFilter] = useState<string>(activeAccount)
   const [showInactiveRecurring, setShowInactiveRecurring] = useState(false)
   const [isPendingRecurring, startRecurring] = useTransition()
+  const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
 
   // Derived options
   const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
@@ -84,18 +87,41 @@ export function RecurringTab({
   // Handlers
   const handleRecurringSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
+    setFormErrors(null)
     const form = event.currentTarget
     const formData = new FormData(form)
 
+    const errors: FormErrors = {}
+    const categoryId = formData.get('recurringCategoryId') as string
+    const amount = Number(formData.get('recurringAmount') || 0)
+    const startMonth = formData.get('startMonth') as string
+
+    if (!categoryId) {
+      errors.categoryId = ['Please select a category.']
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      errors.amount = ['Enter an amount greater than zero.']
+    }
+
+    if (!startMonth) {
+      errors.startMonth = ['Please select a start month.']
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+
     const payload = {
       accountId: (formData.get('recurringAccountId') as string) || defaultAccountId,
-      categoryId: formData.get('recurringCategoryId') as string,
+      categoryId,
       type: formData.get('recurringType') as TransactionType,
-      amount: Number(formData.get('recurringAmount') || 0),
+      amount,
       currency: (formData.get('recurringCurrency') as Currency) || Currency.USD,
       dayOfMonth: Number(formData.get('dayOfMonth') || 1),
       description: (formData.get('recurringDescription') as string) || undefined,
-      startMonthKey: formData.get('startMonth') as string,
+      startMonthKey: startMonth,
       endMonthKey: (formData.get('endMonth') as string) || undefined,
       isActive: true,
       csrfToken,
@@ -104,10 +130,13 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await upsertRecurringTemplateAction(payload)
       if ('error' in result) {
+        const serverErrors = result.error as FormErrors
+        setFormErrors(serverErrors)
         toast.error('Could not save recurring template.')
         return
       }
       toast.success('Recurring template saved.')
+      setFormErrors(null)
       form.reset()
       router.refresh()
     })
@@ -209,6 +238,7 @@ export function RecurringTab({
                 className="grid gap-4 sm:grid-cols-2"
                 tabIndex={-1}
               >
+                {formErrors?.general && <p className="text-xs text-rose-300 sm:col-span-2">{formErrors.general[0]}</p>}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="recurringType">
                     Type
@@ -242,7 +272,13 @@ export function RecurringTab({
                       .filter((category) => !category.isArchived)
                       .map((category) => ({ label: category.name, value: category.id }))}
                     required
+                    aria-describedby={formErrors?.categoryId ? 'recurring-categoryId-error' : undefined}
                   />
+                  {formErrors?.categoryId && (
+                    <p id="recurring-categoryId-error" className="text-xs text-rose-300">
+                      {formErrors.categoryId[0]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="recurringAmount">
@@ -256,7 +292,13 @@ export function RecurringTab({
                     min="0"
                     placeholder="0.00"
                     required
+                    aria-describedby={formErrors?.amount ? 'recurring-amount-error' : undefined}
                   />
+                  {formErrors?.amount && (
+                    <p id="recurring-amount-error" className="text-xs text-rose-300">
+                      {formErrors.amount[0]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="recurringCurrency">
@@ -285,7 +327,18 @@ export function RecurringTab({
                   <label className="text-xs font-medium text-slate-300" htmlFor="startMonth">
                     Start month
                   </label>
-                  <Input name="startMonth" id="startMonth" type="month" required />
+                  <Input
+                    name="startMonth"
+                    id="startMonth"
+                    type="month"
+                    required
+                    aria-describedby={formErrors?.startMonth ? 'recurring-startMonth-error' : undefined}
+                  />
+                  {formErrors?.startMonth && (
+                    <p id="recurring-startMonth-error" className="text-xs text-rose-300">
+                      {formErrors.startMonth[0]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="endMonth">
