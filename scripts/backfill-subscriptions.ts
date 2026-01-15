@@ -4,6 +4,11 @@
  * This script creates trial subscriptions for all existing users who don't have one.
  * Run this after deploying the subscription model to production.
  *
+ * BEHAVIOR: All existing users receive a fresh 14-day trial starting from when
+ * this script runs. This is intentional - existing users get the same trial
+ * experience as new users, regardless of when they originally signed up.
+ * This is a one-time migration to introduce the subscription model.
+ *
  * Usage: npx tsx scripts/backfill-subscriptions.ts
  */
 

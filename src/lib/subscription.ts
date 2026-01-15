@@ -88,6 +88,8 @@ export async function activateSubscription(userId: string, periodStart: Date, pe
     create: {
       userId,
       status: SubscriptionStatus.ACTIVE,
+      // For direct subscriptions (no trial), trialEndsAt marks when they converted to paid.
+      // This maintains schema consistency where trialEndsAt is always set.
       trialEndsAt: new Date(),
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
