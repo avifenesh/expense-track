@@ -102,18 +102,17 @@ describe('GET /api/health', () => {
   })
 
   describe('Edge cases', () => {
-    it('response time is measured on both success and failure', async () => {
-      // Success case
-      mockQueryRaw.mockResolvedValueOnce([{ '?column?': 1 }])
-      const successResponse = await GET()
-      const successData = await successResponse.json()
-      expect(successData.checks.database.responseTime).toBeGreaterThanOrEqual(0)
-
-      // Failure case
-      mockQueryRaw.mockRejectedValueOnce(new Error('Connection failed'))
-      const failureResponse = await GET()
-      const failureData = await failureResponse.json()
-      expect(failureData.checks.database.responseTime).toBeGreaterThanOrEqual(0)
+    it.each([
+      { case: 'success', mock: () => mockQueryRaw.mockResolvedValueOnce([{ '?column?': 1 }]) },
+      {
+        case: 'failure',
+        mock: () => mockQueryRaw.mockRejectedValueOnce(new Error('Connection failed')),
+      },
+    ])('response time is measured on $case', async ({ mock }) => {
+      mock()
+      const response = await GET()
+      const data = await response.json()
+      expect(data.checks.database.responseTime).toBeGreaterThanOrEqual(0)
     })
 
     it('timestamp is valid ISO 8601 format', async () => {

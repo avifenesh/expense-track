@@ -26,16 +26,18 @@ export async function GET() {
 
 async function checkDatabase() {
   const startTime = performance.now()
+  let checkResult
+
   try {
     await prisma.$queryRaw`SELECT 1`
-    const responseTime = Math.round(performance.now() - startTime)
-    return { status: 'up', responseTime }
+    checkResult = { status: 'up' }
   } catch {
-    const responseTime = Math.round(performance.now() - startTime)
-    return {
+    checkResult = {
       status: 'down',
-      responseTime,
       error: 'Database connection failed',
     }
   }
+
+  const responseTime = Math.round(performance.now() - startTime)
+  return { ...checkResult, responseTime }
 }
