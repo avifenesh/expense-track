@@ -66,6 +66,8 @@ jobs:
         # Change to --audit-level=high and remove || true to make blocking.
 
       - run: npm run check-types
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - run: npm run lint
 
