@@ -13,7 +13,7 @@ import { filterBudgets, getBudgetProgress, getBudgetTotals } from '@/lib/dashboa
 import { createAccountOptions } from '@/lib/select-options'
 import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { useFeedback } from '@/hooks/useFeedback'
+import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { DashboardCategory, DashboardAccount, DashboardBudget, typeFilterOptions, currencyOptions } from './types'
 
@@ -40,7 +40,6 @@ export function BudgetsTab({
   // Local state
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(activeAccount)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
-  const { feedback: budgetFeedback, showSuccess, showError } = useFeedback()
   const [isPendingBudget, startBudget] = useTransition()
 
   // Derived options
@@ -79,10 +78,10 @@ export function BudgetsTab({
     startBudget(async () => {
       const result = await upsertBudgetAction(payload)
       if ('error' in result) {
-        showError('Could not save budget.')
+        toast.error('Could not save budget.')
         return
       }
-      showSuccess('Budget updated.')
+      toast.success('Budget updated.')
       form.reset()
       router.refresh()
     })
@@ -97,10 +96,10 @@ export function BudgetsTab({
         csrfToken,
       })
       if ('error' in result) {
-        showError('Could not remove budget entry.')
+        toast.error('Could not remove budget entry.')
         return
       }
-      showSuccess('Budget removed.')
+      toast.success('Budget removed.')
       router.refresh()
     })
   }
@@ -304,14 +303,6 @@ export function BudgetsTab({
             <Button type="submit" loading={isPendingBudget} className="w-full">
               Save budget
             </Button>
-            {budgetFeedback && (
-              <p
-                role="status"
-                className={cn('text-xs', budgetFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
-              >
-                {budgetFeedback.message}
-              </p>
-            )}
           </form>
         </CardContent>
       </Card>
