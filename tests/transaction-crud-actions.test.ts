@@ -703,7 +703,7 @@ describe('deleteTransactionAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general?.some((msg: string) => msg.includes('Transaction not found'))).toBe(true)
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to delete transaction'))).toBe(true)
     }
   })
 
@@ -726,7 +726,7 @@ describe('deleteTransactionAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general?.some((msg: string) => msg.includes('Transaction not found'))).toBe(true)
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to delete transaction'))).toBe(true)
     }
   })
 })

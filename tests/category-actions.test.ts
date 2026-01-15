@@ -127,7 +127,7 @@ describe('createCategoryAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Category already exists')
+      expect(result.error.general).toContain('Unable to create category')
     }
   })
 
@@ -214,7 +214,7 @@ describe('archiveCategoryAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Category not found')
+      expect(result.error.general).toContain('Unable to update category')
     }
   })
 

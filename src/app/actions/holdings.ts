@@ -1,11 +1,11 @@
 'use server'
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for some models */
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
+import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
@@ -45,8 +45,13 @@ export async function createHoldingAction(input: HoldingInput) {
     if (!category.isHolding) {
       return failure({ categoryId: ['Category must be marked as a holding category'] })
     }
-  } catch {
-    return generalError('Unable to validate category')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'createHolding.validateCategory',
+      accountId: data.accountId,
+      input: data,
+      fallbackMessage: 'Unable to validate category',
+    })
   }
 
   // Test symbol validity with API call (counts toward daily limit)
@@ -60,7 +65,7 @@ export async function createHoldingAction(input: HoldingInput) {
 
   // Create holding
   try {
-    await (prisma as any).holding.create({
+    await prisma.holding.create({
       data: {
         accountId: data.accountId,
         categoryId: data.categoryId,
@@ -76,8 +81,15 @@ export async function createHoldingAction(input: HoldingInput) {
     await invalidateDashboardCache({
       accountId: data.accountId,
     })
-  } catch {
-    return generalError('Unable to create holding. It may already exist.')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'createHolding',
+      accountId: data.accountId,
+      input: data,
+      uniqueMessage: 'A holding with this symbol already exists in this account',
+      foreignKeyMessage: 'The selected account or category no longer exists',
+      fallbackMessage: 'Unable to create holding',
+    })
   }
 
   revalidatePath('/')
@@ -91,21 +103,30 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  let holding
   try {
-    const holding = await (prisma as any).holding.findUnique({
+    holding = await prisma.holding.findUnique({
       where: { id: parsed.data.id },
     })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'updateHolding.findUnique',
+      input: { id: parsed.data.id },
+      fallbackMessage: 'Unable to update holding',
+    })
+  }
 
-    if (!holding) {
-      return generalError('Holding not found')
-    }
+  if (!holding) {
+    return generalError('Holding not found')
+  }
 
-    const access = await ensureAccountAccess(holding.accountId)
-    if ('error' in access) {
-      return access
-    }
+  const access = await ensureAccountAccess(holding.accountId)
+  if ('error' in access) {
+    return access
+  }
 
-    await (prisma as any).holding.update({
+  try {
+    await prisma.holding.update({
       where: { id: parsed.data.id },
       data: {
         quantity: new Prisma.Decimal(parsed.data.quantity.toFixed(6)),
@@ -118,8 +139,14 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
     await invalidateDashboardCache({
       accountId: holding.accountId,
     })
-  } catch {
-    return generalError('Holding not found')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'updateHolding',
+      accountId: holding.accountId,
+      input: parsed.data,
+      notFoundMessage: 'Holding not found',
+      fallbackMessage: 'Unable to update holding',
+    })
   }
 
   revalidatePath('/')
@@ -133,21 +160,30 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  let holding
   try {
-    const holding = await (prisma as any).holding.findUnique({
+    holding = await prisma.holding.findUnique({
       where: { id: parsed.data.id },
     })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteHolding.findUnique',
+      input: { id: parsed.data.id },
+      fallbackMessage: 'Unable to delete holding',
+    })
+  }
 
-    if (!holding) {
-      return generalError('Holding not found')
-    }
+  if (!holding) {
+    return generalError('Holding not found')
+  }
 
-    const access = await ensureAccountAccess(holding.accountId)
-    if ('error' in access) {
-      return access
-    }
+  const access = await ensureAccountAccess(holding.accountId)
+  if ('error' in access) {
+    return access
+  }
 
-    await (prisma as any).holding.delete({
+  try {
+    await prisma.holding.delete({
       where: { id: parsed.data.id },
     })
 
@@ -155,8 +191,14 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
     await invalidateDashboardCache({
       accountId: holding.accountId,
     })
-  } catch {
-    return generalError('Holding not found')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteHolding',
+      accountId: holding.accountId,
+      input: { id: parsed.data.id },
+      notFoundMessage: 'Holding not found',
+      fallbackMessage: 'Unable to delete holding',
+    })
   }
 
   revalidatePath('/')
@@ -177,12 +219,12 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
 
   try {
     // Get all unique symbols for this account's holdings
-    const holdings = await (prisma as any).holding.findMany({
+    const holdings = await prisma.holding.findMany({
       where: { accountId: parsed.data.accountId },
       select: { symbol: true },
     })
 
-    const symbols: string[] = Array.from(new Set(holdings.map((h: any) => h.symbol as string)))
+    const symbols: string[] = Array.from(new Set(holdings.map((h) => h.symbol)))
 
     if (symbols.length === 0) {
       return success({ updated: 0, skipped: 0, errors: [] as string[] })
@@ -193,7 +235,11 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
 
     revalidatePath('/')
     return success(result)
-  } catch {
-    return generalError('Unable to refresh stock prices')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'refreshHoldingPrices',
+      accountId: parsed.data.accountId,
+      fallbackMessage: 'Unable to refresh stock prices',
+    })
   }
 }

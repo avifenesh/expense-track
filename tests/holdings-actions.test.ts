@@ -602,7 +602,7 @@ describe('updateHoldingAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general?.some((msg: string) => msg.includes('Holding not found'))).toBe(true)
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to update holding'))).toBe(true)
     }
   })
 })
@@ -676,7 +676,7 @@ describe('deleteHoldingAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general?.some((msg: string) => msg.includes('Holding not found'))).toBe(true)
+      expect(result.error.general?.some((msg: string) => msg.includes('Unable to delete holding'))).toBe(true)
     }
   })
 })

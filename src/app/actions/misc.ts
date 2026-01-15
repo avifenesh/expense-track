@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { refreshExchangeRates } from '@/lib/currency'
 import { success, generalError } from '@/lib/action-result'
+import { handlePrismaError } from '@/lib/prisma-errors'
 import { requireSession } from '@/lib/auth-server'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { setBalanceSchema } from '@/schemas'
@@ -120,8 +121,13 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
       monthKey,
       accountId,
     })
-  } catch {
-    return generalError('Unable to create balance adjustment')
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'setBalance',
+      accountId,
+      input: { targetBalance, currency, monthKey },
+      fallbackMessage: 'Unable to create balance adjustment',
+    })
   }
 
   revalidatePath('/')
