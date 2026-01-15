@@ -7,19 +7,23 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  displayName       String
-  passwordHash      String
-  preferredCurrency Currency  @default(USD)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                       String    @id @default(cuid())
+  email                    String    @unique
+  displayName              String
+  passwordHash             String
+  preferredCurrency        Currency  @default(USD)
+  emailVerified            Boolean   @default(false)
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   accounts      Account[]
   categories    Category[]
   refreshTokens RefreshToken[]
 
   @@index([email])
+  @@index([emailVerificationToken])
 }
 
 model Account {

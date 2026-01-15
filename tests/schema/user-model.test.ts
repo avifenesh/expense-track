@@ -39,6 +39,9 @@ describe('User Model Schema', () => {
         displayName: 'Test User',
         passwordHash: '$2b$10$hashedpassword',
         preferredCurrency: Currency.USD,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -67,6 +70,9 @@ describe('User Model Schema', () => {
         displayName: 'Test User 2',
         passwordHash: '$2b$10$hashedpassword',
         preferredCurrency: Currency.USD, // default
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -91,6 +97,9 @@ describe('User Model Schema', () => {
         displayName: 'Test User',
         passwordHash: '$2b$10$hashedpassword',
         preferredCurrency: Currency.USD,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -411,6 +420,9 @@ describe('User Model Schema', () => {
         displayName: 'Test User',
         passwordHash: '$2b$10$hashedpassword',
         preferredCurrency: Currency.USD,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [

@@ -80,19 +80,53 @@ const baseCookieConfig = {
   path: '/',
 }
 
-export async function verifyCredentials({ email, password }: { email: string; password: string }) {
+export async function verifyCredentials({
+  email,
+  password,
+}: {
+  email: string
+  password: string
+}): Promise<{ valid: false } | { valid: true; source: 'legacy' | 'database'; userId?: string }> {
   const normalizedEmail = email.trim().toLowerCase()
-  const authUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
-  if (!authUser) {
-    return false
+
+  // First, check legacy AUTH_USERS (for backwards compatibility with seeded users)
+  const legacyUser = AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
+  if (legacyUser) {
+    try {
+      const match = await bcrypt.compare(password, legacyUser.passwordHash)
+      if (match) {
+        return { valid: true, source: 'legacy' }
+      }
+    } catch {
+      // Fall through to database check
+    }
+  }
+
+  // Check database users
+  const dbUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, passwordHash: true, emailVerified: true },
+  })
+
+  if (!dbUser) {
+    return { valid: false }
+  }
+
+  // Check email verification for database users
+  if (!dbUser.emailVerified) {
+    return { valid: false }
   }
 
   try {
-    const match = await bcrypt.compare(password, authUser.passwordHash)
-    return match
+    const match = await bcrypt.compare(password, dbUser.passwordHash)
+    if (match) {
+      return { valid: true, source: 'database', userId: dbUser.id }
+    }
   } catch {
-    return false
+    // Password comparison failed
   }
+
+  return { valid: false }
 }
 
 export async function establishSession({ userEmail, accountId }: { userEmail: string; accountId: string }) {
