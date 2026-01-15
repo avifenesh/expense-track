@@ -2,7 +2,7 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useToast, toast } from '@/hooks/useToast'
 import { toastBus } from '@/lib/toast-events'
 
@@ -72,7 +72,7 @@ describe('useToast', () => {
   })
 
   describe('auto-dismiss', () => {
-    it('should auto-dismiss toast after default duration (4s)', async () => {
+    it('should auto-dismiss toast after default duration (4s)', () => {
       const { result } = renderHook(() => useToast())
 
       act(() => {
@@ -86,12 +86,10 @@ describe('useToast', () => {
         vi.advanceTimersByTime(4000)
       })
 
-      await waitFor(() => {
-        expect(result.current.toasts).toHaveLength(0)
-      })
+      expect(result.current.toasts).toHaveLength(0)
     })
 
-    it('should auto-dismiss toast after custom duration', async () => {
+    it('should auto-dismiss toast after custom duration', () => {
       const { result } = renderHook(() => useToast())
 
       act(() => {
@@ -105,9 +103,7 @@ describe('useToast', () => {
         vi.advanceTimersByTime(2000)
       })
 
-      await waitFor(() => {
-        expect(result.current.toasts).toHaveLength(0)
-      })
+      expect(result.current.toasts).toHaveLength(0)
     })
 
     it('should not dismiss before duration expires', () => {
@@ -171,15 +167,16 @@ describe('useToast', () => {
       const { result } = renderHook(() => useToast())
 
       act(() => {
-        toast.success('First')
-        toast.error('Second')
-        toast.info('Third')
+        // Different message, same type - no deduplication
+        toast.success('First toast')
+        toast.success('Second toast')
+        toast.success('Third toast')
       })
 
       expect(result.current.toasts).toHaveLength(3)
-      expect(result.current.toasts[0].message).toBe('First')
-      expect(result.current.toasts[1].message).toBe('Second')
-      expect(result.current.toasts[2].message).toBe('Third')
+      expect(result.current.toasts[0].message).toBe('First toast')
+      expect(result.current.toasts[1].message).toBe('Second toast')
+      expect(result.current.toasts[2].message).toBe('Third toast')
     })
 
     it('should limit to max 3 toasts', () => {
@@ -199,12 +196,12 @@ describe('useToast', () => {
       expect(result.current.toasts[2].message).toBe('Fourth')
     })
 
-    it('should dismiss each toast independently after their duration', async () => {
+    it('should dismiss each toast independently after their duration', () => {
       const { result } = renderHook(() => useToast())
 
       act(() => {
         toast.success('Short', 2000)
-        toast.success('Long', 6000)
+        toast.info('Long', 6000) // Different type to avoid deduplication
       })
 
       expect(result.current.toasts).toHaveLength(2)
@@ -214,19 +211,15 @@ describe('useToast', () => {
         vi.advanceTimersByTime(2000)
       })
 
-      await waitFor(() => {
-        expect(result.current.toasts).toHaveLength(1)
-        expect(result.current.toasts[0].message).toBe('Long')
-      })
+      expect(result.current.toasts).toHaveLength(1)
+      expect(result.current.toasts[0].message).toBe('Long')
 
       // Fast-forward another 4 seconds (total 6s)
       act(() => {
         vi.advanceTimersByTime(4000)
       })
 
-      await waitFor(() => {
-        expect(result.current.toasts).toHaveLength(0)
-      })
+      expect(result.current.toasts).toHaveLength(0)
     })
   })
 
@@ -376,14 +369,15 @@ describe('useToast', () => {
       const { result } = renderHook(() => useToast())
 
       act(() => {
-        toast.success('First')
-        toast.success('Second')
-        toast.success('Third')
+        toast.success('Message A')
+        toast.success('Message B')
+        toast.success('Message C')
       })
 
       const ids = result.current.toasts.map((t) => t.id)
       const uniqueIds = new Set(ids)
 
+      // All three toasts should have unique IDs
       expect(uniqueIds.size).toBe(3)
     })
   })
