@@ -40,8 +40,16 @@ export async function cleanupTestData() {
   await prisma.recurringTemplate.deleteMany({
     where: { description: { contains: 'TEST_' } },
   })
+  // Delete holdings by notes OR by test category/account reference
+  // This ensures we catch any holdings referencing test data even if notes don't match
   await prisma.holding.deleteMany({
-    where: { notes: { contains: 'TEST_' } },
+    where: {
+      OR: [
+        { notes: { contains: 'TEST_' } },
+        { category: { name: { contains: 'TEST_' } } },
+        { account: { name: { contains: 'TEST_' } } },
+      ],
+    },
   })
   // Clean up categories and accounts created by integration tests
   await prisma.category.deleteMany({

@@ -58,11 +58,8 @@ describe('Holdings Flow Integration', () => {
   })
 
   afterEach(async () => {
-    // Cleanup test data
+    // Cleanup test data (cleanupTestData handles categories with TEST_ prefix)
     await cleanupTestData()
-    await prisma.category.deleteMany({
-      where: { name: { contains: 'TEST_Holdings_' } },
-    })
   })
 
   it('completes full holding lifecycle: create → update → delete', async () => {
