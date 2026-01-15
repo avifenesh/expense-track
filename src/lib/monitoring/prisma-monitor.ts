@@ -57,7 +57,7 @@ export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (pa
       console.warn('SLOW_QUERY', JSON.stringify(logData))
 
       // Report to Sentry as breadcrumb
-      Sentry?.addBreadcrumb({
+      Sentry.addBreadcrumb({
         category: 'database.slow_query',
         message: `Slow query: ${params.model}.${params.action}`,
         level: 'warning',
@@ -71,7 +71,7 @@ export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (pa
 
       // Critical threshold: 5x the slow query threshold
       if (duration > SLOW_QUERY_THRESHOLD_MS * 5) {
-        Sentry?.captureMessage(
+        Sentry.captureMessage(
           `Critical slow query: ${params.model}.${params.action} (${duration}ms)`,
           {
             level: 'warning',
@@ -100,26 +100,28 @@ export const queryMonitorMiddleware = async (params: MiddlewareParams, next: (pa
 
 /**
  * Sanitize query arguments to remove sensitive data.
- * Removes password hashes and other sensitive fields.
+ * Recursively removes password hashes and other sensitive fields.
  */
 function sanitizeArgs(args: unknown): unknown {
-  if (!args || typeof args !== 'object') {
+  if (typeof args !== 'object' || args === null) {
     return args
   }
 
-  const sanitized = { ...args } as Record<string, unknown>
-
-  // Remove sensitive fields
-  const sensitiveFields = ['passwordHash', 'password', 'token', 'secret']
-  for (const field of sensitiveFields) {
-    if (field in sanitized) {
-      sanitized[field] = '[REDACTED]'
-    }
+  if (Array.isArray(args)) {
+    return args.map(sanitizeArgs)
   }
 
-  // Handle nested data objects
-  if ('data' in sanitized && typeof sanitized.data === 'object' && sanitized.data !== null) {
-    sanitized.data = sanitizeArgs(sanitized.data)
+  const sensitiveFields = new Set(['passwordHash', 'password', 'token', 'secret'])
+  const sanitized: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(args)) {
+    if (sensitiveFields.has(key)) {
+      sanitized[key] = '[REDACTED]'
+    } else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeArgs(value)
+    } else {
+      sanitized[key] = value
+    }
   }
 
   return sanitized
