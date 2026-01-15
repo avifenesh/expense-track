@@ -82,7 +82,6 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
   }
   incrementRateLimitTyped(normalizedEmail, 'password_reset')
 
-  // TODO: Implement actual password reset email sending in #33
   // For now, log the request and return an honest message about the feature status.
   // The DB query will be added when we actually send reset emails.
   serverLogger.warn('Password reset requested, but reset flow is not yet implemented (see issue #33).', {
