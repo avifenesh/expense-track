@@ -14,7 +14,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
-  getAuthUserFromSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -75,9 +75,9 @@ describe('upsertRecurringTemplateAction', () => {
   })
 
   it('should successfully create a new recurring template', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -114,9 +114,9 @@ describe('upsertRecurringTemplateAction', () => {
   })
 
   it('should successfully update an existing template', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -217,9 +217,9 @@ describe('upsertRecurringTemplateAction', () => {
   })
 
   it('should accept end month equal to start month', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -261,9 +261,9 @@ describe('toggleRecurringTemplateAction', () => {
   })
 
   it('should successfully toggle template to inactive', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -301,9 +301,9 @@ describe('toggleRecurringTemplateAction', () => {
   })
 
   it('should fail when template not found', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -334,9 +334,9 @@ describe('applyRecurringTemplatesAction', () => {
   })
 
   it('should create transactions from active templates', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -382,9 +382,9 @@ describe('applyRecurringTemplatesAction', () => {
   })
 
   it('should skip templates that already have transactions', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -434,9 +434,9 @@ describe('applyRecurringTemplatesAction', () => {
   })
 
   it('should handle day 31 in months with fewer days', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -480,9 +480,9 @@ describe('applyRecurringTemplatesAction', () => {
   })
 
   it('should return zero when no templates found', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',
@@ -513,9 +513,9 @@ describe('applyRecurringTemplatesAction', () => {
   })
 
   it('should apply only specified template IDs', async () => {
-    const { requireSession, getAuthUserFromSession } = await import('@/lib/auth-server')
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getAuthUserFromSession).mockReturnValue({
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'avi',
       displayName: 'Test User',

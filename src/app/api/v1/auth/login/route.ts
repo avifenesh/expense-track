@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyCredentials } from '@/lib/auth-server'
-import { AUTH_USERS } from '@/lib/auth'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
@@ -24,21 +23,20 @@ export async function POST(request: NextRequest) {
     }
     incrementRateLimit(normalizedEmail)
 
-    const isValid = await verifyCredentials({ email, password })
-    if (!isValid) {
+    const result = await verifyCredentials({ email, password })
+    if (!result.valid) {
+      if (result.reason === 'email_not_verified') {
+        return NextResponse.json({ error: 'Please verify your email before logging in' }, { status: 401 })
+      }
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const authUser = AUTH_USERS.find((u) => u.email.toLowerCase() === normalizedEmail)
-    if (!authUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 401 })
-    }
-
-    const accessToken = generateAccessToken(authUser.id, normalizedEmail)
-    const { token: refreshToken, jti, expiresAt } = generateRefreshToken(authUser.id, normalizedEmail)
+    const userId = result.userId
+    const accessToken = generateAccessToken(userId, normalizedEmail)
+    const { token: refreshToken, jti, expiresAt } = generateRefreshToken(userId, normalizedEmail)
 
     await prisma.refreshToken.create({
-      data: { jti, userId: authUser.id, email: normalizedEmail, expiresAt },
+      data: { jti, userId, email: normalizedEmail, expiresAt },
     })
 
     return NextResponse.json({

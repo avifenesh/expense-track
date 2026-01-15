@@ -380,7 +380,6 @@ describe('verifyCredentials with database users', () => {
 
     expect(result.valid).toBe(true)
     if (result.valid) {
-      expect(result.source).toBe('database')
       expect(result.userId).toBe('db-user-1')
     }
   })

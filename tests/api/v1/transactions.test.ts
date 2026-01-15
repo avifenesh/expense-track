@@ -22,6 +22,20 @@ describe('Transaction API Routes', () => {
     // Get test user for userId foreign keys
     const testUser = await getApiTestUser()
 
+    // Create 'serena' user for transaction request approval tests
+    // This user owns the 'other' account and can approve/reject requests
+    const serenaUser = await prisma.user.upsert({
+      where: { id: 'serena' },
+      update: {},
+      create: {
+        id: 'serena',
+        email: 'serena@example.com',
+        displayName: 'Serena Test User',
+        passwordHash: '$2b$10$placeholder',
+        preferredCurrency: 'USD',
+      },
+    })
+
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
       where: { userId_name: { userId: testUser.id, name: 'Avi' } },
@@ -29,10 +43,11 @@ describe('Transaction API Routes', () => {
       create: { userId: testUser.id, name: 'Avi', type: 'SELF' },
     })
 
+    // Other account belongs to 'serena' user - for request approval tests
     const otherAccount = await prisma.account.upsert({
-      where: { userId_name: { userId: testUser.id, name: 'Serena' } },
+      where: { userId_name: { userId: serenaUser.id, name: 'SerenaAccount' } },
       update: {},
-      create: { userId: testUser.id, name: 'Serena', type: 'SELF' },
+      create: { userId: serenaUser.id, name: 'SerenaAccount', type: 'SELF' },
     })
 
     const category = await prisma.category.upsert({

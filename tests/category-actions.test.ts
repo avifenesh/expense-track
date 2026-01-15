@@ -15,9 +15,9 @@ vi.mock('@/lib/csrf', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn().mockResolvedValue({ userEmail: 'test@example.com', accountId: 'acc-1' }),
-  getAuthUserFromSession: vi
+  getDbUserAsAuthUser: vi
     .fn()
-    .mockReturnValue({ id: 'test-user', email: 'test@example.com', accountNames: ['TestAccount'] }),
+    .mockResolvedValue({ id: 'test-user', email: 'test@example.com', accountNames: ['TestAccount'] }),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {

@@ -6,21 +6,21 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-// Mock auth-server - must be at top
+// Mock auth-server - must be at top (database-driven)
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn().mockResolvedValue({
     userEmail: 'test@example.com',
     accountId: 'test-account-id',
   }),
-  getAuthUserFromSession: vi.fn().mockReturnValue({
+  getDbUserAsAuthUser: vi.fn().mockResolvedValue({
     id: 'test-user',
     email: 'test@example.com',
     displayName: 'Test User',
+    passwordHash: 'hash',
     accountNames: ['Test Account'],
     defaultAccountName: 'Test Account',
     preferredCurrency: 'USD',
   }),
-  getDbUserAsAuthUser: vi.fn().mockResolvedValue(null),
 }))
 
 // Mock CSRF validation - must be at top

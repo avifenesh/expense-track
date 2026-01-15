@@ -6,7 +6,7 @@ import { PUT as UpdateHolding, DELETE as DeleteHolding } from '@/app/api/v1/hold
 import { POST as RefreshPrices } from '@/app/api/v1/holdings/refresh/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { getApiTestUser } from './helpers'
+import { getApiTestUser, getOtherTestUser } from './helpers'
 
 // Mock stock API
 vi.mock('@/lib/stock-api', () => ({
@@ -27,6 +27,9 @@ describe('Holdings API Routes', () => {
     // Get test user for userId foreign keys
     const testUser = await getApiTestUser()
 
+    // Get other user for unauthorized access testing
+    const otherTestUser = await getOtherTestUser()
+
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
       where: { userId_name: { userId: testUser.id, name: 'Avi' } },
@@ -34,10 +37,11 @@ describe('Holdings API Routes', () => {
       create: { userId: testUser.id, name: 'Avi', type: 'SELF' },
     })
 
+    // Other account belongs to OTHER user - test user should NOT have access
     const otherAccount = await prisma.account.upsert({
-      where: { userId_name: { userId: testUser.id, name: 'Serena' } },
+      where: { userId_name: { userId: otherTestUser.id, name: 'OtherUserAccount' } },
       update: {},
-      create: { userId: testUser.id, name: 'Serena', type: 'SELF' },
+      create: { userId: otherTestUser.id, name: 'OtherUserAccount', type: 'SELF' },
     })
 
     const holdingCategory = await prisma.category.upsert({

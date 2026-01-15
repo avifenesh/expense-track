@@ -1,4 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import bcrypt from 'bcryptjs'
+import { Currency } from '@prisma/client'
 
 // Test password used for mock users
 const TEST_PASSWORD = 'TestPassword123!'
@@ -10,73 +12,30 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }))
 
-// Mock auth module with test users (data inlined to avoid hoisting issues)
-vi.mock('@/lib/auth', async () => {
-  const { Currency } = await import('@prisma/client')
-  const bcryptLib = await import('bcryptjs')
-  const hash = bcryptLib.default.hashSync('TestPassword123!', 10)
+// Mock auth module - no longer exports AUTH_USERS or RECOVERY_CONTACTS
+vi.mock('@/lib/auth', () => ({
+  SESSION_COOKIE: 'balance_session',
+  USER_COOKIE: 'balance_user',
+  ACCOUNT_COOKIE: 'balance_account',
+  SESSION_TS_COOKIE: 'balance_session_ts',
+  SESSION_MAX_AGE_MS: 30 * 24 * 60 * 60 * 1000,
+}))
 
-  const users = [
-    {
-      id: 'avi' as const,
-      email: 'test1@example.com',
-      displayName: 'Test User 1',
-      passwordHash: hash,
-      accountNames: ['Test1'],
-      defaultAccountName: 'Test1',
-      preferredCurrency: Currency.USD,
-    },
-    {
-      id: 'serena' as const,
-      email: 'test2@example.com',
-      displayName: 'Test User 2',
-      passwordHash: hash,
-      accountNames: ['Test2', 'Test3'],
-      defaultAccountName: 'Test2',
-      preferredCurrency: Currency.USD,
-    },
-  ]
-
-  const contacts = users.map((user) => ({
-    email: user.email,
-    label: `${user.displayName} recovery inbox`,
-  }))
-
-  return {
-    AUTH_USERS: users,
-    RECOVERY_CONTACTS: contacts,
-    getAuthUsers: () => users,
-    getRecoveryContacts: () => contacts,
-    SESSION_COOKIE: 'balance_session',
-    USER_COOKIE: 'balance_user',
-    ACCOUNT_COOKIE: 'balance_account',
-  }
-})
-
-// Mock auth-server to avoid SESSION_SECRET requirement
-vi.mock('@/lib/auth-server', async () => {
-  const bcryptLib = await import('bcryptjs')
-  const authModule = await import('@/lib/auth')
-
-  return {
-    verifyCredentials: async ({ email, password }: { email: string; password: string }) => {
-      const normalizedEmail = email.trim().toLowerCase()
-      const authUser = authModule.AUTH_USERS.find((user) => user.email.toLowerCase() === normalizedEmail)
-      if (!authUser) return { valid: false }
-      const isValid = await bcryptLib.default.compare(password, authUser.passwordHash)
-      if (!isValid) return { valid: false }
-      return { valid: true, source: 'legacy' as const }
-    },
-    requireSession: vi.fn(),
-    getAuthUserFromSession: vi.fn(),
-    establishSession: vi.fn().mockResolvedValue(undefined),
-    clearSession: vi.fn().mockResolvedValue(undefined),
-    updateSessionAccount: vi.fn().mockResolvedValue({ success: true }),
-  }
-})
+// Mock auth-server to use database-based verification
+vi.mock('@/lib/auth-server', () => ({
+  verifyCredentials: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
+  requireSession: vi.fn(),
+  establishSession: vi.fn().mockResolvedValue(undefined),
+  clearSession: vi.fn().mockResolvedValue(undefined),
+  updateSessionAccount: vi.fn().mockResolvedValue({ success: true }),
+}))
 
 vi.mock('@/lib/csrf', () => ({
   validateCsrfToken: vi.fn().mockResolvedValue(true),
@@ -96,15 +55,38 @@ vi.mock('@/app/actions/shared', () => ({
     account: { id: 'acc-1', name: 'Test1', type: 'SELF' },
   }),
   requireCsrfToken: vi.fn().mockResolvedValue({ success: true }),
+  requireAuthUser: vi.fn(),
 }))
 
-import { AUTH_USERS, RECOVERY_CONTACTS } from '@/lib/auth'
 import { verifyCredentials, establishSession, clearSession, updateSessionAccount } from '@/lib/auth-server'
 import { rotateCsrfToken } from '@/lib/csrf'
 import { ensureAccountAccess, requireCsrfToken } from '@/app/actions/shared'
 import { loginAction, logoutAction, requestPasswordResetAction, persistActiveAccountAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import type { Account } from '@prisma/client'
+
+// Test users setup
+const testPasswordHash = bcrypt.hashSync(TEST_PASSWORD, 10)
+
+const TEST_USER_1 = {
+  id: 'user-1',
+  email: 'test1@example.com',
+  displayName: 'Test User 1',
+  passwordHash: testPasswordHash,
+  accountNames: ['Test1'],
+  defaultAccountName: 'Test1',
+  preferredCurrency: Currency.USD,
+}
+
+const TEST_USER_2 = {
+  id: 'user-2',
+  email: 'test2@example.com',
+  displayName: 'Test User 2',
+  passwordHash: testPasswordHash,
+  accountNames: ['Test2', 'Test3'],
+  defaultAccountName: 'Test2',
+  preferredCurrency: Currency.USD,
+}
 
 // Helper to create mock Account objects with all required properties
 function mockAccount(partial: Partial<Account>): Account {
@@ -129,21 +111,25 @@ describe('auth actions', () => {
 
   describe('auth credential verification', () => {
     it('accepts valid credentials', async () => {
-      const user = AUTH_USERS[0]
-      const result = await verifyCredentials({ email: user.email, password: TEST_PASSWORD })
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+
+      const result = await verifyCredentials({ email: TEST_USER_1.email, password: TEST_PASSWORD })
       expect(result.valid).toBe(true)
       if (result.valid) {
-        expect(result.source).toBe('legacy')
+        expect(result.userId).toBe(TEST_USER_1.id)
       }
     })
 
     it('rejects a wrong password', async () => {
-      const user = AUTH_USERS[0]
-      const result = await verifyCredentials({ email: user.email, password: 'wrong-pass' })
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: false })
+
+      const result = await verifyCredentials({ email: TEST_USER_1.email, password: 'wrong-pass' })
       expect(result.valid).toBe(false)
     })
 
     it('rejects an unexpected email', async () => {
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: false })
+
       const result = await verifyCredentials({ email: 'unauthorized@example.com', password: TEST_PASSWORD })
       expect(result.valid).toBe(false)
     })
@@ -151,47 +137,81 @@ describe('auth actions', () => {
 
   describe('loginAction', () => {
     it('succeeds with valid credentials and single account', async () => {
-      const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+      // loginAction queries prisma.user.findUnique with include: { accounts }
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_1.id,
+        email: TEST_USER_1.email,
+        displayName: TEST_USER_1.displayName,
+        passwordHash: TEST_USER_1.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
+      } as never)
 
-      const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
+      const result = await loginAction({ email: TEST_USER_1.email, password: TEST_PASSWORD })
 
       expect(result).toEqual({ success: true, data: { accountId: 'acc-1' } })
       expect(establishSession).toHaveBeenCalledWith({
-        userEmail: user.email,
+        userEmail: TEST_USER_1.email,
         accountId: 'acc-1',
       })
       expect(rotateCsrfToken).toHaveBeenCalled()
     })
 
-    it('succeeds with multiple accounts and selects default', async () => {
-      const user = AUTH_USERS[1]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([
-        mockAccount({ id: 'acc-2', name: 'Test2', type: 'SELF' }),
-        mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
-      ])
+    it('succeeds with multiple accounts and selects first by name order', async () => {
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_2.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_2.id,
+        email: TEST_USER_2.email,
+        displayName: TEST_USER_2.displayName,
+        passwordHash: TEST_USER_2.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [
+          mockAccount({ id: 'acc-2', name: 'Test2', type: 'SELF' }),
+          mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
+        ],
+      } as never)
 
-      const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
+      const result = await loginAction({ email: TEST_USER_2.email, password: TEST_PASSWORD })
 
       expect(result).toEqual({ success: true, data: { accountId: 'acc-2' } })
       expect(establishSession).toHaveBeenCalledWith({
-        userEmail: user.email,
+        userEmail: TEST_USER_2.email,
         accountId: 'acc-2',
       })
     })
 
-    it('fallback to first account when default not found', async () => {
-      const user = AUTH_USERS[1]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([
-        mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
-        mockAccount({ id: 'acc-4', name: 'Test4', type: 'SELF' }),
-      ])
+    it('selects first account from sorted list', async () => {
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_2.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_2.id,
+        email: TEST_USER_2.email,
+        displayName: TEST_USER_2.displayName,
+        passwordHash: TEST_USER_2.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [
+          mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
+          mockAccount({ id: 'acc-4', name: 'Test4', type: 'SELF' }),
+        ],
+      } as never)
 
-      const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
+      const result = await loginAction({ email: TEST_USER_2.email, password: TEST_PASSWORD })
 
       expect(result).toEqual({ success: true, data: { accountId: 'acc-3' } })
       expect(establishSession).toHaveBeenCalledWith({
-        userEmail: user.email,
+        userEmail: TEST_USER_2.email,
         accountId: 'acc-3',
       })
     })
@@ -211,26 +231,49 @@ describe('auth actions', () => {
     })
 
     it('handles email case-insensitively', async () => {
-      const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_1.id,
+        email: TEST_USER_1.email,
+        displayName: TEST_USER_1.displayName,
+        passwordHash: TEST_USER_1.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
+      } as never)
 
-      const result = await loginAction({ email: user.email.toUpperCase(), password: TEST_PASSWORD })
+      const result = await loginAction({ email: TEST_USER_1.email.toUpperCase(), password: TEST_PASSWORD })
 
       expect(result).toEqual({ success: true, data: { accountId: 'acc-1' } })
     })
 
     it('trims email whitespace', async () => {
-      const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_1.id,
+        email: TEST_USER_1.email,
+        displayName: TEST_USER_1.displayName,
+        passwordHash: TEST_USER_1.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
+      } as never)
 
-      const result = await loginAction({ email: `  ${user.email}  `, password: TEST_PASSWORD })
+      const result = await loginAction({ email: `  ${TEST_USER_1.email}  `, password: TEST_PASSWORD })
 
       expect(result).toEqual({ success: true, data: { accountId: 'acc-1' } })
     })
 
     it('rejects invalid credentials', async () => {
-      const user = AUTH_USERS[0]
-      const result = await loginAction({ email: user.email, password: 'WrongPassword' })
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: false })
+
+      const result = await loginAction({ email: TEST_USER_1.email, password: 'WrongPassword' })
 
       expect('error' in result).toBe(true)
       if ('error' in result) {
@@ -239,7 +282,9 @@ describe('auth actions', () => {
       expect(establishSession).not.toHaveBeenCalled()
     })
 
-    it('rejects email not in AUTH_USERS after credential check', async () => {
+    it('rejects unknown email', async () => {
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: false })
+
       const result = await loginAction({ email: 'unknown@example.com', password: TEST_PASSWORD })
 
       expect('error' in result).toBe(true)
@@ -250,51 +295,95 @@ describe('auth actions', () => {
     })
 
     it('returns error when no accounts provisioned', async () => {
-      const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([])
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_1.id,
+        email: TEST_USER_1.email,
+        displayName: TEST_USER_1.displayName,
+        passwordHash: TEST_USER_1.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [],
+      } as never)
 
-      const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
+      const result = await loginAction({ email: TEST_USER_1.email, password: TEST_PASSWORD })
 
       expect('error' in result).toBe(true)
       if ('error' in result) {
-        expect(result.error.general).toContain('No accounts are provisioned for this user. Please contact support.')
+        expect(result.error.general).toContain('No accounts found. Please contact support.')
       }
       expect(establishSession).not.toHaveBeenCalled()
     })
 
-    it('queries accounts with correct parameters', async () => {
-      const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
+    it('queries user with accounts', async () => {
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_1.id,
+        email: TEST_USER_1.email,
+        displayName: TEST_USER_1.displayName,
+        passwordHash: TEST_USER_1.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
+      } as never)
 
-      await loginAction({ email: user.email, password: TEST_PASSWORD })
+      await loginAction({ email: TEST_USER_1.email, password: TEST_PASSWORD })
 
-      expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: { name: { in: ['Test1'] } },
-        orderBy: { name: 'asc' },
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { email: TEST_USER_1.email },
+        include: { accounts: { orderBy: { name: 'asc' } } },
       })
     })
 
     it('returns accounts sorted by name', async () => {
-      const user = AUTH_USERS[1]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([
-        mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
-        mockAccount({ id: 'acc-2', name: 'Test2', type: 'SELF' }),
-      ])
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_2.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_2.id,
+        email: TEST_USER_2.email,
+        displayName: TEST_USER_2.displayName,
+        passwordHash: TEST_USER_2.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [
+          mockAccount({ id: 'acc-2', name: 'Test2', type: 'SELF' }),
+          mockAccount({ id: 'acc-3', name: 'Test3', type: 'SELF' }),
+        ],
+      } as never)
 
-      const result = await loginAction({ email: user.email, password: TEST_PASSWORD })
+      const result = await loginAction({ email: TEST_USER_2.email, password: TEST_PASSWORD })
 
-      expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: { name: { in: ['Test2', 'Test3'] } },
-        orderBy: { name: 'asc' },
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { email: TEST_USER_2.email },
+        include: { accounts: { orderBy: { name: 'asc' } } },
       })
       expect(result).toEqual({ success: true, data: { accountId: 'acc-2' } })
     })
 
     it('calls rotateCsrfToken after successful login', async () => {
-      const user = AUTH_USERS[0]
-      vi.mocked(prisma.account.findMany).mockResolvedValue([mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })])
+      vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: TEST_USER_1.id })
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: TEST_USER_1.id,
+        email: TEST_USER_1.email,
+        displayName: TEST_USER_1.displayName,
+        passwordHash: TEST_USER_1.passwordHash,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
+      } as never)
 
-      await loginAction({ email: user.email, password: TEST_PASSWORD })
+      await loginAction({ email: TEST_USER_1.email, password: TEST_PASSWORD })
 
       expect(rotateCsrfToken).toHaveBeenCalledTimes(1)
     })
@@ -328,22 +417,38 @@ describe('auth actions', () => {
   })
 
   describe('requestPasswordResetAction', () => {
-    it('returns a friendly confirmation for known inboxes', async () => {
-      const target = RECOVERY_CONTACTS[0]
-      const response = await requestPasswordResetAction({ email: target.email })
-      expect(response).toEqual({
-        success: true,
-        message: expect.stringContaining(target.email),
+    it('returns generic message for known users (no email enumeration)', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        email: 'test1@example.com',
+        displayName: 'Test User 1',
+        passwordHash: testPasswordHash,
+        preferredCurrency: Currency.USD,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
+
+      const response = await requestPasswordResetAction({ email: 'test1@example.com' })
+
+      expect('success' in response && response.success).toBe(true)
+      if ('success' in response && response.success) {
+        expect(response.data.message).toContain('If this email is registered')
+      }
     })
 
-    it('flags unknown inboxes', async () => {
+    it('returns same generic message for unknown emails (prevents enumeration)', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
       const response = await requestPasswordResetAction({ email: 'unknown@example.com' })
-      expect(response).toEqual({
-        error: {
-          email: ['Email is not registered. Reach out to the finance team to restore access.'],
-        },
-      })
+
+      // Should return success with generic message to prevent email enumeration
+      expect('success' in response && response.success).toBe(true)
+      if ('success' in response && response.success) {
+        expect(response.data.message).toContain('If this email is registered')
+      }
     })
 
     it('rejects invalid email format', async () => {
@@ -353,18 +458,26 @@ describe('auth actions', () => {
     })
 
     it('handles email case-insensitively', async () => {
-      const target = RECOVERY_CONTACTS[0]
-      const response = await requestPasswordResetAction({ email: target.email.toUpperCase() })
-
-      expect(response).toEqual({
-        success: true,
-        message: expect.stringContaining(target.email),
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        email: 'test1@example.com',
+        displayName: 'Test User 1',
+        passwordHash: testPasswordHash,
+        preferredCurrency: Currency.USD,
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
+
+      const response = await requestPasswordResetAction({ email: 'TEST1@EXAMPLE.COM' })
+
+      expect('success' in response && response.success).toBe(true)
     })
 
     it('rejects email with whitespace (not trimmed before validation)', async () => {
-      const target = RECOVERY_CONTACTS[0]
-      const response = await requestPasswordResetAction({ email: `  ${target.email}  ` })
+      const response = await requestPasswordResetAction({ email: '  test1@example.com  ' })
 
       // Email with whitespace fails Zod email validation
       expect('error' in response).toBe(true)
@@ -373,25 +486,15 @@ describe('auth actions', () => {
       }
     })
 
-    it('includes complete success message format', async () => {
-      const target = RECOVERY_CONTACTS[0]
-      const response = await requestPasswordResetAction({ email: target.email })
+    it('returns generic success for unknown email (security best practice)', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
-      expect('success' in response && response.success).toBe(true)
-      if ('success' in response && response.success) {
-        expect(response.message).toContain('A reset link was sent to')
-        expect(response.message).toContain(target.email)
-        expect(response.message).toContain('Use the standard password after completing the guided reset')
-      }
-    })
-
-    it('returns proper error structure for unknown email', async () => {
       const response = await requestPasswordResetAction({ email: 'unknown@example.com' })
 
-      expect('error' in response).toBe(true)
-      if ('error' in response) {
-        expect(response.error.email).toBeDefined()
-        expect(Array.isArray(response.error.email)).toBe(true)
+      // Returns success (not error) to prevent email enumeration attacks
+      expect('success' in response && response.success).toBe(true)
+      if ('success' in response && response.success) {
+        expect(response.data.message).toBeDefined()
       }
     })
   })
