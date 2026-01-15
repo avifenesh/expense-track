@@ -156,7 +156,6 @@ export function LoginCard() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
                 aria-describedby={
                   errors?.password ? 'password-error' : errors?.credentials ? 'credentials-error' : undefined
                 }
