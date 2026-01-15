@@ -7,6 +7,7 @@ import { POST as ApproveRequest } from '@/app/api/v1/transactions/requests/[id]/
 import { POST as RejectRequest } from '@/app/api/v1/transactions/requests/[id]/reject/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
+import { getApiTestUser } from './helpers'
 
 describe('Transaction API Routes', () => {
   let validToken: string
@@ -18,23 +19,26 @@ describe('Transaction API Routes', () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
     validToken = generateAccessToken('avi', 'avi@example.com')
 
+    // Get test user for userId foreign keys
+    const testUser = await getApiTestUser()
+
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
-      where: { name: 'Avi' },
+      where: { userId_name: { userId: testUser.id, name: 'Avi' } },
       update: {},
-      create: { name: 'Avi', type: 'SELF' },
+      create: { userId: testUser.id, name: 'Avi', type: 'SELF' },
     })
 
     const otherAccount = await prisma.account.upsert({
-      where: { name: 'Serena' },
+      where: { userId_name: { userId: testUser.id, name: 'Serena' } },
       update: {},
-      create: { name: 'Serena', type: 'SELF' },
+      create: { userId: testUser.id, name: 'Serena', type: 'SELF' },
     })
 
     const category = await prisma.category.upsert({
-      where: { name_type: { name: 'TEST_TransactionCategory', type: 'EXPENSE' } },
+      where: { userId_name_type: { userId: testUser.id, name: 'TEST_TransactionCategory', type: 'EXPENSE' } },
       update: {},
-      create: { name: 'TEST_TransactionCategory', type: 'EXPENSE' },
+      create: { userId: testUser.id, name: 'TEST_TransactionCategory', type: 'EXPENSE' },
     })
 
     accountId = account.id

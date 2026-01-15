@@ -13,6 +13,7 @@ import {
 const mockAccounts = [
   {
     id: 'acc-self',
+    userId: 'test-user',
     name: 'My Account',
     type: AccountType.SELF,
     preferredCurrency: Currency.USD,
@@ -24,6 +25,7 @@ const mockAccounts = [
   },
   {
     id: 'acc-partner',
+    userId: 'test-user',
     name: 'Partner Account',
     type: AccountType.PARTNER,
     preferredCurrency: Currency.EUR,
@@ -38,6 +40,7 @@ const mockAccounts = [
 const mockCategories = [
   {
     id: 'cat-groceries',
+    userId: 'test-user',
     name: 'Groceries',
     type: TransactionType.EXPENSE,
     color: '#22c55e',
@@ -48,6 +51,7 @@ const mockCategories = [
   },
   {
     id: 'cat-salary',
+    userId: 'test-user',
     name: 'Salary',
     type: TransactionType.INCOME,
     color: '#3b82f6',
@@ -58,6 +62,7 @@ const mockCategories = [
   },
   {
     id: 'cat-archived',
+    userId: 'test-user',
     name: 'Old Category',
     type: TransactionType.EXPENSE,
     color: null,

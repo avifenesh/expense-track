@@ -66,6 +66,7 @@ const sampleTransactions = [
     recurringTemplateId: null,
     category: {
       id: 'c1',
+      userId: 'test-user',
       name: 'Dining',
       type: TransactionType.EXPENSE,
       color: null,
@@ -76,6 +77,7 @@ const sampleTransactions = [
     },
     account: {
       id: 'a1',
+      userId: 'test-user',
       name: 'Joint',
       type: AccountType.PARTNER,
       preferredCurrency: Currency.USD,
@@ -105,6 +107,7 @@ const sampleTransactions = [
     recurringTemplateId: 'rt1',
     category: {
       id: 'c2',
+      userId: 'test-user',
       name: 'Salary',
       type: TransactionType.INCOME,
       color: null,
@@ -115,6 +118,7 @@ const sampleTransactions = [
     },
     account: {
       id: 'a2',
+      userId: 'test-user',
       name: 'Partner',
       type: AccountType.SELF,
       preferredCurrency: Currency.USD,
@@ -164,6 +168,7 @@ const sampleRecurring = [
 const sampleCategories = [
   {
     id: 'c1',
+    userId: 'test-user',
     name: 'Dining',
     type: TransactionType.EXPENSE,
     color: null,
@@ -174,6 +179,7 @@ const sampleCategories = [
   },
   {
     id: 'c2',
+    userId: 'test-user',
     name: 'Salary',
     type: TransactionType.INCOME,
     color: null,
@@ -184,6 +190,7 @@ const sampleCategories = [
   },
   {
     id: 'c3',
+    userId: 'test-user',
     name: 'Travel',
     type: TransactionType.EXPENSE,
     color: null,
