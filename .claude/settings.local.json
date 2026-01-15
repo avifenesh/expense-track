@@ -1,5 +1,5 @@
 {
   "permissions": {
-    "allow": ["Skill(ralph-loop:ralph-loop)"]
+    "allow": ["Skill(ralph-loop:ralph-loop)", "Skill(ship-it)"]
   }
 }
