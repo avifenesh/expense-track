@@ -142,11 +142,44 @@ describe('Subscription Module', () => {
       expect(state.canAccessApp).toBe(true)
     })
 
-    it('should deny access when canceled', async () => {
+    it('should allow access when canceled with valid period remaining', async () => {
+      const periodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days from now
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
         createMockSubscription({
           status: SubscriptionStatus.CANCELED,
           canceledAt: new Date(),
+          currentPeriodEnd: periodEnd,
+        }),
+      )
+
+      const state = await getSubscriptionState('user-1')
+
+      expect(state.status).toBe(SubscriptionStatus.CANCELED)
+      expect(state.canAccessApp).toBe(true)
+    })
+
+    it('should deny access when canceled with expired period', async () => {
+      const periodEnd = new Date(Date.now() - 1000) // Already passed
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
+        createMockSubscription({
+          status: SubscriptionStatus.CANCELED,
+          canceledAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+          currentPeriodEnd: periodEnd,
+        }),
+      )
+
+      const state = await getSubscriptionState('user-1')
+
+      expect(state.status).toBe(SubscriptionStatus.CANCELED)
+      expect(state.canAccessApp).toBe(false)
+    })
+
+    it('should deny access when canceled with no period end', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
+        createMockSubscription({
+          status: SubscriptionStatus.CANCELED,
+          canceledAt: new Date(),
+          currentPeriodEnd: null,
         }),
       )
 
@@ -290,15 +323,40 @@ describe('Subscription Module', () => {
       expect(result).toBe(true)
     })
 
-    it('should return true for active subscription', async () => {
+    it('should return true for active subscription with valid period', async () => {
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
         createMockSubscription({
           status: SubscriptionStatus.ACTIVE,
+          currentPeriodEnd: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
         }),
       )
 
       const result = await hasActiveSubscription('user-1')
       expect(result).toBe(true)
+    })
+
+    it('should return false for active subscription with expired period', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
+        createMockSubscription({
+          status: SubscriptionStatus.ACTIVE,
+          currentPeriodEnd: new Date(Date.now() - 1000), // Already expired
+        }),
+      )
+
+      const result = await hasActiveSubscription('user-1')
+      expect(result).toBe(false)
+    })
+
+    it('should return false for active subscription with no period end', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
+        createMockSubscription({
+          status: SubscriptionStatus.ACTIVE,
+          currentPeriodEnd: null,
+        }),
+      )
+
+      const result = await hasActiveSubscription('user-1')
+      expect(result).toBe(false)
     })
 
     it('should return false for expired subscription', async () => {

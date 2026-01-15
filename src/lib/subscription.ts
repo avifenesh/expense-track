@@ -37,11 +37,14 @@ export async function getSubscriptionState(userId: string): Promise<Subscription
   const now = new Date()
   const { status, trialEndsAt, currentPeriodEnd } = subscription
 
-  const isActive = status === SubscriptionStatus.ACTIVE
+  // ACTIVE subscriptions must have a valid currentPeriodEnd (defense-in-depth)
+  const isActive = status === SubscriptionStatus.ACTIVE && !!currentPeriodEnd && currentPeriodEnd > now
   const isTrialing = status === SubscriptionStatus.TRIALING && trialEndsAt > now
   const isPastDue = status === SubscriptionStatus.PAST_DUE
+  // CANCELED subscriptions retain access until their period ends (standard SaaS behavior)
+  const isCanceledWithAccess = status === SubscriptionStatus.CANCELED && !!currentPeriodEnd && currentPeriodEnd > now
 
-  const canAccessApp = isActive || isTrialing || isPastDue
+  const canAccessApp = isActive || isTrialing || isPastDue || isCanceledWithAccess
 
   let daysRemaining: number | null = null
   if (isTrialing && trialEndsAt) {
@@ -52,7 +55,7 @@ export async function getSubscriptionState(userId: string): Promise<Subscription
 
   return {
     status,
-    isActive: isActive || isTrialing,
+    isActive: !!(isActive || isTrialing),
     trialEndsAt,
     currentPeriodEnd,
     daysRemaining,
