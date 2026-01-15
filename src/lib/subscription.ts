@@ -2,9 +2,9 @@ import 'server-only'
 
 import { SubscriptionStatus } from '@prisma/client'
 import { prisma } from './prisma'
+import { TRIAL_DURATION_DAYS, SUBSCRIPTION_PRICE_CENTS } from './subscription-constants'
 
-export const TRIAL_DURATION_DAYS = 14
-export const SUBSCRIPTION_PRICE_CENTS = 500
+export { TRIAL_DURATION_DAYS, SUBSCRIPTION_PRICE_CENTS }
 
 export type SubscriptionState = {
   status: SubscriptionStatus
@@ -39,7 +39,7 @@ export async function getSubscriptionState(userId: string): Promise<Subscription
 
   // ACTIVE subscriptions must have a valid currentPeriodEnd (defense-in-depth)
   const isActive = status === SubscriptionStatus.ACTIVE && !!currentPeriodEnd && currentPeriodEnd > now
-  const isTrialing = status === SubscriptionStatus.TRIALING && trialEndsAt > now
+  const isTrialing = status === SubscriptionStatus.TRIALING && !!trialEndsAt && trialEndsAt > now
   const isPastDue = status === SubscriptionStatus.PAST_DUE
   // CANCELED subscriptions retain access until their period ends (standard SaaS behavior)
   const isCanceledWithAccess = status === SubscriptionStatus.CANCELED && !!currentPeriodEnd && currentPeriodEnd > now

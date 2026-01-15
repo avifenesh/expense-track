@@ -11,6 +11,7 @@ import { config } from 'dotenv'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient, SubscriptionStatus } from '@prisma/client'
 import { Pool } from 'pg'
+import { TRIAL_DURATION_DAYS } from '../src/lib/subscription-constants'
 
 config()
 
@@ -22,8 +23,6 @@ if (!DATABASE_URL) {
 
 const adapter = new PrismaPg(new Pool({ connectionString: DATABASE_URL }))
 const prisma = new PrismaClient({ adapter })
-
-const TRIAL_DURATION_DAYS = 14
 
 async function main() {
   const trialEndsAt = new Date()

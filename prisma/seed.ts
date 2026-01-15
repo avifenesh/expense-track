@@ -2,6 +2,7 @@ import { config } from 'dotenv'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { AccountType, Currency, PrismaClient, SubscriptionStatus, TransactionType } from '@prisma/client'
 import { Pool } from 'pg'
+import { TRIAL_DURATION_DAYS } from '../src/lib/subscription-constants'
 
 // Load .env file
 config()
@@ -173,10 +174,9 @@ async function main() {
     ),
   )
 
-  // Create trial subscriptions for both users (14-day trial)
-  const trialDurationDays = 14
+  // Create trial subscriptions for both users
   const trialEndsAt = new Date()
-  trialEndsAt.setDate(trialEndsAt.getDate() + trialDurationDays)
+  trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DURATION_DAYS)
 
   await Promise.all([
     prisma.subscription.upsert({
