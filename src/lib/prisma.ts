@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 import * as Sentry from '@sentry/nextjs'
+import { serverLogger } from '@/lib/server-logger'
 import { SLOW_QUERY_THRESHOLD_MS, QUERY_MONITORING_ENABLED, sanitizeArgs } from './monitoring/prisma-monitor'
 
 declare global {
@@ -51,9 +52,7 @@ export const prisma: PrismaClient =
                 args: sanitizeArgs(args),
               }
 
-              // Structured log for Railway/production systems
-              // eslint-disable-next-line no-console
-              console.warn('SLOW_QUERY', JSON.stringify(logData))
+              serverLogger.warn('SLOW_QUERY', logData)
 
               // Report to Sentry as breadcrumb
               Sentry.addBreadcrumb({
@@ -82,15 +81,14 @@ export const prisma: PrismaClient =
             const duration = Date.now() - before
 
             // Log query errors with timing
-            // eslint-disable-next-line no-console
-            console.error(
+            serverLogger.error(
               'QUERY_ERROR',
-              JSON.stringify({
+              {
                 model,
                 action: operation,
                 duration,
-                error: error instanceof Error ? error.message : String(error),
-              }),
+              },
+              error,
             )
 
             throw error

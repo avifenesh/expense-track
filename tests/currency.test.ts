@@ -10,6 +10,7 @@ import {
   getLastUpdateTime,
   type RateCache,
 } from '@/lib/currency'
+import { serverLogger } from '@/lib/server-logger'
 
 // Mock Prisma
 vi.mock('@/lib/prisma', () => ({
@@ -22,6 +23,15 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
     },
+  },
+}))
+
+// Mock server-logger to avoid console output during tests
+vi.mock('@/lib/server-logger', () => ({
+  serverLogger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
   },
 }))
 
@@ -70,8 +80,15 @@ describe('currency.ts', () => {
     it('should log warning when rate not found in cache', () => {
       const cache: RateCache = new Map()
       convertAmountWithCache(100, Currency.USD, Currency.EUR, cache)
-      // eslint-disable-next-line no-console
-      expect(console.warn).toHaveBeenCalledWith('CURRENCY_RATE_MISSING', expect.stringContaining('USD'))
+      expect(vi.mocked(serverLogger.warn)).toHaveBeenCalledWith(
+        'CURRENCY_RATE_MISSING',
+        expect.objectContaining({
+          from: Currency.USD,
+          to: Currency.EUR,
+          amount: 100,
+          message: expect.stringContaining('No exchange rate found for USD -> EUR'),
+        }),
+      )
     })
 
     it('should handle rounding edge case 0.005 rounds up', () => {
