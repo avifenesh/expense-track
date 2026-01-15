@@ -19,6 +19,7 @@ describe('CSRF Token Library', () => {
 
   beforeEach(() => {
     // Force production mode for CSRF tests (integration tests use 'test' mode to skip validation)
+    // @ts-expect-error - NODE_ENV is read-only in types, but writable at runtime
     process.env.NODE_ENV = 'production'
     vi.clearAllMocks()
     mockCookies.get.mockReturnValue(undefined)
@@ -26,6 +27,7 @@ describe('CSRF Token Library', () => {
 
   afterEach(() => {
     // Restore original NODE_ENV
+    // @ts-expect-error - NODE_ENV is read-only in types, but writable at runtime
     process.env.NODE_ENV = originalNodeEnv
   })
 
