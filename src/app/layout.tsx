@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { headers } from 'next/headers'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { ToastContainer } from '@/components/ui/toast-container'
 import './globals.css'
 
@@ -18,8 +21,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen`} nonce={nonce}>
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
         <ToastContainer />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
