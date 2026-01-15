@@ -18,6 +18,11 @@ vi.mock('@/lib/csrf', () => ({
   rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
 }))
 
+vi.mock('@/lib/dashboard-cache', () => ({
+  invalidateDashboardCache: vi.fn().mockResolvedValue(undefined),
+  invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {

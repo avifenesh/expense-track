@@ -59,6 +59,22 @@ model Category {
   @@unique([name, type])
 }
 
+model DashboardCache {
+  id                String    @id @default(cuid())
+  cacheKey          String    @unique
+  data              Json
+  monthKey          String
+  accountId         String?
+  preferredCurrency Currency?
+  fetchedAt         DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([monthKey, accountId])
+  @@index([fetchedAt])
+  @@index([monthKey])
+}
+
 model ExchangeRate {
   id             String   @id @default(cuid())
   baseCurrency   Currency

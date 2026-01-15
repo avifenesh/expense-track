@@ -8,6 +8,7 @@ import { getMonthStartFromKey } from '@/utils/date'
 import { successVoid, generalError } from '@/lib/action-result'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
 import { budgetSchema, deleteBudgetSchema, type BudgetInput } from '@/schemas'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 
 export async function upsertBudgetAction(input: BudgetInput) {
   const parsed = parseInput(budgetSchema, input)
@@ -46,6 +47,12 @@ export async function upsertBudgetAction(input: BudgetInput) {
         notes: notes ?? null,
       },
     })
+
+    // Invalidate dashboard cache for affected month/account
+    await invalidateDashboardCache({
+      monthKey,
+      accountId,
+    })
   } catch {
     return generalError('Unable to save budget')
   }
@@ -77,6 +84,12 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
           month,
         },
       },
+    })
+
+    // Invalidate dashboard cache for affected month/account
+    await invalidateDashboardCache({
+      monthKey,
+      accountId,
     })
   } catch {
     return generalError('Budget entry not found')

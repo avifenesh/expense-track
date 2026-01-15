@@ -4,9 +4,10 @@
 import { Prisma, TransactionType, RequestStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getMonthStart } from '@/utils/date'
+import { getMonthStart, getMonthKey } from '@/utils/date'
 import { successVoid, generalError } from '@/lib/action-result'
 import { parseInput, toDecimalString, requireAuthUser, ensureAccountAccess, requireCsrfToken } from './shared'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
   transactionSchema,
   transactionUpdateSchema,
@@ -112,6 +113,13 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
         },
       }),
     ])
+
+    // Invalidate dashboard cache for affected month/account
+    const monthKey = getMonthKey(request.date)
+    await invalidateDashboardCache({
+      monthKey,
+      accountId: request.toId,
+    })
   } catch {
     return generalError('Unable to approve transaction request')
   }
@@ -189,6 +197,13 @@ export async function createTransactionAction(input: TransactionInput) {
         recurringTemplateId: data.recurringTemplateId ?? null,
       },
     })
+
+    // Invalidate dashboard cache for affected month/account
+    const monthKey = getMonthKey(data.date)
+    await invalidateDashboardCache({
+      monthKey,
+      accountId: data.accountId,
+    })
   } catch {
     return generalError('Unable to create transaction')
   }
@@ -210,6 +225,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
     where: { id: data.id },
     select: {
       accountId: true,
+      month: true,
     },
   })
 
@@ -244,6 +260,24 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         isRecurring: data.isRecurring ?? false,
       },
     })
+
+    // Invalidate dashboard cache for affected months/accounts
+    const newMonthKey = getMonthKey(data.date)
+    const oldMonthKey = getMonthKey(existing.month)
+
+    // Invalidate old month/account if different
+    if (oldMonthKey !== newMonthKey || existing.accountId !== data.accountId) {
+      await invalidateDashboardCache({
+        monthKey: oldMonthKey,
+        accountId: existing.accountId,
+      })
+    }
+
+    // Invalidate new month/account
+    await invalidateDashboardCache({
+      monthKey: newMonthKey,
+      accountId: data.accountId,
+    })
   } catch {
     return generalError('Unable to update transaction')
   }
@@ -274,6 +308,13 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
     }
 
     await prisma.transaction.delete({ where: { id: parsed.data.id } })
+
+    // Invalidate dashboard cache for affected month/account
+    const monthKey = getMonthKey(transaction.month)
+    await invalidateDashboardCache({
+      monthKey,
+      accountId: transaction.accountId,
+    })
   } catch {
     return generalError('Transaction not found')
   }
