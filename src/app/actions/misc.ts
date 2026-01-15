@@ -1,6 +1,5 @@
 'use server'
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for some models */
 import { Prisma, TransactionType } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -66,7 +65,7 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
   }
 
   // Calculate current net for this account in the current month
-  const transactions = await (prisma as any).transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: {
       accountId,
       month: monthStart,
@@ -102,7 +101,7 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
   const transactionAmount = Math.abs(adjustment)
 
   try {
-    await (prisma as any).transaction.create({
+    await prisma.transaction.create({
       data: {
         accountId,
         categoryId: adjustmentCategory.id,

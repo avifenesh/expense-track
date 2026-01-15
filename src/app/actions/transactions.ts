@@ -1,6 +1,5 @@
 'use server'
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for some models */
 import { Prisma, TransactionType, RequestStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
@@ -108,7 +107,7 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
         where: { id: request.id },
         data: { status: RequestStatus.APPROVED },
       }),
-      (prisma as any).transaction.create({
+      prisma.transaction.create({
         data: {
           accountId: request.toId,
           categoryId: request.categoryId,
@@ -203,7 +202,7 @@ export async function createTransactionAction(input: TransactionInput) {
   }
 
   try {
-    await (prisma as any).transaction.create({
+    await prisma.transaction.create({
       data: {
         accountId: data.accountId,
         categoryId: data.categoryId,
@@ -272,7 +271,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   }
 
   try {
-    await (prisma as any).transaction.update({
+    await prisma.transaction.update({
       where: { id: data.id },
       data: {
         accountId: data.accountId,
