@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for Holding model */
 import { Prisma, Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { toDecimalString } from '@/app/actions/shared'
@@ -29,7 +28,7 @@ export interface RefreshHoldingPricesInput {
  * Note: Caller must validate category has isHolding=true and symbol is valid
  */
 export async function createHolding(input: CreateHoldingInput) {
-  return await (prisma as any).holding.create({
+  return await prisma.holding.create({
     data: {
       accountId: input.accountId,
       categoryId: input.categoryId,
@@ -46,7 +45,7 @@ export async function createHolding(input: CreateHoldingInput) {
  * Update an existing holding (quantity, averageCost, notes only)
  */
 export async function updateHolding(input: UpdateHoldingInput) {
-  return await (prisma as any).holding.update({
+  return await prisma.holding.update({
     where: { id: input.id },
     data: {
       quantity: new Prisma.Decimal(input.quantity.toFixed(6)),
@@ -60,7 +59,7 @@ export async function updateHolding(input: UpdateHoldingInput) {
  * Delete a holding
  */
 export async function deleteHolding(id: string) {
-  return await (prisma as any).holding.delete({
+  return await prisma.holding.delete({
     where: { id },
   })
 }
@@ -69,7 +68,7 @@ export async function deleteHolding(id: string) {
  * Get a holding by ID
  */
 export async function getHoldingById(id: string) {
-  return await (prisma as any).holding.findUnique({
+  return await prisma.holding.findUnique({
     where: { id },
   })
 }
@@ -78,12 +77,12 @@ export async function getHoldingById(id: string) {
  * Get all unique symbols for an account's holdings
  */
 export async function getAccountHoldingSymbols(accountId: string): Promise<string[]> {
-  const holdings = await (prisma as any).holding.findMany({
+  const holdings = await prisma.holding.findMany({
     where: { accountId },
     select: { symbol: true },
   })
 
-  return Array.from(new Set(holdings.map((h: any) => h.symbol as string)))
+  return Array.from(new Set(holdings.map((h) => h.symbol)))
 }
 
 /**

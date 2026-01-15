@@ -1,5 +1,4 @@
 // Finance module - handles transactions, budgets, holdings, and dashboard data
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for Holding model */
 import { Prisma, TransactionType, Currency } from '@prisma/client'
 import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
@@ -576,12 +575,12 @@ export async function getHoldingsWithPrices({
   accountId?: string
   preferredCurrency?: Currency
 }): Promise<HoldingWithPrice[]> {
-  const where: any = {} // Type assertion workaround for Prisma.HoldingWhereInput
+  const where: Prisma.HoldingWhereInput = {}
   if (accountId) {
     where.accountId = accountId
   }
 
-  const holdings = await (prisma as any).holding.findMany({
+  const holdings = await prisma.holding.findMany({
     where,
     include: {
       account: true,
@@ -594,10 +593,10 @@ export async function getHoldingsWithPrices({
 
   // Batch load all prices and rates in parallel (fixes N+1)
   const { batchLoadStockPrices } = await import('@/lib/stock-api')
-  const symbols = holdings.map((h: any) => h.symbol as string)
+  const symbols = holdings.map((h) => h.symbol)
   const [priceCache, rateCache] = await Promise.all([batchLoadStockPrices(symbols), batchLoadExchangeRates()])
 
-  const enriched = holdings.map((holding: any) => {
+  const enriched = holdings.map((holding) => {
     // Get price from cache
     const priceData = priceCache.get(holding.symbol.toUpperCase())
     const currentPrice = priceData?.price ?? null

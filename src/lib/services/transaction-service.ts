@@ -3,8 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { getMonthStart } from '@/utils/date'
 import { toDecimalString } from '@/app/actions/shared'
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for transaction model */
-
 export interface CreateTransactionInput {
   accountId: string
   categoryId: string
@@ -37,7 +35,7 @@ export interface CreateTransactionRequestInput {
 export async function createTransaction(input: CreateTransactionInput) {
   const monthStart = getMonthStart(input.date)
 
-  return await (prisma as any).transaction.create({
+  return await prisma.transaction.create({
     data: {
       accountId: input.accountId,
       categoryId: input.categoryId,
@@ -59,7 +57,7 @@ export async function createTransaction(input: CreateTransactionInput) {
 export async function updateTransaction(input: UpdateTransactionInput) {
   const monthStart = getMonthStart(input.date)
 
-  return await (prisma as any).transaction.update({
+  return await prisma.transaction.update({
     where: { id: input.id },
     data: {
       accountId: input.accountId,
@@ -133,7 +131,7 @@ export async function approveTransactionRequest(requestId: string) {
       where: { id: requestId },
       data: { status: RequestStatus.APPROVED },
     }),
-    (prisma as any).transaction.create({
+    prisma.transaction.create({
       data: {
         accountId: request.toId,
         categoryId: request.categoryId,

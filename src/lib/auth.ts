@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Proxy handlers require any for dynamic property access */
 import { Currency } from '@prisma/client'
 
 export type AuthUser = {
@@ -68,7 +67,8 @@ export function getAuthUsers(): AuthUser[] {
 // For backward compatibility
 export const AUTH_USERS = new Proxy({} as AuthUser[], {
   get(_target, prop) {
-    return getAuthUsers()[prop as any]
+    const users = getAuthUsers()
+    return users[prop as keyof typeof users]
   },
   has(_target, prop) {
     return prop in getAuthUsers()
@@ -87,7 +87,8 @@ export function getRecoveryContacts() {
 
 export const RECOVERY_CONTACTS = new Proxy([] as ReturnType<typeof getRecoveryContacts>, {
   get(_target, prop) {
-    return getRecoveryContacts()[prop as any]
+    const contacts = getRecoveryContacts()
+    return contacts[prop as keyof typeof contacts]
   },
 }) as unknown as ReturnType<typeof getRecoveryContacts>
 

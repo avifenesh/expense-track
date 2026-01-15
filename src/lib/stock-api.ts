@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma adapter requires any casts for StockPrice model */
 import { Currency, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
@@ -135,7 +134,7 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuoteData> {
  */
 export async function getStockPrice(symbol: string): Promise<StockPriceResult> {
   // Try to get most recent cached price
-  const cached = await (prisma as any).stockPrice.findFirst({
+  const cached = await prisma.stockPrice.findFirst({
     where: { symbol: symbol.toUpperCase() },
     orderBy: { fetchedAt: 'desc' },
   })
@@ -180,7 +179,7 @@ export async function batchLoadStockPrices(symbols: string[]): Promise<PriceCach
   if (upperSymbols.length === 0) return cache
 
   // Get most recent price for each symbol in one query
-  const prices = await (prisma as any).stockPrice.findMany({
+  const prices = await prisma.stockPrice.findMany({
     where: { symbol: { in: upperSymbols } },
     orderBy: { fetchedAt: 'desc' },
     distinct: ['symbol'],
@@ -233,7 +232,7 @@ export async function refreshStockPrices(symbols: string[]): Promise<RefreshResu
       const quote = await fetchStockQuote(symbol)
 
       // Save to database
-      await (prisma as any).stockPrice.create({
+      await prisma.stockPrice.create({
         data: {
           symbol: quote.symbol,
           price: new Prisma.Decimal(quote.price.toFixed(4)),
