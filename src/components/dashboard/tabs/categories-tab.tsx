@@ -10,9 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { filterCategories } from '@/lib/dashboard-ux'
-import { useFeedback } from '@/hooks/useFeedback'
+import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
-import { cn } from '@/utils/cn'
 import { DashboardCategory, transactionTypeOptions, typeFilterOptions, TypeFilterValue } from './types'
 
 export type CategoriesTabProps = {
@@ -28,7 +27,6 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<TypeFilterValue>('all')
   const [showArchivedCategories, setShowArchivedCategories] = useState(false)
   const [visibleCategoriesCount, setVisibleCategoriesCount] = useState(10)
-  const { feedback: categoryFeedback, showSuccess, showError } = useFeedback()
   const [isPendingCategory, startCategory] = useTransition()
 
   // Computed
@@ -58,10 +56,10 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
     startCategory(async () => {
       const result = await createCategoryAction(payload)
       if ('error' in result) {
-        showError('Could not create category.')
+        toast.error('Could not create category.')
         return
       }
-      showSuccess('Category added.')
+      toast.success('Category added.')
       form.reset()
       router.refresh()
     })
@@ -71,10 +69,10 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
     startCategory(async () => {
       const result = await archiveCategoryAction({ id, isArchived, csrfToken })
       if ('error' in result) {
-        showError('Unable to update category.')
+        toast.error('Unable to update category.')
         return
       }
-      showSuccess(isArchived ? 'Category archived.' : 'Category reactivated.')
+      toast.success(isArchived ? 'Category archived.' : 'Category reactivated.')
       router.refresh()
     })
   }
@@ -133,14 +131,6 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
               <Button type="submit" loading={isPendingCategory} className="w-full">
                 Add category
               </Button>
-              {categoryFeedback && (
-                <p
-                  role="status"
-                  className={cn('text-xs', categoryFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
-                >
-                  {categoryFeedback.message}
-                </p>
-              )}
             </form>
           </CardContent>
         </Card>

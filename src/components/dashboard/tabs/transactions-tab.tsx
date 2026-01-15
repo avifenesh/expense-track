@@ -21,7 +21,7 @@ import { formatRelativeAmount } from '@/utils/format'
 import { normalizeDateInput } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { RequestList } from '@/components/dashboard/request-list'
-import { useFeedback } from '@/hooks/useFeedback'
+import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import {
   DashboardCategory,
@@ -108,7 +108,6 @@ export function TransactionsTab({
   })
 
   const [editingTransaction, setEditingTransaction] = useState<DashboardTransaction | null>(null)
-  const { feedback: transactionFeedback, showSuccess, showError, clear: clearFeedback } = useFeedback()
   const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
   const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(activeAccount)
   const [transactionSearch, setTransactionSearch] = useState('')
@@ -228,48 +227,43 @@ export function TransactionsTab({
     [categories, getDefaultCategoryId],
   )
 
-  const handleTransactionEdit = useCallback(
-    (transaction: DashboardTransaction) => {
-      setEditingTransaction(transaction)
-      const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
-      setTransactionFormState({
-        type: transaction.type,
-        accountId: transaction.accountId,
-        categoryId: transaction.categoryId,
-        amount: transaction.amount.toFixed(2),
-        currency: transaction.currency,
-        date: isoDate,
-        description: transaction.description ?? '',
-        isRecurring: transaction.isRecurring,
-        isRequest: false,
-      })
-      clearFeedback()
-    },
-    [clearFeedback],
-  )
+  const handleTransactionEdit = useCallback((transaction: DashboardTransaction) => {
+    setEditingTransaction(transaction)
+    const isoDate = new Date(transaction.date).toISOString().slice(0, 10)
+    setTransactionFormState({
+      type: transaction.type,
+      accountId: transaction.accountId,
+      categoryId: transaction.categoryId,
+      amount: transaction.amount.toFixed(2),
+      currency: transaction.currency,
+      date: isoDate,
+      description: transaction.description ?? '',
+      isRecurring: transaction.isRecurring,
+      isRequest: false,
+    })
+  }, [])
 
   const handleCancelTransactionEdit = useCallback(() => {
     resetTransactionForm()
-    clearFeedback()
-  }, [resetTransactionForm, clearFeedback])
+  }, [resetTransactionForm])
 
   const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
 
     if (!transactionFormState.categoryId) {
-      showError('Please select a category.')
+      toast.error('Please select a category.')
       return
     }
 
     const dateInput = normalizeDateInput(transactionFormState.date)
     if (!dateInput) {
-      showError('Please select a valid date.')
+      toast.error('Please select a valid date.')
       return
     }
 
     const parsedAmount = Number.parseFloat(transactionFormState.amount)
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      showError('Enter an amount greater than zero.')
+      toast.error('Enter an amount greater than zero.')
       return
     }
 
@@ -280,7 +274,7 @@ export function TransactionsTab({
       if (transactionFormState.isRequest && !editingTransaction) {
         const partnerAccount = accounts.find((acc) => acc.type === AccountType.PARTNER)
         if (!partnerAccount) {
-          showError('Partner account not found.')
+          toast.error('Partner account not found.')
           return
         }
         result = await createTransactionRequestAction({
@@ -310,7 +304,7 @@ export function TransactionsTab({
       }
 
       if ('error' in result) {
-        showError(
+        toast.error(
           editingTransaction
             ? 'Unable to update transaction. Please check required fields.'
             : 'Unable to save transaction. Please check required fields.',
@@ -318,7 +312,7 @@ export function TransactionsTab({
         return
       }
 
-      showSuccess(
+      toast.success(
         transactionFormState.isRequest
           ? 'Request sent to partner.'
           : editingTransaction
@@ -334,13 +328,13 @@ export function TransactionsTab({
     startTransaction(async () => {
       const result = await deleteTransactionAction({ id, csrfToken })
       if ('error' in result) {
-        showError('Could not delete transaction.')
+        toast.error('Could not delete transaction.')
         return
       }
       if (editingTransaction?.id === id) {
         resetTransactionForm()
       }
-      showSuccess('Transaction removed.')
+      toast.success('Transaction removed.')
       router.refresh()
     })
   }
@@ -554,14 +548,6 @@ export function TransactionsTab({
                   </Button>
                 )}
               </div>
-              {transactionFeedback && (
-                <p
-                  role="status"
-                  className={cn('text-xs', transactionFeedback.type === 'error' ? 'text-rose-600' : 'text-emerald-600')}
-                >
-                  {transactionFeedback.message}
-                </p>
-              )}
             </form>
           </CardContent>
         </Card>
