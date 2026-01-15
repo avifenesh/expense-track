@@ -76,11 +76,23 @@ describe('refreshExchangeRatesAction', () => {
     const { requireSession } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockRejectedValue(new Error('Unauthorized'))
 
-    const result = await refreshExchangeRatesAction()
+    const result = await refreshExchangeRatesAction({ csrfToken: 'test-token' })
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
+    }
+  })
+
+  it('should fail when CSRF token is invalid', async () => {
+    const { validateCsrfToken } = await import('@/lib/csrf')
+    vi.mocked(validateCsrfToken).mockResolvedValueOnce(false)
+
+    const result = await refreshExchangeRatesAction({ csrfToken: 'invalid-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general?.some((msg: string) => msg.includes('Security validation failed'))).toBe(true)
     }
   })
 
@@ -94,7 +106,7 @@ describe('refreshExchangeRatesAction', () => {
       updatedAt: new Date('2026-01-13'),
     })
 
-    const result = await refreshExchangeRatesAction()
+    const result = await refreshExchangeRatesAction({ csrfToken: 'test-token' })
 
     expect('success' in result && result.success).toBe(true)
     if ('success' in result && result.success) {
@@ -112,7 +124,7 @@ describe('refreshExchangeRatesAction', () => {
       updatedAt: new Date('2026-01-13'),
     })
 
-    const result = await refreshExchangeRatesAction()
+    const result = await refreshExchangeRatesAction({ csrfToken: 'test-token' })
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
@@ -127,7 +139,7 @@ describe('refreshExchangeRatesAction', () => {
     const { refreshExchangeRates } = await import('@/lib/currency')
     vi.mocked(refreshExchangeRates).mockRejectedValue(new Error('Network error'))
 
-    const result = await refreshExchangeRatesAction()
+    const result = await refreshExchangeRatesAction({ csrfToken: 'test-token' })
 
     expect('error' in result).toBe(true)
     if ('error' in result) {

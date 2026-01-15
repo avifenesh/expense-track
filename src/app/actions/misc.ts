@@ -10,10 +10,16 @@ import { success, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
 import { requireSession } from '@/lib/auth-server'
 import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
-import { setBalanceSchema } from '@/schemas'
+import { refreshExchangeRatesSchema, setBalanceSchema } from '@/schemas'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 
-export async function refreshExchangeRatesAction() {
+export async function refreshExchangeRatesAction(input: z.infer<typeof refreshExchangeRatesSchema>) {
+  const parsed = parseInput(refreshExchangeRatesSchema, input)
+  if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
   try {
     await requireSession()
   } catch {

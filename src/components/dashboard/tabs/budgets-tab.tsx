@@ -17,6 +17,8 @@ import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { DashboardCategory, DashboardAccount, DashboardBudget, typeFilterOptions, currencyOptions } from './types'
 
+type FormErrors = Partial<Record<string, string[]>>
+
 export type BudgetsTabProps = {
   budgets: DashboardBudget[]
   accounts: DashboardAccount[]
@@ -41,6 +43,7 @@ export function BudgetsTab({
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(activeAccount)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
   const [isPendingBudget, startBudget] = useTransition()
+  const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
 
   // Derived options
   const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
@@ -62,14 +65,32 @@ export function BudgetsTab({
   // Handlers
   const handleBudgetSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
+    setFormErrors(null)
     const form = event.currentTarget
     const formData = new FormData(form)
 
+    const errors: FormErrors = {}
+    const categoryId = formData.get('budgetCategoryId') as string
+    const planned = Number(formData.get('planned') || 0)
+
+    if (!categoryId) {
+      errors.categoryId = ['Please select a category.']
+    }
+
+    if (!Number.isFinite(planned) || planned < 0) {
+      errors.planned = ['Enter a valid planned amount.']
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+
     const payload = {
       accountId: (formData.get('budgetAccountId') as string) || defaultAccountId,
-      categoryId: formData.get('budgetCategoryId') as string,
+      categoryId,
       monthKey,
-      planned: Number(formData.get('planned') || 0),
+      planned,
       currency: (formData.get('budgetCurrency') as Currency) || Currency.USD,
       notes: (formData.get('notes') as string) || undefined,
       csrfToken,
@@ -78,10 +99,13 @@ export function BudgetsTab({
     startBudget(async () => {
       const result = await upsertBudgetAction(payload)
       if ('error' in result) {
+        const serverErrors = result.error as FormErrors
+        setFormErrors(serverErrors)
         toast.error('Could not save budget.')
         return
       }
       toast.success('Budget updated.')
+      setFormErrors(null)
       form.reset()
       router.refresh()
     })
@@ -251,6 +275,7 @@ export function BudgetsTab({
               <h3 className="text-sm font-semibold text-white">Add or update a budget</h3>
               <p className="text-xs text-slate-400">Capture limits for priority categories and accounts.</p>
             </div>
+            {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-slate-300" htmlFor="budgetAccountId">

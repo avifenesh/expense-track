@@ -33,6 +33,8 @@ import {
   currencyOptions,
 } from './types'
 
+type FormErrors = Partial<Record<string, string[]>>
+
 export type TransactionsTabProps = {
   transactions: DashboardTransaction[]
   transactionRequests: DashboardTransactionRequest[]
@@ -112,6 +114,7 @@ export function TransactionsTab({
   const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(activeAccount)
   const [transactionSearch, setTransactionSearch] = useState('')
   const [isPendingTransaction, startTransaction] = useTransition()
+  const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
 
   const isEditingTransaction = Boolean(editingTransaction)
 
@@ -207,6 +210,7 @@ export function TransactionsTab({
       isRequest: false,
     })
     setEditingTransaction(null)
+    setFormErrors(null)
   }, [activeAccount, getDefaultCategoryId, monthKey, preferredCurrency, resolveLoggableAccountId])
 
   const handleTransactionTypeChange = useCallback(
@@ -249,21 +253,26 @@ export function TransactionsTab({
 
   const handleTransactionSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
+    setFormErrors(null)
+
+    const errors: FormErrors = {}
 
     if (!transactionFormState.categoryId) {
-      toast.error('Please select a category.')
-      return
+      errors.categoryId = ['Please select a category.']
     }
 
     const dateInput = normalizeDateInput(transactionFormState.date)
     if (!dateInput) {
-      toast.error('Please select a valid date.')
-      return
+      errors.date = ['Please select a valid date.']
     }
 
     const parsedAmount = Number.parseFloat(transactionFormState.amount)
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      toast.error('Enter an amount greater than zero.')
+      errors.amount = ['Enter an amount greater than zero.']
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
       return
     }
 
@@ -274,7 +283,7 @@ export function TransactionsTab({
       if (transactionFormState.isRequest && !editingTransaction) {
         const partnerAccount = accounts.find((acc) => acc.type === AccountType.PARTNER)
         if (!partnerAccount) {
-          toast.error('Partner account not found.')
+          setFormErrors({ general: ['Partner account not found.'] })
           return
         }
         result = await createTransactionRequestAction({
@@ -282,7 +291,7 @@ export function TransactionsTab({
           categoryId: transactionFormState.categoryId,
           amount: parsedAmount,
           currency: transactionFormState.currency,
-          date: dateInput,
+          date: dateInput!,
           description: description.length > 0 ? description : undefined,
           csrfToken,
         })
@@ -293,7 +302,7 @@ export function TransactionsTab({
           type: transactionFormState.type,
           amount: parsedAmount,
           currency: transactionFormState.currency,
-          date: dateInput,
+          date: dateInput!,
           description: description.length > 0 ? description : undefined,
           isRecurring: transactionFormState.isRecurring,
           csrfToken,
@@ -304,6 +313,8 @@ export function TransactionsTab({
       }
 
       if ('error' in result) {
+        const serverErrors = result.error as FormErrors
+        setFormErrors(serverErrors)
         toast.error(
           editingTransaction
             ? 'Unable to update transaction. Please check required fields.'
@@ -379,6 +390,7 @@ export function TransactionsTab({
           </CardHeader>
           <CardContent>
             <form id="transaction-form" onSubmit={handleTransactionSubmit} className="grid gap-4" tabIndex={-1}>
+              {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="transactionType">
@@ -427,7 +439,13 @@ export function TransactionsTab({
                     options={transactionCategoryOptions}
                     required
                     disabled={transactionCategoryOptions.length === 0}
+                    aria-describedby={formErrors?.categoryId ? 'categoryId-error' : undefined}
                   />
+                  {formErrors?.categoryId && (
+                    <p id="categoryId-error" className="text-xs text-rose-300">
+                      {formErrors.categoryId[0]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="transactionAmount">
@@ -448,7 +466,13 @@ export function TransactionsTab({
                         amount: event.target.value,
                       }))
                     }
+                    aria-describedby={formErrors?.amount ? 'amount-error' : undefined}
                   />
+                  {formErrors?.amount && (
+                    <p id="amount-error" className="text-xs text-rose-300">
+                      {formErrors.amount[0]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="transactionCurrency">
@@ -483,7 +507,13 @@ export function TransactionsTab({
                       }))
                     }
                     required
+                    aria-describedby={formErrors?.date ? 'date-error' : undefined}
                   />
+                  {formErrors?.date && (
+                    <p id="date-error" className="text-xs text-rose-300">
+                      {formErrors.date[0]}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
