@@ -22,7 +22,7 @@ export async function middleware(_request: NextRequest) {
     `style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ''}`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.frankfurter.app",
+    "connect-src 'self' https://api.frankfurter.app https://*.ingest.sentry.io",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

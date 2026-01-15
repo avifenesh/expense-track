@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
+// import { queryMonitorMiddleware } from './monitoring/prisma-monitor'
 
 declare global {
   var prisma: PrismaClient | undefined
@@ -22,6 +23,11 @@ export const prisma =
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
+
+// TODO: Add query monitoring middleware
+// Prisma $use middleware is deprecated and not available with adapter pattern
+// Alternative: Use Prisma query logging or wrap Prisma client methods
+// prisma.$use(queryMonitorMiddleware)
 
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma
