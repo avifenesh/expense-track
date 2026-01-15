@@ -9,6 +9,8 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'prisma/**'
+      - 'prisma.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig.json'
@@ -18,6 +20,8 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'prisma/**'
+      - 'prisma.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig.json'

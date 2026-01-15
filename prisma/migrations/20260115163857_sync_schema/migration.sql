@@ -4,12 +4,6 @@ DROP INDEX "Account_name_key";
 -- DropIndex
 DROP INDEX "Category_name_type_key";
 
--- AlterTable
-ALTER TABLE "Account" ADD COLUMN     "userId" TEXT NOT NULL;
-
--- AlterTable
-ALTER TABLE "Category" ADD COLUMN     "userId" TEXT NOT NULL;
-
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -49,6 +43,25 @@ CREATE TABLE "RefreshToken" (
 
     CONSTRAINT "RefreshToken_pkey" PRIMARY KEY ("id")
 );
+
+-- AlterTable
+ALTER TABLE "Account" ADD COLUMN     "userId" TEXT;
+
+-- AlterTable
+ALTER TABLE "Category" ADD COLUMN     "userId" TEXT;
+
+-- Seed a legacy user for existing rows
+INSERT INTO "User" ("id", "email", "displayName", "passwordHash", "preferredCurrency", "createdAt", "updatedAt")
+VALUES ('legacy-user', 'legacy@local', 'Legacy User', 'legacy', 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
+
+-- Backfill existing rows
+UPDATE "Account" SET "userId" = 'legacy-user' WHERE "userId" IS NULL;
+UPDATE "Category" SET "userId" = 'legacy-user' WHERE "userId" IS NULL;
+
+-- Enforce NOT NULL after backfill
+ALTER TABLE "Account" ALTER COLUMN "userId" SET NOT NULL;
+ALTER TABLE "Category" ALTER COLUMN "userId" SET NOT NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
