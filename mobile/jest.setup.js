@@ -1,3 +1,4 @@
+/* eslint-env jest */
 // Import gesture handler test setup
 import 'react-native-gesture-handler/jestSetup';
 
