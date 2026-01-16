@@ -5,7 +5,6 @@ import { archiveCategorySchema } from '@/schemas'
 import {
   validationError,
   authError,
-  forbiddenError,
   notFoundError,
   serverError,
   successResponse,
@@ -48,18 +47,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const data = parsed.data
 
-  // 3. Check category exists and belongs to user
+  // 3. Check category exists and belongs to user (userId filter prevents cross-user access)
   const existing = await getCategoryById(id, user.userId)
   if (!existing) {
     return notFoundError('Category not found')
   }
 
-  // 4. Verify ownership (category belongs to authenticated user)
-  if (existing.userId !== user.userId) {
-    return forbiddenError('You do not have access to this category')
-  }
-
-  // 5. Execute archive
+  // 4. Execute archive
   try {
     await archiveCategory({
       id,
