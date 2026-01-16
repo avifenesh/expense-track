@@ -8,7 +8,7 @@ import { getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccessWithSubscription, requireCsrfToken } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
   recurringTemplateSchema,
@@ -31,7 +31,7 @@ export async function upsertRecurringTemplateAction(input: RecurringTemplateInpu
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(data.accountId)
+  const access = await ensureAccountAccessWithSubscription(data.accountId)
   if ('error' in access) {
     return access
   }
@@ -95,7 +95,7 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
     return generalError('Recurring template not found')
   }
 
-  const access = await ensureAccountAccess(template.accountId)
+  const access = await ensureAccountAccessWithSubscription(template.accountId)
   if ('error' in access) {
     return access
   }
@@ -128,7 +128,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
   const csrfCheck = await requireCsrfToken(csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(accountId)
+  const access = await ensureAccountAccessWithSubscription(accountId)
   if ('error' in access) {
     return access
   }

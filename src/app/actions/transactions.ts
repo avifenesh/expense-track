@@ -11,8 +11,9 @@ import {
   toDecimalString,
   requireAuthUser,
   ensureAccountAccess,
+  ensureAccountAccessWithSubscription,
   requireCsrfToken,
-  isDatabaseAuthUser,
+  requireActiveSubscription,
 } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
@@ -35,15 +36,17 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // Check subscription before allowing transaction request creation
+  const subscriptionCheck = await requireActiveSubscription()
+  if ('error' in subscriptionCheck) return subscriptionCheck
+
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
   const { authUser } = auth
 
-  const isDbUser = await isDatabaseAuthUser(authUser)
-
   // Determine current user's account ID (the 'from' account)
   const fromAccount = await prisma.account.findFirst({
-    where: isDbUser ? { userId: authUser.id, type: 'SELF' } : { name: { in: authUser.accountNames }, type: 'SELF' },
+    where: { userId: authUser.id, type: 'SELF' },
   })
 
   if (!fromAccount) {
@@ -205,7 +208,7 @@ export async function createTransactionAction(input: TransactionInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(data.accountId)
+  const access = await ensureAccountAccessWithSubscription(data.accountId)
   if ('error' in access) {
     return access
   }
@@ -267,7 +270,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
     return generalError('Transaction not found')
   }
 
-  const existingAccess = await ensureAccountAccess(existing.accountId)
+  const existingAccess = await ensureAccountAccessWithSubscription(existing.accountId)
   if ('error' in existingAccess) {
     return existingAccess
   }
@@ -351,7 +354,7 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
     return generalError('Transaction not found')
   }
 
-  const access = await ensureAccountAccess(transaction.accountId)
+  const access = await ensureAccountAccessWithSubscription(transaction.accountId)
   if ('error' in access) {
     return access
   }

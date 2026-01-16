@@ -53,6 +53,18 @@ vi.mock('@/lib/dashboard-cache', () => ({
   invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  hasActiveSubscription: vi.fn().mockResolvedValue(true),
+  getSubscriptionState: vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    isActive: true,
+    trialEndsAt: null,
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    daysRemaining: 30,
+    canAccessApp: true,
+  }),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn((calls) => Promise.all(calls)),
@@ -192,6 +204,7 @@ describe('approveTransactionRequestAction', () => {
       id: 'serena-id',
       name: 'Serena',
       type: 'SELF',
+      userId: 'serena',
     } as any)
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)
@@ -237,6 +250,7 @@ describe('rejectTransactionRequestAction', () => {
       id: 'serena-id',
       name: 'Serena',
       type: 'SELF',
+      userId: 'serena',
     } as any)
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)

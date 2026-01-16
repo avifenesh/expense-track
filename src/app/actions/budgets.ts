@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { successVoid } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccessWithSubscription, requireCsrfToken } from './shared'
 import { budgetSchema, deleteBudgetSchema, type BudgetInput } from '@/schemas'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 
@@ -20,7 +20,7 @@ export async function upsertBudgetAction(input: BudgetInput) {
   const csrfCheck = await requireCsrfToken(csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(accountId)
+  const access = await ensureAccountAccessWithSubscription(accountId)
   if ('error' in access) {
     return access
   }
@@ -77,7 +77,7 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
   const csrfCheck = await requireCsrfToken(csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(accountId)
+  const access = await ensureAccountAccessWithSubscription(accountId)
   if ('error' in access) {
     return access
   }

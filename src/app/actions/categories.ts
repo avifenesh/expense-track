@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { successVoid, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
 import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
-import { parseInput, requireCsrfToken } from './shared'
+import { parseInput, requireCsrfToken, requireActiveSubscription } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
 
 export async function createCategoryAction(input: z.infer<typeof categorySchema>) {
@@ -27,6 +27,10 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
   if (!authUser) {
     return generalError('User record not found')
   }
+
+  // Check subscription before allowing category creation
+  const subscriptionCheck = await requireActiveSubscription()
+  if ('error' in subscriptionCheck) return subscriptionCheck
 
   try {
     await prisma.category.create({
@@ -69,6 +73,10 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
   if (!authUser) {
     return generalError('User record not found')
   }
+
+  // Check subscription before allowing category archive
+  const subscriptionCheck = await requireActiveSubscription()
+  if ('error' in subscriptionCheck) return subscriptionCheck
 
   try {
     await prisma.category.update({

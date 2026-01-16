@@ -19,6 +19,7 @@ import {
 import { sendVerificationEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
+import { createTrialSubscription } from '@/lib/subscription'
 
 const BCRYPT_ROUNDS = 12
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24
@@ -150,9 +151,9 @@ export async function registerAction(input: z.infer<typeof registrationSchema>) 
   const verificationToken = crypto.randomBytes(32).toString('hex')
   const verificationExpires = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
 
-  // Create user with a default "Personal" account
+  // Create user with a default "Personal" account and trial subscription
   try {
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email,
         displayName,
@@ -168,6 +169,9 @@ export async function registerAction(input: z.infer<typeof registrationSchema>) 
         },
       },
     })
+
+    // Create 14-day trial subscription for new user
+    await createTrialSubscription(newUser.id)
   } catch (error) {
     serverLogger.error('Failed to create user account', { action: 'registerAction', input: { email } }, error)
     return generalError('Unable to create account. Please try again.')

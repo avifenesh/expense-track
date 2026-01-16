@@ -23,6 +23,18 @@ vi.mock('@/lib/dashboard-cache', () => ({
   invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  hasActiveSubscription: vi.fn().mockResolvedValue(true),
+  getSubscriptionState: vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    isActive: true,
+    trialEndsAt: null,
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    daysRemaining: 30,
+    canAccessApp: true,
+  }),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {
@@ -95,8 +107,9 @@ describe('upsertBudgetAction', () => {
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
       id: 'acc-1',
-      name: 'DifferentAccount',
+      name: 'Account1',
       type: 'SELF',
+      userId: 'other-user',
     } as any)
 
     const result = await upsertBudgetAction({
@@ -132,6 +145,7 @@ describe('upsertBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.upsert).mockResolvedValue({} as any)
@@ -194,6 +208,7 @@ describe('upsertBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.upsert).mockResolvedValue({} as any)
@@ -252,6 +267,7 @@ describe('deleteBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.delete).mockResolvedValue({} as any)
@@ -292,6 +308,7 @@ describe('deleteBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.delete).mockRejectedValue(new Error('Not found'))
