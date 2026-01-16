@@ -622,4 +622,66 @@ describe('sendPaymentReminderAction', () => {
       expect(result.error.general?.some((msg: string) => msg.includes('reminder per day'))).toBe(true)
     }
   })
+
+  it('should succeed when reminder cooldown has passed', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    const { sendPaymentReminderEmail } = await import('@/lib/email')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+    vi.mocked(prisma.expenseParticipant.findUnique).mockResolvedValue({
+      id: 'part-1',
+      participant: { email: 'friend@example.com', displayName: 'Friend' },
+      sharedExpense: {
+        ownerId: 'user-owner',
+        currency: Currency.USD,
+        description: 'Dinner',
+        transaction: { description: 'Restaurant' },
+      },
+      shareAmount: 50,
+      status: PaymentStatus.PENDING,
+      reminderSentAt: new Date(Date.now() - 1000 * 60 * 60 * 25), // 25 hours ago
+    } as any)
+    vi.mocked(prisma.expenseParticipant.update).mockResolvedValue({} as any)
+
+    const result = await sendPaymentReminderAction({
+      participantId: 'part-1',
+      csrfToken: 'test-token',
+    })
+
+    expect(result).toEqual({ success: true })
+    expect(sendPaymentReminderEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'friend@example.com',
+      }),
+    )
+  })
+})
+
+describe('declineShareAction - success path', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should successfully decline a pending share', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+    vi.mocked(prisma.expenseParticipant.findUnique).mockResolvedValue({
+      id: 'part-1',
+      userId: 'user-owner',
+      status: PaymentStatus.PENDING,
+    } as any)
+    vi.mocked(prisma.expenseParticipant.update).mockResolvedValue({} as any)
+
+    const result = await declineShareAction({
+      participantId: 'part-1',
+      csrfToken: 'test-token',
+    })
+
+    expect(result).toEqual({ success: true })
+    expect(prisma.expenseParticipant.update).toHaveBeenCalledWith({
+      where: { id: 'part-1' },
+      data: { status: PaymentStatus.DECLINED },
+    })
+  })
 })
