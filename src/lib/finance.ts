@@ -411,7 +411,7 @@ export async function getDashboardData({
   userId,
 }: {
   monthKey: string
-  accountId?: string
+  accountId: string
   preferredCurrency?: Currency
   accounts?: Awaited<ReturnType<typeof getAccounts>>
   userId?: string
