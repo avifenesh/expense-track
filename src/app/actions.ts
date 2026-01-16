@@ -35,6 +35,7 @@ export {
   verifyEmailAction,
   resendVerificationEmailAction,
   deleteAccountAction,
+  exportUserDataAction,
 } from './actions/auth'
 
 // Holdings actions

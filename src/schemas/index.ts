@@ -286,6 +286,13 @@ export type SendPaymentReminderInput = z.infer<typeof sendPaymentReminderSchema>
 // Re-export enums for convenience
 export { SplitType, PaymentStatus }
 
+// Data export schema (GDPR)
+export const exportUserDataSchema = z.object({
+  format: z.enum(['json', 'csv']).default('json'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type ExportUserDataInput = z.infer<typeof exportUserDataSchema>
 // Onboarding schemas
 export {
   completeOnboardingSchema,
