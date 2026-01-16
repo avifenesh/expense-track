@@ -58,6 +58,11 @@ export default async function Page({ searchParams }: PageProps) {
     redirect('/login?reason=unknown-user')
   }
 
+  // Redirect to onboarding if user hasn't completed it yet
+  if (!authUser.hasCompletedOnboarding) {
+    redirect('/onboarding')
+  }
+
   const currentMonth = getMonthKey(new Date())
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const monthParamRaw = resolvedSearchParams.month
