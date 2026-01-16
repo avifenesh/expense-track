@@ -566,6 +566,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       expect(result.stats).toHaveLength(4)
@@ -606,6 +607,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       expect(result.budgets).toHaveLength(2)
@@ -639,6 +641,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       // Previous net = 2500 - 200 = 2300
@@ -656,6 +659,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       expect(result.history).toHaveLength(6)
@@ -685,6 +689,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       // Should not cause division by zero
@@ -701,6 +706,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       expect(result.stats[0].amount).toBe(0) // actual net
@@ -718,6 +724,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       expect(result.budgets).toHaveLength(0)
@@ -742,6 +749,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
       })
 
       // Actual net = 1000 - 5000 = -4000
@@ -775,6 +783,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
         accounts: mockAccounts as unknown as Account[],
       })
 
@@ -791,6 +800,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
         preferredCurrency: Currency.EUR,
       })
 
@@ -808,6 +818,7 @@ describe('finance.ts', () => {
 
       const result = await financeLib.getDashboardData({
         monthKey: '2024-01',
+        accountId: 'acc1',
         preferredCurrency: Currency.EUR,
       })
 
