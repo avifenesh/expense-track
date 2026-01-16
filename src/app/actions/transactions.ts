@@ -214,6 +214,29 @@ export async function createTransactionAction(input: TransactionInput) {
   }
 
   try {
+    let recurringTemplateId: string | null = data.recurringTemplateId ?? null
+
+    // Auto-create RecurringTemplate if isRecurring is checked and no existing template
+    if (data.isRecurring && !data.recurringTemplateId) {
+      const dayOfMonth = data.date.getDate()
+
+      const template = await prisma.recurringTemplate.create({
+        data: {
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          type: data.type,
+          amount: new Prisma.Decimal(toDecimalString(data.amount)),
+          currency: data.currency,
+          dayOfMonth,
+          description: data.description ?? null,
+          startMonth: monthStart,
+          endMonth: null,
+          isActive: true,
+        },
+      })
+      recurringTemplateId = template.id
+    }
+
     await prisma.transaction.create({
       data: {
         accountId: data.accountId,
@@ -225,7 +248,7 @@ export async function createTransactionAction(input: TransactionInput) {
         month: monthStart,
         description: data.description,
         isRecurring: data.isRecurring ?? false,
-        recurringTemplateId: data.recurringTemplateId ?? null,
+        recurringTemplateId,
       },
     })
 
@@ -263,6 +286,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
     select: {
       accountId: true,
       month: true,
+      recurringTemplateId: true,
     },
   })
 
@@ -283,6 +307,29 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   }
 
   try {
+    let recurringTemplateId: string | null = existing.recurringTemplateId
+
+    // Auto-create RecurringTemplate if transaction is being marked as recurring and has no template
+    if (data.isRecurring && !existing.recurringTemplateId) {
+      const dayOfMonth = data.date.getDate()
+
+      const template = await prisma.recurringTemplate.create({
+        data: {
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          type: data.type,
+          amount: new Prisma.Decimal(toDecimalString(data.amount)),
+          currency: data.currency,
+          dayOfMonth,
+          description: data.description ?? null,
+          startMonth: monthStart,
+          endMonth: null,
+          isActive: true,
+        },
+      })
+      recurringTemplateId = template.id
+    }
+
     await prisma.transaction.update({
       where: { id: data.id },
       data: {
@@ -295,6 +342,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         month: monthStart,
         description: data.description,
         isRecurring: data.isRecurring ?? false,
+        recurringTemplateId,
       },
     })
 
