@@ -21,11 +21,10 @@ import {
   type SendPaymentReminderInput,
 } from '@/schemas'
 import { sendExpenseSharedEmail, sendPaymentReminderEmail } from '@/lib/email'
+import { serverLogger } from '@/lib/server-logger'
 
-/**
- * Share an expense with other users.
- * Creates a SharedExpense record linked to a transaction and adds participants.
- */
+const REMINDER_COOLDOWN_HOURS = 24
+
 export async function shareExpenseAction(input: ShareExpenseInput) {
   const parsed = parseInput(shareExpenseSchema, input)
   if ('error' in parsed) return parsed
@@ -41,7 +40,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
   if ('error' in auth) return auth
   const { authUser } = auth
 
-  // Verify transaction exists and belongs to the user
   const transaction = await prisma.transaction.findUnique({
     where: { id: data.transactionId },
     include: {
@@ -62,7 +60,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
     return generalError('This transaction is already shared')
   }
 
-  // Look up participant users by email
   const participantEmails = data.participants.map((p) => p.email.toLowerCase())
 
   // Prevent sharing with yourself
@@ -81,7 +78,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
     },
   })
 
-  // Check all participants were found
   const foundEmails = new Set(participantUsers.map((u) => u.email.toLowerCase()))
   const missingEmails = participantEmails.filter((email) => !foundEmails.has(email))
 
@@ -94,8 +90,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
   }
 
   const totalAmount = Number(transaction.amount)
-
-  // Calculate shares based on split type
   const participantShares = calculateShares(
     data.splitType,
     totalAmount,
@@ -105,7 +99,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
 
   try {
     const sharedExpense = await prisma.$transaction(async (tx) => {
-      // Create the shared expense
       const shared = await tx.sharedExpense.create({
         data: {
           transactionId: data.transactionId,
@@ -117,7 +110,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
         },
       })
 
-      // Create participant records
       const participantData = participantUsers.map((user) => {
         const share = participantShares.get(user.email.toLowerCase())!
         return {
@@ -136,7 +128,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
       return shared
     })
 
-    // Send notification emails to participants (fire and forget)
     for (const user of participantUsers) {
       const share = participantShares.get(user.email.toLowerCase())!
       sendExpenseSharedEmail({
@@ -147,8 +138,8 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
         totalAmount,
         currency: transaction.currency,
         description: data.description || transaction.description || 'Shared expense',
-      }).catch(() => {
-        // Email failure is non-critical
+      }).catch((err) => {
+        serverLogger.warn('Failed to send expense share email', { to: user.email, error: err })
       })
     }
 
@@ -164,10 +155,6 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
   }
 }
 
-/**
- * Mark a participant's share as paid.
- * Only the expense owner can mark shares as paid.
- */
 export async function markSharePaidAction(input: MarkSharePaidInput) {
   const parsed = parseInput(markSharePaidSchema, input)
   if ('error' in parsed) return parsed
@@ -228,10 +215,6 @@ export async function markSharePaidAction(input: MarkSharePaidInput) {
   }
 }
 
-/**
- * Cancel a shared expense.
- * Only the owner can cancel. Removes the SharedExpense and all participants.
- */
 export async function cancelSharedExpenseAction(input: CancelSharedExpenseInput) {
   const parsed = parseInput(cancelSharedExpenseSchema, input)
   if ('error' in parsed) return parsed
@@ -260,7 +243,6 @@ export async function cancelSharedExpenseAction(input: CancelSharedExpenseInput)
   }
 
   try {
-    // Cascade delete will remove participants
     await prisma.sharedExpense.delete({
       where: { id: data.sharedExpenseId },
     })
@@ -277,10 +259,6 @@ export async function cancelSharedExpenseAction(input: CancelSharedExpenseInput)
   }
 }
 
-/**
- * Decline a share that was assigned to you.
- * Only the participant can decline their own share.
- */
 export async function declineShareAction(input: DeclineShareInput) {
   const parsed = parseInput(declineShareSchema, input)
   if ('error' in parsed) return parsed
@@ -333,9 +311,6 @@ export async function declineShareAction(input: DeclineShareInput) {
   }
 }
 
-/**
- * Get expenses that the current user has shared with others.
- */
 export async function getMySharedExpensesAction() {
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
@@ -376,9 +351,6 @@ export async function getMySharedExpensesAction() {
   }
 }
 
-/**
- * Get expenses that others have shared with the current user.
- */
 export async function getExpensesSharedWithMeAction() {
   const auth = await requireAuthUser()
   if ('error' in auth) return auth
@@ -419,10 +391,6 @@ export async function getExpensesSharedWithMeAction() {
   }
 }
 
-/**
- * Look up a user by email for sharing purposes.
- * Returns limited public info if found.
- */
 export async function lookupUserForSharingAction(input: UserLookupInput) {
   const parsed = parseInput(userLookupSchema, input)
   if ('error' in parsed) return parsed
@@ -466,10 +434,6 @@ export async function lookupUserForSharingAction(input: UserLookupInput) {
   }
 }
 
-/**
- * Send a payment reminder to a participant.
- * Only the expense owner can send reminders.
- */
 export async function sendPaymentReminderAction(input: SendPaymentReminderInput) {
   const parsed = parseInput(sendPaymentReminderSchema, input)
   if ('error' in parsed) return parsed
@@ -514,16 +478,14 @@ export async function sendPaymentReminderAction(input: SendPaymentReminderInput)
     return generalError(`Cannot send reminder for a ${participant.status.toLowerCase()} share`)
   }
 
-  // Rate limit reminders - only allow once per 24 hours
   if (participant.reminderSentAt) {
     const hoursSinceLastReminder = (Date.now() - participant.reminderSentAt.getTime()) / (1000 * 60 * 60)
-    if (hoursSinceLastReminder < 24) {
+    if (hoursSinceLastReminder < REMINDER_COOLDOWN_HOURS) {
       return generalError('You can only send one reminder per day')
     }
   }
 
   try {
-    // Send the reminder email
     await sendPaymentReminderEmail({
       to: participant.participant.email,
       participantName: participant.participant.displayName,
@@ -534,7 +496,6 @@ export async function sendPaymentReminderAction(input: SendPaymentReminderInput)
         participant.sharedExpense.description || participant.sharedExpense.transaction.description || 'Shared expense',
     })
 
-    // Update reminder sent timestamp
     await prisma.expenseParticipant.update({
       where: { id: data.participantId },
       data: {
@@ -554,10 +515,7 @@ export async function sendPaymentReminderAction(input: SendPaymentReminderInput)
   }
 }
 
-/**
- * Calculate participant shares based on split type.
- */
-function calculateShares(
+export function calculateShares(
   splitType: SplitType,
   totalAmount: number,
   participants: Array<{ email: string; shareAmount?: number; sharePercentage?: number }>,
