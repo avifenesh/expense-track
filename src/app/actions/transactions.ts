@@ -105,7 +105,7 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
     where: { id: request.toId },
   })
 
-  if (!toAccount || !authUser.accountNames.includes(toAccount.name)) {
+  if (!toAccount || toAccount.userId !== authUser.id) {
     return generalError('You do not have access to this transaction request')
   }
 
@@ -176,7 +176,7 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
     where: { id: request.toId },
   })
 
-  if (!toAccount || !authUser.accountNames.includes(toAccount.name)) {
+  if (!toAccount || toAccount.userId !== authUser.id) {
     return generalError('You do not have access to this transaction request')
   }
 
