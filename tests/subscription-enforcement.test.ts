@@ -47,6 +47,8 @@ function createMockSubscription(
     currentPeriodStart: null,
     currentPeriodEnd: null,
     canceledAt: null,
+    paymentProvider: null,
+    paymentProviderId: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,
