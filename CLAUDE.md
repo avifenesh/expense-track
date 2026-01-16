@@ -46,6 +46,13 @@ npm run db:migrate       # Apply migrations (prod)
 npm test                 # Vitest
 npm run check-types      # TypeScript check
 npm run build            # Build production bundle
+
+# Mobile commands (run from mobile/ directory)
+cd mobile
+npm start                # Start Expo dev server
+npm run ios              # Run on iOS simulator
+npm run android          # Run on Android emulator
+npm test                 # Run mobile tests
 ```
 
 ## Structure
@@ -63,6 +70,8 @@ npm run build            # Build production bundle
 - `src/utils/date.ts` - Use `getMonthStart()` for month normalization
 - `prisma/schema.prisma` - Models: User, Account, Category, Transaction, Budget, RecurringTemplate, Holding
 - `tests/` - Vitest test files
+- `mobile/` - React Native mobile app (Expo)
+  - See `mobile/README.md` for setup instructions
 
 ## Patterns
 
