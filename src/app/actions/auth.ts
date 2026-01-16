@@ -517,78 +517,74 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
   if (!rateLimit.allowed) {
     return failure({ general: ['Too many export requests. Please try again later.'] })
   }
-  incrementRateLimitTyped(authUser.id, 'data_export')
 
   const { format } = parsed.data
 
   try {
-    // Fetch user data (excluding sensitive fields like passwordHash)
-    const user = await prisma.user.findUnique({
-      where: { id: authUser.id },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        preferredCurrency: true,
-        emailVerified: true,
-        hasCompletedOnboarding: true,
-        createdAt: true,
-      },
-    })
+    // Stage 1: Fetch user and accounts in parallel (need accountIds for stage 2)
+    const [user, accounts] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: authUser.id },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          preferredCurrency: true,
+          emailVerified: true,
+          hasCompletedOnboarding: true,
+          createdAt: true,
+        },
+      }),
+      prisma.account.findMany({
+        where: { userId: authUser.id },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          preferredCurrency: true,
+          color: true,
+          icon: true,
+          description: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ])
 
     if (!user) {
       return generalError('User not found')
     }
 
-    // Fetch subscription
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: authUser.id },
-      select: {
-        id: true,
-        status: true,
-        trialEndsAt: true,
-        currentPeriodStart: true,
-        currentPeriodEnd: true,
-        createdAt: true,
-      },
-    })
-
-    // Fetch accounts
-    const accounts = await prisma.account.findMany({
-      where: { userId: authUser.id },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        preferredCurrency: true,
-        color: true,
-        icon: true,
-        description: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'asc' },
-    })
     const accountIds = accounts.map((a) => a.id)
 
-    // Fetch categories
-    const categories = await prisma.category.findMany({
-      where: { userId: authUser.id },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        color: true,
-        isHolding: true,
-        isArchived: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'asc' },
-    })
-
-    // Fetch transactions (only for user's accounts)
-    const transactions =
+    // Stage 2: Fetch all remaining data in parallel
+    const [subscription, categories, transactions, budgets, holdings, recurringTemplates] = await Promise.all([
+      prisma.subscription.findUnique({
+        where: { userId: authUser.id },
+        select: {
+          id: true,
+          status: true,
+          trialEndsAt: true,
+          currentPeriodStart: true,
+          currentPeriodEnd: true,
+          createdAt: true,
+        },
+      }),
+      prisma.category.findMany({
+        where: { userId: authUser.id },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          color: true,
+          isHolding: true,
+          isArchived: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
       accountIds.length > 0
-        ? await prisma.transaction.findMany({
+        ? prisma.transaction.findMany({
             where: { accountId: { in: accountIds } },
             select: {
               id: true,
@@ -606,12 +602,9 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
             },
             orderBy: { date: 'desc' },
           })
-        : []
-
-    // Fetch budgets
-    const budgets =
+        : Promise.resolve([]),
       accountIds.length > 0
-        ? await prisma.budget.findMany({
+        ? prisma.budget.findMany({
             where: { accountId: { in: accountIds } },
             select: {
               id: true,
@@ -625,12 +618,9 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
             },
             orderBy: { month: 'desc' },
           })
-        : []
-
-    // Fetch holdings
-    const holdings =
+        : Promise.resolve([]),
       accountIds.length > 0
-        ? await prisma.holding.findMany({
+        ? prisma.holding.findMany({
             where: { accountId: { in: accountIds } },
             select: {
               id: true,
@@ -645,12 +635,9 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
             },
             orderBy: { symbol: 'asc' },
           })
-        : []
-
-    // Fetch recurring templates
-    const recurringTemplates =
+        : Promise.resolve([]),
       accountIds.length > 0
-        ? await prisma.recurringTemplate.findMany({
+        ? prisma.recurringTemplate.findMany({
             where: { accountId: { in: accountIds } },
             select: {
               id: true,
@@ -668,7 +655,8 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
             },
             orderBy: { createdAt: 'asc' },
           })
-        : []
+        : Promise.resolve([]),
+    ])
 
     serverLogger.info('User data exported (GDPR)', {
       action: 'exportUserDataAction',
@@ -683,6 +671,9 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
         recurringTemplates: recurringTemplates.length,
       },
     })
+
+    // Increment rate limit only after successful data fetch
+    incrementRateLimitTyped(authUser.id, 'data_export')
 
     // Build export data with proper serialization
     const exportData: UserDataExport = {
@@ -750,7 +741,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
       [
         exportData.user.id,
         `"${exportData.user.email}"`,
-        `"${exportData.user.displayName ?? ''}"`,
+        `"${(exportData.user.displayName ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
         exportData.user.preferredCurrency,
         exportData.user.emailVerified,
         exportData.user.hasCompletedOnboarding,
@@ -783,12 +774,12 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
       csvSections.push(
         [
           a.id,
-          `"${a.name}"`,
+          `"${a.name.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
           a.type,
           a.preferredCurrency,
           a.color ?? '',
           a.icon ?? '',
-          `"${(a.description ?? '').replace(/"/g, '""')}"`,
+          `"${(a.description ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
           a.createdAt,
         ].join(','),
       )
@@ -799,7 +790,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
     csvSections.push('=== CATEGORIES ===')
     csvSections.push('id,name,type,color,isHolding,isArchived,createdAt')
     exportData.categories.forEach((c) => {
-      csvSections.push([c.id, `"${c.name}"`, c.type, c.color ?? '', c.isHolding, c.isArchived, c.createdAt].join(','))
+      csvSections.push([c.id, `"${c.name.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`, c.type, c.color ?? '', c.isHolding, c.isArchived, c.createdAt].join(','))
     })
 
     // Transactions section
@@ -817,7 +808,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
           t.currency,
           t.date,
           t.month,
-          `"${(t.description ?? '').replace(/"/g, '""')}"`,
+          `"${(t.description ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
           t.isRecurring,
           t.isMutual,
           t.createdAt,
@@ -838,7 +829,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
           b.month,
           b.planned,
           b.currency,
-          `"${(b.notes ?? '').replace(/"/g, '""')}"`,
+          `"${(b.notes ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
           b.createdAt,
         ].join(','),
       )
@@ -858,7 +849,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
           h.quantity,
           h.averageCost,
           h.currency,
-          `"${(h.notes ?? '').replace(/"/g, '""')}"`,
+          `"${(h.notes ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
           h.createdAt,
         ].join(','),
       )
@@ -880,7 +871,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
           r.amount,
           r.currency,
           r.dayOfMonth,
-          `"${(r.description ?? '').replace(/"/g, '""')}"`,
+          `"${(r.description ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
           r.isActive,
           r.startMonth,
           r.endMonth ?? '',

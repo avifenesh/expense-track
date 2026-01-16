@@ -374,6 +374,37 @@ describe('exportUserDataAction', () => {
         expect(csvContent).toContain('""quoted""')
       }
     })
+
+    it('replaces newlines in descriptions with spaces', async () => {
+      vi.mocked(prisma.transaction.findMany).mockResolvedValue([
+        {
+          id: 'txn-1',
+          accountId: 'acc-1',
+          categoryId: 'cat-1',
+          type: TransactionType.EXPENSE,
+          amount: new Decimal(50.25),
+          currency: Currency.USD,
+          date: now,
+          month: now,
+          description: 'Line one\nLine two\r\nLine three',
+          isRecurring: false,
+          isMutual: false,
+          createdAt: now,
+        },
+      ] as never)
+
+      const result = await exportUserDataAction({
+        format: 'csv',
+        csrfToken: 'valid-token',
+      })
+
+      if ('data' in result && result.data && result.data.format === 'csv') {
+        const csvContent = result.data.data
+        // Newlines should be replaced with spaces to prevent CSV row breaks
+        expect(csvContent).toContain('"Line one Line two Line three"')
+        expect(csvContent).not.toContain('\nLine two')
+      }
+    })
   })
 
   describe('authentication and authorization', () => {
@@ -510,9 +541,11 @@ describe('exportUserDataAction', () => {
     })
 
     it('defaults to JSON format when format not specified', async () => {
+      // Test that the schema default works - pass format as undefined explicitly
       const result = await exportUserDataAction({
+        format: undefined as unknown as 'json' | 'csv',
         csrfToken: 'valid-token',
-      } as never)
+      })
 
       expect(result).toHaveProperty('success', true)
       if ('data' in result && result.data) {
