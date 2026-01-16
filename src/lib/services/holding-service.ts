@@ -66,8 +66,15 @@ export async function deleteHolding(id: string) {
 
 /**
  * Get a holding by ID
+ * If userId is provided, only returns the holding if it belongs to that user (via account)
  */
-export async function getHoldingById(id: string) {
+export async function getHoldingById(id: string, userId?: string) {
+  if (userId) {
+    return await prisma.holding.findFirst({
+      where: { id, account: { userId } },
+      include: { account: true },
+    })
+  }
   return await prisma.holding.findUnique({
     where: { id },
   })
@@ -101,11 +108,12 @@ export async function refreshHoldingPrices(input: RefreshHoldingPricesInput) {
 }
 
 /**
- * Validate that a category has isHolding = true
+ * Validate that a category has isHolding = true and belongs to the user
  */
-export async function validateHoldingCategory(categoryId: string): Promise<boolean> {
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
+export async function validateHoldingCategory(categoryId: string, userId?: string): Promise<boolean> {
+  const where = userId ? { id: categoryId, userId } : { id: categoryId }
+  const category = await prisma.category.findFirst({
+    where,
   })
 
   if (!category) {
