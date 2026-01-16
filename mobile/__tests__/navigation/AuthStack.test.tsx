@@ -2,35 +2,36 @@ import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthStack } from '../../src/navigation/AuthStack';
+import { AuthProvider } from '../../src/contexts';
+
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      <NavigationContainer>{component}</NavigationContainer>
+    </AuthProvider>
+  );
+};
 
 describe('AuthStack', () => {
   it('renders login screen by default', () => {
-    render(
-      <NavigationContainer>
-        <AuthStack />
-      </NavigationContainer>
-    );
+    renderWithProviders(<AuthStack />);
 
-    expect(screen.getByText('Sign In')).toBeTruthy();
+    // "Sign In" appears as both title and button text
+    expect(screen.getAllByText('Sign In').length).toBeGreaterThan(0);
     expect(screen.getByText('Welcome back to Expense Track')).toBeTruthy();
   });
 
-  it('shows login form placeholder', () => {
-    render(
-      <NavigationContainer>
-        <AuthStack />
-      </NavigationContainer>
-    );
+  it('shows login form with email and password inputs', () => {
+    renderWithProviders(<AuthStack />);
 
-    expect(screen.getByText('Login form will be implemented in task #70')).toBeTruthy();
+    expect(screen.getByText('Email')).toBeTruthy();
+    expect(screen.getByText('Password')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Enter your password')).toBeTruthy();
   });
 
   it('has navigation links', () => {
-    render(
-      <NavigationContainer>
-        <AuthStack />
-      </NavigationContainer>
-    );
+    renderWithProviders(<AuthStack />);
 
     expect(screen.getByText(/Don't have an account/)).toBeTruthy();
     expect(screen.getByText(/Forgot password/)).toBeTruthy();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { OnboardingCurrencyScreen } from '../../../src/screens/onboarding/OnboardingCurrencyScreen';
+import type { OnboardingScreenProps } from '../../../src/navigation/types';
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -16,13 +17,13 @@ const mockNavigation = {
   getState: jest.fn(),
   addListener: jest.fn(),
   removeListener: jest.fn(),
-};
+} as unknown as OnboardingScreenProps<'OnboardingCurrency'>['navigation'];
 
 const mockRoute = {
   key: 'OnboardingCurrency',
   name: 'OnboardingCurrency' as const,
   params: undefined,
-};
+} as OnboardingScreenProps<'OnboardingCurrency'>['route'];
 
 describe('OnboardingCurrencyScreen', () => {
   beforeEach(() => {
@@ -30,50 +31,50 @@ describe('OnboardingCurrencyScreen', () => {
   });
 
   it('renders step indicator correctly', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Step 1 of 5')).toBeTruthy();
   });
 
   it('renders title correctly', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Choose Currency')).toBeTruthy();
   });
 
   it('renders subtitle correctly', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Select your preferred currency for tracking expenses')).toBeTruthy();
   });
 
   it('renders USD currency option', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('$')).toBeTruthy();
     expect(screen.getByText('USD - US Dollar')).toBeTruthy();
   });
 
   it('renders EUR currency option', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('EUR - Euro')).toBeTruthy();
   });
 
   it('renders ILS currency option', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('ILS - Israeli Shekel')).toBeTruthy();
   });
 
   it('renders Continue button', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Continue')).toBeTruthy();
   });
 
   it('navigates to OnboardingCategories when Continue is pressed', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     const continueButton = screen.getByText('Continue');
     fireEvent.press(continueButton);
@@ -82,7 +83,7 @@ describe('OnboardingCurrencyScreen', () => {
   });
 
   it('renders all three currency symbols', () => {
-    render(<OnboardingCurrencyScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCurrencyScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('$')).toBeTruthy();
     // Euro symbol is in the option text

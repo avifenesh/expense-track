@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
 
-export function SharingScreen({}: MainTabScreenProps<'Sharing'>) {
+export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
