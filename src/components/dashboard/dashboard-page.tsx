@@ -255,7 +255,6 @@ export function DashboardPage({ data, monthKey, accountId, subscription }: Dashb
         <SubscriptionBanner
           subscription={subscription}
           onUpgrade={() => {
-            // TODO: Navigate to upgrade page when implemented
             window.open('/upgrade', '_blank')
           }}
         />
