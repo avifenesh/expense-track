@@ -58,12 +58,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Log reset email (actual email sending is a separate task)
-    serverLogger.info('Password reset email requested', {
-      email: normalizedEmail,
-      token: resetToken,
-      expires: resetExpires.toISOString(),
-    })
+    if (process.env.NODE_ENV === 'development') {
+      serverLogger.info('Password reset email requested', {
+        email: normalizedEmail,
+        token: resetToken,
+        expires: resetExpires.toISOString(),
+      })
+    }
 
     return successResponse({ message: 'If an account exists with this email, a password reset link will be sent.' })
   } catch (error) {

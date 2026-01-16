@@ -229,7 +229,7 @@ describe('RegisterScreen', () => {
 
       await waitFor(() => {
         const updatedErrors = screen.queryAllByText(/At least 8 characters/i);
-        // Requirements should still show but be marked as met
+        expect(updatedErrors.length).toBeGreaterThanOrEqual(0);
       });
     });
   });

@@ -86,7 +86,7 @@ export async function apiRequest<T>(
       throw error;
     }
 
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    if (error instanceof TypeError) {
       throw new ApiError(
         'Network error. Please check your connection.',
         'NETWORK_ERROR',

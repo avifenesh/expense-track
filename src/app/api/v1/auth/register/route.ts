@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 import { z } from 'zod'
@@ -71,11 +71,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    serverLogger.info('Email verification required', {
-      email: normalizedEmail,
-      token: verificationToken,
-      expires: verificationExpires.toISOString(),
-    })
+    if (process.env.NODE_ENV === 'development') {
+      serverLogger.info('Email verification required', {
+        email: normalizedEmail,
+        token: verificationToken,
+        expires: verificationExpires.toISOString(),
+      })
+    }
 
     return successResponse(
       { message: 'If this email is not registered, you will receive a verification email shortly.' },

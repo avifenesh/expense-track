@@ -64,12 +64,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Log verification email (actual email sending is a separate task)
-    serverLogger.info('Verification email resent', {
-      email: normalizedEmail,
-      token: verificationToken,
-      expires: verificationExpires.toISOString(),
-    })
+    if (process.env.NODE_ENV === 'development') {
+      serverLogger.info('Verification email resent', {
+        email: normalizedEmail,
+        token: verificationToken,
+        expires: verificationExpires.toISOString(),
+      })
+    }
 
     return successResponse({ message: 'If an account exists with this email and is not verified, a new verification email will be sent.' })
   } catch (error) {
