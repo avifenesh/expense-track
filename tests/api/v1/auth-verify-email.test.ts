@@ -83,6 +83,7 @@ describe('POST /api/v1/auth/verify-email', () => {
     })
 
     it('returns success for already verified email', async () => {
+      const futureDate = new Date(Date.now() + 60 * 60 * 1000) // 1 hour in future
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
         id: 'user-id',
         email: 'test@example.com',
@@ -90,7 +91,7 @@ describe('POST /api/v1/auth/verify-email', () => {
         passwordHash: 'hashed',
         emailVerified: true, // Already verified
         emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
+        emailVerificationExpires: futureDate,
         passwordResetToken: null,
         passwordResetExpires: null,
         preferredCurrency: 'USD',
