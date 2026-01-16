@@ -200,3 +200,22 @@ export const setBalanceSchema = z.object({
   monthKey: z.string().min(7, 'Month key is required'),
   csrfToken: z.string().min(1, 'Security token required'),
 })
+
+// Onboarding schemas
+export {
+  completeOnboardingSchema,
+  skipOnboardingSchema,
+  updatePreferredCurrencySchema,
+  createInitialCategoriesSchema,
+  createQuickBudgetSchema,
+  seedSampleDataSchema,
+} from './onboarding'
+
+export type {
+  CompleteOnboardingInput,
+  SkipOnboardingInput,
+  UpdatePreferredCurrencyInput,
+  CreateInitialCategoriesInput,
+  CreateQuickBudgetInput,
+  SeedSampleDataInput,
+} from './onboarding'

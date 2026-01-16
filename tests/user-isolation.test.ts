@@ -114,6 +114,7 @@ describe('User Isolation: Transaction Requests', () => {
         displayName: 'Attacker',
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
         accountNames: ['Attacker Account'],
         defaultAccountName: 'Attacker Account',
       })
@@ -161,6 +162,7 @@ describe('User Isolation: Transaction Requests', () => {
         displayName: 'Owner',
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
         accountNames: ['Owner Account'],
         defaultAccountName: 'Owner Account',
       })
@@ -207,6 +209,7 @@ describe('User Isolation: Transaction Requests', () => {
         displayName: 'Attacker',
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
         accountNames: ['Attacker Account'],
         defaultAccountName: 'Attacker Account',
       })
@@ -248,6 +251,7 @@ describe('User Isolation: Transaction Requests', () => {
         displayName: 'Owner',
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
         accountNames: ['Owner Account'],
         defaultAccountName: 'Owner Account',
       })
@@ -295,6 +299,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       displayName: 'User A',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['User A Account'],
       defaultAccountName: 'User A Account',
     })
@@ -339,6 +344,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       displayName: 'Owner',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Owner Account'],
       defaultAccountName: 'Owner Account',
     })
@@ -384,6 +390,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       displayName: 'Owner',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Owner Account'],
       defaultAccountName: 'Owner Account',
     })
