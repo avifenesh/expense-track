@@ -3,6 +3,11 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { AccountType, Currency, PrismaClient, SubscriptionStatus, TransactionType } from '@prisma/client'
 import { Pool } from 'pg'
 import { TRIAL_DURATION_DAYS } from '../src/lib/subscription-constants'
+import {
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_INCOME_CATEGORIES,
+  DEFAULT_HOLDING_CATEGORIES,
+} from '../src/lib/default-categories'
 
 // Load .env file
 config()
@@ -16,150 +21,138 @@ if (!DATABASE_URL) {
 const adapter = new PrismaPg(new Pool({ connectionString: DATABASE_URL }))
 const prisma = new PrismaClient({ adapter })
 
-// Parse user data from environment variables (same pattern as src/lib/auth.ts)
-function parseUserEnvVars() {
+// Default account colors for seeded users
+const ACCOUNT_COLORS = ['#0ea5e9', '#f472b6', '#10b981', '#f59e0b', '#8b5cf6']
+
+interface SeedUser {
+  email: string
+  displayName: string
+  passwordHash: string
+  preferredCurrency: Currency
+}
+
+// Parse user data from environment variables
+// User 1 is required, additional users are optional
+function parseUserEnvVars(): SeedUser[] {
+  const users: SeedUser[] = []
+
+  // Parse user 1 (required)
   const user1Email = process.env.AUTH_USER1_EMAIL?.trim()
   const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME?.trim()
   const user1PasswordHashRaw = process.env.AUTH_USER1_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
   const user1PasswordHash = user1PasswordHashRaw?.replace(/\\\$/g, '$')
   const user1PreferredCurrency = (process.env.AUTH_USER1_PREFERRED_CURRENCY as Currency) || Currency.USD
 
+  if (!user1Email || !user1DisplayName || !user1PasswordHash) {
+    throw new Error(
+      'Missing required environment variables for user 1 (AUTH_USER1_EMAIL, AUTH_USER1_DISPLAY_NAME, AUTH_USER1_PASSWORD_HASH)',
+    )
+  }
+
+  users.push({
+    email: user1Email,
+    displayName: user1DisplayName,
+    passwordHash: user1PasswordHash,
+    preferredCurrency: user1PreferredCurrency,
+  })
+
+  // Parse user 2 (optional)
   const user2Email = process.env.AUTH_USER2_EMAIL?.trim()
   const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME?.trim()
   const user2PasswordHashRaw = process.env.AUTH_USER2_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
   const user2PasswordHash = user2PasswordHashRaw?.replace(/\\\$/g, '$')
   const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
 
-  if (!user1Email || !user1DisplayName || !user1PasswordHash) {
-    throw new Error('Missing required environment variables for user 1 (AUTH_USER1_*)')
-  }
-
-  if (!user2Email || !user2DisplayName || !user2PasswordHash) {
-    throw new Error('Missing required environment variables for user 2 (AUTH_USER2_*)')
-  }
-
-  return {
-    user1: {
-      email: user1Email,
-      displayName: user1DisplayName,
-      passwordHash: user1PasswordHash,
-      preferredCurrency: user1PreferredCurrency,
-    },
-    user2: {
+  if (user2Email && user2DisplayName && user2PasswordHash) {
+    users.push({
       email: user2Email,
       displayName: user2DisplayName,
       passwordHash: user2PasswordHash,
       preferredCurrency: user2PreferredCurrency,
-    },
+    })
   }
+
+  return users
 }
 
 async function main() {
-  const { user1, user2 } = parseUserEnvVars()
+  const seedUsers = parseUserEnvVars()
 
-  // Create users
-  const createdUser1 = await prisma.user.upsert({
-    where: { email: user1.email },
-    update: {
-      displayName: user1.displayName,
-      passwordHash: user1.passwordHash,
-      preferredCurrency: user1.preferredCurrency,
-    },
-    create: {
-      email: user1.email,
-      displayName: user1.displayName,
-      passwordHash: user1.passwordHash,
-      preferredCurrency: user1.preferredCurrency,
-    },
-  })
-
-  const createdUser2 = await prisma.user.upsert({
-    where: { email: user2.email },
-    update: {
-      displayName: user2.displayName,
-      passwordHash: user2.passwordHash,
-      preferredCurrency: user2.preferredCurrency,
-    },
-    create: {
-      email: user2.email,
-      displayName: user2.displayName,
-      passwordHash: user2.passwordHash,
-      preferredCurrency: user2.preferredCurrency,
-    },
-  })
-
-  // Create accounts linked to users
-  const accounts = [
-    {
-      userId: createdUser1.id,
-      name: 'Avi',
-      type: AccountType.SELF,
-      preferredCurrency: Currency.ILS,
-      color: '#0ea5e9',
-      icon: 'User',
-    },
-    {
-      userId: createdUser2.id,
-      name: 'Serena',
-      type: AccountType.SELF,
-      preferredCurrency: Currency.EUR,
-      color: '#f472b6',
-      icon: 'User',
-    },
-  ]
-
-  await Promise.all(
-    accounts.map((account) =>
-      prisma.account.upsert({
-        where: { userId_name: { userId: account.userId, name: account.name } },
+  // Create users and their accounts
+  const createdUsers = await Promise.all(
+    seedUsers.map(async (userData, index) => {
+      const user = await prisma.user.upsert({
+        where: { email: userData.email },
         update: {
-          type: account.type,
-          preferredCurrency: account.preferredCurrency,
-          color: account.color,
-          icon: account.icon,
+          displayName: userData.displayName,
+          passwordHash: userData.passwordHash,
+          preferredCurrency: userData.preferredCurrency,
         },
-        create: account,
-      }),
-    ),
+        create: {
+          email: userData.email,
+          displayName: userData.displayName,
+          passwordHash: userData.passwordHash,
+          preferredCurrency: userData.preferredCurrency,
+        },
+      })
+
+      // Create a personal account using the user's display name
+      await prisma.account.upsert({
+        where: { userId_name: { userId: user.id, name: userData.displayName } },
+        update: {
+          type: AccountType.SELF,
+          preferredCurrency: userData.preferredCurrency,
+          color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length],
+          icon: 'User',
+        },
+        create: {
+          userId: user.id,
+          name: userData.displayName,
+          type: AccountType.SELF,
+          preferredCurrency: userData.preferredCurrency,
+          color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length],
+          icon: 'User',
+        },
+      })
+
+      return user
+    }),
   )
 
-  // Categories are linked to user1 (Avi) as the default owner for a simple seed.
-  const categoryData = [
-    { name: 'Pegasus (Dog)', type: TransactionType.EXPENSE, color: '#fb7185' },
-    { name: 'House - New Furnitures', type: TransactionType.EXPENSE, color: '#c084fc' },
-    { name: 'Rent', type: TransactionType.EXPENSE, color: '#ef4444' },
-    { name: 'Electricity', type: TransactionType.EXPENSE, color: '#fde047' },
-    { name: 'Gas', type: TransactionType.EXPENSE, color: '#fbbf24' },
-    { name: 'Water', type: TransactionType.EXPENSE, color: '#38bdf8' },
-    { name: 'Arnona taxes', type: TransactionType.EXPENSE, color: '#94a3b8' },
-    { name: 'Groceries', type: TransactionType.EXPENSE, color: '#84cc16' },
-    { name: 'Travels', type: TransactionType.EXPENSE, color: '#6366f1' },
-    { name: 'Eat outside', type: TransactionType.EXPENSE, color: '#f97316' },
-    { name: 'Weddings', type: TransactionType.EXPENSE, color: '#f9a8d4' },
-    { name: 'Accommodations', type: TransactionType.EXPENSE, color: '#f59e0b' },
-    { name: 'Therapy', type: TransactionType.EXPENSE, color: '#a78bfa' },
-    { name: 'Couple Therapy', type: TransactionType.EXPENSE, color: '#f472b6' },
-    { name: 'Going out', type: TransactionType.EXPENSE, color: '#22d3ee' },
-    { name: 'Vacations', type: TransactionType.EXPENSE, color: '#10b981' },
-    { name: 'Computing', type: TransactionType.EXPENSE, color: '#60a5fa' },
-    { name: 'Other taxes', type: TransactionType.EXPENSE, color: '#facc15' },
-    { name: 'Others', type: TransactionType.EXPENSE, color: '#e5e7eb' },
-    { name: 'Nails', type: TransactionType.EXPENSE, color: '#f472b6' },
-    { name: 'Shopping', type: TransactionType.EXPENSE, color: '#d946ef' },
-    { name: 'Army bonus', type: TransactionType.INCOME, color: '#14b8a6' },
-    { name: 'Army returns', type: TransactionType.INCOME, color: '#0ea5e9' },
-    { name: 'Salary', type: TransactionType.INCOME, color: '#1d4ed8' },
-    { name: 'Secondary salary', type: TransactionType.INCOME, color: '#7c3aed' },
-    { name: 'Savings', type: TransactionType.EXPENSE, color: '#16a34a', isHolding: true },
-    { name: 'Stocks', type: TransactionType.EXPENSE, color: '#0f172a', isHolding: true },
-    { name: 'ETF', type: TransactionType.EXPENSE, color: '#0ea5e9', isHolding: true },
-  ]
+  // Create default categories for the first user
+  const primaryUser = createdUsers[0]
 
-  // Create categories for user1 (shared categories assigned to primary user)
-  const categories = categoryData.map((cat) => ({ ...cat, userId: createdUser1.id }))
+  // Expense categories
+  const expenseCategories = DEFAULT_EXPENSE_CATEGORIES.map((cat) => ({
+    name: cat.name,
+    color: cat.color,
+    type: TransactionType.EXPENSE,
+    userId: primaryUser.id,
+    isHolding: false,
+  }))
+
+  // Income categories
+  const incomeCategories = DEFAULT_INCOME_CATEGORIES.map((cat) => ({
+    name: cat.name,
+    color: cat.color,
+    type: TransactionType.INCOME,
+    userId: primaryUser.id,
+    isHolding: false,
+  }))
+
+  // Holding categories (used for investments/savings tracking)
+  const holdingCategories = DEFAULT_HOLDING_CATEGORIES.map((cat) => ({
+    name: cat.name,
+    color: cat.color,
+    type: TransactionType.EXPENSE,
+    userId: primaryUser.id,
+    isHolding: true,
+  }))
+
+  const allCategories = [...expenseCategories, ...incomeCategories, ...holdingCategories]
 
   await Promise.all(
-    categories.map((category) =>
+    allCategories.map((category) =>
       prisma.category.upsert({
         where: {
           userId_name_type: {
@@ -174,30 +167,23 @@ async function main() {
     ),
   )
 
-  // Create trial subscriptions for both users
+  // Create trial subscriptions for all users
   const trialEndsAt = new Date()
   trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DURATION_DAYS)
 
-  await Promise.all([
-    prisma.subscription.upsert({
-      where: { userId: createdUser1.id },
-      update: {},
-      create: {
-        userId: createdUser1.id,
-        status: SubscriptionStatus.TRIALING,
-        trialEndsAt,
-      },
-    }),
-    prisma.subscription.upsert({
-      where: { userId: createdUser2.id },
-      update: {},
-      create: {
-        userId: createdUser2.id,
-        status: SubscriptionStatus.TRIALING,
-        trialEndsAt,
-      },
-    }),
-  ])
+  await Promise.all(
+    createdUsers.map((user) =>
+      prisma.subscription.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+          status: SubscriptionStatus.TRIALING,
+          trialEndsAt,
+        },
+      }),
+    ),
+  )
 }
 
 main()

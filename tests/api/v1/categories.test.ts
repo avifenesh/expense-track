@@ -4,7 +4,7 @@ import { POST as CreateCategory } from '@/app/api/v1/categories/route'
 import { PATCH as ArchiveCategory } from '@/app/api/v1/categories/[id]/archive/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { getApiTestUser } from './helpers'
+import { getApiTestUser, TEST_USER_ID } from './helpers'
 
 describe('Category API Routes', () => {
   let validToken: string
@@ -12,7 +12,7 @@ describe('Category API Routes', () => {
 
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
-    validToken = generateAccessToken('avi', 'avi@example.com')
+    validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys
     const testUser = await getApiTestUser()

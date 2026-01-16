@@ -188,7 +188,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -201,7 +201,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -245,7 +245,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -258,7 +258,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -302,7 +302,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -315,7 +315,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     // Current: income 1000, expense 200 = net 800
@@ -345,7 +345,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -358,7 +358,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
@@ -383,7 +383,7 @@ describe('setBalanceAction', () => {
     expect('success' in result && result.success).toBe(true)
     expect(prisma.category.create).toHaveBeenCalledWith({
       data: {
-        userId: 'avi',
+        userId: 'test-user',
         name: 'Balance Adjustment',
         type: TransactionType.INCOME,
       },
@@ -395,7 +395,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -408,7 +408,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -457,7 +457,7 @@ describe('setBalanceAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -470,7 +470,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({

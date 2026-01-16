@@ -106,7 +106,7 @@ describe('createTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -119,7 +119,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -146,7 +146,7 @@ describe('createTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -159,7 +159,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -205,7 +205,7 @@ describe('createTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -218,7 +218,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -244,7 +244,7 @@ describe('createTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -257,7 +257,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -283,7 +283,7 @@ describe('createTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -296,7 +296,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockRejectedValue(new Error('DB constraint violation'))
@@ -331,7 +331,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -367,7 +367,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -386,7 +386,7 @@ describe('updateTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
@@ -414,7 +414,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -434,13 +434,13 @@ describe('updateTransactionAction', () => {
         id: 'acc-1',
         name: 'Account1',
         type: 'SELF',
-        userId: 'avi',
+        userId: 'test-user',
       } as any)
       .mockResolvedValueOnce({
         id: 'acc-2',
         name: 'Account2',
         type: 'SELF',
-        userId: 'avi',
+        userId: 'test-user',
       } as any)
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
@@ -467,7 +467,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -513,7 +513,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -533,7 +533,7 @@ describe('updateTransactionAction', () => {
         id: 'acc-1',
         name: 'Account1',
         type: 'SELF',
-        userId: 'avi',
+        userId: 'test-user',
       } as any)
       .mockResolvedValueOnce({
         id: 'acc-unauthorized',
@@ -567,7 +567,7 @@ describe('updateTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -586,7 +586,7 @@ describe('updateTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.update).mockRejectedValue(new Error('DB deadlock'))
@@ -622,7 +622,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -646,7 +646,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -665,7 +665,7 @@ describe('deleteTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.delete).mockResolvedValue({} as any)
@@ -683,7 +683,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -717,7 +717,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -736,7 +736,7 @@ describe('deleteTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.delete).mockRejectedValue(new Error('DB error'))
@@ -754,7 +754,7 @@ describe('deleteTransactionAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,

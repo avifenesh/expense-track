@@ -4,7 +4,7 @@ import { POST as UpsertBudget, DELETE as DeleteBudget } from '@/app/api/v1/budge
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
-import { getApiTestUser, getOtherTestUser } from './helpers'
+import { getApiTestUser, getOtherTestUser, TEST_USER_ID } from './helpers'
 
 describe('Budget API Routes', () => {
   let validToken: string
@@ -15,7 +15,7 @@ describe('Budget API Routes', () => {
 
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
-    validToken = generateAccessToken('avi', 'avi@example.com')
+    validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys
     const testUser = await getApiTestUser()
@@ -25,16 +25,16 @@ describe('Budget API Routes', () => {
 
     // Upsert test accounts (atomic, no race condition)
     const account = await prisma.account.upsert({
-      where: { userId_name: { userId: testUser.id, name: 'Avi' } },
+      where: { userId_name: { userId: testUser.id, name: 'TestAccount' } },
       update: {},
-      create: { userId: testUser.id, name: 'Avi', type: 'SELF' },
+      create: { userId: testUser.id, name: 'TestAccount', type: 'SELF' },
     })
 
     // Other account belongs to OTHER user - test user should NOT have access
     const otherAccount = await prisma.account.upsert({
-      where: { userId_name: { userId: otherTestUser.id, name: 'OtherUserAccount' } },
+      where: { userId_name: { userId: otherTestUser.id, name: 'OtherAccount' } },
       update: {},
-      create: { userId: otherTestUser.id, name: 'OtherUserAccount', type: 'SELF' },
+      create: { userId: otherTestUser.id, name: 'OtherAccount', type: 'SELF' },
     })
 
     const category = await prisma.category.upsert({

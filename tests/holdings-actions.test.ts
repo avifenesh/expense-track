@@ -96,7 +96,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -109,7 +109,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -142,7 +142,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -155,7 +155,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -187,7 +187,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -200,7 +200,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -233,7 +233,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -246,7 +246,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -314,7 +314,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -327,7 +327,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue(null)
@@ -354,7 +354,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -367,7 +367,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockRejectedValue(new Error('DB connection lost'))
@@ -394,7 +394,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -407,7 +407,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -440,7 +440,7 @@ describe('createHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -453,7 +453,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -494,7 +494,7 @@ describe('updateHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -512,7 +512,7 @@ describe('updateHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.update).mockResolvedValue({} as any)
@@ -534,7 +534,7 @@ describe('updateHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -564,7 +564,7 @@ describe('updateHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -604,7 +604,7 @@ describe('updateHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -622,7 +622,7 @@ describe('updateHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.update).mockRejectedValue(new Error('DB error'))
@@ -652,7 +652,7 @@ describe('deleteHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -670,7 +670,7 @@ describe('deleteHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.delete).mockResolvedValue({} as any)
@@ -688,7 +688,7 @@ describe('deleteHoldingAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -706,7 +706,7 @@ describe('deleteHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.delete).mockRejectedValue(new Error('Foreign key constraint'))
@@ -730,7 +730,7 @@ describe('refreshHoldingPricesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -743,7 +743,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([
@@ -772,7 +772,7 @@ describe('refreshHoldingPricesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -785,7 +785,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([])
@@ -804,7 +804,7 @@ describe('refreshHoldingPricesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -817,7 +817,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([
@@ -844,7 +844,7 @@ describe('refreshHoldingPricesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -873,7 +873,7 @@ describe('refreshHoldingPricesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -886,7 +886,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockRejectedValue(new Error('DB timeout'))
