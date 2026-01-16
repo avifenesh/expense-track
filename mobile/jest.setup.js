@@ -25,7 +25,8 @@ jest.mock('@react-navigation/native-stack', () => {
             : firstScreen
         );
       },
-      Screen: ({ name: _name, component: _component }) => null,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      Screen: ({ name, component }) => null,
       Group: ({ children }) => children,
     }),
   };
@@ -105,7 +106,8 @@ jest.mock('react-native-safe-area-context', () => {
         children
       ),
     SafeAreaConsumer: SafeAreaContext.Consumer,
-    SafeAreaView: ({ children, edges: _edges, style }) =>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    SafeAreaView: ({ children, edges, style }) =>
       React.createElement(View, { testID: 'safe-area-view', style }, children),
     useSafeAreaInsets: () => inset,
     useSafeAreaFrame: () => frame,
