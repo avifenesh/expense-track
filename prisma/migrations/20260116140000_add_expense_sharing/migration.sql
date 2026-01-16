@@ -11,7 +11,7 @@ CREATE TABLE "SharedExpense" (
     "ownerId" TEXT NOT NULL,
     "totalAmount" DECIMAL(12,2) NOT NULL,
     "currency" "Currency" NOT NULL DEFAULT 'USD',
-    "splitType" "SplitType" NOT NULL,
+    "splitType" "SplitType" NOT NULL DEFAULT 'EQUAL',
     "description" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -57,10 +57,10 @@ CREATE UNIQUE INDEX "ExpenseParticipant_sharedExpenseId_userId_key" ON "ExpenseP
 ALTER TABLE "SharedExpense" ADD CONSTRAINT "SharedExpense_transactionId_fkey" FOREIGN KEY ("transactionId") REFERENCES "Transaction"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SharedExpense" ADD CONSTRAINT "SharedExpense_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SharedExpense" ADD CONSTRAINT "SharedExpense_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ExpenseParticipant" ADD CONSTRAINT "ExpenseParticipant_sharedExpenseId_fkey" FOREIGN KEY ("sharedExpenseId") REFERENCES "SharedExpense"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ExpenseParticipant" ADD CONSTRAINT "ExpenseParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ExpenseParticipant" ADD CONSTRAINT "ExpenseParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
