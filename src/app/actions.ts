@@ -57,3 +57,15 @@ export {
   createQuickBudgetAction,
   seedSampleDataAction,
 } from './actions/onboarding'
+
+// Expense sharing actions
+export {
+  shareExpenseAction,
+  markSharePaidAction,
+  cancelSharedExpenseAction,
+  declineShareAction,
+  getMySharedExpensesAction,
+  getExpensesSharedWithMeAction,
+  lookupUserForSharingAction,
+  sendPaymentReminderAction,
+} from './actions/expense-sharing'
