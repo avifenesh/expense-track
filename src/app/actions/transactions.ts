@@ -329,10 +329,11 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   }
 
   try {
-    let recurringTemplateId: string | null = existing.recurringTemplateId
+    // Use provided template ID, fall back to existing, or auto-create if marking as recurring
+    let recurringTemplateId: string | null = data.recurringTemplateId ?? existing.recurringTemplateId
 
     // Auto-create RecurringTemplate if transaction is being marked as recurring and has no template
-    if (data.isRecurring && !existing.recurringTemplateId) {
+    if (data.isRecurring && !recurringTemplateId) {
       recurringTemplateId = await createRecurringTemplateForTransaction({
         accountId: data.accountId,
         categoryId: data.categoryId,
