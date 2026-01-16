@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -8,39 +8,19 @@ interface AuthState {
 }
 
 /**
- * Hook to manage authentication state.
- * Currently a placeholder - actual auth logic will be implemented in task #70-71.
+ * Hook to access authentication state from AuthContext.
+ * Used by navigation to determine which stack to show.
+ *
+ * This hook wraps useAuth for compatibility with existing navigation code.
+ * Task #71 will add secure token persistence using expo-secure-store.
  */
 export function useAuthState(): AuthState {
-  const [state, setState] = useState<AuthState>({
-    isAuthenticated: false,
-    hasCompletedOnboarding: false,
-    isLoading: true,
-    userId: null,
-  });
+  const { isAuthenticated, isLoading, user } = useAuth();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Simulate checking for stored auth token
-      // In task #70-71, this will:
-      // 1. Check expo-secure-store for auth token
-      // 2. Validate token with API
-      // 3. Check if user has completed onboarding
-
-      // Simulate async auth check
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Default to unauthenticated state for now
-      setState({
-        isAuthenticated: false,
-        hasCompletedOnboarding: false,
-        isLoading: false,
-        userId: null,
-      });
-    };
-
-    checkAuth();
-  }, []);
-
-  return state;
+  return {
+    isAuthenticated,
+    hasCompletedOnboarding: user?.hasCompletedOnboarding ?? false,
+    isLoading,
+    userId: user?.id ?? null,
+  };
 }
