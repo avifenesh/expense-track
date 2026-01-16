@@ -1,6 +1,8 @@
 # Balance Beacon
 
-Personal finance workspace tailored for managing income, spending, and shared budgets across three accounts (you, partner, and joint). The dashboard keeps budgets, recurring obligations, and month-to-month performance together so you can replace manual spreadsheets.
+Personal finance SaaS for managing income, spending, and shared budgets. Create multiple accounts, track expenses, split costs with others, and gain clarity on your finances. 14-day trial, then $5/month.
+
+The dashboard keeps budgets, recurring obligations, and month-to-month performance together so you can replace manual spreadsheets.
 
 ## Features
 
@@ -150,6 +152,8 @@ REST API documentation for mobile app development:
 | `npm run db:push`         | Push Prisma schema to the configured database       |
 | `npm run db:migrate`      | Apply pending migrations in production environments |
 | `npm run db:seed`         | Seed baseline accounts and categories               |
+| `npm run migrate:users`   | Migrate legacy data to user-based model (one-time)  |
+| `npm run rollback:users`  | Rollback user migration if needed                   |
 
 ## CI Notes
 
