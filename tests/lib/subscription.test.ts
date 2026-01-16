@@ -37,6 +37,8 @@ function createMockSubscription(overrides: Record<string, unknown> = {}) {
     currentPeriodStart: null,
     currentPeriodEnd: null,
     canceledAt: null,
+    paymentProvider: null,
+    paymentProviderId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
