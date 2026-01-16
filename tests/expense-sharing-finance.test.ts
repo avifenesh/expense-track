@@ -310,6 +310,9 @@ describe('getSettlementBalance', () => {
             email: 'friend@example.com',
             displayName: 'Friend User',
           },
+          sharedExpense: {
+            currency: 'USD',
+          },
         },
       ] as any) // shared by user - friend owes 50
       .mockResolvedValueOnce([]) // shared with user
@@ -321,6 +324,7 @@ describe('getSettlementBalance', () => {
       userId: 'user-friend',
       userEmail: 'friend@example.com',
       userDisplayName: 'Friend User',
+      currency: 'USD',
       youOwe: 0,
       theyOwe: 50,
       netBalance: 50,
@@ -335,6 +339,7 @@ describe('getSettlementBalance', () => {
           id: 'part-1',
           shareAmount: { toNumber: () => 75 },
           sharedExpense: {
+            currency: 'USD',
             owner: {
               id: 'user-owner',
               email: 'owner@example.com',
@@ -351,6 +356,7 @@ describe('getSettlementBalance', () => {
       userId: 'user-owner',
       userEmail: 'owner@example.com',
       userDisplayName: 'Owner User',
+      currency: 'USD',
       youOwe: 75,
       theyOwe: 0,
       netBalance: -75,
@@ -368,6 +374,9 @@ describe('getSettlementBalance', () => {
             email: 'friend@example.com',
             displayName: 'Friend User',
           },
+          sharedExpense: {
+            currency: 'USD',
+          },
         },
       ] as any) // friend owes user 100
       .mockResolvedValueOnce([
@@ -375,6 +384,7 @@ describe('getSettlementBalance', () => {
           id: 'part-2',
           shareAmount: { toNumber: () => 30 },
           sharedExpense: {
+            currency: 'USD',
             owner: {
               id: 'user-friend',
               email: 'friend@example.com',
@@ -389,6 +399,7 @@ describe('getSettlementBalance', () => {
     expect(result).toHaveLength(1)
     expect(result[0]).toMatchObject({
       userId: 'user-friend',
+      currency: 'USD',
       youOwe: 30,
       theyOwe: 100,
       netBalance: 70, // friend owes user net 70
@@ -401,14 +412,17 @@ describe('getSettlementBalance', () => {
         {
           shareAmount: { toNumber: () => 20 },
           participant: { id: 'user-a', email: 'a@example.com', displayName: 'User A' },
+          sharedExpense: { currency: 'USD' },
         },
         {
           shareAmount: { toNumber: () => 100 },
           participant: { id: 'user-b', email: 'b@example.com', displayName: 'User B' },
+          sharedExpense: { currency: 'USD' },
         },
         {
           shareAmount: { toNumber: () => 50 },
           participant: { id: 'user-c', email: 'c@example.com', displayName: 'User C' },
+          sharedExpense: { currency: 'USD' },
         },
       ] as any)
       .mockResolvedValueOnce([])
@@ -419,5 +433,44 @@ describe('getSettlementBalance', () => {
     expect(result[0].userId).toBe('user-b') // 100
     expect(result[1].userId).toBe('user-c') // 50
     expect(result[2].userId).toBe('user-a') // 20
+  })
+
+  it('should group balances by currency - same user with different currencies', async () => {
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce([
+        {
+          shareAmount: { toNumber: () => 50 },
+          participant: { id: 'user-friend', email: 'friend@example.com', displayName: 'Friend User' },
+          sharedExpense: { currency: 'USD' },
+        },
+        {
+          shareAmount: { toNumber: () => 30 },
+          participant: { id: 'user-friend', email: 'friend@example.com', displayName: 'Friend User' },
+          sharedExpense: { currency: 'EUR' },
+        },
+      ] as any)
+      .mockResolvedValueOnce([])
+
+    const result = await getSettlementBalance('user-1')
+
+    // Should have 2 separate balances - one for USD, one for EUR
+    expect(result).toHaveLength(2)
+    const usdBalance = result.find((b) => b.currency === 'USD')
+    const eurBalance = result.find((b) => b.currency === 'EUR')
+
+    expect(usdBalance).toMatchObject({
+      userId: 'user-friend',
+      currency: 'USD',
+      theyOwe: 50,
+      youOwe: 0,
+      netBalance: 50,
+    })
+    expect(eurBalance).toMatchObject({
+      userId: 'user-friend',
+      currency: 'EUR',
+      theyOwe: 30,
+      youOwe: 0,
+      netBalance: 30,
+    })
   })
 })

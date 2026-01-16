@@ -90,6 +90,20 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
   }
 
   const totalAmount = Number(transaction.amount)
+
+  if (data.splitType === SplitType.FIXED) {
+    const totalShares = data.participants.reduce((sum, p) => sum + (p.shareAmount ?? 0), 0)
+    if (totalShares > totalAmount) {
+      return {
+        error: {
+          participants: [
+            `Total share amounts ($${totalShares.toFixed(2)}) cannot exceed transaction total ($${totalAmount.toFixed(2)})`,
+          ],
+        },
+      }
+    }
+  }
+
   const participantShares = calculateShares(
     data.splitType,
     totalAmount,

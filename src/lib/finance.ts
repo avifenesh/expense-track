@@ -151,6 +151,7 @@ export type SettlementBalance = {
   userId: string
   userEmail: string
   userDisplayName: string
+  currency: Currency
   youOwe: number
   theyOwe: number
   netBalance: number
@@ -437,6 +438,9 @@ export async function getDashboardData({
     previousTransactionsRaw,
     historyTransactionsRaw,
     exchangeRateLastUpdate,
+    sharedExpenses,
+    expensesSharedWithMe,
+    settlementBalances,
   ] = await Promise.all([
     getCategories(userId),
     getBudgetsForMonth({ monthKey, accountId }),
@@ -486,6 +490,9 @@ export async function getDashboardData({
       },
     }),
     getLastUpdateTime(),
+    userId ? getSharedExpenses(userId) : Promise.resolve([]),
+    userId ? getExpensesSharedWithMe(userId) : Promise.resolve([]),
+    userId ? getSettlementBalance(userId) : Promise.resolve([]),
   ])
 
   const transactionsWithNumbers = transactions
@@ -652,6 +659,9 @@ export async function getDashboardData({
     history,
     exchangeRateLastUpdate,
     preferredCurrency,
+    sharedExpenses,
+    expensesSharedWithMe,
+    settlementBalances,
   }
 }
 
@@ -870,6 +880,7 @@ export async function getExpensesSharedWithMe(userId: string): Promise<ExpensePa
 
 /**
  * Calculate settlement balances between the user and everyone they share expenses with.
+ * Balances are grouped by user AND currency to avoid mixing different currencies.
  */
 export async function getSettlementBalance(userId: string): Promise<SettlementBalance[]> {
   // Get what others owe the user (expenses user shared)
@@ -884,6 +895,11 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
           id: true,
           email: true,
           displayName: true,
+        },
+      },
+      sharedExpense: {
+        select: {
+          currency: true,
         },
       },
     },
@@ -910,38 +926,47 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
     },
   })
 
-  // Aggregate balances by user
+  // Aggregate balances by user AND currency
   const balanceMap = new Map<string, SettlementBalance>()
+
+  // Create composite key for user + currency
+  const getKey = (otherUserId: string, currency: Currency) => `${otherUserId}:${currency}`
 
   // Others owe user
   for (const p of sharedByUser) {
-    const existing = balanceMap.get(p.participant.id) || {
+    const currency = p.sharedExpense.currency
+    const key = getKey(p.participant.id, currency)
+    const existing = balanceMap.get(key) || {
       userId: p.participant.id,
       userEmail: p.participant.email,
       userDisplayName: p.participant.displayName,
+      currency,
       youOwe: 0,
       theyOwe: 0,
       netBalance: 0,
     }
     existing.theyOwe += decimalToNumber(p.shareAmount)
     existing.netBalance = existing.theyOwe - existing.youOwe
-    balanceMap.set(p.participant.id, existing)
+    balanceMap.set(key, existing)
   }
 
   // User owes others
   for (const p of sharedWithUser) {
     const owner = p.sharedExpense.owner
-    const existing = balanceMap.get(owner.id) || {
+    const currency = p.sharedExpense.currency
+    const key = getKey(owner.id, currency)
+    const existing = balanceMap.get(key) || {
       userId: owner.id,
       userEmail: owner.email,
       userDisplayName: owner.displayName,
+      currency,
       youOwe: 0,
       theyOwe: 0,
       netBalance: 0,
     }
     existing.youOwe += decimalToNumber(p.shareAmount)
     existing.netBalance = existing.theyOwe - existing.youOwe
-    balanceMap.set(owner.id, existing)
+    balanceMap.set(key, existing)
   }
 
   return Array.from(balanceMap.values()).sort((a, b) => Math.abs(b.netBalance) - Math.abs(a.netBalance))

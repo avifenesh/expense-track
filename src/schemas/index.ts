@@ -236,6 +236,15 @@ export const shareExpenseSchema = z
     },
     { message: 'Total percentage cannot exceed 100%', path: ['participants'] },
   )
+  .refine(
+    (data) => {
+      if (data.splitType === SplitType.FIXED) {
+        return data.participants.every((p) => p.shareAmount !== undefined && p.shareAmount >= 0.01)
+      }
+      return true
+    },
+    { message: 'All participants must have a share amount for fixed splits', path: ['participants'] },
+  )
 
 export type ShareExpenseInput = z.infer<typeof shareExpenseSchema>
 
