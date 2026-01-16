@@ -11,6 +11,7 @@ import {
   CalendarRange,
   ChevronDown,
   CreditCard,
+  Download,
   FileSpreadsheet,
   Gauge,
   Layers,
@@ -41,6 +42,7 @@ import { ChatWidget } from '@/components/ai/chat-widget'
 import { BudgetsTab, CategoriesTab, OverviewTab, RecurringTab, TransactionsTab } from '@/components/dashboard/tabs'
 import { SubscriptionBanner, type SubscriptionBannerData } from '@/components/subscription'
 import { DeleteAccountDialog } from '@/components/settings/delete-account-dialog'
+import { ExportDataDialog } from '@/components/settings/export-data-dialog'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories' | 'holdings'
@@ -165,6 +167,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const [isPendingLogout, startLogout] = useTransition()
   const [isPendingRates, startRates] = useTransition()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
 
   // Close settings menu on Escape key
@@ -336,6 +339,17 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                   tabIndex={-1}
                 />
                 <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
+                    onClick={() => {
+                      setShowSettingsMenu(false)
+                      setShowExportDialog(true)
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export my data
+                  </button>
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
@@ -601,6 +615,9 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
       >
         <ArrowUp className="h-5 w-5" />
       </Button>
+
+      {/* Export Data Dialog */}
+      {showExportDialog && <ExportDataDialog onClose={() => setShowExportDialog(false)} />}
 
       {/* Delete Account Dialog */}
       {showDeleteDialog && <DeleteAccountDialog userEmail={userEmail} onClose={() => setShowDeleteDialog(false)} />}

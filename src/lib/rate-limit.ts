@@ -18,6 +18,7 @@ export type RateLimitType =
   | 'password_reset'
   | 'resend_verification'
   | 'account_deletion'
+  | 'data_export'
 
 interface RateLimitConfig {
   windowMs: number
@@ -31,6 +32,7 @@ const RATE_LIMIT_CONFIGS: Record<RateLimitType, RateLimitConfig> = {
   password_reset: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - abuse prevention
   resend_verification: { windowMs: 15 * 60 * 1000, maxRequests: 3 }, // 3/15min - spam prevention
   account_deletion: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - abuse prevention
+  data_export: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - GDPR export rate limit
 }
 
 interface RateLimitEntry {
