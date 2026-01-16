@@ -220,8 +220,7 @@ export function LoginCard() {
             </div>
 
             <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300">
-              We send a checklist that confirms your identity, reiterates the shared password, and explains next steps
-              for the team ledger.
+              We&apos;ll send you a link to reset your password. The link expires in 1 hour.
             </p>
 
             {errors?.general && (

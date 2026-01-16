@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     },
     category: {
@@ -73,6 +74,12 @@ vi.mock('@/lib/rate-limit', () => ({
   resetAllRateLimits: vi.fn(),
 }))
 
+vi.mock('@/lib/email', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
+  sendPasswordResetEmail: vi.fn().mockResolvedValue({ success: true }),
+  sendPasswordChangedEmail: vi.fn().mockResolvedValue({ success: true }),
+}))
+
 vi.mock('@/app/actions/shared', () => ({
   parseInput: vi.fn((schema, input) => {
     const parsed = schema.safeParse(input)
@@ -91,10 +98,12 @@ vi.mock('@/app/actions/shared', () => ({
 import { verifyCredentials, establishSession, clearSession, updateSessionAccount } from '@/lib/auth-server'
 import { rotateCsrfToken } from '@/lib/csrf'
 import { ensureAccountAccess, requireCsrfToken, requireAuthUser } from '@/app/actions/shared'
+import { sendPasswordResetEmail, sendPasswordChangedEmail } from '@/lib/email'
 import {
   loginAction,
   logoutAction,
   requestPasswordResetAction,
+  resetPasswordAction,
   persistActiveAccountAction,
   deleteAccountAction,
 } from '@/app/actions'
@@ -185,6 +194,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
@@ -210,6 +221,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [
@@ -237,6 +250,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [
@@ -278,6 +293,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
@@ -298,6 +315,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
@@ -342,6 +361,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [],
@@ -366,6 +387,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
@@ -389,6 +412,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [
@@ -416,6 +441,8 @@ describe('auth actions', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [mockAccount({ id: 'acc-1', name: 'Test1', type: 'SELF' })],
@@ -455,23 +482,65 @@ describe('auth actions', () => {
   })
 
   describe('requestPasswordResetAction', () => {
-    it('returns honest message that feature is not yet implemented', async () => {
+    beforeEach(() => {
+      vi.mocked(prisma.user.findUnique).mockReset()
+      vi.mocked(prisma.user.update).mockReset()
+      vi.mocked(sendPasswordResetEmail).mockReset()
+      vi.mocked(sendPasswordResetEmail).mockResolvedValue({ success: true })
+    })
+
+    it('sends reset email for verified user', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        emailVerified: true,
+      } as never)
+      vi.mocked(prisma.user.update).mockResolvedValue({} as never)
+
       const response = await requestPasswordResetAction({ email: 'test1@example.com' })
 
       expect('success' in response && response.success).toBe(true)
       if ('success' in response && response.success) {
-        expect(response.data.message).toContain('Password reset via email is not yet available')
+        expect(response.data.message).toContain('If an account exists')
       }
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({
+            passwordResetToken: expect.any(String),
+            passwordResetExpires: expect.any(Date),
+          }),
+        }),
+      )
+      // Verify password reset email is sent with the correct email and a token
+      expect(sendPasswordResetEmail).toHaveBeenCalledWith('test1@example.com', expect.any(String))
     })
 
-    it('returns same message for any email (feature not implemented)', async () => {
+    it('returns same message for non-existent email (enumeration protection)', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
       const response = await requestPasswordResetAction({ email: 'unknown@example.com' })
 
-      // Should return success with honest message about feature status
       expect('success' in response && response.success).toBe(true)
       if ('success' in response && response.success) {
-        expect(response.data.message).toContain('Password reset via email is not yet available')
+        expect(response.data.message).toContain('If an account exists')
       }
+      expect(prisma.user.update).not.toHaveBeenCalled()
+      // Verify no email is sent for non-existent user
+      expect(sendPasswordResetEmail).not.toHaveBeenCalled()
+    })
+
+    it('does not send email if user email not verified', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        emailVerified: false,
+      } as never)
+
+      const response = await requestPasswordResetAction({ email: 'unverified@example.com' })
+
+      expect('success' in response && response.success).toBe(true)
+      expect(prisma.user.update).not.toHaveBeenCalled()
+      // Verify no email is sent for unverified user
+      expect(sendPasswordResetEmail).not.toHaveBeenCalled()
     })
 
     it('rejects invalid email format', async () => {
@@ -481,16 +550,21 @@ describe('auth actions', () => {
     })
 
     it('handles email case-insensitively', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
       const response = await requestPasswordResetAction({ email: 'TEST1@EXAMPLE.COM' })
 
-      // Should succeed regardless of email case
       expect('success' in response && response.success).toBe(true)
+      expect(prisma.user.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { email: 'test1@example.com' },
+        }),
+      )
     })
 
     it('rejects email with whitespace (not trimmed before validation)', async () => {
       const response = await requestPasswordResetAction({ email: '  test1@example.com  ' })
 
-      // Email with whitespace fails Zod email validation
       expect('error' in response).toBe(true)
       if ('error' in response) {
         expect(response.error.email).toBeDefined()
@@ -502,10 +576,146 @@ describe('auth actions', () => {
 
       const response = await requestPasswordResetAction({ email: 'unknown@example.com' })
 
-      // Returns success (not error) to prevent email enumeration attacks
       expect('success' in response && response.success).toBe(true)
       if ('success' in response && response.success) {
         expect(response.data.message).toBeDefined()
+      }
+    })
+  })
+
+  describe('resetPasswordAction', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.user.findUnique).mockReset()
+      vi.mocked(prisma.user.update).mockReset()
+      vi.mocked(sendPasswordChangedEmail).mockReset()
+      vi.mocked(sendPasswordChangedEmail).mockResolvedValue({ success: true })
+    })
+
+    it('resets password with valid token', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        passwordResetExpires: new Date(Date.now() + 3600000),
+      } as never)
+      vi.mocked(prisma.user.update).mockResolvedValue({} as never)
+
+      const result = await resetPasswordAction({
+        token: 'valid-token',
+        newPassword: 'NewPassword123',
+      })
+
+      expect(result).toHaveProperty('success', true)
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({
+            passwordHash: expect.any(String),
+            passwordResetToken: null,
+            passwordResetExpires: null,
+          }),
+        }),
+      )
+      // Verify password changed notification email is triggered
+      expect(sendPasswordChangedEmail).toHaveBeenCalledWith('test@example.com')
+    })
+
+    it('rejects expired token', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        passwordResetExpires: new Date(Date.now() - 3600000),
+      } as never)
+
+      const result = await resetPasswordAction({
+        token: 'expired-token',
+        newPassword: 'NewPassword123',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.token).toBeDefined()
+      }
+      expect(prisma.user.update).not.toHaveBeenCalled()
+    })
+
+    it('rejects invalid token', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+      const result = await resetPasswordAction({
+        token: 'invalid-token',
+        newPassword: 'NewPassword123',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.token).toBeDefined()
+      }
+    })
+
+    it('rejects weak password (too short)', async () => {
+      const result = await resetPasswordAction({
+        token: 'valid-token',
+        newPassword: 'weak',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.newPassword).toBeDefined()
+      }
+    })
+
+    it('rejects password without uppercase', async () => {
+      const result = await resetPasswordAction({
+        token: 'valid-token',
+        newPassword: 'password123',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.newPassword).toBeDefined()
+      }
+    })
+
+    it('rejects password without number', async () => {
+      const result = await resetPasswordAction({
+        token: 'valid-token',
+        newPassword: 'PasswordOnly',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.newPassword).toBeDefined()
+      }
+    })
+
+    it('rejects password without lowercase', async () => {
+      const result = await resetPasswordAction({
+        token: 'valid-token',
+        newPassword: 'PASSWORD123',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.newPassword).toBeDefined()
+      }
+    })
+
+    it('returns success message after reset', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        passwordResetExpires: new Date(Date.now() + 3600000),
+      } as never)
+      vi.mocked(prisma.user.update).mockResolvedValue({} as never)
+
+      const result = await resetPasswordAction({
+        token: 'valid-token',
+        newPassword: 'NewPassword123',
+      })
+
+      expect('success' in result && result.success).toBe(true)
+      if ('success' in result && result.success) {
+        expect(result.data.message).toContain('successfully')
       }
     })
   })
