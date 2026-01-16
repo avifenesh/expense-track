@@ -340,9 +340,13 @@ describe('exportUserDataAction', () => {
 
       if ('data' in result && result.data && result.data.format === 'csv') {
         const csvContent = result.data.data
-        expect(csvContent).toContain('id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt')
+        expect(csvContent).toContain(
+          'id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt',
+        )
         expect(csvContent).toContain('id,name,type,preferredCurrency,color,icon,description,createdAt')
-        expect(csvContent).toContain('id,accountId,categoryId,type,amount,currency,date,month,description,isRecurring,isMutual,createdAt')
+        expect(csvContent).toContain(
+          'id,accountId,categoryId,type,amount,currency,date,month,description,isRecurring,isMutual,createdAt',
+        )
       }
     })
 

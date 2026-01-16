@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TransactionType, Currency } from '@prisma/client'
+import { TransactionType, Currency, SplitType, PaymentStatus } from '@prisma/client'
 
 // Transaction schemas
 export const transactionSchema = z.object({
@@ -209,6 +209,83 @@ export const deleteAccountSchema = z.object({
 
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>
 
+// Expense sharing schemas
+export const participantSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  shareAmount: z.coerce.number().min(0.01, 'Share amount must be positive').optional(),
+  sharePercentage: z.coerce.number().min(0).max(100, 'Percentage must be between 0 and 100').optional(),
+})
+
+export type ParticipantInput = z.infer<typeof participantSchema>
+
+export const shareExpenseSchema = z
+  .object({
+    transactionId: z.string().min(1, 'Transaction is required'),
+    splitType: z.nativeEnum(SplitType).default(SplitType.EQUAL),
+    participants: z.array(participantSchema).min(1, 'At least one participant is required'),
+    description: z.string().max(240, 'Description too long').optional().nullable(),
+    csrfToken: z.string().min(1, 'Security token required'),
+  })
+  .refine(
+    (data) => {
+      if (data.splitType === SplitType.PERCENTAGE) {
+        const totalPercentage = data.participants.reduce((sum, p) => sum + (p.sharePercentage ?? 0), 0)
+        return totalPercentage <= 100
+      }
+      return true
+    },
+    { message: 'Total percentage cannot exceed 100%', path: ['participants'] },
+  )
+  .refine(
+    (data) => {
+      if (data.splitType === SplitType.FIXED) {
+        return data.participants.every((p) => p.shareAmount !== undefined && p.shareAmount >= 0.01)
+      }
+      return true
+    },
+    { message: 'All participants must have a share amount for fixed splits', path: ['participants'] },
+  )
+
+export type ShareExpenseInput = z.infer<typeof shareExpenseSchema>
+
+export const markSharePaidSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type MarkSharePaidInput = z.infer<typeof markSharePaidSchema>
+
+export const cancelSharedExpenseSchema = z.object({
+  sharedExpenseId: z.string().min(1, 'Shared expense ID is required'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type CancelSharedExpenseInput = z.infer<typeof cancelSharedExpenseSchema>
+
+export const declineShareSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type DeclineShareInput = z.infer<typeof declineShareSchema>
+
+export const userLookupSchema = z.object({
+  email: z.string().email('Enter a valid email address'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type UserLookupInput = z.infer<typeof userLookupSchema>
+
+export const sendPaymentReminderSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type SendPaymentReminderInput = z.infer<typeof sendPaymentReminderSchema>
+
+// Re-export enums for convenience
+export { SplitType, PaymentStatus }
+
 // Data export schema (GDPR)
 export const exportUserDataSchema = z.object({
   format: z.enum(['json', 'csv']).default('json'),
@@ -216,7 +293,6 @@ export const exportUserDataSchema = z.object({
 })
 
 export type ExportUserDataInput = z.infer<typeof exportUserDataSchema>
-
 // Onboarding schemas
 export {
   completeOnboardingSchema,

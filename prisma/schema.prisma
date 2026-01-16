@@ -19,10 +19,12 @@ model User {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  accounts      Account[]
-  categories    Category[]
-  refreshTokens RefreshToken[]
-  subscription  Subscription?
+  accounts              Account[]
+  categories            Category[]
+  refreshTokens         RefreshToken[]
+  subscription          Subscription?
+  sharedExpensesOwned   SharedExpense[]        @relation("SharedExpensesOwned")
+  expenseParticipations ExpenseParticipant[]   @relation("ExpenseParticipations")
 
   @@index([email])
 }
@@ -213,9 +215,61 @@ model Transaction {
   account             Account            @relation(fields: [accountId], references: [id])
   category            Category           @relation(fields: [categoryId], references: [id])
   recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id])
+  sharedExpense       SharedExpense?
 
   @@index([accountId, month])
   @@index([month])
+}
+
+model SharedExpense {
+  id            String               @id @default(cuid())
+  transactionId String               @unique
+  ownerId       String
+  splitType     SplitType            @default(EQUAL)
+  totalAmount   Decimal              @db.Decimal(12, 2)
+  currency      Currency             @default(USD)
+  description   String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  transaction   Transaction          @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  owner         User                 @relation("SharedExpensesOwned", fields: [ownerId], references: [id], onDelete: Cascade)
+  participants  ExpenseParticipant[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model ExpenseParticipant {
+  id              String        @id @default(cuid())
+  sharedExpenseId String
+  userId          String
+  shareAmount     Decimal       @db.Decimal(12, 2)
+  sharePercentage Decimal?      @db.Decimal(5, 2)
+  status          PaymentStatus @default(PENDING)
+  paidAt          DateTime?
+  reminderSentAt  DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  sharedExpense   SharedExpense @relation(fields: [sharedExpenseId], references: [id], onDelete: Cascade)
+  participant     User          @relation("ExpenseParticipations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sharedExpenseId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+enum SplitType {
+  EQUAL
+  PERCENTAGE
+  FIXED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  DECLINED
 }
 
 model TransactionRequest {

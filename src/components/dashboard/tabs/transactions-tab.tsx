@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { TransactionType, Currency } from '@prisma/client'
-import { Download, CreditCard } from 'lucide-react'
+import { Download, CreditCard, Users } from 'lucide-react'
 import { createTransactionAction, updateTransactionAction, deleteTransactionAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import { formatRelativeAmount } from '@/utils/format'
 import { normalizeDateInput } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { RequestList } from '@/components/dashboard/request-list'
+import { ShareExpenseForm } from '@/components/dashboard/share-expense-form'
 import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import {
@@ -103,6 +104,7 @@ export function TransactionsTab({
   })
 
   const [editingTransaction, setEditingTransaction] = useState<DashboardTransaction | null>(null)
+  const [sharingTransaction, setSharingTransaction] = useState<DashboardTransaction | null>(null)
   const [transactionFilterType, setTransactionFilterType] = useState<'all' | TransactionType>('all')
   const [transactionAccountFilter, setTransactionAccountFilter] = useState<string>(activeAccount)
   const [transactionSearch, setTransactionSearch] = useState('')
@@ -641,6 +643,17 @@ export function TransactionsTab({
                         preferredCurrency,
                       )}
                     </span>
+                    {transaction.type === TransactionType.EXPENSE && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-xs text-sky-300 hover:bg-sky-500/20"
+                        onClick={() => setSharingTransaction(transaction)}
+                        title="Share expense"
+                      >
+                        <Users className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"
@@ -664,6 +677,16 @@ export function TransactionsTab({
           </CardContent>
         </Card>
       </div>
+
+      {sharingTransaction && (
+        <ShareExpenseForm
+          transactionId={sharingTransaction.id}
+          transactionAmount={sharingTransaction.amount}
+          transactionDescription={sharingTransaction.description}
+          currency={sharingTransaction.currency}
+          onClose={() => setSharingTransaction(null)}
+        />
+      )}
     </div>
   )
 }
