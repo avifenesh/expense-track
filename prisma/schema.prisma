@@ -273,7 +273,6 @@ enum PaymentStatus {
   PAID
   DECLINED
 }
-
 model TransactionRequest {
   id          String        @id @default(cuid())
   fromId      String
@@ -335,4 +334,16 @@ enum SubscriptionStatus {
   PAST_DUE
   CANCELED
   EXPIRED
+}
+
+enum SplitType {
+  EQUAL
+  PERCENTAGE
+  FIXED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  DECLINED
 }
