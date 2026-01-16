@@ -42,7 +42,7 @@ export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `expense-track-export-${new Date().toISOString().split('T')[0]}.${extension}`
+        link.download = `balance-beacon-export-${new Date().toISOString().split('T')[0]}.${extension}`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)

@@ -18,7 +18,7 @@ describe('AuthStack', () => {
 
     // "Sign In" appears as both title and button text
     expect(screen.getAllByText('Sign In').length).toBeGreaterThan(0);
-    expect(screen.getByText('Welcome back to Expense Track')).toBeTruthy();
+    expect(screen.getByText('Welcome back to Balance Beacon')).toBeTruthy();
   });
 
   it('shows login form with email and password inputs', () => {

@@ -85,7 +85,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
         >
           <View style={styles.content}>
             <Text style={styles.title}>Sign In</Text>
-            <Text style={styles.subtitle}>Welcome back to Expense Track</Text>
+            <Text style={styles.subtitle}>Welcome back to Balance Beacon</Text>
 
             {error && (
               <View style={styles.errorContainer}>

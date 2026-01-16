@@ -801,7 +801,6 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should create RecurringTemplate when isRecurring is true on new transaction', async () => {
-
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({
       id: 'template-123',
     } as any)
