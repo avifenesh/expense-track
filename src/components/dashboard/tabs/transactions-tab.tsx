@@ -720,7 +720,9 @@ export function TransactionsTab({
                         )}
                       >
                         {formatRelativeAmount(
-                          transaction.type === TransactionType.EXPENSE ? -transaction.amount : transaction.amount,
+                          transaction.type === TransactionType.EXPENSE
+                            ? -transaction.convertedAmount
+                            : transaction.convertedAmount,
                           preferredCurrency,
                         )}
                       </span>
