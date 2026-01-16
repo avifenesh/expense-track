@@ -3,7 +3,7 @@ import * as authService from '../services/auth';
 import { ApiError } from '../services/api';
 
 export interface User {
-  id: string;
+  id: string | null;
   email: string;
   displayName?: string;
   hasCompletedOnboarding: boolean;
@@ -48,8 +48,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAccessToken(response.accessToken);
       setRefreshTokenValue(response.refreshToken);
 
+      // Note: User ID is null until we fetch user profile from /me endpoint
+      // For now, we set it to null and rely on the accessToken for auth
       setUser({
-        id: '',
+        id: null,
         email: email.toLowerCase(),
         hasCompletedOnboarding: false,
       });
@@ -70,8 +72,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (refreshTokenValue) {
         await authService.logout(refreshTokenValue);
       }
-    } catch {
-      // Ignore errors during logout
+    } catch (error) {
+      // Logout errors are intentionally not propagated to avoid blocking the user
+      // from logging out if the server is unreachable. The client-side state will
+      // be cleared regardless, and the server will eventually expire the token.
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('Logout request failed:', error);
+      }
     } finally {
       setUser(null);
       setAccessToken(null);
