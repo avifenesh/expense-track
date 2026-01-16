@@ -393,7 +393,7 @@ export function TransactionsTab({
       {transactionRequests.length > 0 && (
         <RequestList requests={transactionRequests} preferredCurrency={preferredCurrency} />
       )}
-      <div className="grid gap-6 xl:grid-cols-[2fr,3fr]">
+      <div className="grid gap-6 lg:grid-cols-[2fr,3fr]">
         <Card className="border-white/15 bg-white/10">
           <CardHeader className="gap-1">
             <CardTitle
@@ -406,7 +406,7 @@ export function TransactionsTab({
           <CardContent>
             <form id="transaction-form" onSubmit={handleTransactionSubmit} className="grid gap-4" tabIndex={-1}>
               {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-300" htmlFor="transactionType">
                     Type

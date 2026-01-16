@@ -59,7 +59,7 @@ export function OverviewTab({
       {transactionRequests.length > 0 && (
         <RequestList requests={transactionRequests} preferredCurrency={preferredCurrency} />
       )}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-white/15 bg-white/10">
           <CardHeader>
             <CardTitle

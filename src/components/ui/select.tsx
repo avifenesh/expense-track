@@ -21,7 +21,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           aria-invalid={ariaInvalid ?? (error ? 'true' : undefined)}
           className={cn(
-            'glass-select block w-full appearance-none rounded-lg border bg-white/10 px-3 py-2 pr-10 text-sm text-slate-100 shadow-inner shadow-slate-950/20 backdrop-blur focus:outline-none',
+            'glass-select block w-full appearance-none rounded-lg border bg-white/10 px-3 py-2.5 pr-10 text-sm text-slate-100 shadow-inner shadow-slate-950/20 backdrop-blur focus:outline-none sm:py-2',
             'transition focus:ring-offset-0 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400',
             error
               ? 'border-rose-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-400/40'

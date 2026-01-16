@@ -23,7 +23,7 @@ export function SharingTab({
     <div role="tabpanel" id="panel-sharing" aria-labelledby="tab-sharing" className="space-y-6">
       <SettlementSummary balances={settlementBalances} preferredCurrency={preferredCurrency} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <SharedExpensesList sharedExpenses={sharedExpenses} />
         <ExpensesSharedWithMe participations={expensesSharedWithMe} />
       </div>
