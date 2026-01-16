@@ -478,7 +478,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
         </div>
 
         {/* Compact stat cards at the bottom of header */}
-        <div className="relative z-10 mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="relative z-10 mt-5 grid grid-cols-1 gap-2 min-[375px]:grid-cols-2 md:grid-cols-4">
           {data.stats.map((stat) => {
             const variantKey = stat.variant ?? 'neutral'
             const styles = STAT_VARIANT_STYLES[variantKey]
