@@ -5,7 +5,7 @@ const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10)
 const SMTP_USER = process.env.SMTP_USER
 const SMTP_PASS = process.env.SMTP_PASS
-const SMTP_FROM = process.env.SMTP_FROM || 'noreply@balancebeacon.com'
+const SMTP_FROM = process.env.SMTP_FROM || 'noreply@balancebeacon.app'
 
 // APP_URL validation: require HTTPS in production
 const _rawAppUrl = process.env.APP_URL || 'http://localhost:3000'
