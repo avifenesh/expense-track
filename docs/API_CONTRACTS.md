@@ -149,7 +149,7 @@ Invalidate refresh token.
 
 ---
 
-### POST /api/v1/auth/register (NEW)
+### POST /api/v1/auth/register
 
 Register a new user account.
 
@@ -178,7 +178,7 @@ Register a new user account.
 
 ---
 
-### POST /api/v1/auth/verify-email (NEW)
+### POST /api/v1/auth/verify-email
 
 Verify email address with token.
 
@@ -204,7 +204,7 @@ Verify email address with token.
 
 ---
 
-### POST /api/v1/auth/resend-verification (NEW)
+### POST /api/v1/auth/resend-verification
 
 Resend verification email.
 
@@ -227,7 +227,7 @@ Resend verification email.
 
 ---
 
-### POST /api/v1/auth/request-reset (NEW)
+### POST /api/v1/auth/request-reset
 
 Request password reset email.
 
@@ -250,7 +250,7 @@ Request password reset email.
 
 ---
 
-### POST /api/v1/auth/reset-password (NEW)
+### POST /api/v1/auth/reset-password
 
 Reset password using token.
 
