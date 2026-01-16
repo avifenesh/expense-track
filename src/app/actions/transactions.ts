@@ -1,6 +1,6 @@
 'use server'
 
-import { Prisma, TransactionType, RequestStatus } from '@prisma/client'
+import { Currency, Prisma, TransactionType, RequestStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart, getMonthKey } from '@/utils/date'
@@ -33,7 +33,7 @@ async function createRecurringTemplateForTransaction(data: {
   categoryId: string
   type: TransactionType
   amount: number
-  currency: string
+  currency: Currency
   date: Date
   description?: string | null
   monthStart: Date
