@@ -124,6 +124,14 @@ Detailed, step-by-step notes live in [`docs/railway-deployment.md`](docs/railway
 - **Budget** – Planned spend/earn for a category + account in a given month.
 - **RecurringTemplate** – Permanent plan definitions that can be applied into transactions each month.
 
+## API Documentation
+
+REST API documentation for mobile app development:
+
+- **[API Audit](docs/API_AUDIT.md)** - Server actions vs REST endpoints analysis
+- **[API Contracts](docs/API_CONTRACTS.md)** - Request/response formats and endpoint specifications
+- **[API Versioning](docs/API_VERSIONING.md)** - Versioning strategy and deprecation policy
+
 ## Common Workflows
 
 - Add budgets for the month from the “Monthly Budgets” card, then capture spending as it happens.
