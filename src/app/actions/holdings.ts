@@ -32,10 +32,10 @@ export async function createHoldingAction(input: HoldingInput) {
     return access
   }
 
-  // Validate that category has isHolding = true
+  // Validate that category has isHolding = true and belongs to the user
   try {
     const category = await prisma.category.findUnique({
-      where: { id: data.categoryId },
+      where: { id: data.categoryId, userId: access.authUser.id },
     })
 
     if (!category) {
