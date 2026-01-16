@@ -109,16 +109,28 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
           passwordResetExpires: expires,
         },
       })
-
-      // Send reset email
-      await sendPasswordResetEmail(normalizedEmail, token)
     } catch (error) {
       serverLogger.error(
-        'Failed to process password reset request',
+        'Failed to store password reset token',
         { action: 'requestPasswordResetAction', input: { email: normalizedEmail } },
         error,
       )
       // Still return success to prevent enumeration
+      return success({
+        message: 'If an account exists with this email, you will receive password reset instructions.',
+      })
+    }
+
+    // Send reset email (separate try-catch for clearer error attribution)
+    try {
+      await sendPasswordResetEmail(normalizedEmail, token)
+    } catch (emailError) {
+      serverLogger.error(
+        'Failed to send password reset email',
+        { action: 'requestPasswordResetAction', input: { email: normalizedEmail } },
+        emailError,
+      )
+      // Do not rethrow - return success to prevent email enumeration
     }
   }
 
@@ -161,7 +173,11 @@ export async function resetPasswordAction(input: z.infer<typeof resetPasswordSch
       },
     })
 
-    // Send notification email (fire and forget)
+    // Send notification email (fire-and-forget pattern).
+    // This is intentionally not awaited because:
+    // 1. The password reset is already complete - user can log in
+    // 2. This is a non-critical notification, not a blocking operation
+    // 3. Email delivery failures are logged but don't affect the reset success
     sendPasswordChangedEmail(user.email).catch((error) => {
       serverLogger.error(
         'Failed to send password changed notification',

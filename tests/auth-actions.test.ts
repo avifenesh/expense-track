@@ -98,6 +98,7 @@ vi.mock('@/app/actions/shared', () => ({
 import { verifyCredentials, establishSession, clearSession, updateSessionAccount } from '@/lib/auth-server'
 import { rotateCsrfToken } from '@/lib/csrf'
 import { ensureAccountAccess, requireCsrfToken, requireAuthUser } from '@/app/actions/shared'
+import { sendPasswordResetEmail, sendPasswordChangedEmail } from '@/lib/email'
 import {
   loginAction,
   logoutAction,
@@ -484,6 +485,8 @@ describe('auth actions', () => {
     beforeEach(() => {
       vi.mocked(prisma.user.findUnique).mockReset()
       vi.mocked(prisma.user.update).mockReset()
+      vi.mocked(sendPasswordResetEmail).mockReset()
+      vi.mocked(sendPasswordResetEmail).mockResolvedValue({ success: true })
     })
 
     it('sends reset email for verified user', async () => {
@@ -508,6 +511,8 @@ describe('auth actions', () => {
           }),
         }),
       )
+      // Verify password reset email is sent with the correct email and a token
+      expect(sendPasswordResetEmail).toHaveBeenCalledWith('test1@example.com', expect.any(String))
     })
 
     it('returns same message for non-existent email (enumeration protection)', async () => {
@@ -520,6 +525,8 @@ describe('auth actions', () => {
         expect(response.data.message).toContain('If an account exists')
       }
       expect(prisma.user.update).not.toHaveBeenCalled()
+      // Verify no email is sent for non-existent user
+      expect(sendPasswordResetEmail).not.toHaveBeenCalled()
     })
 
     it('does not send email if user email not verified', async () => {
@@ -532,6 +539,8 @@ describe('auth actions', () => {
 
       expect('success' in response && response.success).toBe(true)
       expect(prisma.user.update).not.toHaveBeenCalled()
+      // Verify no email is sent for unverified user
+      expect(sendPasswordResetEmail).not.toHaveBeenCalled()
     })
 
     it('rejects invalid email format', async () => {
@@ -578,6 +587,8 @@ describe('auth actions', () => {
     beforeEach(() => {
       vi.mocked(prisma.user.findUnique).mockReset()
       vi.mocked(prisma.user.update).mockReset()
+      vi.mocked(sendPasswordChangedEmail).mockReset()
+      vi.mocked(sendPasswordChangedEmail).mockResolvedValue({ success: true })
     })
 
     it('resets password with valid token', async () => {
@@ -604,6 +615,8 @@ describe('auth actions', () => {
           }),
         }),
       )
+      // Verify password changed notification email is triggered
+      expect(sendPasswordChangedEmail).toHaveBeenCalledWith('test@example.com')
     })
 
     it('rejects expired token', async () => {

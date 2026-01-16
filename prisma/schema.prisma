@@ -335,15 +335,3 @@ enum SubscriptionStatus {
   CANCELED
   EXPIRED
 }
-
-enum SplitType {
-  EQUAL
-  PERCENTAGE
-  FIXED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  DECLINED
-}
