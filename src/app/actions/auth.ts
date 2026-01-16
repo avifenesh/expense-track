@@ -337,49 +337,62 @@ export async function deleteAccountAction(input: z.infer<typeof deleteAccountSch
     })
     const categoryIds = userCategories.map((c) => c.id)
 
-    // Delete all user data in correct order (respecting FK constraints)
-    // Also handle cross-account references where other users' transactions
-    // may reference this user's categories (from approved transaction requests)
-    await prisma.$transaction([
-      // 1. TransactionRequest - depends on Account, Category
-      prisma.transactionRequest.deleteMany({
-        where: {
-          OR: [{ fromId: { in: accountIds } }, { toId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
-        },
-      }),
-      // 2. Transaction - depends on Account, Category (includes cross-account refs)
-      prisma.transaction.deleteMany({
-        where: {
-          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
-        },
-      }),
-      // 3. Holding - depends on Account, Category
-      prisma.holding.deleteMany({
-        where: {
-          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
-        },
-      }),
-      // 4. Budget - depends on Account, Category
-      prisma.budget.deleteMany({
-        where: {
-          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
-        },
-      }),
-      // 5. RecurringTemplate - depends on Account, Category
-      prisma.recurringTemplate.deleteMany({
-        where: {
-          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
-        },
-      }),
-      // 6. DashboardCache - cleanup cached data for user's accounts
-      prisma.dashboardCache.deleteMany({
-        where: { accountId: { in: accountIds } },
-      }),
-      // 7. User deletion - cascades: Account, Category, RefreshToken, Subscription
-      prisma.user.delete({
-        where: { id: authUser.id },
-      }),
-    ])
+    // Build deletion operations, skipping empty array conditions to avoid SQL issues
+    const deleteOps = []
+
+    // 1. TransactionRequest - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) {
+        orConditions.push({ fromId: { in: accountIds } }, { toId: { in: accountIds } })
+      }
+      if (categoryIds.length > 0) {
+        orConditions.push({ categoryId: { in: categoryIds } })
+      }
+      deleteOps.push(prisma.transactionRequest.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 2. Transaction - depends on Account, Category (includes cross-account refs)
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.transaction.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 3. Holding - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.holding.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 4. Budget - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.budget.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 5. RecurringTemplate - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.recurringTemplate.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 6. DashboardCache - cleanup cached data for user's accounts
+    if (accountIds.length > 0) {
+      deleteOps.push(prisma.dashboardCache.deleteMany({ where: { accountId: { in: accountIds } } }))
+    }
+
+    // 7. User deletion - cascades: Account, Category, RefreshToken, Subscription
+    deleteOps.push(prisma.user.delete({ where: { id: authUser.id } }))
+
+    await prisma.$transaction(deleteOps)
 
     serverLogger.info('User account deleted (GDPR)', {
       action: 'deleteAccountAction',

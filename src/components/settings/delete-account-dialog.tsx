@@ -48,9 +48,16 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
     })
   }
 
+  const isLoading = !csrfToken
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative mx-4 w-full max-w-md rounded-2xl border border-rose-500/30 bg-slate-900 p-6 shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+        className="relative mx-4 w-full max-w-md rounded-2xl border border-rose-500/30 bg-slate-900 p-6 shadow-2xl"
+      >
         <button
           type="button"
           onClick={onClose}
@@ -66,7 +73,9 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
           </div>
         </div>
 
-        <h2 className="mb-2 text-center text-xl font-semibold text-white">Delete Your Account</h2>
+        <h2 id="delete-dialog-title" className="mb-2 text-center text-xl font-semibold text-white">
+          Delete Your Account
+        </h2>
         <p className="mb-6 text-center text-sm text-slate-300">
           This action is <strong className="text-rose-400">permanent and irreversible</strong>. All your data including
           transactions, budgets, categories, and settings will be deleted immediately.
@@ -101,10 +110,11 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
             variant="primary"
             className="flex-1 bg-rose-600 hover:bg-rose-700"
             onClick={handleDelete}
-            disabled={!isEmailMatch || isPending || !csrfToken}
-            loading={isPending}
+            disabled={!isEmailMatch || isPending || isLoading}
+            loading={isPending || isLoading}
+            title={isLoading ? 'Loading security token...' : undefined}
           >
-            Delete Account
+            {isLoading ? 'Loading...' : 'Delete Account'}
           </Button>
         </div>
       </div>

@@ -112,6 +112,7 @@ const TEST_USER_1 = {
   accountNames: ['Test1'],
   defaultAccountName: 'Test1',
   preferredCurrency: Currency.USD,
+  hasCompletedOnboarding: true,
 }
 
 const TEST_USER_2 = {
@@ -122,6 +123,7 @@ const TEST_USER_2 = {
   accountNames: ['Test2', 'Test3'],
   defaultAccountName: 'Test2',
   preferredCurrency: Currency.USD,
+  hasCompletedOnboarding: true,
 }
 
 // Helper to create mock Account objects with all required properties

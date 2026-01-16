@@ -328,7 +328,13 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             </Button>
             {showSettingsMenu && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} />
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowSettingsMenu(false)}
+                  role="button"
+                  aria-label="Close settings menu"
+                  tabIndex={-1}
+                />
                 <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl">
                   <button
                     type="button"
