@@ -44,6 +44,13 @@ if (Test-Path ".env.local") {
     Write-Host "✓ .env.local file copied" -ForegroundColor Green
 }
 
+# Copy .claude directory if it exists (for Claude Code settings)
+if (Test-Path ".claude") {
+    Write-Host "Copying .claude directory to worktree..." -ForegroundColor Cyan
+    Copy-Item -Recurse ".claude" "$WorktreePath\.claude"
+    Write-Host "✓ .claude directory copied" -ForegroundColor Green
+}
+
 Write-Host ""
 Write-Host "✓ Worktree created successfully!" -ForegroundColor Green
 Write-Host ""

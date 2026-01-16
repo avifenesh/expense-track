@@ -30,7 +30,38 @@
       "claimedAt": "2026-01-16T19:03:00Z",
       "worktreePath": "../expense-track-mobile-init-68",
       "branch": "feature/mobile-init-68"
+    },
+    {
+      "id": "70",
+      "title": "Create mobile authentication screens",
+      "status": "implementation_complete",
+      "branch": "feature/mobile-auth-screens-70",
+      "worktreePath": "C:/Users/avife/expense-track-mobile-auth-screens-70",
+      "startedAt": "2026-01-16T21:00:00Z",
+      "lastActivityAt": "2026-01-16T23:25:00Z",
+      "currentStep": "delivery-validated",
+      "deliveryValidationPassed": true
+    },
+    {
+      "id": "85",
+      "title": "Write Jest unit tests for mobile app",
+      "status": "shipped",
+      "claimedAt": "2026-01-16T20:21:00Z",
+      "completedAt": "2026-01-16T21:02:16Z",
+      "branch": "feature/mobile-jest-tests-85",
+      "pr": "https://github.com/avifenesh/expense-track/pull/153",
+      "mergeCommit": "a53c224f1d6d74ad4d3fc7d1fc2903341fe88133"
+    },
+    {
+      "id": "155",
+      "title": "Create Terms of Service, Pricing pages and update domain to balancebeacon.app",
+      "status": "in_progress",
+      "claimedAt": "2026-01-16T23:30:00Z",
+      "branch": "feature/legal-pages-155",
+      "worktreePath": "C:/Users/avife/expense-track-legal-pages-155",
+      "labels": ["infrastructure"],
+      "url": "https://github.com/avifenesh/expense-track/issues/155"
     }
   ],
-  "lastUpdated": "2026-01-16T19:03:00Z"
+  "lastUpdated": "2026-01-16T23:30:00Z"
 }

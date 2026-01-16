@@ -43,6 +43,13 @@ if [ -f ".env.local" ]; then
   echo "✓ .env.local file copied"
 fi
 
+# Copy .claude directory if it exists (for Claude Code settings)
+if [ -d ".claude" ]; then
+  echo "Copying .claude directory to worktree..."
+  cp -r .claude "$WORKTREE_PATH/.claude"
+  echo "✓ .claude directory copied"
+fi
+
 echo ""
 echo "✓ Worktree created successfully!"
 echo ""
