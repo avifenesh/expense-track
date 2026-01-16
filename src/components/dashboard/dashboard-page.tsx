@@ -24,6 +24,7 @@ import {
   Tags,
   Trash2,
   TrendingUp,
+  Users,
   Wallet,
 } from 'lucide-react'
 import { logoutAction, persistActiveAccountAction, refreshExchangeRatesAction } from '@/app/actions'
@@ -38,12 +39,19 @@ import { formatMonthLabel, shiftMonth } from '@/utils/date'
 import { cn } from '@/utils/cn'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { ChatWidget } from '@/components/ai/chat-widget'
-import { BudgetsTab, CategoriesTab, OverviewTab, RecurringTab, TransactionsTab } from '@/components/dashboard/tabs'
+import {
+  BudgetsTab,
+  CategoriesTab,
+  OverviewTab,
+  RecurringTab,
+  TransactionsTab,
+  SharingTab,
+} from '@/components/dashboard/tabs'
 import { SubscriptionBanner, type SubscriptionBannerData } from '@/components/subscription'
 import { DeleteAccountDialog } from '@/components/settings/delete-account-dialog'
 
 type Feedback = { type: 'success' | 'error'; message: string }
-type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories' | 'holdings'
+type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories' | 'holdings' | 'sharing'
 
 type DashboardPageProps = {
   data: DashboardData
@@ -92,6 +100,7 @@ const TABS: Array<{
   { value: 'recurring', label: 'Auto-repeat', icon: Repeat },
   { value: 'categories', label: 'Labels', icon: Tags },
   { value: 'holdings', label: 'Investments', icon: TrendingUp },
+  { value: 'sharing', label: 'Sharing', icon: Users },
 ]
 
 const STAT_VARIANT_STYLES: Record<
@@ -583,6 +592,16 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
               onSelectAccount={handleAccountSelect}
             />
           </Suspense>
+        )}
+
+        {/* Sharing Tab */}
+        {activeTab === 'sharing' && (
+          <SharingTab
+            sharedExpenses={data.sharedExpenses || []}
+            expensesSharedWithMe={data.expensesSharedWithMe || []}
+            settlementBalances={data.settlementBalances || []}
+            preferredCurrency={preferredCurrency}
+          />
         )}
       </section>
 
