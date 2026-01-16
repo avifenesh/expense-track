@@ -1,30 +1,13 @@
-import { StatusBar } from 'expo-status-bar'
-import { StyleSheet, Text, View } from 'react-native'
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from './src/navigation';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Expense Track</Text>
-      <Text style={styles.subtitle}>Mobile App</Text>
-      <StatusBar style="auto" />
-    </View>
-  )
+    <SafeAreaProvider>
+      <NavigationContainer />
+      <StatusBar style="light" />
+    </SafeAreaProvider>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-})

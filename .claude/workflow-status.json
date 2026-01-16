@@ -1,32 +1,33 @@
 {
   "version": "1.0.0",
   "task": {
-    "id": "68",
+    "id": "69",
     "source": "github",
-    "title": "Initialize React Native project with Expo",
-    "description": "Set up React Native mobile app foundation - initialize Expo project, configure TypeScript, set up linting and formatting, test iOS and Android builds.",
-    "url": "https://github.com/avife/expense-track/issues/68",
-    "sprint": "Sprint 3: Mobile App"
+    "title": "Set up React Navigation for mobile app",
+    "description": "Configure React Navigation library and core navigation structure for React Native mobile app",
+    "labels": ["mobile"],
+    "sprint": 3,
+    "url": "https://github.com/avife/expense-track/issues/69"
   },
   "workflow": {
-    "id": "worktree-setup-68",
-    "startedAt": "2026-01-16T19:03:00Z",
-    "lastActivityAt": "2026-01-16T19:03:00Z",
+    "id": "worktree-setup-69",
+    "startedAt": "2026-01-16T00:00:00Z",
+    "lastActivityAt": "2026-01-16T00:00:00Z",
     "status": "active",
-    "currentPhase": "worktree-setup"
+    "currentPhase": "planning"
   },
   "git": {
-    "branch": "feature/mobile-init-68",
-    "baseSha": "7fa28be584c3366970c0526b838ea8729b6f5409",
-    "currentSha": "7fa28be584c3366970c0526b838ea8729b6f5409",
+    "branch": "feature/react-navigation-69",
+    "baseSha": "88a2dbab39659406f9b73c4dd16104dcfa7a1cfa",
+    "currentSha": "88a2dbab39659406f9b73c4dd16104dcfa7a1cfa",
     "mainRepoPath": "C:\\Users\\avife\\expense-track"
   },
   "steps": [
     {
       "step": "worktree-created",
       "status": "completed",
-      "startedAt": "2026-01-16T19:03:00Z",
-      "completedAt": "2026-01-16T19:03:00Z"
+      "startedAt": "2026-01-16T00:00:00Z",
+      "completedAt": "2026-01-16T00:00:00Z"
     }
   ],
   "resume": {
