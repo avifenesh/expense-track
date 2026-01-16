@@ -113,70 +113,73 @@ async function main() {
   process.stdout.write('\n')
 
   // Execute rollback in a transaction - all data changes are atomic
-  process.stdout.write('Step 1: Reverting data ownership and subscriptions...\n')
+  process.stdout.write('Reverting data ownership and subscriptions...\n')
 
-  let rollbackSuccess = false
   let revertedAccounts = 0
   let revertedCategories = 0
   let deletedSubscriptions = 0
 
   try {
     await prisma.$transaction(async (tx) => {
-      // Revert account ownership
-      for (const account of state.accounts) {
+      // Revert account ownership in parallel for better performance
+      const accountPromises = state.accounts.map(async (account) => {
         try {
           await tx.account.update({
             where: { id: account.id },
             data: { userId: account.originalUserId },
           })
-          revertedAccounts++
+          return true
         } catch (error) {
           if (isRecordNotFoundError(error)) {
             process.stdout.write(`  Warning: Account ${account.id} not found (may have been deleted)\n`)
-          } else {
-            throw error // Re-throw to rollback transaction
+            return false
           }
+          throw error // Re-throw to rollback transaction
         }
-      }
+      })
+      const accountResults = await Promise.all(accountPromises)
+      revertedAccounts = accountResults.filter(Boolean).length
       process.stdout.write(`  Reverted ${revertedAccounts} account(s)\n`)
 
-      // Revert category ownership
-      for (const category of state.categories) {
+      // Revert category ownership in parallel
+      const categoryPromises = state.categories.map(async (category) => {
         try {
           await tx.category.update({
             where: { id: category.id },
             data: { userId: category.originalUserId },
           })
-          revertedCategories++
+          return true
         } catch (error) {
           if (isRecordNotFoundError(error)) {
             process.stdout.write(`  Warning: Category ${category.id} not found (may have been deleted)\n`)
-          } else {
-            throw error // Re-throw to rollback transaction
+            return false
           }
+          throw error // Re-throw to rollback transaction
         }
-      }
+      })
+      const categoryResults = await Promise.all(categoryPromises)
+      revertedCategories = categoryResults.filter(Boolean).length
       process.stdout.write(`  Reverted ${revertedCategories} category(ies)\n`)
 
-      // Delete subscriptions within the same transaction
-      for (const userId of state.createdSubscriptionUserIds) {
+      // Delete subscriptions in parallel within the same transaction
+      const subscriptionPromises = state.createdSubscriptionUserIds.map(async (userId) => {
         try {
           await tx.subscription.delete({
             where: { userId },
           })
-          deletedSubscriptions++
+          return true
         } catch (error) {
           if (isRecordNotFoundError(error)) {
             process.stdout.write(`  Warning: Subscription for user ${userId} not found\n`)
-          } else {
-            throw error // Re-throw to rollback transaction
+            return false
           }
+          throw error // Re-throw to rollback transaction
         }
-      }
+      })
+      const subscriptionResults = await Promise.all(subscriptionPromises)
+      deletedSubscriptions = subscriptionResults.filter(Boolean).length
       process.stdout.write(`  Deleted ${deletedSubscriptions} subscription(s)\n`)
     })
-
-    rollbackSuccess = true
   } catch (error) {
     process.stderr.write(`\nError during rollback transaction: ${error}\n`)
     process.stderr.write('Transaction rolled back. Original state preserved.\n')
@@ -186,9 +189,9 @@ async function main() {
   process.stdout.write('\n')
 
   // Optionally delete users created by migration
+  let deletedUsers = 0
   if (deleteUsers && state.createdUserIds.length > 0) {
-    process.stdout.write('Step 3: Deleting users created by migration...\n')
-    let deletedUsers = 0
+    process.stdout.write('Deleting users created by migration...\n')
     for (const userId of state.createdUserIds) {
       try {
         // Check if user still exists and has no other data
@@ -217,16 +220,12 @@ async function main() {
     }
     process.stdout.write(`  Deleted ${deletedUsers} user(s)\n\n`)
   } else if (state.createdUserIds.length > 0) {
-    process.stdout.write('Step 3: Skipping user deletion (use --delete-users flag to delete)\n')
+    process.stdout.write('Skipping user deletion (use --delete-users flag to delete)\n')
     process.stdout.write(`  ${state.createdUserIds.length} user(s) preserved\n\n`)
   }
 
-  // Only delete migration state file if rollback was fully successful
-  if (rollbackSuccess) {
-    deleteMigrationState()
-  } else {
-    markStateAsPartial()
-  }
+  // If we got here, rollback succeeded - delete migration state file
+  deleteMigrationState()
 
   // Summary
   process.stdout.write('='.repeat(50) + '\n')
@@ -236,7 +235,7 @@ async function main() {
   process.stdout.write(`  Categories reverted: ${revertedCategories}\n`)
   process.stdout.write(`  Subscriptions deleted: ${deletedSubscriptions}\n`)
   if (deleteUsers) {
-    process.stdout.write(`  Users deleted: ${state.createdUserIds.length}\n`)
+    process.stdout.write(`  Users deleted: ${deletedUsers}\n`)
   }
   process.stdout.write('\nData has been restored to legacy-user ownership.\n')
 }

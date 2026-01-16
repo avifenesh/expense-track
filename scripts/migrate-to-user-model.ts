@@ -288,13 +288,15 @@ async function main() {
   trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DURATION_DAYS)
 
   await prisma.$transaction(async (tx) => {
-    // Update account ownership
-    for (const mapping of accountMappings) {
-      await tx.account.update({
-        where: { id: mapping.accountId },
-        data: { userId: mapping.newUserId },
-      })
-    }
+    // Update account ownership in parallel for better performance
+    await Promise.all(
+      accountMappings.map((mapping) =>
+        tx.account.update({
+          where: { id: mapping.accountId },
+          data: { userId: mapping.newUserId },
+        }),
+      ),
+    )
     process.stdout.write(`  Updated ${accountMappings.length} account(s)\n`)
 
     // Update category ownership (all to primary user)
@@ -307,17 +309,19 @@ async function main() {
       process.stdout.write(`  Updated ${legacyCategories.length} category(ies)\n`)
     }
 
-    // Create subscriptions within the same transaction
-    for (const user of usersNeedingSubscription) {
-      await tx.subscription.create({
-        data: {
-          userId: user.id,
-          status: SubscriptionStatus.TRIALING,
-          trialEndsAt,
-        },
-      })
-      process.stdout.write(`  Created trial subscription for ${user.email}\n`)
-    }
+    // Create subscriptions in parallel within the same transaction
+    await Promise.all(
+      usersNeedingSubscription.map((user) =>
+        tx.subscription.create({
+          data: {
+            userId: user.id,
+            status: SubscriptionStatus.TRIALING,
+            trialEndsAt,
+          },
+        }),
+      ),
+    )
+    process.stdout.write(`  Created trial subscriptions for ${usersNeedingSubscription.length} user(s)\n`)
   })
   process.stdout.write('\n')
 
