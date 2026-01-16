@@ -172,14 +172,18 @@ function buildAccountScopedWhere(base: Prisma.TransactionWhereInput, accountId?:
   }
 }
 
-export async function getAccounts() {
+export async function getAccounts(userId?: string) {
+  const where = userId ? { userId } : {}
   return prisma.account.findMany({
+    where,
     orderBy: { name: 'asc' },
   })
 }
 
-export async function getCategories() {
+export async function getCategories(userId?: string) {
+  const where = userId ? { userId } : {}
   return prisma.category.findMany({
+    where,
     orderBy: { name: 'asc' },
   })
 }
@@ -331,15 +335,17 @@ export async function getDashboardData({
   accountId,
   preferredCurrency,
   accounts: providedAccounts,
+  userId,
 }: {
   monthKey: string
   accountId?: string
   preferredCurrency?: Currency
   accounts?: Awaited<ReturnType<typeof getAccounts>>
+  userId?: string
 }): Promise<DashboardData> {
   const monthStart = getMonthStartFromKey(monthKey)
   const previousMonthStart = subMonths(monthStart, 1)
-  const accounts = providedAccounts ?? (await getAccounts())
+  const accounts = providedAccounts ?? (await getAccounts(userId))
 
   const [
     categories,
@@ -351,7 +357,7 @@ export async function getDashboardData({
     historyTransactionsRaw,
     exchangeRateLastUpdate,
   ] = await Promise.all([
-    getCategories(),
+    getCategories(userId),
     getBudgetsForMonth({ monthKey, accountId }),
     getTransactionsForMonth({
       monthKey,

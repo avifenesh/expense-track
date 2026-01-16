@@ -21,10 +21,16 @@ const metrics = {
 /**
  * Generate cache key from dashboard parameters
  */
-function generateCacheKey(params: { monthKey: string; accountId?: string; preferredCurrency?: Currency }): string {
+function generateCacheKey(params: {
+  monthKey: string
+  accountId?: string
+  preferredCurrency?: Currency
+  userId?: string
+}): string {
   const account = params.accountId || 'ALL'
   const currency = params.preferredCurrency || 'DEFAULT'
-  return `dashboard:${params.monthKey}:${account}:${currency}`
+  const user = params.userId || 'ANON'
+  return `dashboard:${user}:${params.monthKey}:${account}:${currency}`
 }
 
 /**
@@ -39,6 +45,7 @@ export async function getCachedDashboardData(params: {
   accountId?: string
   preferredCurrency?: Currency
   accounts?: Awaited<ReturnType<typeof getAccounts>>
+  userId?: string
 }): Promise<DashboardData> {
   // If accounts are explicitly provided, bypass cache (used for pre-fetched data optimization)
   if (params.accounts) {
