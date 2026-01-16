@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const accounts = await getAccounts()
+    const accounts = await getAccounts(authUser.id)
     const allowedAccountNames = new Set(authUser.accountNames.map((name: string) => name.toLowerCase()))
     const allowedAccounts = accounts.filter((account) => allowedAccountNames.has(account.name.toLowerCase()))
 

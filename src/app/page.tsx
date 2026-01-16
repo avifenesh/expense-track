@@ -22,6 +22,7 @@ async function DashboardLoader({
   preferredCurrency,
   allAccounts,
   subscription,
+  userId,
 }: {
   monthKey: string
   accountId: string
@@ -29,12 +30,14 @@ async function DashboardLoader({
   preferredCurrency?: import('@prisma/client').Currency
   allAccounts: Awaited<ReturnType<typeof getAccounts>>
   subscription: SubscriptionBannerData | null
+  userId: string
 }) {
   const data = await getCachedDashboardData({
     monthKey,
     accountId,
     preferredCurrency,
     accounts: allAccounts,
+    userId,
   })
 
   return (
@@ -73,7 +76,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   const monthKey = typeof monthParam === 'string' && monthParam.length >= 7 ? monthParam : currentMonth
 
-  const accounts = await getAccounts()
+  const accounts = await getAccounts(authUser.id)
   const allowedAccountNames = new Set(authUser.accountNames)
   const allowedAccounts = accounts.filter((account) => allowedAccountNames.has(account.name))
   const accountLookup = new Map(allowedAccounts.map((account) => [account.id, account]))
@@ -128,6 +131,7 @@ export default async function Page({ searchParams }: PageProps) {
         preferredCurrency={authUser.preferredCurrency}
         allAccounts={accounts}
         subscription={subscription}
+        userId={authUser.id}
       />
     </Suspense>
   )

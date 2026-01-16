@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { updateTransaction, deleteTransaction, getTransactionById } from '@/lib/services/transaction-service'
 import { transactionUpdateSchema } from '@/schemas'
 import {
@@ -11,7 +11,7 @@ import {
   successResponse,
   rateLimitError,
 } from '@/lib/api-helpers'
-import { prisma } from '@/lib/prisma'
+import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -49,33 +49,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const data = parsed.data
 
-  // 3. Check existing transaction
-  const existing = await getTransactionById(id)
+  // 3. Check existing transaction (with userId filter via account)
+  const existing = await getTransactionById(id, user.userId)
   if (!existing) {
     return notFoundError('Transaction not found')
   }
 
-  // 4. Authorize access to existing account
-  const existingAccount = await prisma.account.findUnique({
-    where: { id: existing.accountId },
-  })
-  const authUser = await getUserAuthInfo(user.userId)
-
-  if (!existingAccount || !authUser.accountNames.includes(existingAccount.name)) {
-    return forbiddenError('You do not have access to this transaction')
-  }
-
-  // 5. If changing account, authorize new account
+  // 4. If changing account, authorize new account
   if (existing.accountId !== data.accountId) {
-    const newAccount = await prisma.account.findUnique({
-      where: { id: data.accountId },
-    })
-    if (!newAccount || !authUser.accountNames.includes(newAccount.name)) {
+    const newAccountOwnership = await ensureApiAccountOwnership(data.accountId, user.userId)
+    if (!newAccountOwnership.allowed) {
       return forbiddenError('You do not have access to the new account')
     }
   }
 
-  // 6. Execute update
+  // 5. Execute update
   try {
     await updateTransaction(data)
     return successResponse({ id })
@@ -102,23 +90,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
   incrementRateLimit(user.userId)
 
-  // 2. Check existing transaction
-  const existing = await getTransactionById(id)
+  // 2. Check existing transaction (with userId filter via account)
+  const existing = await getTransactionById(id, user.userId)
   if (!existing) {
     return notFoundError('Transaction not found')
   }
 
-  // 3. Authorize access
-  const account = await prisma.account.findUnique({
-    where: { id: existing.accountId },
-  })
-  const authUser = await getUserAuthInfo(user.userId)
-
-  if (!account || !authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this transaction')
-  }
-
-  // 4. Execute delete
+  // 3. Execute delete
   try {
     await deleteTransaction(id)
     return successResponse({ id })

@@ -31,10 +31,12 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
     category: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -377,15 +379,38 @@ describe('holding-service.ts', () => {
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.category.findUnique).mockResolvedValue(mockCategory as never)
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(mockCategory as never)
 
       const result = await validateHoldingCategory('cat-1')
 
       expect(result).toBe(true)
     })
 
+    it('should return true for valid holding category with userId filter', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        userId: 'user-1',
+        name: 'Stocks',
+        type: 'EXPENSE' as const,
+        color: null,
+        isHolding: true,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(mockCategory as never)
+
+      const result = await validateHoldingCategory('cat-1', 'user-1')
+
+      expect(prisma.category.findFirst).toHaveBeenCalledWith({
+        where: { id: 'cat-1', userId: 'user-1' },
+      })
+      expect(result).toBe(true)
+    })
+
     it('should throw if category not found', async () => {
-      vi.mocked(prisma.category.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
 
       await expect(validateHoldingCategory('nonexistent')).rejects.toThrow('Category not found')
     })
@@ -402,7 +427,7 @@ describe('holding-service.ts', () => {
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.category.findUnique).mockResolvedValue(mockCategory as never)
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(mockCategory as never)
 
       await expect(validateHoldingCategory('cat-1')).rejects.toThrow('Category must be marked as a holding category')
     })
