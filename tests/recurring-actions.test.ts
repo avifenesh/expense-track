@@ -103,6 +103,7 @@ describe('upsertRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({} as any)
@@ -142,6 +143,7 @@ describe('upsertRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.update).mockResolvedValue({} as any)
@@ -245,6 +247,7 @@ describe('upsertRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({} as any)
@@ -295,6 +298,7 @@ describe('toggleRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.update).mockResolvedValue({} as any)
@@ -362,6 +366,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
@@ -370,10 +375,10 @@ describe('applyRecurringTemplatesAction', () => {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         type: TransactionType.EXPENSE,
-        amount: { toNumber: () => 1000 },
+        amount: { toNumber: () => 100 },
         currency: Currency.USD,
-        dayOfMonth: 1,
-        description: 'Rent',
+        dayOfMonth: 31,
+        description: 'End of month',
         isActive: true,
       },
     ] as any)
@@ -410,6 +415,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
@@ -462,6 +468,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
@@ -470,10 +477,10 @@ describe('applyRecurringTemplatesAction', () => {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         type: TransactionType.EXPENSE,
-        amount: { toNumber: () => 100 },
+        amount: { toNumber: () => 1000 },
         currency: Currency.USD,
-        dayOfMonth: 31,
-        description: 'End of month',
+        dayOfMonth: 1,
+        description: 'Rent',
         isActive: true,
       },
     ] as any)
@@ -508,6 +515,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([])
@@ -541,6 +549,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([

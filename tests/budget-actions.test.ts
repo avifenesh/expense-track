@@ -107,8 +107,9 @@ describe('upsertBudgetAction', () => {
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
       id: 'acc-1',
-      name: 'DifferentAccount',
+      name: 'Account1',
       type: 'SELF',
+      userId: 'other-user',
     } as any)
 
     const result = await upsertBudgetAction({
@@ -144,6 +145,7 @@ describe('upsertBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.upsert).mockResolvedValue({} as any)
@@ -206,6 +208,7 @@ describe('upsertBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.upsert).mockResolvedValue({} as any)
@@ -264,6 +267,7 @@ describe('deleteBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.delete).mockResolvedValue({} as any)
@@ -304,6 +308,7 @@ describe('deleteBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.budget.delete).mockRejectedValue(new Error('Not found'))

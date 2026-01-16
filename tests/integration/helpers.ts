@@ -1,30 +1,29 @@
 import { prisma } from '@/lib/prisma'
 import { TransactionType, Currency, AccountType } from '@prisma/client'
 
-// Cache test user ID for integration tests
-let testUserId: string | null = null
+/**
+ * Fixed test user ID for integration tests.
+ * Used by both database setup and auth mocks to ensure consistent access checks.
+ */
+export const TEST_USER_ID = 'test-user-id'
+export const TEST_USER_EMAIL = 'test@example.com'
 
 /**
- * Get or create a test user for integration tests
+ * Get or create a test user for integration tests with a fixed ID.
  */
 export async function getTestUser() {
-  if (testUserId) {
-    const existing = await prisma.user.findUnique({ where: { id: testUserId } })
-    if (existing) return existing
-  }
+  const existing = await prisma.user.findUnique({ where: { id: TEST_USER_ID } })
+  if (existing) return existing
 
-  const user = await prisma.user.upsert({
-    where: { email: 'test-integration@example.com' },
-    update: {},
-    create: {
-      email: 'test-integration@example.com',
-      displayName: 'Integration Test User',
+  return prisma.user.create({
+    data: {
+      id: TEST_USER_ID,
+      email: TEST_USER_EMAIL,
+      displayName: 'Test User',
       passwordHash: '$2b$10$placeholder', // Not used for auth
       preferredCurrency: Currency.USD,
     },
   })
-  testUserId = user.id
-  return user
 }
 
 /**
@@ -114,12 +113,10 @@ export async function cleanupTestData() {
   await prisma.account.deleteMany({
     where: { name: { contains: 'TEST_' } },
   })
-  // Clean up test users (integration test user)
+  // Clean up test user (fixed ID)
   await prisma.user.deleteMany({
-    where: { email: { contains: 'test-integration' } },
+    where: { id: TEST_USER_ID },
   })
-  // Reset cached test user ID
-  testUserId = null
 }
 
 /**

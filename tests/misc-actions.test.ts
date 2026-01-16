@@ -200,6 +200,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -255,6 +256,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -310,6 +312,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     // Current: income 1000, expense 200 = net 800
@@ -351,6 +354,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
@@ -399,6 +403,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -459,6 +464,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({

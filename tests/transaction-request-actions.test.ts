@@ -204,6 +204,7 @@ describe('approveTransactionRequestAction', () => {
       id: 'serena-id',
       name: 'Serena',
       type: 'SELF',
+      userId: 'serena',
     } as any)
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)
@@ -249,6 +250,7 @@ describe('rejectTransactionRequestAction', () => {
       id: 'serena-id',
       name: 'Serena',
       type: 'SELF',
+      userId: 'serena',
     } as any)
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)

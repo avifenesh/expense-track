@@ -118,6 +118,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -156,6 +157,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -213,6 +215,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -250,6 +253,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
@@ -287,6 +291,7 @@ describe('createTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.create).mockRejectedValue(new Error('DB constraint violation'))
@@ -374,6 +379,7 @@ describe('updateTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
@@ -420,11 +426,13 @@ describe('updateTransactionAction', () => {
         id: 'acc-1',
         name: 'Account1',
         type: 'SELF',
+        userId: 'avi',
       } as any)
       .mockResolvedValueOnce({
         id: 'acc-2',
         name: 'Account2',
         type: 'SELF',
+        userId: 'avi',
       } as any)
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
@@ -468,6 +476,7 @@ describe('updateTransactionAction', () => {
       id: 'acc-unauthorized',
       name: 'UnauthorizedAccount',
       type: 'SELF',
+      userId: 'other-user',
     } as any)
 
     const result = await updateTransactionAction({
@@ -514,11 +523,13 @@ describe('updateTransactionAction', () => {
         id: 'acc-1',
         name: 'Account1',
         type: 'SELF',
+        userId: 'avi',
       } as any)
       .mockResolvedValueOnce({
         id: 'acc-unauthorized',
         name: 'UnauthorizedAccount',
         type: 'SELF',
+        userId: 'other-user',
       } as any)
 
     const result = await updateTransactionAction({
@@ -564,6 +575,7 @@ describe('updateTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.update).mockRejectedValue(new Error('DB deadlock'))
@@ -640,6 +652,7 @@ describe('deleteTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.delete).mockResolvedValue({} as any)
@@ -674,6 +687,7 @@ describe('deleteTransactionAction', () => {
       id: 'acc-2',
       name: 'DifferentAccount',
       type: 'SELF',
+      userId: 'other-user',
     } as any)
 
     const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
@@ -707,6 +721,7 @@ describe('deleteTransactionAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.transaction.delete).mockRejectedValue(new Error('DB error'))

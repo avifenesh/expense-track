@@ -306,8 +306,9 @@ describe('Subscription Enforcement', () => {
         updatedAt: new Date(),
       })
       vi.mocked(prisma.account.findUnique).mockResolvedValue(createMockAccount())
+      const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
-        createMockSubscription({ status: SubscriptionStatus.ACTIVE }),
+        createMockSubscription({ status: SubscriptionStatus.ACTIVE, currentPeriodEnd: futureDate }),
       )
 
       const { ensureAccountAccessWithSubscription } = await import('@/app/actions/shared')
