@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Currency, PaymentStatus } from '@prisma/client'
+import { PaymentStatus } from '@prisma/client'
 import { Check, X, Inbox } from 'lucide-react'
 import { declineShareAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
@@ -15,13 +15,9 @@ import type { ExpenseParticipationSummary } from '@/lib/finance'
 
 export type ExpensesSharedWithMeProps = {
   participations: ExpenseParticipationSummary[]
-  preferredCurrency: Currency
 }
 
-export function ExpensesSharedWithMe({
-  participations,
-  preferredCurrency: _preferredCurrency,
-}: ExpensesSharedWithMeProps) {
+export function ExpensesSharedWithMe({ participations }: ExpensesSharedWithMeProps) {
   const router = useRouter()
   const csrfToken = useCsrfToken()
   const [isPending, startTransition] = useTransition()

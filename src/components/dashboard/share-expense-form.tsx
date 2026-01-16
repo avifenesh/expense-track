@@ -98,8 +98,10 @@ export function ShareExpenseForm({
   const calculateShares = () => {
     const numParticipants = participants.length + 1 // +1 for the owner
     switch (splitType) {
-      case SplitType.EQUAL:
-        return Math.round((transactionAmount / numParticipants) * 100) / 100
+      case SplitType.EQUAL: {
+        const perPersonShare = transactionAmount / numParticipants
+        return Math.round(perPersonShare * participants.length * 100) / 100
+      }
       case SplitType.PERCENTAGE: {
         const totalPercentage = participants.reduce((sum, p) => sum + (p.sharePercentage || 0), 0)
         return Math.round(transactionAmount * (totalPercentage / 100) * 100) / 100

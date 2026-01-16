@@ -125,7 +125,10 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
       })
 
       const participantData = participantUsers.map((user) => {
-        const share = participantShares.get(user.email.toLowerCase())!
+        const share = participantShares.get(user.email.toLowerCase())
+        if (!share) {
+          throw new Error(`Share data not found for user ${user.email}`)
+        }
         return {
           sharedExpenseId: shared.id,
           userId: user.id,
@@ -143,7 +146,8 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
     })
 
     for (const user of participantUsers) {
-      const share = participantShares.get(user.email.toLowerCase())!
+      const share = participantShares.get(user.email.toLowerCase())
+      if (!share) continue // Skip if share not found (should not happen)
       sendExpenseSharedEmail({
         to: user.email,
         participantName: user.displayName,

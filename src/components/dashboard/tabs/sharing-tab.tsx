@@ -24,8 +24,8 @@ export function SharingTab({
       <SettlementSummary balances={settlementBalances} preferredCurrency={preferredCurrency} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SharedExpensesList sharedExpenses={sharedExpenses} preferredCurrency={preferredCurrency} />
-        <ExpensesSharedWithMe participations={expensesSharedWithMe} preferredCurrency={preferredCurrency} />
+        <SharedExpensesList sharedExpenses={sharedExpenses} />
+        <ExpensesSharedWithMe participations={expensesSharedWithMe} />
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Currency, PaymentStatus } from '@prisma/client'
+import { PaymentStatus } from '@prisma/client'
 import { Bell, Check, X, ChevronDown, ChevronUp, Users } from 'lucide-react'
 import { markSharePaidAction, cancelSharedExpenseAction, sendPaymentReminderAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
@@ -15,10 +15,9 @@ import type { SharedExpenseSummary } from '@/lib/finance'
 
 export type SharedExpensesListProps = {
   sharedExpenses: SharedExpenseSummary[]
-  preferredCurrency: Currency
 }
 
-export function SharedExpensesList({ sharedExpenses, preferredCurrency }: SharedExpensesListProps) {
+export function SharedExpensesList({ sharedExpenses }: SharedExpensesListProps) {
   const router = useRouter()
   const csrfToken = useCsrfToken()
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -107,7 +106,7 @@ export function SharedExpensesList({ sharedExpenses, preferredCurrency }: Shared
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="font-semibold text-white">{formatCurrency(expense.totalAmount, preferredCurrency)}</p>
+                    <p className="font-semibold text-white">{formatCurrency(expense.totalAmount, expense.currency)}</p>
                     <p className={cn('text-xs', expense.allSettled ? 'text-emerald-400' : 'text-amber-400')}>
                       {expense.allSettled
                         ? 'All settled'
