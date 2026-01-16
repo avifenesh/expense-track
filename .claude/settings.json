@@ -11,5 +11,17 @@
       "Bash(!git rev-parse:*)",
       "WebFetch"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "ONLY validate if CODE WAS WRITTEN (Edit or Write tools were used to modify src/ or tests/ files).\n\nIf this was exploration, research, Q&A, planning, or config changes only → return {\"ok\": true}\n\nIf code was written, verify Definition of Done:\n1. DB schema supports changes (if applicable)\n2. Actions return { success, data } or { success, error }\n3. UI shows loading states, toasts, errors\n4. Tests cover new functionality\n5. Types/lint/tests pass\n\nReturn {\"ok\": true} if all pass or no code was written.\nReturn {\"ok\": false, \"reason\": \"specific failing checkpoint\"} if implementation is incomplete."
+          }
+        ]
+      }
+    ]
   }
 }

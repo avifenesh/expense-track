@@ -16,10 +16,12 @@
     {
       "id": "67",
       "title": "Create API documentation with Swagger/OpenAPI",
-      "status": "in_progress",
+      "status": "completed",
       "claimedAt": "2026-01-16T00:00:00Z",
+      "completedAt": "2026-01-16T19:10:00Z",
       "worktreePath": "../expense-track-api-docs",
-      "branch": "feature/67-api-documentation"
+      "branch": "feature/67-api-documentation",
+      "pr": "https://github.com/avifenesh/expense-track/pull/150"
     },
     {
       "id": "68",
