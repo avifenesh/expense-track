@@ -47,16 +47,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const data = parsed.data
 
-  // 3. Check category exists
-  const existing = await getCategoryById(id)
+  // 3. Check category exists and belongs to user (userId filter prevents cross-user access)
+  const existing = await getCategoryById(id, user.userId)
   if (!existing) {
     return notFoundError('Category not found')
   }
 
-  // 4. Execute archive (categories are global, no account authorization needed)
+  // 4. Execute archive
   try {
     await archiveCategory({
       id,
+      userId: user.userId,
       isArchived: data.isArchived,
     })
     return successResponse({ id, isArchived: data.isArchived })

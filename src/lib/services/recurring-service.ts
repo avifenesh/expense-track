@@ -68,8 +68,15 @@ export async function toggleRecurringTemplate(input: ToggleRecurringTemplateInpu
 
 /**
  * Get a recurring template by ID
+ * If userId is provided, only returns the template if it belongs to that user (via account)
  */
-export async function getRecurringTemplateById(id: string) {
+export async function getRecurringTemplateById(id: string, userId?: string) {
+  if (userId) {
+    return await prisma.recurringTemplate.findFirst({
+      where: { id, account: { userId } },
+      include: { account: true },
+    })
+  }
   return await prisma.recurringTemplate.findUnique({ where: { id } })
 }
 

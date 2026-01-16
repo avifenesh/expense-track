@@ -1,17 +1,15 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { updateHolding, deleteHolding, getHoldingById } from '@/lib/services/holding-service'
 import { updateHoldingSchema } from '@/schemas'
 import {
   validationError,
   authError,
-  forbiddenError,
   notFoundError,
   serverError,
   successResponse,
   rateLimitError,
 } from '@/lib/api-helpers'
-import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -49,22 +47,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const data = parsed.data
 
-  // 3. Check holding exists
-  const existing = await getHoldingById(id)
+  // 3. Check holding exists and belongs to user (via account)
+  const existing = await getHoldingById(id, user.userId)
   if (!existing) {
     return notFoundError('Holding not found')
   }
 
-  // 4. Authorize account access
-  const account = await prisma.account.findUnique({ where: { id: existing.accountId } })
-  if (!account) return notFoundError('Account not found')
-
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
-  }
-
-  // 5. Execute update
+  // 4. Execute update
   try {
     await updateHolding(data)
     return successResponse({ id })
@@ -91,22 +80,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
   incrementRateLimit(user.userId)
 
-  // 2. Check holding exists
-  const existing = await getHoldingById(id)
+  // 2. Check holding exists and belongs to user (via account)
+  const existing = await getHoldingById(id, user.userId)
   if (!existing) {
     return notFoundError('Holding not found')
   }
 
-  // 3. Authorize account access
-  const account = await prisma.account.findUnique({ where: { id: existing.accountId } })
-  if (!account) return notFoundError('Account not found')
-
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
-  }
-
-  // 4. Execute delete
+  // 3. Execute delete
   try {
     await deleteHolding(id)
     return successResponse({ id })
