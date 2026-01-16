@@ -19,6 +19,8 @@ import { RequestList } from '@/components/dashboard/request-list'
 import { ShareExpenseForm } from '@/components/dashboard/share-expense-form'
 import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
+import { useOptimisticList, generateTempId } from '@/hooks/useOptimisticList'
+import { useFormValidation, validators } from '@/hooks/useFormValidation'
 import {
   DashboardCategory,
   DashboardAccount,
@@ -52,6 +54,21 @@ export function TransactionsTab({
 }: TransactionsTabProps) {
   const router = useRouter()
   const csrfToken = useCsrfToken()
+
+  // Optimistic state for transactions
+  const {
+    items: optimisticTransactions,
+    optimisticAdd,
+    optimisticUpdate,
+    optimisticDelete,
+  } = useOptimisticList(transactions)
+
+  // Form validation with blur-based validation
+  const validation = useFormValidation({
+    categoryId: { rules: [validators.required('Please select a category.')], validateOnBlur: true },
+    amount: { rules: [validators.positiveNumber('Enter an amount greater than zero.')], validateOnBlur: true },
+    date: { rules: [validators.validDate('Please select a valid date.')], validateOnBlur: true },
+  })
 
   // Derived values (memoized to prevent unnecessary re-renders)
   const defaultExpenseCategoryId = useMemo(
@@ -133,12 +150,12 @@ export function TransactionsTab({
 
   const filteredTransactions = useMemo(
     () =>
-      filterTransactions(transactions, {
+      filterTransactions(optimisticTransactions, {
         type: transactionFilterType,
         search: transactionSearch,
         accountId: transactionAccountFilter === 'all' ? undefined : transactionAccountFilter || undefined,
       }),
-    [transactions, transactionFilterType, transactionSearch, transactionAccountFilter],
+    [optimisticTransactions, transactionFilterType, transactionSearch, transactionAccountFilter],
   )
 
   const getDefaultCategoryId = useCallback(
@@ -205,7 +222,8 @@ export function TransactionsTab({
     })
     setEditingTransaction(null)
     setFormErrors(null)
-  }, [activeAccount, getDefaultCategoryId, monthKey, preferredCurrency, resolveLoggableAccountId])
+    validation.resetAll()
+  }, [activeAccount, getDefaultCategoryId, monthKey, preferredCurrency, resolveLoggableAccountId, validation])
 
   const handleTransactionTypeChange = useCallback(
     (nextType: TransactionType) => {
@@ -248,32 +266,55 @@ export function TransactionsTab({
     event.preventDefault()
     setFormErrors(null)
 
-    const errors: FormErrors = {}
+    // Validate all fields
+    const isValid = validation.validateAll({
+      categoryId: transactionFormState.categoryId,
+      amount: transactionFormState.amount,
+      date: transactionFormState.date,
+    })
 
-    if (!transactionFormState.categoryId) {
-      errors.categoryId = ['Please select a category.']
-    }
-
-    const dateInput = normalizeDateInput(transactionFormState.date)
-    if (!dateInput) {
-      errors.date = ['Please select a valid date.']
-    }
-
-    const parsedAmount = Number.parseFloat(transactionFormState.amount)
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      errors.amount = ['Enter an amount greater than zero.']
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors)
+    if (!isValid) {
+      setFormErrors(validation.errors)
       return
     }
 
+    const dateInput = normalizeDateInput(transactionFormState.date)
+    const parsedAmount = Number.parseFloat(transactionFormState.amount)
     const description = transactionFormState.description.trim()
+    const accountId = transactionFormState.accountId || activeAccount || defaultAccountId
+
+    // Find category and account for optimistic display
+    const category = categories.find((c) => c.id === transactionFormState.categoryId)
+    const account = accounts.find((a) => a.id === accountId)
+
+    // Create optimistic transaction data (uses type assertion since it will be replaced by server data on refresh)
+    const optimisticData = {
+      id: editingTransaction?.id || generateTempId(),
+      type: transactionFormState.type,
+      accountId,
+      categoryId: transactionFormState.categoryId,
+      amount: parsedAmount,
+      currency: transactionFormState.currency,
+      date: new Date(dateInput!),
+      description: description.length > 0 ? description : null,
+      isRecurring: transactionFormState.isRecurring,
+      convertedAmount: parsedAmount,
+      displayCurrency: transactionFormState.currency,
+      month: monthKey,
+      category: category ?? { id: '', name: 'Unknown', type: transactionFormState.type },
+      account: account ?? { id: '', name: 'Unknown' },
+    } as DashboardTransaction
+
+    // Apply optimistic update immediately
+    if (editingTransaction) {
+      optimisticUpdate(editingTransaction.id, optimisticData)
+    } else {
+      optimisticAdd(optimisticData)
+    }
 
     startTransaction(async () => {
       const payload = {
-        accountId: transactionFormState.accountId || activeAccount || defaultAccountId,
+        accountId,
         categoryId: transactionFormState.categoryId,
         type: transactionFormState.type,
         amount: parsedAmount,
@@ -290,9 +331,10 @@ export function TransactionsTab({
       if ('error' in result) {
         const serverErrors = result.error as FormErrors
         setFormErrors(serverErrors)
+        validation.setFieldsFromServer(serverErrors)
         toast.error(
           editingTransaction
-            ? 'Unable to update transaction. Please check required fields.'
+            ? 'Unable to update transaction. Changes have been reverted.'
             : 'Unable to save transaction. Please check required fields.',
         )
         return
@@ -305,10 +347,14 @@ export function TransactionsTab({
   }
 
   const handleTransactionDelete = (id: string) => {
+    // Apply optimistic delete immediately
+    optimisticDelete(id)
+
     startTransaction(async () => {
       const result = await deleteTransactionAction({ id, csrfToken })
       if ('error' in result) {
-        toast.error('Could not delete transaction.')
+        toast.error('Could not delete transaction. The item has been restored.')
+        router.refresh() // Refresh to restore the item
         return
       }
       if (editingTransaction?.id === id) {
@@ -399,20 +445,26 @@ export function TransactionsTab({
                     id="transactionCategory"
                     name="categoryId"
                     value={transactionFormState.categoryId}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setTransactionFormState((prev) => ({
                         ...prev,
                         categoryId: event.target.value,
                       }))
-                    }
+                      validation.getFieldProps('categoryId').onChange()
+                    }}
+                    onBlur={() => {
+                      validation.validateField('categoryId', transactionFormState.categoryId)
+                    }}
                     options={transactionCategoryOptions}
                     required
                     disabled={transactionCategoryOptions.length === 0}
+                    error={validation.fields.categoryId?.touched && !!validation.fields.categoryId?.error}
+                    valid={validation.fields.categoryId?.touched && validation.fields.categoryId?.valid}
                     aria-describedby={formErrors?.categoryId ? 'categoryId-error' : undefined}
                   />
-                  {formErrors?.categoryId && (
-                    <p id="categoryId-error" className="text-xs text-rose-300">
-                      {formErrors.categoryId[0]}
+                  {(formErrors?.categoryId || validation.fields.categoryId?.error) && (
+                    <p id="categoryId-error" className="text-xs text-rose-300" role="alert">
+                      {formErrors?.categoryId?.[0] || validation.fields.categoryId?.error}
                     </p>
                   )}
                 </div>
@@ -428,17 +480,23 @@ export function TransactionsTab({
                     min="0"
                     required
                     value={transactionFormState.amount}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setTransactionFormState((prev) => ({
                         ...prev,
                         amount: event.target.value,
                       }))
-                    }
+                      validation.getFieldProps('amount').onChange()
+                    }}
+                    onBlur={() => {
+                      validation.validateField('amount', transactionFormState.amount)
+                    }}
+                    error={validation.fields.amount?.touched && !!validation.fields.amount?.error}
+                    valid={validation.fields.amount?.touched && validation.fields.amount?.valid}
                     aria-describedby={formErrors?.amount ? 'amount-error' : undefined}
                   />
-                  {formErrors?.amount && (
-                    <p id="amount-error" className="text-xs text-rose-300">
-                      {formErrors.amount[0]}
+                  {(formErrors?.amount || validation.fields.amount?.error) && (
+                    <p id="amount-error" className="text-xs text-rose-300" role="alert">
+                      {formErrors?.amount?.[0] || validation.fields.amount?.error}
                     </p>
                   )}
                 </div>
@@ -468,18 +526,24 @@ export function TransactionsTab({
                     id="transactionDate"
                     type="date"
                     value={transactionFormState.date}
-                    onChange={(event) =>
+                    onChange={(event) => {
                       setTransactionFormState((prev) => ({
                         ...prev,
                         date: event.target.value,
                       }))
-                    }
+                      validation.getFieldProps('date').onChange()
+                    }}
+                    onBlur={() => {
+                      validation.validateField('date', transactionFormState.date)
+                    }}
                     required
+                    error={validation.fields.date?.touched && !!validation.fields.date?.error}
+                    valid={validation.fields.date?.touched && validation.fields.date?.valid}
                     aria-describedby={formErrors?.date ? 'date-error' : undefined}
                   />
-                  {formErrors?.date && (
-                    <p id="date-error" className="text-xs text-rose-300">
-                      {formErrors.date[0]}
+                  {(formErrors?.date || validation.fields.date?.error) && (
+                    <p id="date-error" className="text-xs text-rose-300" role="alert">
+                      {formErrors?.date?.[0] || validation.fields.date?.error}
                     </p>
                   )}
                 </div>
@@ -597,7 +661,7 @@ export function TransactionsTab({
                   <div className="rounded-full bg-white/10 p-3">
                     <CreditCard className="h-6 w-6 text-slate-300" />
                   </div>
-                  {transactions.length === 0 ? (
+                  {optimisticTransactions.length === 0 ? (
                     <>
                       <p className="text-sm font-medium text-white">No transactions yet</p>
                       <p className="text-xs text-slate-400">Record your first expense or income on the left panel.</p>
@@ -610,69 +674,78 @@ export function TransactionsTab({
                   )}
                 </div>
               )}
-              {filteredTransactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2 font-medium text-white">
-                      <span>{transaction.category.name}</span>
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-slate-200">
-                        {transaction.account.name}
-                      </span>
-                      {transaction.isRecurring && (
-                        <span className="rounded-full bg-sky-400/20 px-2 py-0.5 text-[11px] font-medium text-sky-200">
-                          Recurring
+              {filteredTransactions.map((transaction) => {
+                const isOptimistic = transaction.id.startsWith('temp-')
+                return (
+                  <div
+                    key={transaction.id}
+                    className={cn(
+                      'flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between',
+                      isOptimistic && 'opacity-60 animate-pulse',
+                    )}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                        <span>{transaction.category.name}</span>
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-slate-200">
+                          {transaction.account.name}
                         </span>
-                      )}
+                        {transaction.isRecurring && (
+                          <span className="rounded-full bg-sky-400/20 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                            Recurring
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-300">
+                        {new Date(transaction.date).toLocaleDateString()} ·{' '}
+                        {transaction.description || 'No description'}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-300">
-                      {new Date(transaction.date).toLocaleDateString()} · {transaction.description || 'No description'}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={cn(
-                        'text-sm font-semibold',
-                        transaction.type === TransactionType.EXPENSE ? 'text-rose-300' : 'text-emerald-300',
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={cn(
+                          'text-sm font-semibold',
+                          transaction.type === TransactionType.EXPENSE ? 'text-rose-300' : 'text-emerald-300',
+                        )}
+                      >
+                        {formatRelativeAmount(
+                          transaction.type === TransactionType.EXPENSE ? -transaction.amount : transaction.amount,
+                          preferredCurrency,
+                        )}
+                      </span>
+                      {transaction.type === TransactionType.EXPENSE && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-xs text-sky-300 hover:bg-sky-500/20"
+                          onClick={() => setSharingTransaction(transaction)}
+                          title="Share expense"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                        </Button>
                       )}
-                    >
-                      {formatRelativeAmount(
-                        transaction.type === TransactionType.EXPENSE ? -transaction.amount : transaction.amount,
-                        preferredCurrency,
-                      )}
-                    </span>
-                    {transaction.type === TransactionType.EXPENSE && (
                       <Button
                         type="button"
                         variant="ghost"
-                        className="text-xs text-sky-300 hover:bg-sky-500/20"
-                        onClick={() => setSharingTransaction(transaction)}
-                        title="Share expense"
+                        className="text-xs text-slate-400 hover:bg-slate-100"
+                        onClick={() => handleTransactionEdit(transaction)}
+                        disabled={isOptimistic}
                       >
-                        <Users className="h-3.5 w-3.5" />
+                        Edit
                       </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="text-xs text-slate-400 hover:bg-slate-100"
-                      onClick={() => handleTransactionEdit(transaction)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="text-xs text-rose-200 hover:bg-rose-500/20"
-                      onClick={() => handleTransactionDelete(transaction.id)}
-                    >
-                      Delete
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-xs text-rose-200 hover:bg-rose-500/20"
+                        onClick={() => handleTransactionDelete(transaction.id)}
+                        disabled={isOptimistic}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>

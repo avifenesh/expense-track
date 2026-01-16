@@ -15,6 +15,7 @@ import { formatCurrency } from '@/utils/format'
 import { cn } from '@/utils/cn'
 import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
+import { useFormValidation, validators } from '@/hooks/useFormValidation'
 import { DashboardCategory, DashboardAccount, DashboardBudget, typeFilterOptions, currencyOptions } from './types'
 
 type FormErrors = Partial<Record<string, string[]>>
@@ -39,11 +40,18 @@ export function BudgetsTab({
   const router = useRouter()
   const csrfToken = useCsrfToken()
 
+  // Form validation with blur-based validation
+  const validation = useFormValidation({
+    categoryId: { rules: [validators.required('Please select a category.')], validateOnBlur: true },
+    planned: { rules: [validators.nonNegativeNumber('Enter a valid planned amount.')], validateOnBlur: true },
+  })
+
   // Local state
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(activeAccount)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
   const [isPendingBudget, startBudget] = useTransition()
   const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
+  const [deletingBudgetKey, setDeletingBudgetKey] = useState<string | null>(null)
 
   // Derived options
   const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
@@ -69,20 +77,17 @@ export function BudgetsTab({
     const form = event.currentTarget
     const formData = new FormData(form)
 
-    const errors: FormErrors = {}
     const categoryId = formData.get('budgetCategoryId') as string
     const planned = Number(formData.get('planned') || 0)
 
-    if (!categoryId) {
-      errors.categoryId = ['Please select a category.']
-    }
+    // Validate all fields
+    const isValid = validation.validateAll({
+      categoryId,
+      planned: String(planned),
+    })
 
-    if (!Number.isFinite(planned) || planned < 0) {
-      errors.planned = ['Enter a valid planned amount.']
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors)
+    if (!isValid) {
+      setFormErrors(validation.errors)
       return
     }
 
@@ -101,17 +106,22 @@ export function BudgetsTab({
       if ('error' in result) {
         const serverErrors = result.error as FormErrors
         setFormErrors(serverErrors)
+        validation.setFieldsFromServer(serverErrors)
         toast.error('Could not save budget.')
         return
       }
       toast.success('Budget updated.')
       setFormErrors(null)
+      validation.resetAll()
       form.reset()
       router.refresh()
     })
   }
 
   const handleBudgetDelete = (categoryId: string, accountIdForBudget: string) => {
+    const budgetKey = `${categoryId}-${accountIdForBudget}`
+    setDeletingBudgetKey(budgetKey)
+
     startBudget(async () => {
       const result = await deleteBudgetAction({
         categoryId,
@@ -119,6 +129,7 @@ export function BudgetsTab({
         monthKey,
         csrfToken,
       })
+      setDeletingBudgetKey(null)
       if ('error' in result) {
         toast.error('Could not remove budget entry.')
         return
@@ -215,11 +226,16 @@ export function BudgetsTab({
               const actualLabel = budget.categoryType === TransactionType.EXPENSE ? 'spent' : 'received'
               const progressColor =
                 budget.categoryType === TransactionType.EXPENSE ? 'bg-rose-400/80' : 'bg-emerald-300/80'
+              const budgetKey = `${budget.categoryId}-${budget.accountId}`
+              const isDeleting = deletingBudgetKey === budgetKey
 
               return (
                 <div
                   key={`${budget.categoryId}-${budget.budgetId}`}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+                  className={cn(
+                    'rounded-2xl border border-white/10 bg-white/5 px-4 py-4',
+                    isDeleting && 'opacity-50 animate-pulse',
+                  )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -239,8 +255,9 @@ export function BudgetsTab({
                       variant="ghost"
                       className="text-xs text-rose-200 hover:bg-rose-500/20"
                       onClick={() => handleBudgetDelete(budget.categoryId, budget.accountId)}
+                      disabled={isDeleting}
                     >
-                      Remove
+                      {isDeleting ? 'Removing...' : 'Remove'}
                     </Button>
                   </div>
                   <div className="mt-3">
@@ -299,11 +316,19 @@ export function BudgetsTab({
                     .filter((category) => category.type === TransactionType.EXPENSE && !category.isArchived)
                     .map((category) => ({ label: category.name, value: category.id }))}
                   required
-                  aria-describedby={formErrors?.categoryId ? 'budget-categoryId-error' : undefined}
+                  onBlur={(e) => validation.validateField('categoryId', e.target.value)}
+                  onChange={() => validation.getFieldProps('categoryId').onChange()}
+                  error={validation.fields.categoryId?.touched && !!validation.fields.categoryId?.error}
+                  valid={validation.fields.categoryId?.touched && validation.fields.categoryId?.valid}
+                  aria-describedby={
+                    formErrors?.categoryId || validation.fields.categoryId?.error
+                      ? 'budget-categoryId-error'
+                      : undefined
+                  }
                 />
-                {formErrors?.categoryId && (
-                  <p id="budget-categoryId-error" className="text-xs text-rose-300">
-                    {formErrors.categoryId[0]}
+                {(formErrors?.categoryId || validation.fields.categoryId?.error) && (
+                  <p id="budget-categoryId-error" className="text-xs text-rose-300" role="alert">
+                    {formErrors?.categoryId?.[0] || validation.fields.categoryId?.error}
                   </p>
                 )}
               </div>
@@ -318,11 +343,17 @@ export function BudgetsTab({
                   min="0"
                   step="0.01"
                   required
-                  aria-describedby={formErrors?.planned ? 'budget-planned-error' : undefined}
+                  onBlur={(e) => validation.validateField('planned', e.target.value)}
+                  onChange={() => validation.getFieldProps('planned').onChange()}
+                  error={validation.fields.planned?.touched && !!validation.fields.planned?.error}
+                  valid={validation.fields.planned?.touched && validation.fields.planned?.valid}
+                  aria-describedby={
+                    formErrors?.planned || validation.fields.planned?.error ? 'budget-planned-error' : undefined
+                  }
                 />
-                {formErrors?.planned && (
-                  <p id="budget-planned-error" className="text-xs text-rose-300">
-                    {formErrors.planned[0]}
+                {(formErrors?.planned || validation.fields.planned?.error) && (
+                  <p id="budget-planned-error" className="text-xs text-rose-300" role="alert">
+                    {formErrors?.planned?.[0] || validation.fields.planned?.error}
                   </p>
                 )}
               </div>
