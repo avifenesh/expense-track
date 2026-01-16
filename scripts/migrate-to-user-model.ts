@@ -34,6 +34,7 @@ config()
 const DATABASE_URL = process.env.DATABASE_URL
 const LEGACY_USER_ID = 'legacy-user'
 const STATE_FILE = path.join(__dirname, '.migration-state.json')
+const VALID_CURRENCIES = Object.values(Currency)
 
 if (!DATABASE_URL) {
   process.stderr.write('Error: DATABASE_URL is not set\n')
@@ -59,6 +60,17 @@ interface MigrationState {
 }
 
 /**
+ * Validate and parse currency from environment variable
+ */
+function parseCurrency(value: string | undefined): Currency {
+  const trimmed = value?.trim()
+  if (trimmed && VALID_CURRENCIES.includes(trimmed as Currency)) {
+    return trimmed as Currency
+  }
+  return Currency.USD
+}
+
+/**
  * Parse user data from environment variables
  * User 1 is required, User 2 is optional
  */
@@ -70,7 +82,7 @@ function parseUserEnvVars(): MigrationUser[] {
   const user1DisplayName = process.env.AUTH_USER1_DISPLAY_NAME?.trim()
   const user1PasswordHashRaw = process.env.AUTH_USER1_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
   const user1PasswordHash = user1PasswordHashRaw?.replace(/\\\$/g, '$')
-  const user1PreferredCurrency = (process.env.AUTH_USER1_PREFERRED_CURRENCY as Currency) || Currency.USD
+  const user1PreferredCurrency = parseCurrency(process.env.AUTH_USER1_PREFERRED_CURRENCY)
 
   if (!user1Email || !user1DisplayName || !user1PasswordHash) {
     throw new Error(
@@ -90,7 +102,7 @@ function parseUserEnvVars(): MigrationUser[] {
   const user2DisplayName = process.env.AUTH_USER2_DISPLAY_NAME?.trim()
   const user2PasswordHashRaw = process.env.AUTH_USER2_PASSWORD_HASH?.trim().replace(/^["']|["']$/g, '')
   const user2PasswordHash = user2PasswordHashRaw?.replace(/\\\$/g, '$')
-  const user2PreferredCurrency = (process.env.AUTH_USER2_PREFERRED_CURRENCY as Currency) || Currency.USD
+  const user2PreferredCurrency = parseCurrency(process.env.AUTH_USER2_PREFERRED_CURRENCY)
 
   if (user2Email && user2DisplayName && user2PasswordHash) {
     users.push({
@@ -251,8 +263,29 @@ async function main() {
     process.stdout.write(`  Will assign all to primary user: ${primaryUser.email}\n\n`)
   }
 
-  // Step 5: Execute migration in a transaction
-  process.stdout.write('Step 5: Executing migration transaction...\n')
+  // Pre-compute which users need subscriptions (before transaction)
+  process.stdout.write('Step 5: Checking existing subscriptions...\n')
+  const usersNeedingSubscription: typeof createdUsers = []
+  for (const user of createdUsers) {
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    })
+    if (!existingSubscription) {
+      usersNeedingSubscription.push(user)
+      migrationState.createdSubscriptionUserIds.push(user.id)
+    } else {
+      process.stdout.write(`  Subscription already exists for ${user.email}\n`)
+    }
+  }
+  process.stdout.write('\n')
+
+  // Save migration state BEFORE the transaction so we can rollback if needed
+  saveMigrationState(migrationState)
+
+  // Step 6: Execute all changes in a single transaction for atomicity
+  process.stdout.write('Step 6: Executing migration transaction...\n')
+  const trialEndsAt = new Date()
+  trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DURATION_DAYS)
 
   await prisma.$transaction(async (tx) => {
     // Update account ownership
@@ -273,37 +306,20 @@ async function main() {
       })
       process.stdout.write(`  Updated ${legacyCategories.length} category(ies)\n`)
     }
-  })
-  process.stdout.write('\n')
 
-  // Step 6: Create trial subscriptions
-  process.stdout.write('Step 6: Creating subscriptions...\n')
-  const trialEndsAt = new Date()
-  trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DURATION_DAYS)
-
-  for (const user of createdUsers) {
-    const existingSubscription = await prisma.subscription.findUnique({
-      where: { userId: user.id },
-    })
-
-    if (!existingSubscription) {
-      await prisma.subscription.create({
+    // Create subscriptions within the same transaction
+    for (const user of usersNeedingSubscription) {
+      await tx.subscription.create({
         data: {
           userId: user.id,
           status: SubscriptionStatus.TRIALING,
           trialEndsAt,
         },
       })
-      migrationState.createdSubscriptionUserIds.push(user.id)
       process.stdout.write(`  Created trial subscription for ${user.email}\n`)
-    } else {
-      process.stdout.write(`  Subscription already exists for ${user.email}\n`)
     }
-  }
+  })
   process.stdout.write('\n')
-
-  // Save migration state for rollback
-  saveMigrationState(migrationState)
 
   // Summary
   process.stdout.write('='.repeat(50) + '\n')

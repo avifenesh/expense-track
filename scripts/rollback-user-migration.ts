@@ -24,7 +24,7 @@
 
 import { config } from 'dotenv'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 import { Pool } from 'pg'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -33,6 +33,7 @@ config()
 
 const DATABASE_URL = process.env.DATABASE_URL
 const STATE_FILE = path.join(__dirname, '.migration-state.json')
+const PARTIAL_STATE_FILE = path.join(__dirname, '.migration-state.partial.json')
 
 if (!DATABASE_URL) {
   process.stderr.write('Error: DATABASE_URL is not set\n')
@@ -71,6 +72,23 @@ function deleteMigrationState(): void {
   }
 }
 
+/**
+ * Rename state file to indicate partial rollback
+ */
+function markStateAsPartial(): void {
+  if (fs.existsSync(STATE_FILE)) {
+    fs.renameSync(STATE_FILE, PARTIAL_STATE_FILE)
+    process.stdout.write(`Renamed state file to: ${PARTIAL_STATE_FILE}\n`)
+  }
+}
+
+/**
+ * Check if an error is a "record not found" error (P2025)
+ */
+function isRecordNotFoundError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
+}
+
 async function main() {
   const deleteUsers = process.argv.includes('--delete-users')
 
@@ -94,52 +112,78 @@ async function main() {
   }
   process.stdout.write('\n')
 
-  // Execute rollback in a transaction
-  process.stdout.write('Step 1: Reverting data ownership...\n')
+  // Execute rollback in a transaction - all data changes are atomic
+  process.stdout.write('Step 1: Reverting data ownership and subscriptions...\n')
 
-  await prisma.$transaction(async (tx) => {
-    // Revert account ownership
-    for (const account of state.accounts) {
-      try {
-        await tx.account.update({
-          where: { id: account.id },
-          data: { userId: account.originalUserId },
-        })
-      } catch {
-        process.stdout.write(`  Warning: Account ${account.id} not found (may have been deleted)\n`)
-      }
-    }
-    process.stdout.write(`  Reverted ${state.accounts.length} account(s)\n`)
-
-    // Revert category ownership
-    for (const category of state.categories) {
-      try {
-        await tx.category.update({
-          where: { id: category.id },
-          data: { userId: category.originalUserId },
-        })
-      } catch {
-        process.stdout.write(`  Warning: Category ${category.id} not found (may have been deleted)\n`)
-      }
-    }
-    process.stdout.write(`  Reverted ${state.categories.length} category(ies)\n`)
-  })
-  process.stdout.write('\n')
-
-  // Delete subscriptions created by migration
-  process.stdout.write('Step 2: Deleting subscriptions created by migration...\n')
+  let rollbackSuccess = false
+  let revertedAccounts = 0
+  let revertedCategories = 0
   let deletedSubscriptions = 0
-  for (const userId of state.createdSubscriptionUserIds) {
-    try {
-      await prisma.subscription.delete({
-        where: { userId },
-      })
-      deletedSubscriptions++
-    } catch {
-      process.stdout.write(`  Warning: Subscription for user ${userId} not found\n`)
-    }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Revert account ownership
+      for (const account of state.accounts) {
+        try {
+          await tx.account.update({
+            where: { id: account.id },
+            data: { userId: account.originalUserId },
+          })
+          revertedAccounts++
+        } catch (error) {
+          if (isRecordNotFoundError(error)) {
+            process.stdout.write(`  Warning: Account ${account.id} not found (may have been deleted)\n`)
+          } else {
+            throw error // Re-throw to rollback transaction
+          }
+        }
+      }
+      process.stdout.write(`  Reverted ${revertedAccounts} account(s)\n`)
+
+      // Revert category ownership
+      for (const category of state.categories) {
+        try {
+          await tx.category.update({
+            where: { id: category.id },
+            data: { userId: category.originalUserId },
+          })
+          revertedCategories++
+        } catch (error) {
+          if (isRecordNotFoundError(error)) {
+            process.stdout.write(`  Warning: Category ${category.id} not found (may have been deleted)\n`)
+          } else {
+            throw error // Re-throw to rollback transaction
+          }
+        }
+      }
+      process.stdout.write(`  Reverted ${revertedCategories} category(ies)\n`)
+
+      // Delete subscriptions within the same transaction
+      for (const userId of state.createdSubscriptionUserIds) {
+        try {
+          await tx.subscription.delete({
+            where: { userId },
+          })
+          deletedSubscriptions++
+        } catch (error) {
+          if (isRecordNotFoundError(error)) {
+            process.stdout.write(`  Warning: Subscription for user ${userId} not found\n`)
+          } else {
+            throw error // Re-throw to rollback transaction
+          }
+        }
+      }
+      process.stdout.write(`  Deleted ${deletedSubscriptions} subscription(s)\n`)
+    })
+
+    rollbackSuccess = true
+  } catch (error) {
+    process.stderr.write(`\nError during rollback transaction: ${error}\n`)
+    process.stderr.write('Transaction rolled back. Original state preserved.\n')
+    markStateAsPartial()
+    throw error
   }
-  process.stdout.write(`  Deleted ${deletedSubscriptions} subscription(s)\n\n`)
+  process.stdout.write('\n')
 
   // Optionally delete users created by migration
   if (deleteUsers && state.createdUserIds.length > 0) {
@@ -177,15 +221,19 @@ async function main() {
     process.stdout.write(`  ${state.createdUserIds.length} user(s) preserved\n\n`)
   }
 
-  // Delete migration state file
-  deleteMigrationState()
+  // Only delete migration state file if rollback was fully successful
+  if (rollbackSuccess) {
+    deleteMigrationState()
+  } else {
+    markStateAsPartial()
+  }
 
   // Summary
   process.stdout.write('='.repeat(50) + '\n')
   process.stdout.write('Rollback completed successfully!\n')
   process.stdout.write('='.repeat(50) + '\n')
-  process.stdout.write(`  Accounts reverted: ${state.accounts.length}\n`)
-  process.stdout.write(`  Categories reverted: ${state.categories.length}\n`)
+  process.stdout.write(`  Accounts reverted: ${revertedAccounts}\n`)
+  process.stdout.write(`  Categories reverted: ${revertedCategories}\n`)
   process.stdout.write(`  Subscriptions deleted: ${deletedSubscriptions}\n`)
   if (deleteUsers) {
     process.stdout.write(`  Users deleted: ${state.createdUserIds.length}\n`)
