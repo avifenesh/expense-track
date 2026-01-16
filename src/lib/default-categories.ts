@@ -1,7 +1,3 @@
-/**
- * Default expense categories for new users.
- * Each category has a name and optional color for UI display.
- */
 export const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Groceries', color: '#22c55e' },
   { name: 'Dining Out', color: '#f97316' },
@@ -15,9 +11,6 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Subscriptions', color: '#14b8a6' },
 ] as const
 
-/**
- * Default income categories for new users.
- */
 export const DEFAULT_INCOME_CATEGORIES = [
   { name: 'Salary', color: '#10b981' },
   { name: 'Freelance', color: '#06b6d4' },

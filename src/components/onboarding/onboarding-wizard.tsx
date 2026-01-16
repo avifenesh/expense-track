@@ -20,7 +20,6 @@ export type OnboardingStep = 'welcome' | 'currency' | 'categories' | 'budget' | 
 const STEPS: OnboardingStep[] = ['welcome', 'currency', 'categories', 'budget', 'sample-data', 'complete']
 
 type OnboardingWizardProps = {
-  userId: string
   displayName: string
   preferredCurrency: Currency
   accounts: { id: string; name: string }[]
@@ -212,7 +211,6 @@ export function OnboardingWizard({
           </span>
         </div>
 
-        {/* Progress bar */}
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-all duration-300"

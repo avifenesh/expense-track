@@ -22,19 +22,16 @@ export default async function OnboardingPage() {
     redirect('/login?reason=unknown-user')
   }
 
-  // If user has already completed onboarding, redirect to dashboard
   if (authUser.hasCompletedOnboarding) {
     redirect('/')
   }
 
-  // Get user's accounts for the wizard
   const accounts = await prisma.account.findMany({
     where: { userId: authUser.id },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })
 
-  // Get existing categories to show what's already set up
   const existingCategories = await prisma.category.findMany({
     where: { userId: authUser.id, isArchived: false },
     select: { id: true, name: true, type: true },
@@ -52,7 +49,6 @@ export default async function OnboardingPage() {
       />
 
       <OnboardingWizard
-        userId={authUser.id}
         displayName={authUser.displayName}
         preferredCurrency={authUser.preferredCurrency}
         accounts={accounts}

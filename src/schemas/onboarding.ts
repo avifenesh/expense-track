@@ -1,27 +1,18 @@
 import { z } from 'zod'
 import { Currency, TransactionType } from '@prisma/client'
 
-/**
- * Schema for marking onboarding as complete
- */
 export const completeOnboardingSchema = z.object({
   csrfToken: z.string().min(1, 'Security token required'),
 })
 
 export type CompleteOnboardingInput = z.infer<typeof completeOnboardingSchema>
 
-/**
- * Schema for skipping onboarding (marks as complete without setup)
- */
 export const skipOnboardingSchema = z.object({
   csrfToken: z.string().min(1, 'Security token required'),
 })
 
 export type SkipOnboardingInput = z.infer<typeof skipOnboardingSchema>
 
-/**
- * Schema for updating preferred currency during onboarding
- */
 export const updatePreferredCurrencySchema = z.object({
   currency: z.nativeEnum(Currency),
   csrfToken: z.string().min(1, 'Security token required'),
@@ -29,9 +20,6 @@ export const updatePreferredCurrencySchema = z.object({
 
 export type UpdatePreferredCurrencyInput = z.infer<typeof updatePreferredCurrencySchema>
 
-/**
- * Schema for creating initial categories during onboarding
- */
 export const createInitialCategoriesSchema = z.object({
   categories: z
     .array(
@@ -47,9 +35,6 @@ export const createInitialCategoriesSchema = z.object({
 
 export type CreateInitialCategoriesInput = z.infer<typeof createInitialCategoriesSchema>
 
-/**
- * Schema for creating a quick budget during onboarding
- */
 export const createQuickBudgetSchema = z.object({
   accountId: z.string().min(1, 'Account is required'),
   categoryId: z.string().min(1, 'Category is required'),
@@ -61,9 +46,6 @@ export const createQuickBudgetSchema = z.object({
 
 export type CreateQuickBudgetInput = z.infer<typeof createQuickBudgetSchema>
 
-/**
- * Schema for seeding sample data during onboarding
- */
 export const seedSampleDataSchema = z.object({
   csrfToken: z.string().min(1, 'Security token required'),
 })

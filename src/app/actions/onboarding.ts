@@ -25,9 +25,6 @@ import type {
   SeedSampleDataInput,
 } from '@/schemas'
 
-/**
- * Mark onboarding as complete for the current user.
- */
 export async function completeOnboardingAction(input: CompleteOnboardingInput) {
   const parsed = parseInput(completeOnboardingSchema, input)
   if ('error' in parsed) return parsed
@@ -68,9 +65,6 @@ export async function completeOnboardingAction(input: CompleteOnboardingInput) {
   return successVoid()
 }
 
-/**
- * Skip onboarding and mark as complete without any setup.
- */
 export async function skipOnboardingAction(input: SkipOnboardingInput) {
   const parsed = parseInput(skipOnboardingSchema, input)
   if ('error' in parsed) return parsed
@@ -111,9 +105,6 @@ export async function skipOnboardingAction(input: SkipOnboardingInput) {
   return successVoid()
 }
 
-/**
- * Update the user's preferred currency during onboarding.
- */
 export async function updatePreferredCurrencyAction(input: UpdatePreferredCurrencyInput) {
   const parsed = parseInput(updatePreferredCurrencySchema, input)
   if ('error' in parsed) return parsed
@@ -154,9 +145,6 @@ export async function updatePreferredCurrencyAction(input: UpdatePreferredCurren
   return successVoid()
 }
 
-/**
- * Create initial categories for the user during onboarding.
- */
 export async function createInitialCategoriesAction(input: CreateInitialCategoriesInput) {
   const parsed = parseInput(createInitialCategoriesSchema, input)
   if ('error' in parsed) return parsed
@@ -180,7 +168,6 @@ export async function createInitialCategoriesAction(input: CreateInitialCategori
   if ('error' in subscriptionCheck) return subscriptionCheck
 
   try {
-    // Create categories in a transaction to ensure atomicity
     await prisma.$transaction(
       parsed.data.categories.map((cat) =>
         prisma.category.upsert({
@@ -217,9 +204,6 @@ export async function createInitialCategoriesAction(input: CreateInitialCategori
   return success({ categoriesCreated: parsed.data.categories.length })
 }
 
-/**
- * Create a quick budget for a category during onboarding.
- */
 export async function createQuickBudgetAction(input: CreateQuickBudgetInput) {
   const parsed = parseInput(createQuickBudgetSchema, input)
   if ('error' in parsed) return parsed
@@ -258,7 +242,6 @@ export async function createQuickBudgetAction(input: CreateQuickBudgetInput) {
     return generalError('Category not found or access denied')
   }
 
-  // Parse month from monthKey (e.g., "2024-01" -> Date)
   const [year, monthNum] = parsed.data.monthKey.split('-').map(Number)
   const month = getMonthStart(new Date(year, monthNum - 1, 1))
 
@@ -296,10 +279,6 @@ export async function createQuickBudgetAction(input: CreateQuickBudgetInput) {
   return successVoid()
 }
 
-/**
- * Seed sample data for the user during onboarding.
- * Creates default categories and a sample transaction.
- */
 export async function seedSampleDataAction(input: SeedSampleDataInput) {
   const parsed = parseInput(seedSampleDataSchema, input)
   if ('error' in parsed) return parsed
@@ -380,11 +359,9 @@ export async function seedSampleDataAction(input: SeedSampleDataInput) {
       ),
     )
 
-    // Create sample transactions for the current month
     const now = new Date()
     const month = getMonthStart(now)
 
-    // Find groceries and salary categories
     const groceriesCat = expenseCategories.find((c) => c.name === 'Groceries')
     const salaryCat = incomeCategories.find((c) => c.name === 'Salary')
 
@@ -418,7 +395,6 @@ export async function seedSampleDataAction(input: SeedSampleDataInput) {
       })
     }
 
-    // Create a sample budget for groceries
     if (groceriesCat) {
       await prisma.budget.upsert({
         where: {
