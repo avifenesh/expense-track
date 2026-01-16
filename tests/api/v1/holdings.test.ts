@@ -403,7 +403,7 @@ describe('Holdings API Routes', () => {
       expect(response.status).toBe(401)
     })
 
-    it('returns 403 for unauthorized account access', async () => {
+    it('returns 404 for unauthorized account access (no information leakage)', async () => {
       // Create holding for other account
       const otherHolding = await (prisma as any).holding.create({
         data: {
@@ -421,8 +421,9 @@ describe('Holdings API Routes', () => {
         headers: { Authorization: `Bearer ${validToken}` },
       })
 
+      // Returns 404 instead of 403 to avoid leaking existence info
       const response = await DeleteHolding(request, { params: Promise.resolve({ id: otherHolding.id }) })
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(404)
     })
   })
 

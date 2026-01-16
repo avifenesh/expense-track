@@ -94,9 +94,21 @@ describe('finance.ts', () => {
       const result = await financeLib.getAccounts()
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: {},
         orderBy: { name: 'asc' },
       })
       expect(result).toEqual(mockAccounts)
+    })
+
+    it('should filter accounts by userId when provided', async () => {
+      vi.mocked(prisma.account.findMany).mockResolvedValue(mockAccounts as unknown as Account[])
+
+      await financeLib.getAccounts('user-123')
+
+      expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-123' },
+        orderBy: { name: 'asc' },
+      })
     })
   })
 
@@ -107,9 +119,21 @@ describe('finance.ts', () => {
       const result = await financeLib.getCategories()
 
       expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: {},
         orderBy: { name: 'asc' },
       })
       expect(result).toEqual(mockCategories)
+    })
+
+    it('should filter categories by userId when provided', async () => {
+      vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as unknown as Category[])
+
+      await financeLib.getCategories('user-123')
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-123' },
+        orderBy: { name: 'asc' },
+      })
     })
   })
 

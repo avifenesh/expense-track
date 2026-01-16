@@ -79,6 +79,7 @@ vi.mock('@/lib/prisma', () => ({
     account: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
     transactionRequest: {
       create: vi.fn(),
@@ -89,7 +90,10 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
     },
     category: {
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
     },
     holding: {
       create: vi.fn(),
@@ -418,5 +422,177 @@ describe('User Isolation: Holdings Category Validation', () => {
       expect(result.error.categoryId).toContain('Category must be marked as a holding category')
     }
     expect(prisma.holding.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('User Isolation: Finance Module Data Access', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('getAccounts()', () => {
+    it('should filter accounts by userId when provided', async () => {
+      const { getAccounts } = await import('@/lib/finance')
+
+      // Mock accounts for multiple users
+      vi.mocked(prisma.account.findMany).mockResolvedValue([
+        { id: 'acc-1', name: 'User A Account', userId: 'user-a' },
+        { id: 'acc-2', name: 'User A Second', userId: 'user-a' },
+      ] as any)
+
+      const result = await getAccounts('user-a')
+
+      expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-a' },
+        orderBy: { name: 'asc' },
+      })
+      expect(result).toHaveLength(2)
+    })
+
+    it('should return all accounts when userId not provided', async () => {
+      const { getAccounts } = await import('@/lib/finance')
+
+      vi.mocked(prisma.account.findMany).mockResolvedValue([
+        { id: 'acc-1', name: 'User A Account', userId: 'user-a' },
+        { id: 'acc-2', name: 'User B Account', userId: 'user-b' },
+      ] as any)
+
+      const result = await getAccounts()
+
+      expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: {},
+        orderBy: { name: 'asc' },
+      })
+      expect(result).toHaveLength(2)
+    })
+  })
+
+  describe('getCategories()', () => {
+    it('should filter categories by userId when provided', async () => {
+      const { getCategories } = await import('@/lib/finance')
+
+      vi.mocked(prisma.category.findMany).mockResolvedValue([
+        { id: 'cat-1', name: 'Groceries', userId: 'user-a' },
+        { id: 'cat-2', name: 'Transport', userId: 'user-a' },
+      ] as any)
+
+      const result = await getCategories('user-a')
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-a' },
+        orderBy: { name: 'asc' },
+      })
+      expect(result).toHaveLength(2)
+    })
+
+    it('should return all categories when userId not provided', async () => {
+      const { getCategories } = await import('@/lib/finance')
+
+      vi.mocked(prisma.category.findMany).mockResolvedValue([
+        { id: 'cat-1', name: 'Groceries', userId: 'user-a' },
+        { id: 'cat-2', name: 'Salary', userId: 'user-b' },
+      ] as any)
+
+      const result = await getCategories()
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: {},
+        orderBy: { name: 'asc' },
+      })
+      expect(result).toHaveLength(2)
+    })
+  })
+})
+
+describe('User Isolation: Category Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('getCategoryById()', () => {
+    it('should filter by userId when provided', async () => {
+      const { getCategoryById } = await import('@/lib/services/category-service')
+
+      vi.mocked(prisma.category.findFirst).mockResolvedValue({
+        id: 'cat-1',
+        name: 'Groceries',
+        userId: 'user-a',
+      } as any)
+
+      const result = await getCategoryById('cat-1', 'user-a')
+
+      expect(prisma.category.findFirst).toHaveBeenCalledWith({
+        where: { id: 'cat-1', userId: 'user-a' },
+      })
+      expect(result?.id).toBe('cat-1')
+    })
+
+    it('should return null when category belongs to different user', async () => {
+      const { getCategoryById } = await import('@/lib/services/category-service')
+
+      // Category exists but doesn't belong to the requesting user
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
+
+      const result = await getCategoryById('cat-1', 'user-a')
+
+      expect(result).toBeNull()
+    })
+
+    it('should use findUnique when userId not provided', async () => {
+      const { getCategoryById } = await import('@/lib/services/category-service')
+
+      vi.mocked(prisma.category.findUnique).mockResolvedValue({
+        id: 'cat-1',
+        name: 'Groceries',
+        userId: 'user-a',
+      } as any)
+
+      await getCategoryById('cat-1')
+
+      expect(prisma.category.findUnique).toHaveBeenCalledWith({
+        where: { id: 'cat-1' },
+      })
+    })
+  })
+
+  describe('archiveCategory()', () => {
+    it('should include userId in WHERE clause', async () => {
+      const { archiveCategory } = await import('@/lib/services/category-service')
+
+      vi.mocked(prisma.category.update).mockResolvedValue({
+        id: 'cat-1',
+        name: 'Groceries',
+        userId: 'user-a',
+        isArchived: true,
+      } as any)
+
+      await archiveCategory({
+        id: 'cat-1',
+        userId: 'user-a',
+        isArchived: true,
+      })
+
+      expect(prisma.category.update).toHaveBeenCalledWith({
+        where: { id: 'cat-1', userId: 'user-a' },
+        data: { isArchived: true },
+      })
+    })
+
+    it('should fail if category does not belong to user', async () => {
+      const { archiveCategory } = await import('@/lib/services/category-service')
+
+      // Prisma throws when record not found with compound where
+      const error = new Error('Record not found')
+      ;(error as any).code = 'P2025'
+      vi.mocked(prisma.category.update).mockRejectedValue(error)
+
+      await expect(
+        archiveCategory({
+          id: 'cat-1',
+          userId: 'wrong-user',
+          isArchived: true,
+        }),
+      ).rejects.toThrow('Record not found')
+    })
   })
 })

@@ -231,6 +231,7 @@ describe('category-service.ts', () => {
     it('should archive category (isArchived=true)', async () => {
       const input: ArchiveCategoryInput = {
         id: 'cat-1',
+        userId: 'test-user',
         isArchived: true,
       }
 
@@ -251,7 +252,7 @@ describe('category-service.ts', () => {
       const result = await archiveCategory(input)
 
       expect(prisma.category.update).toHaveBeenCalledWith({
-        where: { id: 'cat-1' },
+        where: { id: 'cat-1', userId: 'test-user' },
         data: { isArchived: true },
       })
       expect(result.isArchived).toBe(true)
@@ -260,6 +261,7 @@ describe('category-service.ts', () => {
     it('should unarchive category (isArchived=false)', async () => {
       const input: ArchiveCategoryInput = {
         id: 'cat-1',
+        userId: 'test-user',
         isArchived: false,
       }
 
@@ -280,7 +282,7 @@ describe('category-service.ts', () => {
       const result = await archiveCategory(input)
 
       expect(prisma.category.update).toHaveBeenCalledWith({
-        where: { id: 'cat-1' },
+        where: { id: 'cat-1', userId: 'test-user' },
         data: { isArchived: false },
       })
       expect(result.isArchived).toBe(false)
@@ -289,6 +291,7 @@ describe('category-service.ts', () => {
     it('should be idempotent when archiving already archived category', async () => {
       const input: ArchiveCategoryInput = {
         id: 'cat-1',
+        userId: 'test-user',
         isArchived: true,
       }
 
@@ -315,6 +318,7 @@ describe('category-service.ts', () => {
     it('should handle category not found error', async () => {
       const input: ArchiveCategoryInput = {
         id: 'nonexistent',
+        userId: 'test-user',
         isArchived: true,
       }
 
@@ -329,6 +333,7 @@ describe('category-service.ts', () => {
     it('should handle Prisma update failure', async () => {
       const input: ArchiveCategoryInput = {
         id: 'cat-1',
+        userId: 'test-user',
         isArchived: true,
       }
 

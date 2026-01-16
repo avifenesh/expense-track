@@ -197,11 +197,12 @@ describe('dashboard-cache.ts', () => {
       const call1 = vi.mocked(prisma.dashboardCache.upsert).mock.calls[0][0]
       const call2 = vi.mocked(prisma.dashboardCache.upsert).mock.calls[1][0]
 
-      expect(call1.where.cacheKey).toBe('dashboard:2024-01:acc1:USD')
-      expect(call2.where.cacheKey).toBe('dashboard:2024-01:acc2:USD')
+      // Cache key format: dashboard:userId:monthKey:accountId:currency
+      expect(call1.where.cacheKey).toBe('dashboard:ANON:2024-01:acc1:USD')
+      expect(call2.where.cacheKey).toBe('dashboard:ANON:2024-01:acc2:USD')
     })
 
-    it('should use "ALL" for undefined accountId in cache key', async () => {
+    it('should use "ALL" for undefined accountId and "ANON" for undefined userId in cache key', async () => {
       vi.mocked(prisma.dashboardCache.findUnique).mockResolvedValue(null)
       vi.mocked(prisma.dashboardCache.upsert).mockResolvedValue({} as DashboardCache)
 
@@ -210,7 +211,21 @@ describe('dashboard-cache.ts', () => {
       })
 
       const call = vi.mocked(prisma.dashboardCache.upsert).mock.calls[0][0]
-      expect(call.where.cacheKey).toBe('dashboard:2024-01:ALL:DEFAULT')
+      expect(call.where.cacheKey).toBe('dashboard:ANON:2024-01:ALL:DEFAULT')
+    })
+
+    it('should include userId in cache key when provided', async () => {
+      vi.mocked(prisma.dashboardCache.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.dashboardCache.upsert).mockResolvedValue({} as DashboardCache)
+
+      await getCachedDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+        userId: 'user-123',
+      })
+
+      const call = vi.mocked(prisma.dashboardCache.upsert).mock.calls[0][0]
+      expect(call.where.cacheKey).toBe('dashboard:user-123:2024-01:acc1:DEFAULT')
     })
 
     it('should handle cache read error and fall through to fresh computation', async () => {
