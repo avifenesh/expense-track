@@ -145,6 +145,18 @@ export const recoverySchema = z.object({
   email: z.string().email('Provide a valid email address'),
 })
 
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+    .regex(/[a-z]/, 'Password must contain a lowercase letter')
+    .regex(/[0-9]/, 'Password must contain a number'),
+})
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
+
 export const accountSelectionSchema = z.object({
   accountId: z.string().min(1),
   csrfToken: z.string().min(1, 'Security token required'),

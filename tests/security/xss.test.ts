@@ -123,7 +123,7 @@ import {
   upsertRecurringTemplateAction,
   registerAction,
 } from '@/app/actions'
-import { Currency, TransactionType } from '@prisma/client'
+import { Currency, TransactionType, User } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { CRITICAL_XSS_PAYLOADS, ALL_XSS_PAYLOADS } from './xss-payloads'
 import { assertNoExecutableScript } from './xss-helpers'
@@ -444,9 +444,12 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           emailVerified: false,
           emailVerificationToken: 'token',
           emailVerificationExpires: new Date(),
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          hasCompletedOnboarding: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-        } as any)
+        } as User)
 
         const result = await registerAction({
           email: 'test-xss@example.com',
