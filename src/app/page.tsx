@@ -23,6 +23,7 @@ async function DashboardLoader({
   allAccounts,
   subscription,
   userId,
+  userEmail,
 }: {
   monthKey: string
   accountId: string
@@ -31,6 +32,7 @@ async function DashboardLoader({
   allAccounts: Awaited<ReturnType<typeof getAccounts>>
   subscription: SubscriptionBannerData | null
   userId: string
+  userEmail: string
 }) {
   const data = await getCachedDashboardData({
     monthKey,
@@ -46,6 +48,7 @@ async function DashboardLoader({
       monthKey={monthKey}
       accountId={accountId}
       subscription={subscription}
+      userEmail={userEmail}
     />
   )
 }
@@ -132,6 +135,7 @@ export default async function Page({ searchParams }: PageProps) {
         allAccounts={accounts}
         subscription={subscription}
         userId={authUser.id}
+        userEmail={authUser.email}
       />
     </Suspense>
   )

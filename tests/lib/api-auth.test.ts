@@ -1,6 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
+
+// Mock prisma before importing modules that depend on it
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    refreshToken: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+  },
+}))
+
 import { extractBearerToken, requireJwtAuth } from '@/lib/api-auth'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 

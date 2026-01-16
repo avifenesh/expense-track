@@ -201,6 +201,14 @@ export const setBalanceSchema = z.object({
   csrfToken: z.string().min(1, 'Security token required'),
 })
 
+// Account deletion schema (GDPR)
+export const deleteAccountSchema = z.object({
+  confirmEmail: z.string().email('Please enter your email to confirm deletion'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>
+
 // Onboarding schemas
 export {
   completeOnboardingSchema,

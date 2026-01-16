@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { clearSession, establishSession, updateSessionAccount, verifyCredentials } from '@/lib/auth-server'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
-import { parseInput, ensureAccountAccess, requireCsrfToken } from './shared'
+import { parseInput, ensureAccountAccess, requireCsrfToken, requireAuthUser } from './shared'
 import { rotateCsrfToken } from '@/lib/csrf'
 import {
   loginSchema,
@@ -15,6 +15,7 @@ import {
   registrationSchema,
   verifyEmailSchema,
   resendVerificationSchema,
+  deleteAccountSchema,
 } from '@/schemas'
 import { sendVerificationEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
@@ -292,4 +293,118 @@ export async function resendVerificationEmailAction(input: z.infer<typeof resend
   return success({
     message: 'If an unverified account exists with this email, a verification link will be sent.',
   })
+}
+
+/** Delete user account and all associated data (GDPR compliance). */
+export async function deleteAccountAction(input: z.infer<typeof deleteAccountSchema>) {
+  const parsed = parseInput(deleteAccountSchema, input)
+  if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
+  const auth = await requireAuthUser()
+  if ('error' in auth) return auth
+  const { authUser } = auth
+
+  // Rate limit check (3/hour for abuse prevention)
+  const rateLimit = checkRateLimitTyped(authUser.id, 'account_deletion')
+  if (!rateLimit.allowed) {
+    return failure({ general: ['Too many deletion attempts. Please try again later.'] })
+  }
+  incrementRateLimitTyped(authUser.id, 'account_deletion')
+
+  // Verify email confirmation matches authenticated user
+  if (parsed.data.confirmEmail.toLowerCase() !== authUser.email.toLowerCase()) {
+    return {
+      error: {
+        confirmEmail: ['Email does not match your account'],
+      },
+    }
+  }
+
+  try {
+    // Get all user's account IDs and category IDs for cascade deletion
+    const userAccounts = await prisma.account.findMany({
+      where: { userId: authUser.id },
+      select: { id: true },
+    })
+    const accountIds = userAccounts.map((a) => a.id)
+
+    const userCategories = await prisma.category.findMany({
+      where: { userId: authUser.id },
+      select: { id: true },
+    })
+    const categoryIds = userCategories.map((c) => c.id)
+
+    // Build deletion operations, skipping empty array conditions to avoid SQL issues
+    const deleteOps = []
+
+    // 1. TransactionRequest - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) {
+        orConditions.push({ fromId: { in: accountIds } }, { toId: { in: accountIds } })
+      }
+      if (categoryIds.length > 0) {
+        orConditions.push({ categoryId: { in: categoryIds } })
+      }
+      deleteOps.push(prisma.transactionRequest.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 2. Transaction - depends on Account, Category (includes cross-account refs)
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.transaction.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 3. Holding - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.holding.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 4. Budget - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.budget.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 5. RecurringTemplate - depends on Account, Category
+    if (accountIds.length > 0 || categoryIds.length > 0) {
+      const orConditions = []
+      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
+      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
+      deleteOps.push(prisma.recurringTemplate.deleteMany({ where: { OR: orConditions } }))
+    }
+
+    // 6. DashboardCache - cleanup cached data for user's accounts
+    if (accountIds.length > 0) {
+      deleteOps.push(prisma.dashboardCache.deleteMany({ where: { accountId: { in: accountIds } } }))
+    }
+
+    // 7. User deletion - cascades: Account, Category, RefreshToken, Subscription
+    deleteOps.push(prisma.user.delete({ where: { id: authUser.id } }))
+
+    await prisma.$transaction(deleteOps)
+
+    serverLogger.info('User account deleted (GDPR)', {
+      action: 'deleteAccountAction',
+      userId: authUser.id,
+    })
+  } catch (error) {
+    serverLogger.error('Failed to delete user account', { action: 'deleteAccountAction', userId: authUser.id }, error)
+    return generalError('Unable to delete account. Please try again or contact support.')
+  }
+
+  // Clear session after deletion
+  await clearSession()
+
+  return successVoid()
 }
