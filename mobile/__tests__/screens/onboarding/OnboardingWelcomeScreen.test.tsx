@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import type { OnboardingScreenProps } from '../../../src/navigation/types';
 import { OnboardingWelcomeScreen } from '../../../src/screens/onboarding/OnboardingWelcomeScreen';
 
 const mockNavigation = {
@@ -30,19 +31,19 @@ describe('OnboardingWelcomeScreen', () => {
   });
 
   it('renders title correctly', () => {
-    render(<OnboardingWelcomeScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingWelcomeScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Welcome')).toBeTruthy();
   });
 
   it('renders subtitle correctly', () => {
-    render(<OnboardingWelcomeScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingWelcomeScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText("Let's set up your expense tracking")).toBeTruthy();
   });
 
   it('renders info text about the onboarding process', () => {
-    render(<OnboardingWelcomeScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingWelcomeScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(
       screen.getByText("We'll guide you through a few steps to personalize your experience")
@@ -50,13 +51,13 @@ describe('OnboardingWelcomeScreen', () => {
   });
 
   it('renders Get Started button', () => {
-    render(<OnboardingWelcomeScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingWelcomeScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Get Started')).toBeTruthy();
   });
 
   it('navigates to OnboardingCurrency when Get Started is pressed', () => {
-    render(<OnboardingWelcomeScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingWelcomeScreen navigation={mockNavigation} route={mockRoute} />);
 
     const getStartedButton = screen.getByText('Get Started');
     fireEvent.press(getStartedButton);

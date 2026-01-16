@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import type { OnboardingScreenProps } from '../../../src/navigation/types';
 import { OnboardingCategoriesScreen } from '../../../src/screens/onboarding/OnboardingCategoriesScreen';
 
 const mockNavigation = {
@@ -30,73 +31,73 @@ describe('OnboardingCategoriesScreen', () => {
   });
 
   it('renders step indicator correctly', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Step 2 of 5')).toBeTruthy();
   });
 
   it('renders title correctly', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Categories')).toBeTruthy();
   });
 
   it('renders subtitle correctly', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Select the expense categories you want to track')).toBeTruthy();
   });
 
   it('renders Food & Dining category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Food & Dining')).toBeTruthy();
   });
 
   it('renders Transportation category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Transportation')).toBeTruthy();
   });
 
   it('renders Shopping category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Shopping')).toBeTruthy();
   });
 
   it('renders Entertainment category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Entertainment')).toBeTruthy();
   });
 
   it('renders Bills & Utilities category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Bills & Utilities')).toBeTruthy();
   });
 
   it('renders Healthcare category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Healthcare')).toBeTruthy();
   });
 
   it('renders Education category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Education')).toBeTruthy();
   });
 
   it('renders Travel category', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Travel')).toBeTruthy();
   });
 
   it('renders all 8 default categories', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     const categories = [
       'Food & Dining',
@@ -115,13 +116,13 @@ describe('OnboardingCategoriesScreen', () => {
   });
 
   it('renders Continue button', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Continue')).toBeTruthy();
   });
 
   it('navigates to OnboardingBudget when Continue is pressed', () => {
-    render(<OnboardingCategoriesScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
     const continueButton = screen.getByText('Continue');
     fireEvent.press(continueButton);

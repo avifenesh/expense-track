@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
+import type { OnboardingScreenProps } from '../../../src/navigation/types';
 import { OnboardingCompleteScreen } from '../../../src/screens/onboarding/OnboardingCompleteScreen';
 
 const mockNavigation = {
@@ -30,25 +31,25 @@ describe('OnboardingCompleteScreen', () => {
   });
 
   it('renders step indicator correctly', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Step 5 of 5')).toBeTruthy();
   });
 
   it('renders title correctly', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('All Set!')).toBeTruthy();
   });
 
   it('renders subtitle correctly', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Your expense tracker is ready to use')).toBeTruthy();
   });
 
   it('renders success checkmark', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     // The checkmark is rendered as a text character
     const checkmarks = screen.getAllByText(/✓/);
@@ -56,28 +57,28 @@ describe('OnboardingCompleteScreen', () => {
   });
 
   it('renders Currency summary item', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Currency')).toBeTruthy();
     expect(screen.getByText('USD')).toBeTruthy();
   });
 
   it('renders Categories summary item', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Categories')).toBeTruthy();
     expect(screen.getByText('8 selected')).toBeTruthy();
   });
 
   it('renders Monthly Budget summary item', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Monthly Budget')).toBeTruthy();
     expect(screen.getByText('$2,000')).toBeTruthy();
   });
 
   it('renders all three summary items', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Currency')).toBeTruthy();
     expect(screen.getByText('Categories')).toBeTruthy();
@@ -85,13 +86,13 @@ describe('OnboardingCompleteScreen', () => {
   });
 
   it('renders Start Tracking button', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('Start Tracking')).toBeTruthy();
   });
 
   it('displays summary values correctly', () => {
-    render(<OnboardingCompleteScreen navigation={mockNavigation as any} route={mockRoute} />);
+    render(<OnboardingCompleteScreen navigation={mockNavigation} route={mockRoute} />);
 
     expect(screen.getByText('USD')).toBeTruthy();
     expect(screen.getByText('8 selected')).toBeTruthy();
