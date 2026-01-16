@@ -30,6 +30,7 @@ export {
   loginAction,
   logoutAction,
   requestPasswordResetAction,
+  resetPasswordAction,
   persistActiveAccountAction,
   registerAction,
   verifyEmailAction,

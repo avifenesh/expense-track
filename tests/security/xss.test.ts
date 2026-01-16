@@ -444,6 +444,8 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           emailVerified: false,
           emailVerificationToken: 'token',
           emailVerificationExpires: new Date(),
+          passwordResetToken: null,
+          passwordResetExpires: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as any)

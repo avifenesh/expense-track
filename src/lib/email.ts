@@ -116,6 +116,56 @@ export async function sendVerificationEmail(
   })
 }
 
+export async function sendPasswordResetEmail(
+  to: string,
+  token: string,
+): Promise<{ success: boolean; messageId?: string }> {
+  const resetUrl = `${APP_URL}/reset-password?token=${encodeURIComponent(token)}`
+  const safeUrl = escapeHtml(resetUrl)
+
+  return sendEmail({
+    to,
+    subject: 'Reset your password - Balance Beacon',
+    text: `You requested a password reset for your Balance Beacon account.\n\nClick the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, you can safely ignore this email. Your password will not be changed.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">Reset your password</h1>
+        <p>You requested a password reset for your Balance Beacon account.</p>
+        <p style="margin: 24px 0;">
+          <a href="${safeUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Reset Password
+          </a>
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          Or copy and paste this link into your browser:<br/>
+          <a href="${safeUrl}" style="color: #0070f3;">${safeUrl}</a>
+        </p>
+        <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px;">
+          If you didn't request this, you can safely ignore this email. Your password will not be changed.
+        </p>
+      </div>
+    `,
+  })
+}
+
+export async function sendPasswordChangedEmail(to: string): Promise<{ success: boolean; messageId?: string }> {
+  return sendEmail({
+    to,
+    subject: 'Your password was changed - Balance Beacon',
+    text: `Your Balance Beacon password was successfully changed.\n\nIf you did not make this change, please contact support immediately.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">Password changed</h1>
+        <p>Your Balance Beacon password was successfully changed.</p>
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">
+          If you did not make this change, please contact support immediately.
+        </p>
+      </div>
+    `,
+  })
+}
+
 export interface ExpenseSharedEmailOptions {
   to: string
   participantName: string

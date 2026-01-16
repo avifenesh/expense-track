@@ -112,6 +112,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -146,6 +148,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -182,6 +186,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -216,6 +222,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -252,6 +260,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -280,6 +290,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -312,6 +324,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -346,6 +360,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -380,6 +396,8 @@ describe('Subscription Enforcement', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

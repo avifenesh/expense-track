@@ -11,6 +11,7 @@ import { rotateCsrfToken } from '@/lib/csrf'
 import {
   loginSchema,
   recoverySchema,
+  resetPasswordSchema,
   accountSelectionSchema,
   registrationSchema,
   verifyEmailSchema,
@@ -18,13 +19,14 @@ import {
   deleteAccountSchema,
   exportUserDataSchema,
 } from '@/schemas'
-import { sendVerificationEmail } from '@/lib/email'
+import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangedEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
 import { createTrialSubscription } from '@/lib/subscription'
 
 const BCRYPT_ROUNDS = 12
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24
+const PASSWORD_RESET_TOKEN_EXPIRY_HOURS = 1
 
 export async function loginAction(input: z.infer<typeof loginSchema>) {
   const parsed = parseInput(loginSchema, {
@@ -84,16 +86,97 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
   }
   incrementRateLimitTyped(normalizedEmail, 'password_reset')
 
-  // For now, log the request and return an honest message about the feature status.
-  // The DB query will be added when we actually send reset emails.
-  serverLogger.warn('Password reset requested, but reset flow is not yet implemented (see issue #33).', {
-    action: 'requestPasswordResetAction',
-    input: { email: normalizedEmail },
+  // Check if user exists (but always return same message for security)
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, emailVerified: true },
   })
 
+  // Only send email if user exists and email is verified
+  if (user && user.emailVerified) {
+    // Generate secure token
+    const token = crypto.randomBytes(32).toString('hex')
+    const expires = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
+
+    try {
+      // Store token in database
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetToken: token,
+          passwordResetExpires: expires,
+        },
+      })
+
+      // Send reset email
+      await sendPasswordResetEmail(normalizedEmail, token)
+    } catch (error) {
+      serverLogger.error(
+        'Failed to process password reset request',
+        { action: 'requestPasswordResetAction', input: { email: normalizedEmail } },
+        error,
+      )
+      // Still return success to prevent enumeration
+    }
+  }
+
+  // Always return same message regardless of whether email exists (enumeration protection)
   return success({
-    message:
-      'Password reset via email is not yet available. Please contact support if you need assistance accessing your account.',
+    message: 'If an account exists with this email, you will receive password reset instructions.',
+  })
+}
+
+export async function resetPasswordAction(input: z.infer<typeof resetPasswordSchema>) {
+  const parsed = parseInput(resetPasswordSchema, input)
+  if ('error' in parsed) return parsed
+
+  const { token, newPassword } = parsed.data
+
+  // Find user by token
+  const user = await prisma.user.findUnique({
+    where: { passwordResetToken: token },
+    select: { id: true, email: true, passwordResetExpires: true },
+  })
+
+  // Validate token and expiry
+  if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+    return failure({ token: ['Invalid or expired reset token. Please request a new password reset.'] })
+  }
+
+  // Hash new password
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS)
+
+  try {
+    // Update password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+    })
+
+    // Send notification email (fire and forget)
+    sendPasswordChangedEmail(user.email).catch((error) => {
+      serverLogger.error(
+        'Failed to send password changed notification',
+        { action: 'resetPasswordAction', userId: user.id },
+        error,
+      )
+    })
+
+    serverLogger.info('Password reset completed', {
+      action: 'resetPasswordAction',
+      userId: user.id,
+    })
+  } catch (error) {
+    serverLogger.error('Failed to reset password', { action: 'resetPasswordAction', userId: user.id }, error)
+    return generalError('Unable to reset password. Please try again.')
+  }
+
+  return success({
+    message: 'Your password has been reset successfully. You can now sign in with your new password.',
   })
 }
 
