@@ -51,6 +51,9 @@ npm run build            # Build production bundle
 
 - `src/app/actions/` - Server actions by domain (transactions, budgets, recurring, holdings, categories, auth, misc)
 - `src/app/api/v1/` - REST API endpoints (auth, transactions, budgets, holdings, categories, recurring)
+  - See `docs/API_AUDIT.md` for mobile compatibility audit
+  - See `docs/API_CONTRACTS.md` for endpoint contracts
+  - See `docs/API_VERSIONING.md` for versioning strategy
 - `src/components/` - React components (dashboard, forms, UI primitives)
 - `src/schemas/` - Zod validation schemas
 - `src/lib/finance.ts` - Financial logic, budget tracking
