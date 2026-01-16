@@ -117,6 +117,7 @@ describe('createTransactionRequestAction', () => {
       displayName: 'Avi',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Avi', 'Serena'],
       defaultAccountName: 'Avi',
     })
@@ -166,6 +167,7 @@ describe('approveTransactionRequestAction', () => {
       preferredCurrency: Currency.EUR,
       accountNames: ['Serena'],
       defaultAccountName: 'Serena',
+      hasCompletedOnboarding: true,
     })
 
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(null)
@@ -186,6 +188,7 @@ describe('approveTransactionRequestAction', () => {
       preferredCurrency: Currency.EUR,
       accountNames: ['Serena'],
       defaultAccountName: 'Serena',
+      hasCompletedOnboarding: true,
     })
 
     const mockRequest = {
@@ -237,6 +240,7 @@ describe('rejectTransactionRequestAction', () => {
       preferredCurrency: Currency.EUR,
       accountNames: ['Serena'],
       defaultAccountName: 'Serena',
+      hasCompletedOnboarding: true,
     })
 
     const mockRequest = {

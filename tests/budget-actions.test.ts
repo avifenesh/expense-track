@@ -101,6 +101,7 @@ describe('upsertBudgetAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -137,6 +138,7 @@ describe('upsertBudgetAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -200,6 +202,7 @@ describe('upsertBudgetAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -259,6 +262,7 @@ describe('deleteBudgetAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -300,6 +304,7 @@ describe('deleteBudgetAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })

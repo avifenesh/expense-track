@@ -192,6 +192,7 @@ describe('setBalanceAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -248,6 +249,7 @@ describe('setBalanceAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -304,6 +306,7 @@ describe('setBalanceAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -346,6 +349,7 @@ describe('setBalanceAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -395,6 +399,7 @@ describe('setBalanceAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -456,6 +461,7 @@ describe('setBalanceAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })

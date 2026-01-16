@@ -46,3 +46,13 @@ export {
 
 // Miscellaneous actions
 export { refreshExchangeRatesAction, setBalanceAction } from './actions/misc'
+
+// Onboarding actions
+export {
+  completeOnboardingAction,
+  skipOnboardingAction,
+  updatePreferredCurrencyAction,
+  createInitialCategoriesAction,
+  createQuickBudgetAction,
+  seedSampleDataAction,
+} from './actions/onboarding'
