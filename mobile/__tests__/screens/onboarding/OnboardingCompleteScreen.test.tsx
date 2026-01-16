@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import type { OnboardingScreenProps } from '../../../src/navigation/types';
 import { OnboardingCompleteScreen } from '../../../src/screens/onboarding/OnboardingCompleteScreen';
+import type { OnboardingScreenProps } from '../../../src/navigation/types';
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -17,13 +17,13 @@ const mockNavigation = {
   getState: jest.fn(),
   addListener: jest.fn(),
   removeListener: jest.fn(),
-};
+} as unknown as OnboardingScreenProps<'OnboardingComplete'>['navigation'];
 
 const mockRoute = {
   key: 'OnboardingComplete',
   name: 'OnboardingComplete' as const,
   params: undefined,
-};
+} as OnboardingScreenProps<'OnboardingComplete'>['route'];
 
 describe('OnboardingCompleteScreen', () => {
   beforeEach(() => {
