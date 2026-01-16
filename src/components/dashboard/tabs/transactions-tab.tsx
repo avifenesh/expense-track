@@ -340,7 +340,18 @@ export function TransactionsTab({
         return
       }
 
-      toast.success(editingTransaction ? 'Transaction updated.' : 'Transaction saved.')
+      // Show enhanced message when a recurring template was auto-created
+      const isNewRecurring = transactionFormState.isRecurring && !editingTransaction?.recurringTemplateId
+      if (isNewRecurring) {
+        const day = dateInput!.getUTCDate()
+        toast.success(
+          editingTransaction
+            ? `Transaction updated. Recurring template created for day ${day} of each month.`
+            : `Transaction saved. Recurring template created for day ${day} of each month.`,
+        )
+      } else {
+        toast.success(editingTransaction ? 'Transaction updated.' : 'Transaction saved.')
+      }
       resetTransactionForm()
       router.refresh()
     })

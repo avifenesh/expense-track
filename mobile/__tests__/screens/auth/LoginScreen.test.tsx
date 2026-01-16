@@ -46,7 +46,7 @@ describe('LoginScreen', () => {
       renderLoginScreen();
 
       expect(screen.getByText('Sign In')).toBeTruthy();
-      expect(screen.getByText('Welcome back to Expense Track')).toBeTruthy();
+      expect(screen.getByText('Welcome back to Balance Beacon')).toBeTruthy();
       expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
       expect(screen.getByPlaceholderText('Enter your password')).toBeTruthy();
     });

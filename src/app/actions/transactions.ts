@@ -1,6 +1,6 @@
 'use server'
 
-import { Prisma, TransactionType, RequestStatus } from '@prisma/client'
+import { Currency, Prisma, TransactionType, RequestStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart, getMonthKey } from '@/utils/date'
@@ -27,6 +27,35 @@ import {
   type TransactionRequestInput,
 } from '@/schemas'
 import { z } from 'zod'
+
+async function createRecurringTemplateForTransaction(data: {
+  accountId: string
+  categoryId: string
+  type: TransactionType
+  amount: number
+  currency: Currency
+  date: Date
+  description?: string | null
+  monthStart: Date
+}): Promise<string> {
+  const dayOfMonth = data.date.getUTCDate()
+
+  const template = await prisma.recurringTemplate.create({
+    data: {
+      accountId: data.accountId,
+      categoryId: data.categoryId,
+      type: data.type,
+      amount: new Prisma.Decimal(toDecimalString(data.amount)),
+      currency: data.currency,
+      dayOfMonth,
+      description: data.description ?? null,
+      startMonth: data.monthStart,
+      endMonth: null,
+      isActive: true,
+    },
+  })
+  return template.id
+}
 
 export async function createTransactionRequestAction(input: TransactionRequestInput) {
   const parsed = parseInput(transactionRequestSchema, input)
@@ -214,6 +243,22 @@ export async function createTransactionAction(input: TransactionInput) {
   }
 
   try {
+    let recurringTemplateId: string | null = data.recurringTemplateId ?? null
+
+    // Auto-create RecurringTemplate if isRecurring is checked and no existing template
+    if (data.isRecurring && !data.recurringTemplateId) {
+      recurringTemplateId = await createRecurringTemplateForTransaction({
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        type: data.type,
+        amount: data.amount,
+        currency: data.currency,
+        date: data.date,
+        description: data.description,
+        monthStart,
+      })
+    }
+
     await prisma.transaction.create({
       data: {
         accountId: data.accountId,
@@ -225,7 +270,7 @@ export async function createTransactionAction(input: TransactionInput) {
         month: monthStart,
         description: data.description,
         isRecurring: data.isRecurring ?? false,
-        recurringTemplateId: data.recurringTemplateId ?? null,
+        recurringTemplateId,
       },
     })
 
@@ -263,6 +308,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
     select: {
       accountId: true,
       month: true,
+      recurringTemplateId: true,
     },
   })
 
@@ -283,6 +329,23 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   }
 
   try {
+    // Use provided template ID, fall back to existing, or auto-create if marking as recurring
+    let recurringTemplateId: string | null = data.recurringTemplateId ?? existing.recurringTemplateId
+
+    // Auto-create RecurringTemplate if transaction is being marked as recurring and has no template
+    if (data.isRecurring && !recurringTemplateId) {
+      recurringTemplateId = await createRecurringTemplateForTransaction({
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        type: data.type,
+        amount: data.amount,
+        currency: data.currency,
+        date: data.date,
+        description: data.description,
+        monthStart,
+      })
+    }
+
     await prisma.transaction.update({
       where: { id: data.id },
       data: {
@@ -295,6 +358,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         month: monthStart,
         description: data.description,
         isRecurring: data.isRecurring ?? false,
+        recurringTemplateId,
       },
     })
 
