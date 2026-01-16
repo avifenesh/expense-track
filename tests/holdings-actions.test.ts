@@ -51,6 +51,18 @@ vi.mock('@/lib/dashboard-cache', () => ({
   invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  hasActiveSubscription: vi.fn().mockResolvedValue(true),
+  getSubscriptionState: vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    isActive: true,
+    trialEndsAt: null,
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    daysRemaining: 30,
+    canAccessApp: true,
+  }),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
@@ -96,6 +108,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -140,6 +153,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -183,6 +197,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -227,6 +242,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -306,6 +322,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue(null)
@@ -344,6 +361,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockRejectedValue(new Error('DB connection lost'))
@@ -382,6 +400,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -426,6 +445,7 @@ describe('createHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
@@ -483,6 +503,7 @@ describe('updateHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.update).mockResolvedValue({} as any)
@@ -550,6 +571,7 @@ describe('updateHoldingAction', () => {
       id: 'acc-other',
       name: 'UnauthorizedAccount',
       type: 'SELF',
+      userId: 'other-user',
     } as any)
 
     const result = await updateHoldingAction({
@@ -588,6 +610,7 @@ describe('updateHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.update).mockRejectedValue(new Error('DB error'))
@@ -634,6 +657,7 @@ describe('deleteHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.delete).mockResolvedValue({} as any)
@@ -668,6 +692,7 @@ describe('deleteHoldingAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.delete).mockRejectedValue(new Error('Foreign key constraint'))
@@ -703,6 +728,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([
@@ -743,6 +769,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([])
@@ -773,6 +800,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockResolvedValue([
@@ -811,6 +839,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-unauthorized',
       name: 'UnauthorizedAccount',
       type: 'SELF',
+      userId: 'other-user',
     } as any)
 
     const result = await refreshHoldingPricesAction({ accountId: 'acc-unauthorized', csrfToken: 'test-token' })
@@ -838,6 +867,7 @@ describe('refreshHoldingPricesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.holding.findMany).mockRejectedValue(new Error('DB timeout'))

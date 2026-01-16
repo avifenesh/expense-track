@@ -47,6 +47,18 @@ vi.mock('@/lib/dashboard-cache', () => ({
   invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  hasActiveSubscription: vi.fn().mockResolvedValue(true),
+  getSubscriptionState: vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    isActive: true,
+    trialEndsAt: null,
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    daysRemaining: 30,
+    canAccessApp: true,
+  }),
+}))
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
@@ -188,6 +200,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -243,6 +256,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -298,6 +312,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     // Current: income 1000, expense 200 = net 800
@@ -339,6 +354,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
@@ -387,6 +403,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({
@@ -447,6 +464,7 @@ describe('setBalanceAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'avi',
     } as any)
 
     vi.mocked(prisma.category.findFirst).mockResolvedValue({

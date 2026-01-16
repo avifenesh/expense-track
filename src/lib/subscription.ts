@@ -49,13 +49,13 @@ export async function getSubscriptionState(userId: string): Promise<Subscription
   let daysRemaining: number | null = null
   if (isTrialing && trialEndsAt) {
     daysRemaining = Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  } else if (isActive && currentPeriodEnd) {
+  } else if ((isActive || isCanceledWithAccess) && currentPeriodEnd) {
     daysRemaining = Math.ceil((currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   }
 
   return {
     status,
-    isActive: !!(isActive || isTrialing),
+    isActive: !!(isActive || isTrialing || isCanceledWithAccess),
     trialEndsAt,
     currentPeriodEnd,
     daysRemaining,

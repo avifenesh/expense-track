@@ -135,6 +135,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
     // Default mock implementations
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
       id: 'test-account-id',
+      userId: 'test-user',
       name: 'Test Account',
       type: 'CHECKING',
       isArchived: false,
@@ -181,6 +182,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
         // Mock account and category lookups
         vi.mocked(prisma.account.findUnique).mockResolvedValueOnce({
           id: 'test-account-id',
+          userId: 'test-user',
           name: 'Test Account',
           type: 'CHECKING',
           isArchived: false,
@@ -334,6 +336,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
 
         vi.mocked(prisma.account.findUnique).mockResolvedValueOnce({
           id: 'test-account-id',
+          userId: 'test-user',
           name: 'Test Account',
         } as any)
 
@@ -508,6 +511,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
 
         vi.mocked(prisma.account.findUnique).mockResolvedValueOnce({
           id: 'test-account-id',
+          userId: 'test-user',
           name: 'Test Account',
         } as any)
 

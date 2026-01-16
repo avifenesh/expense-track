@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { parseInput, toDecimalString, ensureAccountAccess, requireCsrfToken } from './shared'
+import { parseInput, toDecimalString, ensureAccountAccessWithSubscription, requireCsrfToken } from './shared'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import {
   holdingSchema,
@@ -27,7 +27,7 @@ export async function createHoldingAction(input: HoldingInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(data.accountId)
+  const access = await ensureAccountAccessWithSubscription(data.accountId)
   if ('error' in access) {
     return access
   }
@@ -120,7 +120,7 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
     return generalError('Holding not found')
   }
 
-  const access = await ensureAccountAccess(holding.accountId)
+  const access = await ensureAccountAccessWithSubscription(holding.accountId)
   if ('error' in access) {
     return access
   }
@@ -177,7 +177,7 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
     return generalError('Holding not found')
   }
 
-  const access = await ensureAccountAccess(holding.accountId)
+  const access = await ensureAccountAccessWithSubscription(holding.accountId)
   if ('error' in access) {
     return access
   }
@@ -212,7 +212,7 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const access = await ensureAccountAccess(parsed.data.accountId)
+  const access = await ensureAccountAccessWithSubscription(parsed.data.accountId)
   if ('error' in access) {
     return access
   }

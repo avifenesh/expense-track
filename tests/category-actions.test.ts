@@ -15,9 +15,27 @@ vi.mock('@/lib/csrf', () => ({
 
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn().mockResolvedValue({ userEmail: 'test@example.com', accountId: 'acc-1' }),
-  getDbUserAsAuthUser: vi
-    .fn()
-    .mockResolvedValue({ id: 'test-user', email: 'test@example.com', accountNames: ['TestAccount'] }),
+  getDbUserAsAuthUser: vi.fn().mockResolvedValue({
+    id: 'test-user',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    passwordHash: 'hashed',
+    accountNames: ['TestAccount'],
+    defaultAccountName: 'TestAccount',
+    preferredCurrency: 'USD',
+  }),
+}))
+
+vi.mock('@/lib/subscription', () => ({
+  hasActiveSubscription: vi.fn().mockResolvedValue(true),
+  getSubscriptionState: vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    isActive: true,
+    trialEndsAt: null,
+    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    daysRemaining: 30,
+    canAccessApp: true,
+  }),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {
