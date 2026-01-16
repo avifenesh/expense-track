@@ -353,18 +353,14 @@ export async function getTransactionsForMonth({
   return converted
 }
 
-export async function getBudgetsForMonth({ monthKey, accountId }: { monthKey: string; accountId?: string }) {
+export async function getBudgetsForMonth({ monthKey, accountId }: { monthKey: string; accountId: string }) {
   const monthStart = getMonthStartFromKey(monthKey)
-  const where: Prisma.BudgetWhereInput = {
-    month: monthStart,
-  }
-
-  if (accountId) {
-    where.accountId = accountId
-  }
 
   const budgets = await prisma.budget.findMany({
-    where,
+    where: {
+      month: monthStart,
+      accountId,
+    },
     include: {
       category: true,
       account: true,
@@ -379,14 +375,9 @@ export async function getBudgetsForMonth({ monthKey, accountId }: { monthKey: st
   return budgets
 }
 
-export async function getRecurringTemplates({ accountId }: { accountId?: string }) {
-  const where: Prisma.RecurringTemplateWhereInput = {}
-  if (accountId) {
-    where.accountId = accountId
-  }
-
+export async function getRecurringTemplates({ accountId }: { accountId: string }) {
   const templates = await prisma.recurringTemplate.findMany({
-    where,
+    where: { accountId },
     include: {
       category: true,
       account: true,

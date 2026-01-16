@@ -181,6 +181,8 @@ model RecurringTemplate {
   transactions Transaction[]
 
   @@index([isActive])
+  @@index([accountId])
+  @@index([accountId, isActive])
 }
 
 model StockPrice {

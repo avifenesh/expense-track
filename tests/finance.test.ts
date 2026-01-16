@@ -367,31 +367,28 @@ describe('finance.ts', () => {
       },
     ]
 
-    it('should return budgets for given month', async () => {
+    it('should return budgets for given month and accountId', async () => {
       vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as unknown as Budget[])
 
-      const result = await financeLib.getBudgetsForMonth({ monthKey: '2024-01' })
+      const result = await financeLib.getBudgetsForMonth({ monthKey: '2024-01', accountId: 'acc1' })
 
       const callArg = vi.mocked(prisma.budget.findMany).mock.calls[0]?.[0]
       const monthDate = callArg?.where?.month as Date
 
       expect(monthDate?.getFullYear()).toBe(2024)
       expect(monthDate?.getMonth()).toBe(0) // January is 0
+      expect(callArg?.where?.accountId).toBe('acc1')
       expect(callArg?.include).toEqual({ category: true, account: true })
       expect(result).toEqual(mockBudgets)
     })
 
-    it('should filter by accountId', async () => {
+    it('should order budgets by category name', async () => {
       vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as unknown as Budget[])
 
       await financeLib.getBudgetsForMonth({ monthKey: '2024-01', accountId: 'acc1' })
 
       const callArg = vi.mocked(prisma.budget.findMany).mock.calls[0]?.[0]
-      const monthDate = callArg?.where?.month as Date
-
-      expect(monthDate?.getFullYear()).toBe(2024)
-      expect(monthDate?.getMonth()).toBe(0)
-      expect(callArg?.where?.accountId).toBe('acc1')
+      expect(callArg?.orderBy).toEqual({ category: { name: 'asc' } })
     })
   })
 
@@ -413,10 +410,10 @@ describe('finance.ts', () => {
       },
     ]
 
-    it('should return formatted recurring templates', async () => {
+    it('should return formatted recurring templates for accountId', async () => {
       vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue(mockTemplates as unknown as RecurringTemplate[])
 
-      const result = await financeLib.getRecurringTemplates({})
+      const result = await financeLib.getRecurringTemplates({ accountId: 'acc1' })
 
       expect(result).toHaveLength(1)
       expect(result[0]).toMatchObject({
@@ -433,17 +430,18 @@ describe('finance.ts', () => {
         startMonthKey: '2024-01',
         endMonthKey: null,
       })
+
+      const callArg = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0]?.[0]
+      expect(callArg?.where).toEqual({ accountId: 'acc1' })
     })
 
-    it('should filter by accountId', async () => {
+    it('should order templates by dayOfMonth', async () => {
       vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue(mockTemplates as unknown as RecurringTemplate[])
 
       await financeLib.getRecurringTemplates({ accountId: 'acc1' })
 
       const callArg = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0]?.[0]
-      expect(callArg?.where).toMatchObject({
-        accountId: 'acc1',
-      })
+      expect(callArg?.orderBy).toEqual({ dayOfMonth: 'asc' })
     })
 
     it('should handle null start and end months', async () => {
@@ -456,7 +454,7 @@ describe('finance.ts', () => {
         templateWithNullDates,
       ] as unknown as RecurringTemplate[])
 
-      const result = await financeLib.getRecurringTemplates({})
+      const result = await financeLib.getRecurringTemplates({ accountId: 'acc1' })
 
       expect(result[0].startMonthKey).toBeNull()
       expect(result[0].endMonthKey).toBeNull()
