@@ -9,16 +9,20 @@ import {
   ArrowRight,
   ArrowUp,
   CalendarRange,
+  ChevronDown,
   CreditCard,
   FileSpreadsheet,
   Gauge,
   Layers,
+  LogOut,
   PiggyBank,
   RefreshCcw,
   Repeat,
   Scale,
+  Settings,
   Sparkles,
   Tags,
+  Trash2,
   TrendingUp,
   Wallet,
 } from 'lucide-react'
@@ -36,6 +40,7 @@ import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { ChatWidget } from '@/components/ai/chat-widget'
 import { BudgetsTab, CategoriesTab, OverviewTab, RecurringTab, TransactionsTab } from '@/components/dashboard/tabs'
 import { SubscriptionBanner, type SubscriptionBannerData } from '@/components/subscription'
+import { DeleteAccountDialog } from '@/components/settings/delete-account-dialog'
 
 type Feedback = { type: 'success' | 'error'; message: string }
 type TabValue = 'overview' | 'budgets' | 'transactions' | 'recurring' | 'categories' | 'holdings'
@@ -45,6 +50,7 @@ type DashboardPageProps = {
   monthKey: string
   accountId: string
   subscription: SubscriptionBannerData | null
+  userEmail: string
 }
 
 const HoldingsTab = dynamic(() => import('./holdings-tab'), {
@@ -140,7 +146,7 @@ function resolveStatIcon(label: string) {
   return TrendingUp
 }
 
-export function DashboardPage({ data, monthKey, accountId, subscription }: DashboardPageProps) {
+export function DashboardPage({ data, monthKey, accountId, subscription, userEmail }: DashboardPageProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -158,6 +164,20 @@ export function DashboardPage({ data, monthKey, accountId, subscription }: Dashb
   const [, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
   const [isPendingRates, startRates] = useTransition()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+
+  // Close settings menu on Escape key
+  useEffect(() => {
+    if (!showSettingsMenu) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowSettingsMenu(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showSettingsMenu])
 
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
@@ -294,16 +314,56 @@ export function DashboardPage({ data, monthKey, accountId, subscription }: Dashb
             </Button>
           </div>
 
-          {/* Right side actions */}
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
-            onClick={handleLogout}
-            loading={isPendingLogout}
-          >
-            Sign out
-          </Button>
+          {/* Right side actions - Settings dropdown */}
+          <div className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
+              onClick={() => setShowSettingsMenu((prev) => !prev)}
+            >
+              <Settings className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Account</span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+            {showSettingsMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowSettingsMenu(false)}
+                  role="button"
+                  aria-label="Close settings menu"
+                  tabIndex={-1}
+                />
+                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
+                    onClick={() => {
+                      setShowSettingsMenu(false)
+                      handleLogout()
+                    }}
+                    disabled={isPendingLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {isPendingLogout ? 'Signing out...' : 'Sign out'}
+                  </button>
+                  <div className="my-1 h-px bg-white/10" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-400 hover:bg-rose-500/10"
+                    onClick={() => {
+                      setShowSettingsMenu(false)
+                      setShowDeleteDialog(true)
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete account
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -541,6 +601,9 @@ export function DashboardPage({ data, monthKey, accountId, subscription }: Dashb
       >
         <ArrowUp className="h-5 w-5" />
       </Button>
+
+      {/* Delete Account Dialog */}
+      {showDeleteDialog && <DeleteAccountDialog userEmail={userEmail} onClose={() => setShowDeleteDialog(false)} />}
     </div>
   )
 }

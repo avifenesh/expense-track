@@ -11,7 +11,13 @@ import 'server-only'
  * Rate limit configurations for different endpoint types
  * Each type has its own window and max requests
  */
-export type RateLimitType = 'default' | 'login' | 'registration' | 'password_reset' | 'resend_verification'
+export type RateLimitType =
+  | 'default'
+  | 'login'
+  | 'registration'
+  | 'password_reset'
+  | 'resend_verification'
+  | 'account_deletion'
 
 interface RateLimitConfig {
   windowMs: number
@@ -24,6 +30,7 @@ const RATE_LIMIT_CONFIGS: Record<RateLimitType, RateLimitConfig> = {
   registration: { windowMs: 60 * 1000, maxRequests: 3 }, // 3/min - spam prevention
   password_reset: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - abuse prevention
   resend_verification: { windowMs: 15 * 60 * 1000, maxRequests: 3 }, // 3/15min - spam prevention
+  account_deletion: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - abuse prevention
 }
 
 interface RateLimitEntry {
