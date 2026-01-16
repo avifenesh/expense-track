@@ -66,6 +66,13 @@ vi.mock('@/lib/csrf', () => ({
   requireCsrfToken: vi.fn().mockResolvedValue({ success: true }),
 }))
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimitTyped: vi.fn().mockReturnValue({ allowed: true, limit: 3, remaining: 3, resetAt: new Date() }),
+  incrementRateLimitTyped: vi.fn(),
+  resetRateLimitTyped: vi.fn(),
+  resetAllRateLimits: vi.fn(),
+}))
+
 vi.mock('@/app/actions/shared', () => ({
   parseInput: vi.fn((schema, input) => {
     const parsed = schema.safeParse(input)
@@ -645,6 +652,7 @@ describe('auth actions', () => {
       vi.mocked(prisma.account.findMany).mockResolvedValue([
         mockAccount({ id: 'acc-1', userId: TEST_USER_1.id, name: 'Test1' }),
       ])
+      vi.mocked(prisma.category.findMany).mockResolvedValue([{ id: 'cat-1', userId: TEST_USER_1.id } as never])
       vi.mocked(prisma.$transaction).mockResolvedValue(undefined)
     })
 
@@ -785,6 +793,18 @@ describe('auth actions', () => {
       })
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: { userId: TEST_USER_1.id },
+        select: { id: true },
+      })
+    })
+
+    it('fetches user categories for cross-account FK cleanup', async () => {
+      await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
         where: { userId: TEST_USER_1.id },
         select: { id: true },
       })

@@ -307,6 +307,13 @@ export async function deleteAccountAction(input: z.infer<typeof deleteAccountSch
   if ('error' in auth) return auth
   const { authUser } = auth
 
+  // Rate limit check (3/hour for abuse prevention)
+  const rateLimit = checkRateLimitTyped(authUser.id, 'account_deletion')
+  if (!rateLimit.allowed) {
+    return failure({ general: ['Too many deletion attempts. Please try again later.'] })
+  }
+  incrementRateLimitTyped(authUser.id, 'account_deletion')
+
   // Verify email confirmation matches authenticated user
   if (parsed.data.confirmEmail.toLowerCase() !== authUser.email.toLowerCase()) {
     return {
@@ -317,36 +324,52 @@ export async function deleteAccountAction(input: z.infer<typeof deleteAccountSch
   }
 
   try {
-    // Get all user's account IDs for cascade deletion
+    // Get all user's account IDs and category IDs for cascade deletion
     const userAccounts = await prisma.account.findMany({
       where: { userId: authUser.id },
       select: { id: true },
     })
     const accountIds = userAccounts.map((a) => a.id)
 
+    const userCategories = await prisma.category.findMany({
+      where: { userId: authUser.id },
+      select: { id: true },
+    })
+    const categoryIds = userCategories.map((c) => c.id)
+
     // Delete all user data in correct order (respecting FK constraints)
+    // Also handle cross-account references where other users' transactions
+    // may reference this user's categories (from approved transaction requests)
     await prisma.$transaction([
-      // 1. TransactionRequest - depends on Account
+      // 1. TransactionRequest - depends on Account, Category
       prisma.transactionRequest.deleteMany({
         where: {
-          OR: [{ fromId: { in: accountIds } }, { toId: { in: accountIds } }],
+          OR: [{ fromId: { in: accountIds } }, { toId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
         },
       }),
-      // 2. Transaction - depends on Account, Category
+      // 2. Transaction - depends on Account, Category (includes cross-account refs)
       prisma.transaction.deleteMany({
-        where: { accountId: { in: accountIds } },
+        where: {
+          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
+        },
       }),
       // 3. Holding - depends on Account, Category
       prisma.holding.deleteMany({
-        where: { accountId: { in: accountIds } },
+        where: {
+          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
+        },
       }),
       // 4. Budget - depends on Account, Category
       prisma.budget.deleteMany({
-        where: { accountId: { in: accountIds } },
+        where: {
+          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
+        },
       }),
       // 5. RecurringTemplate - depends on Account, Category
       prisma.recurringTemplate.deleteMany({
-        where: { accountId: { in: accountIds } },
+        where: {
+          OR: [{ accountId: { in: accountIds } }, { categoryId: { in: categoryIds } }],
+        },
       }),
       // 6. DashboardCache - cleanup cached data for user's accounts
       prisma.dashboardCache.deleteMany({

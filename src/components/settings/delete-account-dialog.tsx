@@ -20,6 +20,7 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
+  // Client-side email check for immediate UX feedback (server also validates)
   const isEmailMatch = confirmEmail.toLowerCase() === userEmail.toLowerCase()
 
   const handleDelete = () => {
@@ -100,7 +101,7 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
             variant="primary"
             className="flex-1 bg-rose-600 hover:bg-rose-700"
             onClick={handleDelete}
-            disabled={!isEmailMatch || isPending}
+            disabled={!isEmailMatch || isPending || !csrfToken}
             loading={isPending}
           >
             Delete Account

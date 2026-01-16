@@ -167,6 +167,18 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
 
+  // Close settings menu on Escape key
+  useEffect(() => {
+    if (!showSettingsMenu) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowSettingsMenu(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showSettingsMenu])
+
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
     [data.accounts],
@@ -316,7 +328,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             </Button>
             {showSettingsMenu && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} aria-hidden="true" />
+                <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} />
                 <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl">
                   <button
                     type="button"
