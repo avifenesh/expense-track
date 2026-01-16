@@ -69,6 +69,7 @@ function createMockAccount(overrides: Partial<{
     preferredCurrency: Currency.USD,
     color: '#0ea5e9',
     icon: 'User',
+    description: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
@@ -245,8 +246,6 @@ describe('Migration Logic', () => {
         currentPeriodStart: null,
         currentPeriodEnd: null,
         canceledAt: null,
-        paymentProvider: null,
-        paymentProviderId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -274,12 +273,10 @@ describe('Migration Logic', () => {
         id: 'existing-sub',
         userId: 'user-1',
         status: SubscriptionStatus.ACTIVE,
-        trialEndsAt: null,
+        trialEndsAt: new Date(), // trialEndsAt is required in schema
         currentPeriodStart: new Date(),
         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         canceledAt: null,
-        paymentProvider: 'stripe',
-        paymentProviderId: 'stripe_sub_123',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -366,8 +363,6 @@ describe('Migration Logic', () => {
         currentPeriodStart: null,
         currentPeriodEnd: null,
         canceledAt: null,
-        paymentProvider: null,
-        paymentProviderId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
