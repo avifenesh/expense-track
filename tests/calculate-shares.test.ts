@@ -38,7 +38,7 @@ vi.mock('next/cache', () => ({
 }))
 
 // Import after mocks are set up
-import { calculateShares } from '@/app/actions/expense-sharing'
+import { calculateShares } from '@/lib/finance'
 
 describe('calculateShares', () => {
   describe('EQUAL split type', () => {

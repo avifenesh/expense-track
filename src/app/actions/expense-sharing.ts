@@ -3,6 +3,7 @@
 import { Prisma, PaymentStatus, SplitType } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { calculateShares } from '@/lib/finance'
 import { success, successVoid, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, toDecimalString, requireAuthUser, requireCsrfToken, requireActiveSubscription } from './shared'
@@ -532,49 +533,4 @@ export async function sendPaymentReminderAction(input: SendPaymentReminderInput)
       fallbackMessage: 'Unable to send reminder',
     })
   }
-}
-
-export function calculateShares(
-  splitType: SplitType,
-  totalAmount: number,
-  participants: Array<{ email: string; shareAmount?: number; sharePercentage?: number }>,
-  validEmails: string[],
-): Map<string, { amount: number; percentage: number | null }> {
-  const shares = new Map<string, { amount: number; percentage: number | null }>()
-  const numParticipants = validEmails.length
-
-  switch (splitType) {
-    case SplitType.EQUAL: {
-      const equalShare = Math.round((totalAmount / (numParticipants + 1)) * 100) / 100
-      for (const email of validEmails) {
-        shares.set(email.toLowerCase(), { amount: equalShare, percentage: null })
-      }
-      break
-    }
-
-    case SplitType.PERCENTAGE: {
-      for (const p of participants) {
-        const email = p.email.toLowerCase()
-        if (!validEmails.some((e) => e.toLowerCase() === email)) continue
-
-        const percentage = p.sharePercentage ?? 0
-        const amount = Math.round(totalAmount * (percentage / 100) * 100) / 100
-        shares.set(email, { amount, percentage })
-      }
-      break
-    }
-
-    case SplitType.FIXED: {
-      for (const p of participants) {
-        const email = p.email.toLowerCase()
-        if (!validEmails.some((e) => e.toLowerCase() === email)) continue
-
-        const amount = p.shareAmount ?? 0
-        shares.set(email, { amount, percentage: null })
-      }
-      break
-    }
-  }
-
-  return shares
 }
