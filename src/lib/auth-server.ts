@@ -224,5 +224,6 @@ export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | und
     accountNames: dbUser.accounts.map((a) => a.name),
     defaultAccountName: dbUser.accounts[0].name,
     preferredCurrency: dbUser.preferredCurrency,
+    hasCompletedOnboarding: dbUser.hasCompletedOnboarding,
   }
 }

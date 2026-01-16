@@ -12,6 +12,7 @@ export type AuthUser = {
   accountNames: string[]
   defaultAccountName: string
   preferredCurrency: Currency
+  hasCompletedOnboarding: boolean
 }
 
 // Session cookie names
