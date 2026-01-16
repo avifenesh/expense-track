@@ -23,6 +23,31 @@ npm start
 - `npm run lint` - Run ESLint
 - `npm run check-types` - TypeScript check
 - `npm test` - Run tests
+- `npm test -- --coverage` - Run tests with coverage report
+
+## Testing
+
+Tests are written with Jest and React Native Testing Library. Current coverage: 90.9%
+
+### Running Tests
+
+```bash
+npm test                    # Run all tests
+npm test -- --coverage      # Run with coverage report
+npm test -- --watch         # Run in watch mode
+npm test -- LoginScreen     # Run specific test file
+```
+
+### Test Structure
+
+```
+__tests__/
+  hooks/           # Hook tests (useAuthState)
+  navigation/      # Navigation component tests (TabIcon)
+  screens/
+    auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
+    onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
+```
 
 ## Project Structure
 
