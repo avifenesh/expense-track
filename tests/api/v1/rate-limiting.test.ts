@@ -6,7 +6,7 @@ import { POST as holdingsPost } from '@/app/api/v1/holdings/route'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { resetAllRateLimits } from '@/lib/rate-limit'
-import { getApiTestUser } from './helpers'
+import { getApiTestUser, TEST_USER_ID } from './helpers'
 
 describe('API Rate Limiting Integration', () => {
   let validToken: string
@@ -18,18 +18,18 @@ describe('API Rate Limiting Integration', () => {
     vi.useFakeTimers()
     resetAllRateLimits()
 
-    // Generate test JWT token
-    validToken = generateAccessToken('avi', 'avi@example.com')
-
     // Get test user for userId foreign keys
     const testUser = await getApiTestUser()
     testUserId = testUser.id
 
+    // Generate test JWT token using the actual test user ID
+    validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
+
     // Create refresh token for testing
-    const { token, jti, expiresAt } = generateRefreshToken('avi', 'avi@example.com')
+    const { token, jti, expiresAt } = generateRefreshToken(TEST_USER_ID, 'api-test@example.com')
     refreshToken = token
     await prisma.refreshToken.create({
-      data: { jti, userId: testUser.id, email: 'avi@example.com', expiresAt },
+      data: { jti, userId: testUser.id, email: 'api-test@example.com', expiresAt },
     })
 
     // Setup test account
@@ -406,30 +406,30 @@ describe('API Rate Limiting Integration', () => {
 
   describe('different users', () => {
     it('tracks rate limits independently per user', async () => {
-      const user1Token = generateAccessToken('avi', 'avi@example.com')
-      const user2Token = generateAccessToken('serena', 'serena@example.com')
+      const user1Token = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
+      const user2Token = generateAccessToken('other-user', 'other@example.com')
 
-      // Create second user 'serena' with their own account
+      // Create second user for rate limit testing with their own account
       const user2 = await prisma.user.upsert({
-        where: { id: 'serena' },
+        where: { id: 'other-user' },
         update: {},
         create: {
-          id: 'serena',
-          email: 'serena@example.com',
-          displayName: 'Serena Test User',
+          id: 'other-user',
+          email: 'other@example.com',
+          displayName: 'Other Test User',
           passwordHash: '$2b$10$placeholder',
           preferredCurrency: 'USD',
         },
       })
 
-      const user2AccountId = 'test-account-serena'
+      const user2AccountId = 'test-account-other'
       await prisma.account.upsert({
         where: { id: user2AccountId },
         update: {},
         create: {
           id: user2AccountId,
           userId: user2.id,
-          name: 'Serena Checking Rate Limit Test',
+          name: 'Other User Rate Limit Test',
           type: 'SELF',
           preferredCurrency: 'USD',
         },

@@ -91,7 +91,7 @@ describe('upsertRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -104,7 +104,7 @@ describe('upsertRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({} as any)
@@ -132,7 +132,7 @@ describe('upsertRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -145,7 +145,7 @@ describe('upsertRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.update).mockResolvedValue({} as any)
@@ -237,7 +237,7 @@ describe('upsertRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -250,7 +250,7 @@ describe('upsertRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({} as any)
@@ -283,7 +283,7 @@ describe('toggleRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -302,7 +302,7 @@ describe('toggleRecurringTemplateAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.update).mockResolvedValue({} as any)
@@ -325,7 +325,7 @@ describe('toggleRecurringTemplateAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -359,7 +359,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -372,7 +372,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
@@ -409,7 +409,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -422,7 +422,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
@@ -463,7 +463,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -476,7 +476,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([
@@ -511,7 +511,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -524,7 +524,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([])
@@ -546,7 +546,7 @@ describe('applyRecurringTemplatesAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -559,7 +559,7 @@ describe('applyRecurringTemplatesAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([

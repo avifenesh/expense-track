@@ -7,7 +7,7 @@ import { POST as ApproveRequest } from '@/app/api/v1/transactions/requests/[id]/
 import { POST as RejectRequest } from '@/app/api/v1/transactions/requests/[id]/reject/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { getApiTestUser } from './helpers'
+import { getApiTestUser, TEST_USER_ID } from './helpers'
 
 describe('Transaction API Routes', () => {
   let validToken: string
@@ -17,20 +17,20 @@ describe('Transaction API Routes', () => {
 
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
-    validToken = generateAccessToken('avi', 'avi@example.com')
+    validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys
     const testUser = await getApiTestUser()
 
-    // Create 'serena' user for transaction request approval tests
-    // This user owns the 'SerenaAccount' account and can approve/reject requests
-    const serenaUser = await prisma.user.upsert({
-      where: { id: 'serena' },
+    // Create approver user for transaction request approval tests
+    // This user owns the approver account and can approve/reject requests
+    const approverUser = await prisma.user.upsert({
+      where: { id: 'approver-user' },
       update: {},
       create: {
-        id: 'serena',
-        email: 'serena@example.com',
-        displayName: 'Serena Test User',
+        id: 'approver-user',
+        email: 'approver@example.com',
+        displayName: 'Approver Test User',
         passwordHash: '$2b$10$placeholder',
         preferredCurrency: 'USD',
       },
@@ -38,16 +38,16 @@ describe('Transaction API Routes', () => {
 
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
-      where: { userId_name: { userId: testUser.id, name: 'Avi' } },
+      where: { userId_name: { userId: testUser.id, name: 'TestAccount' } },
       update: {},
-      create: { userId: testUser.id, name: 'Avi', type: 'SELF' },
+      create: { userId: testUser.id, name: 'TestAccount', type: 'SELF' },
     })
 
-    // Other account belongs to 'serena' user - for request approval tests
+    // Other account belongs to approver user - for request approval tests
     const otherAccount = await prisma.account.upsert({
-      where: { userId_name: { userId: serenaUser.id, name: 'SerenaAccount' } },
+      where: { userId_name: { userId: approverUser.id, name: 'ApproverAccount' } },
       update: {},
-      create: { userId: serenaUser.id, name: 'SerenaAccount', type: 'SELF' },
+      create: { userId: approverUser.id, name: 'ApproverAccount', type: 'SELF' },
     })
 
     const category = await prisma.category.upsert({
@@ -378,10 +378,10 @@ describe('Transaction API Routes', () => {
 
   describe('POST /api/v1/transactions/requests/[id]/approve', () => {
     let requestId: string
-    let serenaToken: string
+    let approverToken: string
 
     beforeEach(async () => {
-      serenaToken = generateAccessToken('serena', 'serena@example.com')
+      approverToken = generateAccessToken('approver-user', 'approver@example.com')
       const transactionRequest = await prisma.transactionRequest.create({
         data: {
           fromId: accountId,
@@ -400,7 +400,7 @@ describe('Transaction API Routes', () => {
     it('approves request with valid JWT and authorization', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${requestId}/approve`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${approverToken}` },
       })
 
       const response = await ApproveRequest(request, { params: Promise.resolve({ id: requestId }) })
@@ -417,7 +417,7 @@ describe('Transaction API Routes', () => {
     it('returns 404 for non-existent request', async () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/requests/nonexistent/approve', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${approverToken}` },
       })
 
       const response = await ApproveRequest(request, { params: Promise.resolve({ id: 'nonexistent' }) })
@@ -446,10 +446,10 @@ describe('Transaction API Routes', () => {
 
   describe('POST /api/v1/transactions/requests/[id]/reject', () => {
     let requestId: string
-    let serenaToken: string
+    let approverToken: string
 
     beforeEach(async () => {
-      serenaToken = generateAccessToken('serena', 'serena@example.com')
+      approverToken = generateAccessToken('approver-user', 'approver@example.com')
       const transactionRequest = await prisma.transactionRequest.create({
         data: {
           fromId: accountId,
@@ -468,7 +468,7 @@ describe('Transaction API Routes', () => {
     it('rejects request with valid JWT and authorization', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${requestId}/reject`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${approverToken}` },
       })
 
       const response = await RejectRequest(request, { params: Promise.resolve({ id: requestId }) })
@@ -485,7 +485,7 @@ describe('Transaction API Routes', () => {
     it('returns 404 for non-existent request', async () => {
       const request = new NextRequest('http://localhost/api/v1/transactions/requests/nonexistent/reject', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${serenaToken}` },
+        headers: { Authorization: `Bearer ${approverToken}` },
       })
 
       const response = await RejectRequest(request, { params: Promise.resolve({ id: 'nonexistent' }) })

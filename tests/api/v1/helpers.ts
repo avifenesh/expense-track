@@ -2,11 +2,10 @@ import { prisma } from '@/lib/prisma'
 import { Currency } from '@prisma/client'
 
 // Fixed test user ID that matches the JWT tokens generated in tests
-// Tests use generateAccessToken('avi', ...) which sets userId='avi'
-export const TEST_USER_ID = 'avi'
+export const TEST_USER_ID = 'api-test-user'
 
 // Second user ID for testing unauthorized access scenarios
-export const OTHER_USER_ID = 'other-user'
+export const OTHER_USER_ID = 'api-other-user'
 
 // Cache test users for API tests
 let testUser: Awaited<ReturnType<typeof prisma.user.upsert>> | null = null
@@ -14,7 +13,6 @@ let otherUser: Awaited<ReturnType<typeof prisma.user.upsert>> | null = null
 
 /**
  * Get or create a test user for API tests
- * Uses a fixed ID ('avi') to match the JWT tokens generated in tests
  */
 export async function getApiTestUser() {
   if (testUser) {
@@ -27,7 +25,7 @@ export async function getApiTestUser() {
     update: {},
     create: {
       id: TEST_USER_ID,
-      email: 'avi@example.com',
+      email: 'api-test@example.com',
       displayName: 'API Test User',
       passwordHash: '$2b$10$placeholder', // Not used for auth
       preferredCurrency: Currency.USD,
@@ -52,8 +50,8 @@ export async function getOtherTestUser() {
     update: {},
     create: {
       id: OTHER_USER_ID,
-      email: 'other@example.com',
-      displayName: 'Other Test User',
+      email: 'api-other@example.com',
+      displayName: 'API Other User',
       passwordHash: '$2b$10$placeholder', // Not used for auth
       preferredCurrency: Currency.USD,
     },

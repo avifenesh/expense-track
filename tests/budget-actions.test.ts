@@ -97,7 +97,7 @@ describe('upsertBudgetAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -134,7 +134,7 @@ describe('upsertBudgetAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -147,7 +147,7 @@ describe('upsertBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.budget.upsert).mockResolvedValue({} as any)
@@ -198,7 +198,7 @@ describe('upsertBudgetAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -211,7 +211,7 @@ describe('upsertBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.budget.upsert).mockResolvedValue({} as any)
@@ -258,7 +258,7 @@ describe('deleteBudgetAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -271,7 +271,7 @@ describe('deleteBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.budget.delete).mockResolvedValue({} as any)
@@ -300,7 +300,7 @@ describe('deleteBudgetAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
-      id: 'avi',
+      id: 'test-user',
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
@@ -313,7 +313,7 @@ describe('deleteBudgetAction', () => {
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
-      userId: 'avi',
+      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.budget.delete).mockRejectedValue(new Error('Not found'))

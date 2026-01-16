@@ -113,18 +113,18 @@ describe('createTransactionRequestAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'avi@example.com',
-      id: 'avi',
-      displayName: 'Avi',
+      id: 'test-user',
+      displayName: 'Test User',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
-      accountNames: ['Avi', 'Serena'],
-      defaultAccountName: 'Avi',
+      accountNames: ['TestAccount', 'OtherAccount'],
+      defaultAccountName: 'TestAccount',
     })
 
     vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'from-id',
-      name: 'Avi',
+      name: 'TestAccount',
       type: 'SELF',
     } as any)
     vi.mocked(prisma.transactionRequest.create).mockResolvedValue({} as any)
@@ -161,12 +161,12 @@ describe('approveTransactionRequestAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'serena@example.com',
-      id: 'serena',
-      displayName: 'Serena',
+      id: 'other-user',
+      displayName: 'Other User',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.EUR,
-      accountNames: ['Serena'],
-      defaultAccountName: 'Serena',
+      accountNames: ['OtherAccount'],
+      defaultAccountName: 'OtherAccount',
       hasCompletedOnboarding: true,
     })
 
@@ -182,12 +182,12 @@ describe('approveTransactionRequestAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'serena@example.com',
-      id: 'serena',
-      displayName: 'Serena',
+      id: 'other-user',
+      displayName: 'Other User',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.EUR,
-      accountNames: ['Serena'],
-      defaultAccountName: 'Serena',
+      accountNames: ['OtherAccount'],
+      defaultAccountName: 'OtherAccount',
       hasCompletedOnboarding: true,
     })
 
@@ -205,9 +205,9 @@ describe('approveTransactionRequestAction', () => {
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
       id: 'serena-id',
-      name: 'Serena',
+      name: 'OtherAccount',
       type: 'SELF',
-      userId: 'serena',
+      userId: 'other-user',
     } as any)
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)
@@ -234,12 +234,12 @@ describe('rejectTransactionRequestAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'serena@example.com',
-      id: 'serena',
-      displayName: 'Serena',
+      id: 'other-user',
+      displayName: 'Other User',
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.EUR,
-      accountNames: ['Serena'],
-      defaultAccountName: 'Serena',
+      accountNames: ['OtherAccount'],
+      defaultAccountName: 'OtherAccount',
       hasCompletedOnboarding: true,
     })
 
@@ -252,9 +252,9 @@ describe('rejectTransactionRequestAction', () => {
 
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
       id: 'serena-id',
-      name: 'Serena',
+      name: 'OtherAccount',
       type: 'SELF',
-      userId: 'serena',
+      userId: 'other-user',
     } as any)
     vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
     vi.mocked(prisma.transactionRequest.update).mockResolvedValue({} as any)

@@ -41,7 +41,7 @@ describe('api-auth.ts', () => {
     })
 
     it('should extract token with proper Bearer format', () => {
-      const token = generateAccessToken('avi', 'avi@example.com')
+      const token = generateAccessToken('test-user', 'test@example.com')
       const request = new NextRequest('http://localhost:3000/', {
         headers: { authorization: `Bearer ${token}` },
       })
@@ -129,27 +129,27 @@ describe('api-auth.ts', () => {
 
   describe('requireJwtAuth', () => {
     it('should return user data for valid access token', () => {
-      const token = generateAccessToken('avi', 'avi@example.com')
+      const token = generateAccessToken('test-user', 'test@example.com')
       const request = new NextRequest('http://localhost:3000/', {
         headers: { authorization: `Bearer ${token}` },
       })
 
       const result = requireJwtAuth(request)
       expect(result).toEqual({
-        userId: 'avi',
-        email: 'avi@example.com',
+        userId: 'test-user',
+        email: 'test@example.com',
       })
     })
 
     it('should correctly extract user data from token payload', () => {
-      const token = generateAccessToken('serena', 'serena@example.com')
+      const token = generateAccessToken('other-user', 'other@example.com')
       const request = new NextRequest('http://localhost:3000/', {
         headers: { authorization: `Bearer ${token}` },
       })
 
       const result = requireJwtAuth(request)
-      expect(result.userId).toBe('serena')
-      expect(result.email).toBe('serena@example.com')
+      expect(result.userId).toBe('other-user')
+      expect(result.email).toBe('other@example.com')
     })
 
     it('should throw "Missing authorization token" when Authorization header is missing', () => {
@@ -176,9 +176,13 @@ describe('api-auth.ts', () => {
 
     it('should throw "Invalid token" for tampered token signature', () => {
       // Create token signed with wrong secret
-      const tamperedToken = jwt.sign({ userId: 'avi', email: 'avi@example.com', type: 'access' }, 'wrong-secret', {
-        expiresIn: '15m',
-      })
+      const tamperedToken = jwt.sign(
+        { userId: 'test-user', email: 'test@example.com', type: 'access' },
+        'wrong-secret',
+        {
+          expiresIn: '15m',
+        },
+      )
       const request = new NextRequest('http://localhost:3000/', {
         headers: { authorization: `Bearer ${tamperedToken}` },
       })
@@ -189,7 +193,7 @@ describe('api-auth.ts', () => {
     it('should throw "Token expired" for expired access token', () => {
       // Create intentionally expired token
       const expiredToken = jwt.sign(
-        { userId: 'avi', email: 'avi@example.com', type: 'access' },
+        { userId: 'test-user', email: 'test@example.com', type: 'access' },
         testSecret,
         { expiresIn: '-1s' }, // Expired 1 second ago
       )
@@ -201,7 +205,7 @@ describe('api-auth.ts', () => {
     })
 
     it('should throw "Invalid token" for wrong token type (refresh instead of access)', () => {
-      const { token: refreshToken } = generateRefreshToken('avi', 'avi@example.com')
+      const { token: refreshToken } = generateRefreshToken('test-user', 'test@example.com')
       const request = new NextRequest('http://localhost:3000/', {
         headers: { authorization: `Bearer ${refreshToken}` },
       })
@@ -240,7 +244,7 @@ describe('api-auth.ts', () => {
     })
 
     it('should successfully extract and verify token in full integration', () => {
-      const token = generateAccessToken('avi', 'avi@example.com')
+      const token = generateAccessToken('test-user', 'test@example.com')
       const request = new NextRequest('http://localhost:3000/', {
         headers: { authorization: `Bearer ${token}` },
       })
@@ -249,8 +253,8 @@ describe('api-auth.ts', () => {
       expect(extractedToken).toBeTruthy()
 
       const user = requireJwtAuth(request)
-      expect(user.userId).toBe('avi')
-      expect(user.email).toBe('avi@example.com')
+      expect(user.userId).toBe('test-user')
+      expect(user.email).toBe('test@example.com')
     })
 
     it('should handle error chain: missing header -> extraction null -> missing token error', () => {
