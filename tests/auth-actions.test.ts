@@ -14,7 +14,30 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn(),
+      delete: vi.fn(),
     },
+    category: {
+      findMany: vi.fn(),
+    },
+    transactionRequest: {
+      deleteMany: vi.fn(),
+    },
+    transaction: {
+      deleteMany: vi.fn(),
+    },
+    holding: {
+      deleteMany: vi.fn(),
+    },
+    budget: {
+      deleteMany: vi.fn(),
+    },
+    recurringTemplate: {
+      deleteMany: vi.fn(),
+    },
+    dashboardCache: {
+      deleteMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -60,8 +83,14 @@ vi.mock('@/app/actions/shared', () => ({
 
 import { verifyCredentials, establishSession, clearSession, updateSessionAccount } from '@/lib/auth-server'
 import { rotateCsrfToken } from '@/lib/csrf'
-import { ensureAccountAccess, requireCsrfToken } from '@/app/actions/shared'
-import { loginAction, logoutAction, requestPasswordResetAction, persistActiveAccountAction } from '@/app/actions'
+import { ensureAccountAccess, requireCsrfToken, requireAuthUser } from '@/app/actions/shared'
+import {
+  loginAction,
+  logoutAction,
+  requestPasswordResetAction,
+  persistActiveAccountAction,
+  deleteAccountAction,
+} from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import type { Account } from '@prisma/client'
 
@@ -604,6 +633,179 @@ describe('auth actions', () => {
       if ('success' in result && result.success) {
         expect(result.data).toBeUndefined()
       }
+    })
+  })
+
+  describe('deleteAccountAction', () => {
+    beforeEach(() => {
+      vi.mocked(requireAuthUser).mockResolvedValue({
+        authUser: { ...TEST_USER_1 },
+      })
+      vi.mocked(requireCsrfToken).mockResolvedValue({ success: true })
+      vi.mocked(prisma.account.findMany).mockResolvedValue([
+        mockAccount({ id: 'acc-1', userId: TEST_USER_1.id, name: 'Test1' }),
+      ])
+      vi.mocked(prisma.$transaction).mockResolvedValue(undefined)
+    })
+
+    it('successfully deletes account with matching email confirmation', async () => {
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect(result).toEqual({ success: true, data: undefined })
+      expect(prisma.$transaction).toHaveBeenCalled()
+      expect(clearSession).toHaveBeenCalled()
+    })
+
+    it('deletes all user data in correct order', async () => {
+      await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      // Verify $transaction was called with the deletion operations
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1)
+      const transactionArg = vi.mocked(prisma.$transaction).mock.calls[0][0]
+      expect(Array.isArray(transactionArg)).toBe(true)
+      // Should have 7 delete operations: transactionRequest, transaction, holding, budget, recurringTemplate, dashboardCache, user
+      expect(transactionArg).toHaveLength(7)
+    })
+
+    it('requires valid CSRF token', async () => {
+      vi.mocked(requireCsrfToken).mockResolvedValueOnce({
+        error: { general: ['Security validation failed. Please refresh the page and try again.'] },
+      })
+
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'invalid-token',
+      })
+
+      expect('error' in result).toBe(true)
+      expect(prisma.$transaction).not.toHaveBeenCalled()
+      expect(clearSession).not.toHaveBeenCalled()
+    })
+
+    it('requires authenticated user', async () => {
+      vi.mocked(requireAuthUser).mockResolvedValueOnce({
+        error: { general: ['Your session expired. Please sign in again.'] },
+      })
+
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.general).toContain('Your session expired. Please sign in again.')
+      }
+      expect(prisma.$transaction).not.toHaveBeenCalled()
+    })
+
+    it('rejects when email confirmation does not match', async () => {
+      const result = await deleteAccountAction({
+        confirmEmail: 'wrong@example.com',
+        csrfToken: 'valid-token',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.confirmEmail).toContain('Email does not match your account')
+      }
+      expect(prisma.$transaction).not.toHaveBeenCalled()
+      expect(clearSession).not.toHaveBeenCalled()
+    })
+
+    it('handles email confirmation case-insensitively', async () => {
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email.toUpperCase(),
+        csrfToken: 'valid-token',
+      })
+
+      expect(result).toEqual({ success: true, data: undefined })
+      expect(prisma.$transaction).toHaveBeenCalled()
+    })
+
+    it('clears session after successful deletion', async () => {
+      await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect(clearSession).toHaveBeenCalledTimes(1)
+    })
+
+    it('returns error when database transaction fails', async () => {
+      vi.mocked(prisma.$transaction).mockRejectedValueOnce(new Error('Database error'))
+
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.general).toContain('Unable to delete account. Please try again or contact support.')
+      }
+      // Session should NOT be cleared if deletion fails
+      expect(clearSession).not.toHaveBeenCalled()
+    })
+
+    it('rejects invalid email format', async () => {
+      const result = await deleteAccountAction({
+        confirmEmail: 'not-an-email',
+        csrfToken: 'valid-token',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.confirmEmail).toBeDefined()
+      }
+    })
+
+    it('rejects missing CSRF token', async () => {
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: '',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(result.error.csrfToken).toBeDefined()
+      }
+    })
+
+    it('fetches user accounts for deletion', async () => {
+      await deleteAccountAction({
+        confirmEmail: TEST_USER_1.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect(prisma.account.findMany).toHaveBeenCalledWith({
+        where: { userId: TEST_USER_1.id },
+        select: { id: true },
+      })
+    })
+
+    it('handles user with multiple accounts', async () => {
+      vi.mocked(requireAuthUser).mockResolvedValue({
+        authUser: { ...TEST_USER_2 },
+      })
+      vi.mocked(prisma.account.findMany).mockResolvedValue([
+        mockAccount({ id: 'acc-2', userId: TEST_USER_2.id, name: 'Test2' }),
+        mockAccount({ id: 'acc-3', userId: TEST_USER_2.id, name: 'Test3' }),
+      ])
+
+      const result = await deleteAccountAction({
+        confirmEmail: TEST_USER_2.email,
+        csrfToken: 'valid-token',
+      })
+
+      expect(result).toEqual({ success: true, data: undefined })
+      expect(prisma.$transaction).toHaveBeenCalled()
     })
   })
 })

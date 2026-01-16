@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { clearSession, establishSession, updateSessionAccount, verifyCredentials } from '@/lib/auth-server'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
-import { parseInput, ensureAccountAccess, requireCsrfToken } from './shared'
+import { parseInput, ensureAccountAccess, requireCsrfToken, requireAuthUser } from './shared'
 import { rotateCsrfToken } from '@/lib/csrf'
 import {
   loginSchema,
@@ -15,6 +15,7 @@ import {
   registrationSchema,
   verifyEmailSchema,
   resendVerificationSchema,
+  deleteAccountSchema,
 } from '@/schemas'
 import { sendVerificationEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
@@ -292,4 +293,82 @@ export async function resendVerificationEmailAction(input: z.infer<typeof resend
   return success({
     message: 'If an unverified account exists with this email, a verification link will be sent.',
   })
+}
+
+/** Delete user account and all associated data (GDPR compliance). */
+export async function deleteAccountAction(input: z.infer<typeof deleteAccountSchema>) {
+  const parsed = parseInput(deleteAccountSchema, input)
+  if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
+  const auth = await requireAuthUser()
+  if ('error' in auth) return auth
+  const { authUser } = auth
+
+  // Verify email confirmation matches authenticated user
+  if (parsed.data.confirmEmail.toLowerCase() !== authUser.email.toLowerCase()) {
+    return {
+      error: {
+        confirmEmail: ['Email does not match your account'],
+      },
+    }
+  }
+
+  try {
+    // Get all user's account IDs for cascade deletion
+    const userAccounts = await prisma.account.findMany({
+      where: { userId: authUser.id },
+      select: { id: true },
+    })
+    const accountIds = userAccounts.map((a) => a.id)
+
+    // Delete all user data in correct order (respecting FK constraints)
+    await prisma.$transaction([
+      // 1. TransactionRequest - depends on Account
+      prisma.transactionRequest.deleteMany({
+        where: {
+          OR: [{ fromId: { in: accountIds } }, { toId: { in: accountIds } }],
+        },
+      }),
+      // 2. Transaction - depends on Account, Category
+      prisma.transaction.deleteMany({
+        where: { accountId: { in: accountIds } },
+      }),
+      // 3. Holding - depends on Account, Category
+      prisma.holding.deleteMany({
+        where: { accountId: { in: accountIds } },
+      }),
+      // 4. Budget - depends on Account, Category
+      prisma.budget.deleteMany({
+        where: { accountId: { in: accountIds } },
+      }),
+      // 5. RecurringTemplate - depends on Account, Category
+      prisma.recurringTemplate.deleteMany({
+        where: { accountId: { in: accountIds } },
+      }),
+      // 6. DashboardCache - cleanup cached data for user's accounts
+      prisma.dashboardCache.deleteMany({
+        where: { accountId: { in: accountIds } },
+      }),
+      // 7. User deletion - cascades: Account, Category, RefreshToken, Subscription
+      prisma.user.delete({
+        where: { id: authUser.id },
+      }),
+    ])
+
+    serverLogger.info('User account deleted (GDPR)', {
+      action: 'deleteAccountAction',
+      userId: authUser.id,
+    })
+  } catch (error) {
+    serverLogger.error('Failed to delete user account', { action: 'deleteAccountAction', userId: authUser.id }, error)
+    return generalError('Unable to delete account. Please try again or contact support.')
+  }
+
+  // Clear session after deletion
+  await clearSession()
+
+  return successVoid()
 }
