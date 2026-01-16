@@ -26,7 +26,7 @@ Stack: Next.js 16 App Router + Prisma + PostgreSQL + TypeScript.
 - **Sprint 3**: Scale - Redis caching, monitoring, performance, security hardening
 - **Sprint 4**: Mobile - React Native app (Expo), REST API, iOS/Android deployment
 
-See `TRANSFORMATION_PLAN.md` for details. Issues tracked in GitHub Projects.
+See `PLAN.md` for details. Issues tracked in GitHub Projects.
 
 ## Legacy 2-User Architecture (Being Removed)
 
