@@ -11,6 +11,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "migrate:users": "tsx scripts/migrate-to-user-model.ts",
+    "rollback:users": "tsx scripts/rollback-user-migration.ts",
     "db:up:local": "docker compose up -d db",
     "db:down:local": "docker compose down",
     "db:logs:local": "docker compose logs -f db",

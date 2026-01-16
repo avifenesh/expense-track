@@ -19,12 +19,13 @@ Stack: Next.js 16 App Router + Prisma + PostgreSQL + TypeScript.
 
 ## Transformation Roadmap
 
-4-sprint plan to transform from personal app to multi-tenant SaaS with mobile:
+5-sprint plan to transform from personal app to multi-tenant SaaS with mobile:
 
-- **Sprint 1**: Production readiness - 90%+ test coverage, bug fixes, UX polish
-- **Sprint 2**: Multi-tenant - user auth, data isolation, subscriptions, OAuth
-- **Sprint 3**: Scale - Redis caching, monitoring, performance, security hardening
-- **Sprint 4**: Mobile - React Native app (Expo), REST API, iOS/Android deployment
+- **Sprint 1**: Production readiness - 90%+ test coverage, bug fixes, UX polish - COMPLETE
+- **Sprint 2**: Multi-tenant - user auth, data isolation, subscriptions, data migration - COMPLETE
+- **Sprint 3**: Mobile - React Native app (Expo), REST API, iOS/Android deployment
+- **Sprint 4**: Production Infrastructure - External services, caching, monitoring, performance
+- **Sprint 5**: Launch Prep - Legal compliance, support infrastructure, app store submissions
 
 See `PLAN.md` for details. Issues tracked in GitHub Projects.
 
@@ -51,6 +52,9 @@ npm run build            # Build production bundle
 
 - `src/app/actions/` - Server actions by domain (transactions, budgets, recurring, holdings, categories, auth, misc)
 - `src/app/api/v1/` - REST API endpoints (auth, transactions, budgets, holdings, categories, recurring)
+  - See `docs/API_AUDIT.md` for mobile compatibility audit
+  - See `docs/API_CONTRACTS.md` for endpoint contracts
+  - See `docs/API_VERSIONING.md` for versioning strategy
 - `src/components/` - React components (dashboard, forms, UI primitives)
 - `src/schemas/` - Zod validation schemas
 - `src/lib/finance.ts` - Financial logic, budget tracking

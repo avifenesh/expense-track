@@ -1,6 +1,8 @@
 # Balance Beacon
 
-Personal finance workspace tailored for managing income, spending, and shared budgets across three accounts (you, partner, and joint). The dashboard keeps budgets, recurring obligations, and month-to-month performance together so you can replace manual spreadsheets.
+Personal finance SaaS for managing income, spending, and shared budgets. Create multiple accounts, track expenses, split costs with others, and gain clarity on your finances. 14-day trial, then $5/month.
+
+The dashboard keeps budgets, recurring obligations, and month-to-month performance together so you can replace manual spreadsheets.
 
 ## Features
 
@@ -124,6 +126,14 @@ Detailed, step-by-step notes live in [`docs/railway-deployment.md`](docs/railway
 - **Budget** – Planned spend/earn for a category + account in a given month.
 - **RecurringTemplate** – Permanent plan definitions that can be applied into transactions each month.
 
+## API Documentation
+
+REST API documentation for mobile app development:
+
+- **[API Audit](docs/API_AUDIT.md)** - Server actions vs REST endpoints analysis
+- **[API Contracts](docs/API_CONTRACTS.md)** - Request/response formats and endpoint specifications
+- **[API Versioning](docs/API_VERSIONING.md)** - Versioning strategy and deprecation policy
+
 ## Common Workflows
 
 - Add budgets for the month from the “Monthly Budgets” card, then capture spending as it happens.
@@ -142,6 +152,8 @@ Detailed, step-by-step notes live in [`docs/railway-deployment.md`](docs/railway
 | `npm run db:push`         | Push Prisma schema to the configured database       |
 | `npm run db:migrate`      | Apply pending migrations in production environments |
 | `npm run db:seed`         | Seed baseline accounts and categories               |
+| `npm run migrate:users`   | Migrate legacy data to user-based model (one-time)  |
+| `npm run rollback:users`  | Rollback user migration if needed                   |
 
 ## CI Notes
 

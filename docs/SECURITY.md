@@ -80,6 +80,16 @@ API endpoints validate and sanitize inputs:
 
 ---
 
+## API Security
+
+REST API endpoints use JWT Bearer authentication instead of cookie sessions. See `docs/API_AUDIT.md` for details on authentication patterns for web vs mobile clients.
+
+**Key Differences:**
+- Web: Cookie-based sessions with CSRF protection
+- Mobile: JWT Bearer tokens (CSRF not applicable)
+
+---
+
 ## XSS Test Coverage
 
 **Location**: `tests/security/`
