@@ -10,7 +10,7 @@ if [ -z "$1" ]; then
 fi
 
 BRANCH_NAME="$1"
-WORKTREE_PATH="../expense-track-${BRANCH_NAME}"
+WORKTREE_PATH="../balance-beacon-${BRANCH_NAME}"
 
 # Check if worktree already exists
 if [ -d "$WORKTREE_PATH" ]; then

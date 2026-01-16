@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: expense-track-db
+    container_name: balance-beacon-db
     restart: unless-stopped
     env_file:
       - .env.docker

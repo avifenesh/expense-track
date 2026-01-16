@@ -25,7 +25,7 @@ describe('App', () => {
   it('shows auth screen when not logged in', async () => {
     render(<App />);
     await waitFor(() => {
-      expect(screen.getByText('Welcome back to Expense Track')).toBeTruthy();
+      expect(screen.getByText('Welcome back to Balance Beacon')).toBeTruthy();
     });
   });
 

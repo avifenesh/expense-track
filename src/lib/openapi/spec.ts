@@ -3,10 +3,10 @@ export function generateOpenAPIDocument() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Expense Track API',
+      title: 'Balance Beacon API',
       version: '1.0.0',
       description:
-        'REST API for the Expense Track personal finance application. Supports transaction management, budgeting, holdings tracking, and expense sharing.',
+        'REST API for the Balance Beacon personal finance application. Supports transaction management, budgeting, holdings tracking, and expense sharing.',
     },
     servers: [
       {
