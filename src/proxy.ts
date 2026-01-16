@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { getCsrfToken } from '@/lib/csrf'
 import { generateNonce } from '@/lib/nonce'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Generate unique nonce for this request
   const nonce = generateNonce()
 
