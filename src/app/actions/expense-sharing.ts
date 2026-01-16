@@ -23,6 +23,7 @@ import {
 import { sendExpenseSharedEmail, sendPaymentReminderEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
 
+/** Minimum hours between payment reminder emails to prevent spam */
 const REMINDER_COOLDOWN_HOURS = 24
 
 export async function shareExpenseAction(input: ShareExpenseInput) {
