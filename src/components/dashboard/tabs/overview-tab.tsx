@@ -88,11 +88,12 @@ export function OverviewTab({
                   <div>
                     <div className="font-medium text-white">{point.label}</div>
                     <div className="text-xs text-slate-400">
-                      Income {formatRelativeAmount(point.income)} · Expenses {formatRelativeAmount(-point.expense)}
+                      Income {formatRelativeAmount(point.income, preferredCurrency)} · Expenses{' '}
+                      {formatRelativeAmount(-point.expense, preferredCurrency)}
                     </div>
                   </div>
                   <div className={cn('text-sm font-semibold', point.net >= 0 ? 'text-emerald-300' : 'text-rose-400')}>
-                    {formatRelativeAmount(point.net)}
+                    {formatRelativeAmount(point.net, preferredCurrency)}
                   </div>
                 </div>
               ))}
