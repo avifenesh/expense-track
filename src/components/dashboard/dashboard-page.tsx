@@ -135,26 +135,21 @@ const STAT_VARIANT_STYLES: Record<
 }
 
 const STAT_TOOLTIPS: Record<string, string> = {
-  'Actual net':
-    'Formula: Income received − Expenses paid\n\n' +
-    'Your real position this month based on actual transactions. ' +
-    'Higher than Planned net when you earn more than budgeted or spend less.',
+  'Actual net': `Formula: Income received − Expenses paid
 
-  'Projected end of month':
-    'Formula: Actual net + Remaining income budget − Remaining expense budget\n\n' +
-    'Estimates month-end position if you fulfill remaining budgets. ' +
-    'Only counts positive remaining amounts (not overspent categories).',
+Your real position this month based on actual transactions. Higher than Planned net when you earn more than budgeted or spend less.`,
 
-  'Remaining budgets':
-    'Formula: Planned expenses − Actual expenses\n\n' +
-    "Expense budget you haven't spent yet. " +
-    "Zero means you've hit your spending plan exactly.",
+  'Projected end of month': `Formula: Actual net + Remaining income budget − Remaining expense budget
 
-  'Planned net':
-    'Formula: Budgeted income − Budgeted expenses\n\n' +
-    'Your target if all budgets hit exactly. Negative means planned ' +
-    'expenses exceed planned income. Differs from Actual when real ' +
-    "income/expenses don't match budget.",
+Estimates month-end position if you fulfill remaining budgets. Only counts positive remaining amounts (not overspent categories).`,
+
+  'Remaining budgets': `Formula: Planned expenses − Actual expenses
+
+Expense budget you haven't spent yet. Zero means you've hit your spending plan exactly.`,
+
+  'Planned net': `Formula: Budgeted income − Budgeted expenses
+
+Your target if all budgets hit exactly. Negative means planned expenses exceed planned income. Differs from Actual when real income/expenses don't match budget.`,
 }
 
 const DEFAULT_STAT_TOOLTIP = 'Monitors this monthly metric based on your recorded data and budgets.'

@@ -343,7 +343,7 @@ export function TransactionsTab({
       // Show enhanced message when a recurring template was auto-created
       const isNewRecurring = transactionFormState.isRecurring && !editingTransaction?.recurringTemplateId
       if (isNewRecurring) {
-        const day = dateInput!.getDate()
+        const day = dateInput!.getUTCDate()
         toast.success(
           editingTransaction
             ? `Transaction updated. Recurring template created for day ${day} of each month.`

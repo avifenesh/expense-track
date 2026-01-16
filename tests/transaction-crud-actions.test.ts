@@ -778,11 +778,8 @@ describe('deleteTransactionAction', () => {
 })
 
 describe('auto-create RecurringTemplate', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
-  })
-
-  it('should create RecurringTemplate when isRecurring is true on new transaction', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
@@ -795,13 +792,15 @@ describe('auto-create RecurringTemplate', () => {
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
-
     vi.mocked(prisma.account.findUnique).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
+  })
+
+  it('should create RecurringTemplate when isRecurring is true on new transaction', async () => {
 
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({
       id: 'template-123',
@@ -840,26 +839,6 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should NOT create template if recurringTemplateId already provided', async () => {
-    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
-      email: 'test@example.com',
-      id: 'test-user',
-      displayName: 'Test User',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      hasCompletedOnboarding: true,
-      accountNames: ['Account1'],
-      defaultAccountName: 'Account1',
-    })
-
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
-      id: 'acc-1',
-      name: 'Account1',
-      type: 'SELF',
-      userId: 'test-user',
-    } as any)
-
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
 
     const result = await createTransactionAction({
@@ -886,31 +865,11 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should create template when updating transaction to recurring', async () => {
-    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
-      email: 'test@example.com',
-      id: 'test-user',
-      displayName: 'Test User',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      hasCompletedOnboarding: true,
-      accountNames: ['Account1'],
-      defaultAccountName: 'Account1',
-    })
-
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2026-01-01'),
       recurringTemplateId: null,
-    } as any)
-
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
-      id: 'acc-1',
-      name: 'Account1',
-      type: 'SELF',
-      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({
@@ -949,31 +908,11 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should NOT create template when updating already recurring transaction', async () => {
-    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
-      email: 'test@example.com',
-      id: 'test-user',
-      displayName: 'Test User',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      hasCompletedOnboarding: true,
-      accountNames: ['Account1'],
-      defaultAccountName: 'Account1',
-    })
-
     vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2026-01-01'),
       recurringTemplateId: 'existing-template-id',
-    } as any)
-
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
-      id: 'acc-1',
-      name: 'Account1',
-      type: 'SELF',
-      userId: 'test-user',
     } as any)
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
@@ -1002,26 +941,6 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should extract correct dayOfMonth from different dates', async () => {
-    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
-    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
-      email: 'test@example.com',
-      id: 'test-user',
-      displayName: 'Test User',
-      passwordHash: 'hash',
-      preferredCurrency: Currency.USD,
-      hasCompletedOnboarding: true,
-      accountNames: ['Account1'],
-      defaultAccountName: 'Account1',
-    })
-
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
-      id: 'acc-1',
-      name: 'Account1',
-      type: 'SELF',
-      userId: 'test-user',
-    } as any)
-
     vi.mocked(prisma.recurringTemplate.create).mockResolvedValue({ id: 'template-day31' } as any)
     vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
 
