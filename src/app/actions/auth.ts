@@ -731,17 +731,34 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
       return success({ data: exportData, format: 'json' as const })
     }
 
-    // CSV format - create multiple sections
+    // CSV helpers
+    type CsvValue = string | number | boolean | null | undefined
+    const escapeCsv = (value: string | null | undefined): string =>
+      `"${(value ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`
+
+    const addCsvSection = <T>(
+      sections: string[],
+      title: string,
+      headers: string,
+      data: T[],
+      rowMapper: (item: T) => CsvValue[],
+    ): void => {
+      if (sections.length > 0) sections.push('')
+      sections.push(`=== ${title} ===`)
+      sections.push(headers)
+      data.forEach((item) => sections.push(rowMapper(item).map((v) => v ?? '').join(',')))
+    }
+
     const csvSections: string[] = []
 
-    // User section
+    // User section (single row, handled separately)
     csvSections.push('=== USER ===')
     csvSections.push('id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt')
     csvSections.push(
       [
         exportData.user.id,
-        `"${exportData.user.email}"`,
-        `"${(exportData.user.displayName ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
+        escapeCsv(exportData.user.email),
+        escapeCsv(exportData.user.displayName),
         exportData.user.preferredCurrency,
         exportData.user.emailVerified,
         exportData.user.hasCompletedOnboarding,
@@ -749,136 +766,76 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
       ].join(','),
     )
 
-    // Subscription section
+    // Subscription section (single row, conditional)
     if (exportData.subscription) {
+      const sub = exportData.subscription
       csvSections.push('')
       csvSections.push('=== SUBSCRIPTION ===')
       csvSections.push('id,status,trialEndsAt,currentPeriodStart,currentPeriodEnd,createdAt')
       csvSections.push(
-        [
-          exportData.subscription.id,
-          exportData.subscription.status,
-          exportData.subscription.trialEndsAt ?? '',
-          exportData.subscription.currentPeriodStart ?? '',
-          exportData.subscription.currentPeriodEnd ?? '',
-          exportData.subscription.createdAt,
-        ].join(','),
+        [sub.id, sub.status, sub.trialEndsAt ?? '', sub.currentPeriodStart ?? '', sub.currentPeriodEnd ?? '', sub.createdAt].join(','),
       )
     }
 
-    // Accounts section
-    csvSections.push('')
-    csvSections.push('=== ACCOUNTS ===')
-    csvSections.push('id,name,type,preferredCurrency,color,icon,description,createdAt')
-    exportData.accounts.forEach((a) => {
-      csvSections.push(
-        [
-          a.id,
-          `"${a.name.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
-          a.type,
-          a.preferredCurrency,
-          a.color ?? '',
-          a.icon ?? '',
-          `"${(a.description ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
-          a.createdAt,
-        ].join(','),
-      )
-    })
+    addCsvSection(csvSections, 'ACCOUNTS', 'id,name,type,preferredCurrency,color,icon,description,createdAt', exportData.accounts, (a) => [
+      a.id,
+      escapeCsv(a.name),
+      a.type,
+      a.preferredCurrency,
+      a.color,
+      a.icon,
+      escapeCsv(a.description),
+      a.createdAt,
+    ])
 
-    // Categories section
-    csvSections.push('')
-    csvSections.push('=== CATEGORIES ===')
-    csvSections.push('id,name,type,color,isHolding,isArchived,createdAt')
-    exportData.categories.forEach((c) => {
-      csvSections.push([c.id, `"${c.name.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`, c.type, c.color ?? '', c.isHolding, c.isArchived, c.createdAt].join(','))
-    })
+    addCsvSection(csvSections, 'CATEGORIES', 'id,name,type,color,isHolding,isArchived,createdAt', exportData.categories, (c) => [
+      c.id,
+      escapeCsv(c.name),
+      c.type,
+      c.color,
+      c.isHolding,
+      c.isArchived,
+      c.createdAt,
+    ])
 
-    // Transactions section
-    csvSections.push('')
-    csvSections.push('=== TRANSACTIONS ===')
-    csvSections.push('id,accountId,categoryId,type,amount,currency,date,month,description,isRecurring,isMutual,createdAt')
-    exportData.transactions.forEach((t) => {
-      csvSections.push(
-        [
-          t.id,
-          t.accountId,
-          t.categoryId,
-          t.type,
-          t.amount,
-          t.currency,
-          t.date,
-          t.month,
-          `"${(t.description ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
-          t.isRecurring,
-          t.isMutual,
-          t.createdAt,
-        ].join(','),
-      )
-    })
-
-    // Budgets section
-    csvSections.push('')
-    csvSections.push('=== BUDGETS ===')
-    csvSections.push('id,accountId,categoryId,month,planned,currency,notes,createdAt')
-    exportData.budgets.forEach((b) => {
-      csvSections.push(
-        [
-          b.id,
-          b.accountId,
-          b.categoryId,
-          b.month,
-          b.planned,
-          b.currency,
-          `"${(b.notes ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
-          b.createdAt,
-        ].join(','),
-      )
-    })
-
-    // Holdings section
-    csvSections.push('')
-    csvSections.push('=== HOLDINGS ===')
-    csvSections.push('id,accountId,categoryId,symbol,quantity,averageCost,currency,notes,createdAt')
-    exportData.holdings.forEach((h) => {
-      csvSections.push(
-        [
-          h.id,
-          h.accountId,
-          h.categoryId,
-          h.symbol,
-          h.quantity,
-          h.averageCost,
-          h.currency,
-          `"${(h.notes ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
-          h.createdAt,
-        ].join(','),
-      )
-    })
-
-    // Recurring templates section
-    csvSections.push('')
-    csvSections.push('=== RECURRING TEMPLATES ===')
-    csvSections.push(
-      'id,accountId,categoryId,type,amount,currency,dayOfMonth,description,isActive,startMonth,endMonth,createdAt',
+    addCsvSection(
+      csvSections,
+      'TRANSACTIONS',
+      'id,accountId,categoryId,type,amount,currency,date,month,description,isRecurring,isMutual,createdAt',
+      exportData.transactions,
+      (t) => [t.id, t.accountId, t.categoryId, t.type, t.amount, t.currency, t.date, t.month, escapeCsv(t.description), t.isRecurring, t.isMutual, t.createdAt],
     )
-    exportData.recurringTemplates.forEach((r) => {
-      csvSections.push(
-        [
-          r.id,
-          r.accountId,
-          r.categoryId,
-          r.type,
-          r.amount,
-          r.currency,
-          r.dayOfMonth,
-          `"${(r.description ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
-          r.isActive,
-          r.startMonth,
-          r.endMonth ?? '',
-          r.createdAt,
-        ].join(','),
-      )
-    })
+
+    addCsvSection(csvSections, 'BUDGETS', 'id,accountId,categoryId,month,planned,currency,notes,createdAt', exportData.budgets, (b) => [
+      b.id,
+      b.accountId,
+      b.categoryId,
+      b.month,
+      b.planned,
+      b.currency,
+      escapeCsv(b.notes),
+      b.createdAt,
+    ])
+
+    addCsvSection(csvSections, 'HOLDINGS', 'id,accountId,categoryId,symbol,quantity,averageCost,currency,notes,createdAt', exportData.holdings, (h) => [
+      h.id,
+      h.accountId,
+      h.categoryId,
+      h.symbol,
+      h.quantity,
+      h.averageCost,
+      h.currency,
+      escapeCsv(h.notes),
+      h.createdAt,
+    ])
+
+    addCsvSection(
+      csvSections,
+      'RECURRING TEMPLATES',
+      'id,accountId,categoryId,type,amount,currency,dayOfMonth,description,isActive,startMonth,endMonth,createdAt',
+      exportData.recurringTemplates,
+      (r) => [r.id, r.accountId, r.categoryId, r.type, r.amount, r.currency, r.dayOfMonth, escapeCsv(r.description), r.isActive, r.startMonth, r.endMonth, r.createdAt],
+    )
 
     return success({ data: csvSections.join('\n'), format: 'csv' as const })
   } catch (error) {
