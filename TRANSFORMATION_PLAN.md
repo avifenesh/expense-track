@@ -4,307 +4,207 @@
 
 Transform personal finance app into commercial multi-tenant service with mobile support.
 
-**Timeline**: 4 sprints
-**Current State**: Personal app for 2 users, hardcoded auth, no isolation
-**Target State**: Multi-tenant SaaS with subscription model, polished UX, mobile app
+**Timeline**: 5 sprints
+**Current State**: Multi-tenant SaaS with user auth, data isolation, subscription tracking
+**Target State**: Production-ready SaaS with mobile app, external integrations, full launch
 
 ---
 
-## Sprint 1: Production Readiness & Quality
+## Sprint 1: Production Readiness & Quality - COMPLETE
 
 **Goal**: Eliminate all bugs, achieve 90%+ test coverage, polish edge cases
 
-### 1.1 Bug Fixes & Edge Cases
+### Completed
 
-- Fix all known bugs in transaction handling
-- Handle edge cases in budget calculations (zero planned, negative amounts)
-- Fix currency conversion edge cases
-- Proper error handling in all server actions
-- Validate all user inputs thoroughly
+- [x] Fix all known bugs in transaction handling
+- [x] Handle edge cases in budget calculations
+- [x] Fix currency conversion edge cases
+- [x] Proper error handling in all server actions
+- [x] Validate all user inputs thoroughly
+- [x] Achieve 90%+ test coverage (1212 tests passing)
+- [x] Remove all console.\* statements
+- [x] Add proper error logging
+- [x] Eliminate TypeScript any types
+- [x] Fix all ESLint warnings
+- [x] Remove hardcoded assumptions (#27)
+- [x] Consistent error messages across all forms
+- [x] Loading states for all async operations
+- [x] Optimistic updates where appropriate
+- [x] Toast notifications for success/error
+- [x] Form validation feedback
+- [x] Responsive design fixes (#26)
 
-### 1.2 Test Coverage
-
-- Achieve 90%+ coverage on all action files
-- Full coverage for lib/finance.ts (currently 0%)
-- Full coverage for lib/currency.ts (currently 2.56%)
-- Full coverage for lib/stock-api.ts (currently 0%)
-- Integration tests for critical user flows
-- Edge case tests for date handling, decimals, currencies
-
-### 1.3 Code Quality
-
-- Remove all console.\* statements
-- Add proper error logging
-- Eliminate TypeScript any types
-- Fix all ESLint warnings
-- Code review and refactor for clarity
-- Remove hardcoded assumptions
-
-### 1.4 UX Polish
-
-- Consistent error messages across all forms
-- Loading states for all async operations
-- Optimistic updates where appropriate
-- Toast notifications for success/error
-- Form validation feedback
-- Responsive design fixes
-
-**Deliverables**:
-
-- All tests passing
-- 90%+ code coverage
-- Zero console.\* in production code
-- Clean TypeScript strict mode
-- Polished user experience
+**Deliverables**: All tests passing, 90%+ coverage, polished UX
 
 ---
 
-## Sprint 2: Multi-Tenant Infrastructure
+## Sprint 2: Multi-Tenant Core - IN PROGRESS
 
-**Goal**: Replace hardcoded auth with proper user management, database isolation, subscription system
+**Goal**: Complete core multi-tenant infrastructure
 
-### 2.1 Database Schema Overhaul
+### Completed
 
-- Add User model (id, email, name, passwordHash, createdAt, etc.)
-- Add userId to all existing models (Account, Transaction, Budget, etc.)
-- Add Subscription model (userId, status, trialEndsAt, currentPeriodEnd, etc.)
-- Migration strategy for existing data
-- Row-level security patterns
+- [x] User model with proper authentication
+- [x] User registration flow with email verification
+- [x] Session management
+- [x] Row-level security patterns
+- [x] Middleware to enforce userId on all queries
+- [x] Helper functions for user-scoped queries
+- [x] Update all server actions to filter by userId
+- [x] Prevent cross-user data access
+- [x] Trial period tracking (14 days)
+- [x] Subscription status checks
+- [x] Grace period handling
+- [x] Feature gating based on subscription status
+- [x] GDPR data export (#96)
+- [x] GDPR data deletion (#97)
+- [x] User onboarding flow (#98)
 
-### 2.2 Authentication System
+### Remaining
 
-- Remove hardcoded AUTH_USERS
-- Implement proper user registration flow
-- Email/password authentication with bcrypt
-- Session management with database sessions
-- Password reset via email (SendGrid/Resend)
-- Email verification on signup
-- Rate limiting on auth endpoints
+- [ ] #30 - Migrate existing data to user-based model
 
-### 2.3 Authorization & Data Isolation
-
-- Middleware to enforce userId on all queries
-- Helper functions for user-scoped queries
-- Update all server actions to filter by userId
-- Prevent cross-user data access
-- Account ownership validation
-
-### 2.4 Subscription Management
-
-- Trial period tracking (14 days)
-- Subscription status checks
-- Grace period handling
-- Feature gating based on subscription status
-- Admin dashboard for subscription management
-
-### 2.5 OAuth Integration
-
-- Google OAuth setup
-- GitHub OAuth setup
-- OAuth callback handling
-- Link OAuth accounts to existing users
-
-**Deliverables**:
-
-- User registration/login/logout flows
-- Email verification working
-- OAuth providers integrated
-- All data properly isolated by user
-- Subscription tracking in place
+**Deliverables**: All data properly isolated by user, subscription tracking in place
 
 ---
 
-## Sprint 3: Scale & Production Infrastructure
-
-**Goal**: Prepare for scale with caching, monitoring, performance optimization
-
-### 3.1 Database Optimization
-
-- Add indexes for common queries (userId, month, accountId)
-- Query optimization for dashboard aggregations
-- Connection pooling configuration
-- Database backup strategy
-- Migration rollback procedures
-
-### 3.2 Caching Layer
-
-- Redis setup for session storage
-- Cache exchange rates (refresh daily)
-- Cache stock prices (refresh hourly)
-- Cache dashboard aggregations (TTL: 5 min)
-- Cache invalidation strategies
-
-### 3.3 API & Performance
-
-- API rate limiting (per user)
-- Request logging and monitoring
-- Slow query detection
-- Bundle size optimization
-- Image optimization
-- Lazy loading for heavy components
-
-### 3.4 Monitoring & Observability
-
-- Error tracking (Sentry)
-- Performance monitoring (Railway metrics)
-- Database query monitoring
-- User analytics (PostHog/Mixpanel)
-- Uptime monitoring
-- Alert system for critical errors
-
-### 3.5 Security Hardening
-
-- CSRF protection
-- XSS prevention audit
-- SQL injection prevention (Prisma handles this)
-- Rate limiting on all endpoints
-- Input sanitization
-- Security headers (helmet.js)
-- Dependency vulnerability scanning
-
-### 3.6 Deployment & DevOps
-
-- CI/CD pipeline refinement
-- Staging environment setup
-- Database migration automation
-- Environment variable management
-- Rollback procedures
-- Health check endpoints
-
-**Deliverables**:
-
-- Redis caching operational
-- Monitoring dashboards configured
-- Rate limiting active
-- Performance optimized (Lighthouse >90)
-- Security audit passed
-- Production deployment ready
-
----
-
-## Sprint 4: Mobile App Foundation
+## Sprint 3: Mobile App
 
 **Goal**: Create React Native mobile app with core features
 
-### 4.1 API Foundation
+### API Foundation
 
-- Audit existing server actions for mobile compatibility
-- Create REST API layer (Next.js API routes)
-- Authentication token system (JWT)
-- API versioning strategy
-- Mobile-specific error responses
-- API documentation (Swagger/OpenAPI)
+- [ ] #64 - Audit server actions for mobile API compatibility
+- [ ] #67 - Create API documentation with Swagger/OpenAPI
 
-### 4.2 React Native Setup
+### React Native Setup
 
-- Expo/React Native project initialization
-- Navigation structure (React Navigation)
-- Authentication flow (screens + storage)
-- API client setup (axios/fetch)
-- State management (Zustand/Redux)
-- Offline support strategy
+- [ ] #68 - Initialize React Native project with Expo
+- [ ] #69 - Set up React Navigation for mobile app
+- [ ] #70 - Create mobile authentication screens
+- [ ] #71 - Implement secure token storage on mobile
+- [ ] #72 - Set up state management with Zustand
+- [ ] #73 - Create mobile API client with axios
 
-### 4.3 Core Mobile Screens
+### Core Mobile Screens
 
-- Login/Signup screens
-- Dashboard (summary view)
-- Transactions list and detail
-- Add/Edit transaction
-- Budgets overview
-- Account switcher
-- Settings screen
+- [ ] #74 - Build mobile dashboard screen
+- [ ] #75 - Build mobile transactions list screen
+- [ ] #76 - Build add/edit transaction screens on mobile
+- [ ] #77 - Build mobile budgets overview screen
+- [ ] #78 - Add account switcher to mobile app
+- [ ] #79 - Create mobile settings screen
 
-### 4.4 Mobile-Specific Features
+### Mobile-Specific Features
 
-- Biometric authentication (Face ID/Touch ID)
-- Push notifications setup
-- Receipt photo capture
-- Offline transaction queue
-- Pull-to-refresh
-- Dark mode support
+- [ ] #80 - Implement biometric authentication on mobile
+- [ ] #81 - Set up push notifications infrastructure
+- [ ] #82 - Add receipt photo capture feature
+- [ ] #83 - Implement offline transaction queue
+- [ ] #84 - Add dark mode support to mobile app
 
-### 4.5 Mobile Testing
+### Mobile Testing
 
-- Jest unit tests
-- Detox E2E tests
-- iOS simulator testing
-- Android emulator testing
-- Real device testing
-- Performance profiling
+- [ ] #85 - Write Jest unit tests for mobile app
+- [ ] #86 - Set up Detox E2E testing for mobile
+- [ ] #87 - Test mobile app on iOS devices
+- [ ] #88 - Test mobile app on Android devices
+- [ ] #89 - Profile mobile app performance
 
-### 4.6 Mobile Deployment
-
-- iOS App Store preparation
-- Google Play Store preparation
-- App icons and splash screens
-- Privacy policy and terms
-- App Store screenshots
-- Beta testing (TestFlight/Internal Testing)
-
-**Deliverables**:
-
-- Mobile app with core features functional
-- Authentication working on mobile
-- Dashboard and transactions viewable
-- Add/Edit transactions working
-- iOS and Android builds ready
-- Beta testing group established
+**Deliverables**: Mobile app with core features, authentication, dashboard, transactions
 
 ---
 
-## Cross-Sprint Considerations
+## Sprint 4: Production Infrastructure
 
-### Documentation
+**Goal**: External services integration, caching, monitoring, performance
 
-- API documentation for mobile team
-- Architecture decision records
-- Deployment runbook
-- User onboarding guide
-- Admin documentation
+### External Services
+
+- [ ] #34 - Set up email service for transactional emails
+- [ ] #35 - Implement Google OAuth integration
+- [ ] #36 - Implement GitHub OAuth integration
+- [ ] #137 - Integrate payment provider for subscriptions
+
+### Caching & Performance
+
+- [ ] #42 - Optimize dashboard aggregation queries
+- [ ] #44 - Set up Redis for session storage
+- [ ] #56 - Optimize bundle size
+- [ ] #57 - Implement lazy loading for heavy components
+
+### Monitoring & DevOps
+
+- [ ] #52 - Set up user analytics tracking
+- [ ] #58 - Set up database backup strategy
+- [ ] #59 - Create database migration rollback procedures
+- [ ] #60 - Set up staging environment
+- [ ] #62 - Set up uptime monitoring
+
+**Deliverables**: External services operational, caching active, monitoring configured
+
+---
+
+## Sprint 5: Launch Prep
+
+**Goal**: Legal compliance, support infrastructure, app store submissions
 
 ### Legal & Compliance
 
-- Privacy policy (GDPR, CCPA)
-- Terms of service
-- Cookie policy
-- Data retention policy
-- GDPR compliance (right to delete, export)
+- [ ] #94 - Write privacy policy for GDPR compliance
+- [ ] #95 - Write terms of service
 
 ### Support Infrastructure
 
-- Customer support system
-- FAQ documentation
-- In-app help system
-- Bug reporting mechanism
-- Feature request tracking
+- [ ] #99 - Create FAQ and help documentation
+- [ ] #100 - Set up customer support system
+- [ ] #101 - Add in-app bug reporting mechanism
+- [ ] #102 - Create feature request tracking system
+
+### App Store Submissions
+
+- [ ] #90 - Prepare iOS App Store submission
+- [ ] #91 - Prepare Google Play Store submission
+- [ ] #92 - Set up TestFlight for iOS beta testing
+- [ ] #93 - Set up Google Play Internal Testing
+
+**Deliverables**: Legal docs complete, support ready, apps submitted to stores
 
 ---
 
 ## Success Metrics
 
-**Sprint 1**:
+**Sprint 1**: COMPLETE
 
-- 90%+ test coverage ✓
-- Zero production bugs open ✓
-- Lighthouse score >90 ✓
+- 90%+ test coverage
+- Zero production bugs open
+- Lighthouse score >90
 
-**Sprint 2**:
+**Sprint 2**: IN PROGRESS
 
-- User registration working ✓
-- Multi-tenant data isolation verified ✓
-- OAuth login functional ✓
+- User registration working
+- Multi-tenant data isolation verified
+- 1 issue remaining (#30)
 
 **Sprint 3**:
 
-- Cache hit rate >80% ✓
-- API response time <200ms p95 ✓
-- Zero downtime deployments ✓
+- Mobile app functional on iOS/Android
+- Core features parity with web
+- 24 issues to complete
 
 **Sprint 4**:
 
-- Mobile app functional on iOS/Android ✓
-- Core features parity with web ✓
-- Beta users onboarded ✓
+- OAuth providers integrated
+- Payment provider operational
+- Cache hit rate >80%
+- 13 issues to complete
+
+**Sprint 5**:
+
+- Privacy policy and ToS published
+- Beta users onboarded
+- App store submissions complete
+- 10 issues to complete
 
 ---
 
@@ -313,17 +213,15 @@ Transform personal finance app into commercial multi-tenant service with mobile 
 **Technical Risks**:
 
 - Data migration complexity → Mitigation: Thorough testing, rollback plan
-- Performance degradation with multi-tenancy → Mitigation: Caching, query optimization
 - Mobile platform differences → Mitigation: Platform-specific testing
+- External service dependencies → Mitigation: Graceful degradation, fallbacks
 
 **Business Risks**:
 
-- User churn during transition → Mitigation: Maintain backward compatibility
 - Delayed mobile launch → Mitigation: Web-first approach, mobile can follow
-- Security vulnerabilities → Mitigation: Security audit, penetration testing
+- Payment integration complexity → Mitigation: Start with simple Stripe integration
 
 **Operational Risks**:
 
 - Database migration failures → Mitigation: Backup strategy, dry runs
 - Third-party service outages → Mitigation: Graceful degradation, fallbacks
-- Scaling issues → Mitigation: Load testing before launch
