@@ -16,6 +16,7 @@ import {
   verifyEmailSchema,
   resendVerificationSchema,
   deleteAccountSchema,
+  exportUserDataSchema,
 } from '@/schemas'
 import { sendVerificationEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
@@ -407,4 +408,490 @@ export async function deleteAccountAction(input: z.infer<typeof deleteAccountSch
   await clearSession()
 
   return successVoid()
+}
+
+/** Export user data type for JSON format */
+interface UserDataExport {
+  exportedAt: string
+  user: {
+    id: string
+    email: string
+    displayName: string | null
+    preferredCurrency: string
+    emailVerified: boolean
+    hasCompletedOnboarding: boolean
+    createdAt: string
+  }
+  subscription: {
+    id: string
+    status: string
+    trialEndsAt: string | null
+    currentPeriodStart: string | null
+    currentPeriodEnd: string | null
+    createdAt: string
+  } | null
+  accounts: Array<{
+    id: string
+    name: string
+    type: string
+    preferredCurrency: string | null
+    color: string | null
+    icon: string | null
+    description: string | null
+    createdAt: string
+  }>
+  categories: Array<{
+    id: string
+    name: string
+    type: string
+    color: string | null
+    isHolding: boolean
+    isArchived: boolean
+    createdAt: string
+  }>
+  transactions: Array<{
+    id: string
+    accountId: string
+    categoryId: string
+    type: string
+    amount: number
+    currency: string
+    date: string
+    month: string
+    description: string | null
+    isRecurring: boolean
+    isMutual: boolean
+    createdAt: string
+  }>
+  budgets: Array<{
+    id: string
+    accountId: string
+    categoryId: string
+    month: string
+    planned: number
+    currency: string
+    notes: string | null
+    createdAt: string
+  }>
+  holdings: Array<{
+    id: string
+    accountId: string
+    categoryId: string
+    symbol: string
+    quantity: number
+    averageCost: number
+    currency: string
+    notes: string | null
+    createdAt: string
+  }>
+  recurringTemplates: Array<{
+    id: string
+    accountId: string
+    categoryId: string
+    type: string
+    amount: number
+    currency: string
+    dayOfMonth: number
+    description: string | null
+    isActive: boolean
+    startMonth: string
+    endMonth: string | null
+    createdAt: string
+  }>
+}
+
+/** Export all user data (GDPR Article 20 - Right to data portability). */
+export async function exportUserDataAction(input: z.infer<typeof exportUserDataSchema>) {
+  const parsed = parseInput(exportUserDataSchema, input)
+  if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
+  const auth = await requireAuthUser()
+  if ('error' in auth) return auth
+  const { authUser } = auth
+
+  // Rate limit check (3/hour)
+  const rateLimit = checkRateLimitTyped(authUser.id, 'data_export')
+  if (!rateLimit.allowed) {
+    return failure({ general: ['Too many export requests. Please try again later.'] })
+  }
+  incrementRateLimitTyped(authUser.id, 'data_export')
+
+  const { format } = parsed.data
+
+  try {
+    // Fetch user data (excluding sensitive fields like passwordHash)
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.id },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        preferredCurrency: true,
+        emailVerified: true,
+        hasCompletedOnboarding: true,
+        createdAt: true,
+      },
+    })
+
+    if (!user) {
+      return generalError('User not found')
+    }
+
+    // Fetch subscription
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: authUser.id },
+      select: {
+        id: true,
+        status: true,
+        trialEndsAt: true,
+        currentPeriodStart: true,
+        currentPeriodEnd: true,
+        createdAt: true,
+      },
+    })
+
+    // Fetch accounts
+    const accounts = await prisma.account.findMany({
+      where: { userId: authUser.id },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        preferredCurrency: true,
+        color: true,
+        icon: true,
+        description: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+    const accountIds = accounts.map((a) => a.id)
+
+    // Fetch categories
+    const categories = await prisma.category.findMany({
+      where: { userId: authUser.id },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        color: true,
+        isHolding: true,
+        isArchived: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    // Fetch transactions (only for user's accounts)
+    const transactions =
+      accountIds.length > 0
+        ? await prisma.transaction.findMany({
+            where: { accountId: { in: accountIds } },
+            select: {
+              id: true,
+              accountId: true,
+              categoryId: true,
+              type: true,
+              amount: true,
+              currency: true,
+              date: true,
+              month: true,
+              description: true,
+              isRecurring: true,
+              isMutual: true,
+              createdAt: true,
+            },
+            orderBy: { date: 'desc' },
+          })
+        : []
+
+    // Fetch budgets
+    const budgets =
+      accountIds.length > 0
+        ? await prisma.budget.findMany({
+            where: { accountId: { in: accountIds } },
+            select: {
+              id: true,
+              accountId: true,
+              categoryId: true,
+              month: true,
+              planned: true,
+              currency: true,
+              notes: true,
+              createdAt: true,
+            },
+            orderBy: { month: 'desc' },
+          })
+        : []
+
+    // Fetch holdings
+    const holdings =
+      accountIds.length > 0
+        ? await prisma.holding.findMany({
+            where: { accountId: { in: accountIds } },
+            select: {
+              id: true,
+              accountId: true,
+              categoryId: true,
+              symbol: true,
+              quantity: true,
+              averageCost: true,
+              currency: true,
+              notes: true,
+              createdAt: true,
+            },
+            orderBy: { symbol: 'asc' },
+          })
+        : []
+
+    // Fetch recurring templates
+    const recurringTemplates =
+      accountIds.length > 0
+        ? await prisma.recurringTemplate.findMany({
+            where: { accountId: { in: accountIds } },
+            select: {
+              id: true,
+              accountId: true,
+              categoryId: true,
+              type: true,
+              amount: true,
+              currency: true,
+              dayOfMonth: true,
+              description: true,
+              isActive: true,
+              startMonth: true,
+              endMonth: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' },
+          })
+        : []
+
+    serverLogger.info('User data exported (GDPR)', {
+      action: 'exportUserDataAction',
+      userId: authUser.id,
+      format,
+      counts: {
+        accounts: accounts.length,
+        categories: categories.length,
+        transactions: transactions.length,
+        budgets: budgets.length,
+        holdings: holdings.length,
+        recurringTemplates: recurringTemplates.length,
+      },
+    })
+
+    // Build export data with proper serialization
+    const exportData: UserDataExport = {
+      exportedAt: new Date().toISOString(),
+      user: {
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+      },
+      subscription: subscription
+        ? {
+            ...subscription,
+            trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
+            currentPeriodStart: subscription.currentPeriodStart?.toISOString() ?? null,
+            currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+            createdAt: subscription.createdAt.toISOString(),
+          }
+        : null,
+      accounts: accounts.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+      })),
+      categories: categories.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+      })),
+      transactions: transactions.map((t) => ({
+        ...t,
+        amount: t.amount.toNumber(),
+        date: t.date.toISOString(),
+        month: t.month.toISOString(),
+        createdAt: t.createdAt.toISOString(),
+      })),
+      budgets: budgets.map((b) => ({
+        ...b,
+        planned: b.planned.toNumber(),
+        month: b.month.toISOString(),
+        createdAt: b.createdAt.toISOString(),
+      })),
+      holdings: holdings.map((h) => ({
+        ...h,
+        quantity: h.quantity.toNumber(),
+        averageCost: h.averageCost.toNumber(),
+        createdAt: h.createdAt.toISOString(),
+      })),
+      recurringTemplates: recurringTemplates.map((r) => ({
+        ...r,
+        amount: r.amount.toNumber(),
+        startMonth: r.startMonth.toISOString(),
+        endMonth: r.endMonth?.toISOString() ?? null,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    }
+
+    if (format === 'json') {
+      return success({ data: exportData, format: 'json' as const })
+    }
+
+    // CSV format - create multiple sections
+    const csvSections: string[] = []
+
+    // User section
+    csvSections.push('=== USER ===')
+    csvSections.push('id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt')
+    csvSections.push(
+      [
+        exportData.user.id,
+        `"${exportData.user.email}"`,
+        `"${exportData.user.displayName ?? ''}"`,
+        exportData.user.preferredCurrency,
+        exportData.user.emailVerified,
+        exportData.user.hasCompletedOnboarding,
+        exportData.user.createdAt,
+      ].join(','),
+    )
+
+    // Subscription section
+    if (exportData.subscription) {
+      csvSections.push('')
+      csvSections.push('=== SUBSCRIPTION ===')
+      csvSections.push('id,status,trialEndsAt,currentPeriodStart,currentPeriodEnd,createdAt')
+      csvSections.push(
+        [
+          exportData.subscription.id,
+          exportData.subscription.status,
+          exportData.subscription.trialEndsAt ?? '',
+          exportData.subscription.currentPeriodStart ?? '',
+          exportData.subscription.currentPeriodEnd ?? '',
+          exportData.subscription.createdAt,
+        ].join(','),
+      )
+    }
+
+    // Accounts section
+    csvSections.push('')
+    csvSections.push('=== ACCOUNTS ===')
+    csvSections.push('id,name,type,preferredCurrency,color,icon,description,createdAt')
+    exportData.accounts.forEach((a) => {
+      csvSections.push(
+        [
+          a.id,
+          `"${a.name}"`,
+          a.type,
+          a.preferredCurrency,
+          a.color ?? '',
+          a.icon ?? '',
+          `"${(a.description ?? '').replace(/"/g, '""')}"`,
+          a.createdAt,
+        ].join(','),
+      )
+    })
+
+    // Categories section
+    csvSections.push('')
+    csvSections.push('=== CATEGORIES ===')
+    csvSections.push('id,name,type,color,isHolding,isArchived,createdAt')
+    exportData.categories.forEach((c) => {
+      csvSections.push([c.id, `"${c.name}"`, c.type, c.color ?? '', c.isHolding, c.isArchived, c.createdAt].join(','))
+    })
+
+    // Transactions section
+    csvSections.push('')
+    csvSections.push('=== TRANSACTIONS ===')
+    csvSections.push('id,accountId,categoryId,type,amount,currency,date,month,description,isRecurring,isMutual,createdAt')
+    exportData.transactions.forEach((t) => {
+      csvSections.push(
+        [
+          t.id,
+          t.accountId,
+          t.categoryId,
+          t.type,
+          t.amount,
+          t.currency,
+          t.date,
+          t.month,
+          `"${(t.description ?? '').replace(/"/g, '""')}"`,
+          t.isRecurring,
+          t.isMutual,
+          t.createdAt,
+        ].join(','),
+      )
+    })
+
+    // Budgets section
+    csvSections.push('')
+    csvSections.push('=== BUDGETS ===')
+    csvSections.push('id,accountId,categoryId,month,planned,currency,notes,createdAt')
+    exportData.budgets.forEach((b) => {
+      csvSections.push(
+        [
+          b.id,
+          b.accountId,
+          b.categoryId,
+          b.month,
+          b.planned,
+          b.currency,
+          `"${(b.notes ?? '').replace(/"/g, '""')}"`,
+          b.createdAt,
+        ].join(','),
+      )
+    })
+
+    // Holdings section
+    csvSections.push('')
+    csvSections.push('=== HOLDINGS ===')
+    csvSections.push('id,accountId,categoryId,symbol,quantity,averageCost,currency,notes,createdAt')
+    exportData.holdings.forEach((h) => {
+      csvSections.push(
+        [
+          h.id,
+          h.accountId,
+          h.categoryId,
+          h.symbol,
+          h.quantity,
+          h.averageCost,
+          h.currency,
+          `"${(h.notes ?? '').replace(/"/g, '""')}"`,
+          h.createdAt,
+        ].join(','),
+      )
+    })
+
+    // Recurring templates section
+    csvSections.push('')
+    csvSections.push('=== RECURRING TEMPLATES ===')
+    csvSections.push(
+      'id,accountId,categoryId,type,amount,currency,dayOfMonth,description,isActive,startMonth,endMonth,createdAt',
+    )
+    exportData.recurringTemplates.forEach((r) => {
+      csvSections.push(
+        [
+          r.id,
+          r.accountId,
+          r.categoryId,
+          r.type,
+          r.amount,
+          r.currency,
+          r.dayOfMonth,
+          `"${(r.description ?? '').replace(/"/g, '""')}"`,
+          r.isActive,
+          r.startMonth,
+          r.endMonth ?? '',
+          r.createdAt,
+        ].join(','),
+      )
+    })
+
+    return success({ data: csvSections.join('\n'), format: 'csv' as const })
+  } catch (error) {
+    serverLogger.error('Failed to export user data', { action: 'exportUserDataAction', userId: authUser.id }, error)
+    return generalError('Unable to export data. Please try again.')
+  }
 }

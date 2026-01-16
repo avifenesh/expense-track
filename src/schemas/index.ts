@@ -209,6 +209,14 @@ export const deleteAccountSchema = z.object({
 
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>
 
+// Data export schema (GDPR)
+export const exportUserDataSchema = z.object({
+  format: z.enum(['json', 'csv']).default('json'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type ExportUserDataInput = z.infer<typeof exportUserDataSchema>
+
 // Onboarding schemas
 export {
   completeOnboardingSchema,
