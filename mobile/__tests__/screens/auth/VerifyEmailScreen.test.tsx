@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { VerifyEmailScreen } from '../../../src/screens/auth/VerifyEmailScreen';
 import { ApiError } from '../../../src/services/api';
 import * as authService from '../../../src/services/auth';
+import type { AuthScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/auth');
 
@@ -13,16 +14,20 @@ const mockNavigate = jest.fn();
 const mockNavigation = {
   navigate: mockNavigate,
   goBack: jest.fn(),
-};
+} as unknown as AuthScreenProps<'VerifyEmail'>['navigation'];
+
+const mockRoute = {
+  key: 'VerifyEmail',
+  name: 'VerifyEmail' as const,
+  params: { email: 'test@example.com' },
+} as AuthScreenProps<'VerifyEmail'>['route'];
 
 const renderVerifyEmailScreen = () => {
   return render(
     <NavigationContainer>
       <VerifyEmailScreen
-        navigation={mockNavigation as any}
-        route={{
-          params: { email: 'test@example.com' },
-        } as any}
+        navigation={mockNavigation}
+        route={mockRoute}
       />
     </NavigationContainer>
   );
@@ -302,13 +307,17 @@ describe('VerifyEmailScreen', () => {
 
   describe('Email Parameter Handling', () => {
     it('displays email from route params', () => {
+      const customRoute = {
+        key: 'VerifyEmail',
+        name: 'VerifyEmail' as const,
+        params: { email: 'user@example.com' },
+      } as AuthScreenProps<'VerifyEmail'>['route'];
+
       render(
         <NavigationContainer>
           <VerifyEmailScreen
-            navigation={mockNavigation as any}
-            route={{
-              params: { email: 'user@example.com' },
-            } as any}
+            navigation={mockNavigation}
+            route={customRoute}
           />
         </NavigationContainer>
       );
@@ -321,13 +330,17 @@ describe('VerifyEmailScreen', () => {
         message: 'Verification email sent',
       });
 
+      const customRoute = {
+        key: 'VerifyEmail',
+        name: 'VerifyEmail' as const,
+        params: { email: 'custom@example.com' },
+      } as AuthScreenProps<'VerifyEmail'>['route'];
+
       render(
         <NavigationContainer>
           <VerifyEmailScreen
-            navigation={mockNavigation as any}
-            route={{
-              params: { email: 'custom@example.com' },
-            } as any}
+            navigation={mockNavigation}
+            route={customRoute}
           />
         </NavigationContainer>
       );

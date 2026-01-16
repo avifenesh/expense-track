@@ -5,6 +5,7 @@ import { LoginScreen } from '../../../src/screens/auth/LoginScreen';
 import { AuthProvider } from '../../../src/contexts';
 import { ApiError } from '../../../src/services/api';
 import * as authService from '../../../src/services/auth';
+import type { AuthScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/auth');
 
@@ -14,15 +15,21 @@ const mockNavigate = jest.fn();
 const mockNavigation = {
   navigate: mockNavigate,
   goBack: jest.fn(),
-};
+} as unknown as AuthScreenProps<'Login'>['navigation'];
+
+const mockRoute = {
+  key: 'Login',
+  name: 'Login' as const,
+  params: undefined,
+} as AuthScreenProps<'Login'>['route'];
 
 const renderLoginScreen = () => {
   return render(
     <AuthProvider>
       <NavigationContainer>
         <LoginScreen
-          navigation={mockNavigation as any}
-          route={{} as any}
+          navigation={mockNavigation}
+          route={mockRoute}
         />
       </NavigationContainer>
     </AuthProvider>

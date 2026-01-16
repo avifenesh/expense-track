@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { ResetPasswordScreen } from '../../../src/screens/auth/ResetPasswordScreen';
 import { ApiError } from '../../../src/services/api';
 import * as authService from '../../../src/services/auth';
+import type { AuthScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/auth');
 
@@ -13,16 +14,20 @@ const mockNavigate = jest.fn();
 const mockNavigation = {
   navigate: mockNavigate,
   goBack: jest.fn(),
-};
+} as unknown as AuthScreenProps<'ResetPassword'>['navigation'];
 
 const renderResetPasswordScreen = (token?: string) => {
+  const mockRoute = {
+    key: 'ResetPassword',
+    name: 'ResetPassword' as const,
+    params: token ? { token } : undefined,
+  } as AuthScreenProps<'ResetPassword'>['route'];
+
   return render(
     <NavigationContainer>
       <ResetPasswordScreen
-        navigation={mockNavigation as any}
-        route={{
-          params: token ? { token } : {},
-        } as any}
+        navigation={mockNavigation}
+        route={mockRoute}
       />
     </NavigationContainer>
   );
