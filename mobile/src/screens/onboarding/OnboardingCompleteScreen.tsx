@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
-export function OnboardingCompleteScreen({}: OnboardingScreenProps<'OnboardingComplete'>) {
+export function OnboardingCompleteScreen(_props: OnboardingScreenProps<'OnboardingComplete'>) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>

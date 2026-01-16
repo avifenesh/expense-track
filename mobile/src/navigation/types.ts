@@ -69,7 +69,6 @@ export type RootStackScreenProps<T extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, T>;
 
 // Declare global navigation types for useNavigation hook
-// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace ReactNavigation {
