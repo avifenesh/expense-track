@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Expense Track",
-    "slug": "expense-track",
+    "name": "Balance Beacon",
+    "slug": "balance-beacon",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.expensetrack.app"
+      "bundleIdentifier": "app.balancebeacon.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.expensetrack.app"
+      "package": "app.balancebeacon.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
