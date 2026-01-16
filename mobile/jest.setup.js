@@ -1,3 +1,4 @@
+/* global jest */
 // Import gesture handler test setup
 import 'react-native-gesture-handler/jestSetup';
 
@@ -24,6 +25,7 @@ jest.mock('@react-navigation/native-stack', () => {
             : firstScreen
         );
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       Screen: ({ name, component }) => null,
       Group: ({ children }) => children,
     }),
@@ -104,6 +106,7 @@ jest.mock('react-native-safe-area-context', () => {
         children
       ),
     SafeAreaConsumer: SafeAreaContext.Consumer,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     SafeAreaView: ({ children, edges, style }) =>
       React.createElement(View, { testID: 'safe-area-view', style }, children),
     useSafeAreaInsets: () => inset,

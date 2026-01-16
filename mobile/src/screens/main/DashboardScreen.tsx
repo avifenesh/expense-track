@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
 
-export function DashboardScreen({}: MainTabScreenProps<'Dashboard'>) {
+export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>

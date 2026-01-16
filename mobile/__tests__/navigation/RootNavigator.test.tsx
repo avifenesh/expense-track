@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { RootNavigator } from '../../src/navigation/RootNavigator';
+import { AuthProvider } from '../../src/contexts';
 
 jest.mock('../../src/hooks/useAuthState', () => ({
   useAuthState: jest.fn(),
@@ -10,6 +11,14 @@ jest.mock('../../src/hooks/useAuthState', () => ({
 import { useAuthState } from '../../src/hooks/useAuthState';
 
 const mockUseAuthState = useAuthState as jest.Mock;
+
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      <NavigationContainer>{component}</NavigationContainer>
+    </AuthProvider>
+  );
+};
 
 describe('RootNavigator', () => {
   beforeEach(() => {
@@ -24,11 +33,7 @@ describe('RootNavigator', () => {
       userId: null,
     });
 
-    render(
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    );
+    renderWithProviders(<RootNavigator />);
 
     // The loading screen renders an ActivityIndicator
     expect(screen.getByTestId).toBeTruthy();
@@ -42,14 +47,11 @@ describe('RootNavigator', () => {
       userId: null,
     });
 
-    render(
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    );
+    renderWithProviders(<RootNavigator />);
 
     await waitFor(() => {
-      expect(screen.getByText('Sign In')).toBeTruthy();
+      // Check for login screen elements
+      expect(screen.getAllByText('Sign In').length).toBeGreaterThan(0);
     });
   });
 
@@ -61,11 +63,7 @@ describe('RootNavigator', () => {
       userId: 'user-123',
     });
 
-    render(
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    );
+    renderWithProviders(<RootNavigator />);
 
     await waitFor(() => {
       expect(screen.getByText('Welcome')).toBeTruthy();
@@ -80,11 +78,7 @@ describe('RootNavigator', () => {
       userId: 'user-123',
     });
 
-    render(
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    );
+    renderWithProviders(<RootNavigator />);
 
     await waitFor(() => {
       expect(screen.getByText('Dashboard')).toBeTruthy();

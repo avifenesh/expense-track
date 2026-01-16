@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
 import { APP_NAME, APP_VERSION } from '../../constants';
 
-export function SettingsScreen({}: MainTabScreenProps<'Settings'>) {
+export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
