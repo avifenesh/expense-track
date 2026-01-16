@@ -51,7 +51,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         aria-hidden
       />
 
-      <main className="flex flex-1 items-center justify-center overflow-hidden px-4 py-16 sm:px-8">
+      <main className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-16 sm:px-8">
         <div className="relative grid w-full max-w-6xl gap-12 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <section className="space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-lg lg:p-12">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wide text-slate-200">
