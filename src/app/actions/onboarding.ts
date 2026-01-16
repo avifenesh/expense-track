@@ -15,7 +15,7 @@ import {
   seedSampleDataSchema,
 } from '@/schemas'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/lib/default-categories'
-import { getMonthStart } from '@/utils/date'
+import { getMonthStart, getMonthStartFromKey } from '@/utils/date'
 import type {
   CompleteOnboardingInput,
   SkipOnboardingInput,
@@ -168,7 +168,7 @@ export async function createInitialCategoriesAction(input: CreateInitialCategori
   if ('error' in subscriptionCheck) return subscriptionCheck
 
   try {
-    await prisma.$transaction(
+    const createdCategories = await prisma.$transaction(
       parsed.data.categories.map((cat) =>
         prisma.category.upsert({
           where: {
@@ -188,9 +188,20 @@ export async function createInitialCategoriesAction(input: CreateInitialCategori
             color: cat.color ?? undefined,
             isArchived: false,
           },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
         }),
       ),
     )
+
+    revalidatePath('/')
+    return success({
+      categoriesCreated: createdCategories.length,
+      categories: createdCategories,
+    })
   } catch (error) {
     return handlePrismaError(error, {
       action: 'createInitialCategories',
@@ -199,9 +210,6 @@ export async function createInitialCategoriesAction(input: CreateInitialCategori
       fallbackMessage: 'Unable to create categories',
     })
   }
-
-  revalidatePath('/')
-  return success({ categoriesCreated: parsed.data.categories.length })
 }
 
 export async function createQuickBudgetAction(input: CreateQuickBudgetInput) {
@@ -242,8 +250,7 @@ export async function createQuickBudgetAction(input: CreateQuickBudgetInput) {
     return generalError('Category not found or access denied')
   }
 
-  const [year, monthNum] = parsed.data.monthKey.split('-').map(Number)
-  const month = getMonthStart(new Date(year, monthNum - 1, 1))
+  const month = getMonthStartFromKey(parsed.data.monthKey)
 
   try {
     await prisma.budget.upsert({

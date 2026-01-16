@@ -71,7 +71,6 @@ export function OnboardingWizard({
         return
       }
       router.push('/')
-      router.refresh()
     })
   }
 
@@ -83,7 +82,6 @@ export function OnboardingWizard({
         return
       }
       router.push('/')
-      router.refresh()
     })
   }
 
@@ -108,8 +106,8 @@ export function OnboardingWizard({
         setError(result.error.general?.[0] ?? result.error.categories?.[0] ?? 'Failed to create categories')
         return
       }
-      if (result.success) {
-        setCreatedCategories(categories.map((c, i) => ({ id: `temp-${i}`, name: c.name })))
+      if (result.success && result.data?.categories) {
+        setCreatedCategories(result.data.categories.map((c) => ({ id: c.id, name: c.name })))
       }
       goToNextStep()
     })

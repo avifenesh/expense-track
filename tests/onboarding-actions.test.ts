@@ -244,7 +244,16 @@ describe('createInitialCategoriesAction', () => {
       csrfToken: 'valid-token',
     })
 
-    expect(result).toEqual({ success: true, data: { categoriesCreated: 2 } })
+    expect(result).toEqual({
+      success: true,
+      data: {
+        categoriesCreated: 2,
+        categories: [
+          { id: 'cat-1', name: 'Groceries', type: 'EXPENSE' },
+          { id: 'cat-2', name: 'Salary', type: 'INCOME' },
+        ],
+      },
+    })
     expect(prisma.$transaction).toHaveBeenCalled()
   })
 

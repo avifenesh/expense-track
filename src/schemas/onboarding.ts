@@ -38,7 +38,7 @@ export type CreateInitialCategoriesInput = z.infer<typeof createInitialCategorie
 export const createQuickBudgetSchema = z.object({
   accountId: z.string().min(1, 'Account is required'),
   categoryId: z.string().min(1, 'Category is required'),
-  monthKey: z.string().min(7, 'Month key is required'),
+  monthKey: z.string().regex(/^\d{4}-\d{2}$/, 'Invalid month format (expected YYYY-MM)'),
   planned: z.coerce.number().min(0, 'Budget must be >= 0'),
   currency: z.nativeEnum(Currency).default(Currency.USD),
   csrfToken: z.string().min(1, 'Security token required'),
