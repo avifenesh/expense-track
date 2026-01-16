@@ -25,16 +25,13 @@ export function ResetPasswordScreen({
   route,
   navigation,
 }: AuthScreenProps<'ResetPassword'>) {
-  // Check if we have a token (from deep link)
   const token = route.params?.token;
   const hasToken = !!token;
 
-  // Request reset form state
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [requestSent, setRequestSent] = useState(false);
 
-  // Reset password form state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
@@ -42,7 +39,6 @@ export function ResetPasswordScreen({
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
 
-  // Shared state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,14 +101,12 @@ export function ResetPasswordScreen({
     setPasswordErrors([]);
     setConfirmPasswordError(null);
 
-    // Validate password
     const passwordValidationErrors = validatePassword(newPassword);
     if (passwordValidationErrors.length > 0) {
       setPasswordErrors(passwordValidationErrors);
       return;
     }
 
-    // Validate password match
     const matchError = validatePasswordMatch(newPassword, confirmPassword);
     if (matchError) {
       setConfirmPasswordError(matchError);
@@ -141,7 +135,6 @@ export function ResetPasswordScreen({
     }
   };
 
-  // Show success screen after password reset
   if (resetComplete) {
     return (
       <SafeAreaView style={styles.container}>
@@ -164,7 +157,6 @@ export function ResetPasswordScreen({
     );
   }
 
-  // Show success screen after request sent
   if (requestSent) {
     return (
       <SafeAreaView style={styles.container}>
@@ -187,7 +179,6 @@ export function ResetPasswordScreen({
     );
   }
 
-  // Reset password form (with token)
   if (hasToken) {
     return (
       <SafeAreaView style={styles.container}>
@@ -296,7 +287,6 @@ export function ResetPasswordScreen({
     );
   }
 
-  // Request reset form (without token)
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView

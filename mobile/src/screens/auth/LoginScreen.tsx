@@ -36,18 +36,15 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
   };
 
   const handleLogin = async () => {
-    // Clear previous errors
     setError(null);
     setEmailError(null);
 
-    // Validate email
     const emailValidationError = validateEmail(email);
     if (emailValidationError) {
       setEmailError(emailValidationError);
       return;
     }
 
-    // Validate password presence
     if (!password) {
       setError('Password is required');
       return;
@@ -57,8 +54,6 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
 
     try {
       await login(email, password);
-      // Navigation will be handled automatically by RootNavigator
-      // when isAuthenticated becomes true
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.code === 'RATE_LIMITED') {

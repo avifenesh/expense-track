@@ -23,7 +23,6 @@ export function VerifyEmailScreen({
   const [resendError, setResendError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
-  // Cooldown timer
   useEffect(() => {
     if (cooldownSeconds <= 0) return;
 

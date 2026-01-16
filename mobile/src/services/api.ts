@@ -1,15 +1,5 @@
-/**
- * Core API service for making HTTP requests to the backend.
- * Handles base URL configuration, error handling, and response parsing.
- */
-
-// Use environment variable for API URL, fallback to localhost in development
-// In production, this would be set to the actual API domain
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
-/**
- * Custom error class for API errors with structured error data
- */
 export class ApiError extends Error {
   code: string;
   status: number;
@@ -24,9 +14,6 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Response types from the API
- */
 interface ApiSuccessResponse<T> {
   success: true;
   data: T;
@@ -40,14 +27,6 @@ interface ApiErrorResponse {
 
 type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-/**
- * Makes an authenticated API request
- * @param endpoint - API endpoint (e.g., '/auth/login')
- * @param options - Fetch options
- * @param accessToken - Optional JWT access token for authenticated requests
- * @returns Promise with the response data
- * @throws ApiError on failure
- */
 export async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit,
@@ -81,7 +60,6 @@ export async function apiRequest<T>(
       );
     }
 
-    // Check for API error response
     if ('error' in data && data.error) {
       throw new ApiError(
         data.error,
@@ -94,24 +72,20 @@ export async function apiRequest<T>(
       );
     }
 
-    // Success response
     if ('success' in data && data.success && 'data' in data) {
       return data.data;
     }
 
-    // Unexpected response format
     throw new ApiError(
       'Unexpected response format',
       'INVALID_RESPONSE',
       response.status
     );
   } catch (error) {
-    // Re-throw ApiError instances
     if (error instanceof ApiError) {
       throw error;
     }
 
-    // Handle network errors
     if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new ApiError(
         'Network error. Please check your connection.',
@@ -120,7 +94,6 @@ export async function apiRequest<T>(
       );
     }
 
-    // Handle other errors
     throw new ApiError(
       error instanceof Error ? error.message : 'An unexpected error occurred',
       'UNKNOWN_ERROR',
@@ -129,16 +102,10 @@ export async function apiRequest<T>(
   }
 }
 
-/**
- * Helper for GET requests
- */
 export function apiGet<T>(endpoint: string, accessToken?: string | null): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'GET' }, accessToken);
 }
 
-/**
- * Helper for POST requests
- */
 export function apiPost<T>(
   endpoint: string,
   body: unknown,
@@ -154,9 +121,6 @@ export function apiPost<T>(
   );
 }
 
-/**
- * Helper for PUT requests
- */
 export function apiPut<T>(
   endpoint: string,
   body: unknown,
@@ -172,9 +136,6 @@ export function apiPut<T>(
   );
 }
 
-/**
- * Helper for PATCH requests
- */
 export function apiPatch<T>(
   endpoint: string,
   body: unknown,
@@ -190,9 +151,6 @@ export function apiPatch<T>(
   );
 }
 
-/**
- * Helper for DELETE requests
- */
 export function apiDelete<T>(endpoint: string, accessToken?: string | null): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'DELETE' }, accessToken);
 }

@@ -40,33 +40,26 @@ export async function POST(request: NextRequest) {
     const { email, password, displayName } = parsed.data
     const normalizedEmail = email.trim().toLowerCase()
 
-    // Rate limit registration attempts by email (3/min for spam prevention)
     const rateLimit = checkRateLimitTyped(normalizedEmail, 'registration')
     if (!rateLimit.allowed) {
       return rateLimitError(rateLimit.resetAt)
     }
     incrementRateLimitTyped(normalizedEmail, 'registration')
 
-    // Check if user already exists - but don't reveal this in response
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
 
     if (existingUser) {
-      // Return success to prevent email enumeration attacks
-      // In a real scenario, we would send a different email saying "you already have an account"
       serverLogger.info('Registration attempt for existing email', { email: normalizedEmail })
       return successResponse({ message: 'If this email is not registered, you will receive a verification email shortly.' }, 201)
     }
 
-    // Hash password with bcrypt (cost factor 12)
     const passwordHash = await bcrypt.hash(password, 12)
 
-    // Generate email verification token
     const verificationToken = randomBytes(32).toString('hex')
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    // Create user with unverified email
     await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -78,15 +71,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Log verification email (actual email sending is a separate task)
     serverLogger.info('Email verification required', {
       email: normalizedEmail,
       token: verificationToken,
       expires: verificationExpires.toISOString(),
-      // In production, this would trigger an email send
     })
 
-    // Return generic success message (email enumeration protection)
     return successResponse(
       { message: 'If this email is not registered, you will receive a verification email shortly.' },
       201,

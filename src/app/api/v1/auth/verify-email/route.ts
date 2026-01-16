@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
 
     const { token } = parsed.data
 
-    // Find user with this verification token
     const user = await prisma.user.findUnique({
       where: { emailVerificationToken: token },
     })
@@ -33,17 +32,14 @@ export async function POST(request: NextRequest) {
       return authError('Invalid or expired verification token')
     }
 
-    // Check if token has expired
     if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
       return authError('Verification token has expired. Please request a new one.')
     }
 
-    // Check if already verified
     if (user.emailVerified) {
       return successResponse({ message: 'Email is already verified' })
     }
 
-    // Update user to mark email as verified
     await prisma.user.update({
       where: { id: user.id },
       data: {

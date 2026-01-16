@@ -54,13 +54,11 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
   };
 
   const handleRegister = async () => {
-    // Clear previous errors
     setError(null);
     setEmailError(null);
     setPasswordErrors([]);
     setDisplayNameError(null);
 
-    // Validate all fields
     let hasErrors = false;
 
     const emailValidationError = validateEmail(email);
@@ -89,7 +87,6 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
 
     try {
       await register(email, password, displayName);
-      // Navigate to verify email screen
       navigation.navigate('VerifyEmail', { email: email.trim().toLowerCase() });
     } catch (err) {
       if (err instanceof ApiError) {
