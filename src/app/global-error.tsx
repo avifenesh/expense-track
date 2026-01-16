@@ -5,10 +5,11 @@ import { Sentry } from '@/lib/monitoring/sentry-client'
 
 export default function GlobalError({
   error,
-  _reset,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  reset,
 }: {
   error: Error & { digest?: string }
-  _reset: () => void
+  reset: () => void
 }) {
   useEffect(() => {
     // Don't report server action mismatch errors - they're expected during deployments
