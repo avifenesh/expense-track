@@ -15,4 +15,14 @@ npm run lint
 echo "Running tests..."
 npm test
 
+# 4. Mobile checks (if mobile directory exists)
+if [ -d "mobile" ]; then
+  echo "Running mobile quality checks..."
+  cd mobile
+  npm run check-types
+  npm run lint
+  npm test
+  cd ..
+fi
+
 echo "Pre-push checks passed!"

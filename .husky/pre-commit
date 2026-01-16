@@ -2,3 +2,8 @@
 # Runs lint-staged (prettier + eslint on staged files)
 
 npx lint-staged
+
+# Run mobile lint-staged if mobile files are staged
+if git diff --cached --name-only | grep -q "^mobile/"; then
+  cd mobile && npx lint-staged
+fi

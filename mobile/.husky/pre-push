@@ -1,0 +1,1 @@
+cd mobile && npm run check-types && npm run lint && npm test
