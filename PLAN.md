@@ -75,11 +75,11 @@ Transform personal finance app into commercial multi-tenant service with mobile 
 ### API Foundation
 
 - [x] #64 - Audit server actions for mobile API compatibility
-- [ ] #67 - Create API documentation with Swagger/OpenAPI
+- [x] #67 - Create API documentation with Swagger/OpenAPI
 
 ### React Native Setup
 
-- [ ] #68 - Initialize React Native project with Expo
+- [x] #68 - Initialize React Native project with Expo
 - [ ] #69 - Set up React Navigation for mobile app
 - [ ] #70 - Create mobile authentication screens
 - [ ] #71 - Implement secure token storage on mobile
