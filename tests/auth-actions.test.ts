@@ -74,6 +74,12 @@ vi.mock('@/lib/rate-limit', () => ({
   resetAllRateLimits: vi.fn(),
 }))
 
+vi.mock('@/lib/email', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
+  sendPasswordResetEmail: vi.fn().mockResolvedValue({ success: true }),
+  sendPasswordChangedEmail: vi.fn().mockResolvedValue({ success: true }),
+}))
+
 vi.mock('@/app/actions/shared', () => ({
   parseInput: vi.fn((schema, input) => {
     const parsed = schema.safeParse(input)

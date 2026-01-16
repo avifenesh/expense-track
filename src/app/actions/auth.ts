@@ -96,14 +96,16 @@ export async function requestPasswordResetAction(input: z.infer<typeof recoveryS
   if (user && user.emailVerified) {
     // Generate secure token
     const token = crypto.randomBytes(32).toString('hex')
+    // Hash token before storing (security best practice - prevents token theft if DB is compromised)
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
     const expires = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
 
     try {
-      // Store token in database
+      // Store hashed token in database
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          passwordResetToken: token,
+          passwordResetToken: hashedToken,
           passwordResetExpires: expires,
         },
       })
@@ -131,10 +133,12 @@ export async function resetPasswordAction(input: z.infer<typeof resetPasswordSch
   if ('error' in parsed) return parsed
 
   const { token, newPassword } = parsed.data
+  // Hash the incoming token to compare with stored hash
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
 
-  // Find user by token
+  // Find user by hashed token
   const user = await prisma.user.findUnique({
-    where: { passwordResetToken: token },
+    where: { passwordResetToken: hashedToken },
     select: { id: true, email: true, passwordResetExpires: true },
   })
 
