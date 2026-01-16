@@ -17,7 +17,8 @@ describe('App', () => {
     render(<App />);
     // When not authenticated, we should see the login screen
     await waitFor(() => {
-      expect(screen.getByText('Sign In')).toBeTruthy();
+      // Check for multiple elements indicating login screen
+      expect(screen.getAllByText('Sign In').length).toBeGreaterThan(0);
     });
   });
 
@@ -25,6 +26,14 @@ describe('App', () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.getByText('Welcome back to Expense Track')).toBeTruthy();
+    });
+  });
+
+  it('shows login form elements', async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Enter your password')).toBeTruthy();
     });
   });
 });
