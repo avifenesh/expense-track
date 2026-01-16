@@ -115,3 +115,107 @@ export async function sendVerificationEmail(
     `,
   })
 }
+
+export interface ExpenseSharedEmailOptions {
+  to: string
+  participantName: string
+  ownerName: string
+  amount: number
+  totalAmount: number
+  currency: string
+  description: string
+}
+
+export async function sendExpenseSharedEmail(
+  options: ExpenseSharedEmailOptions,
+): Promise<{ success: boolean; messageId?: string }> {
+  const safeOwnerName = escapeHtml(options.ownerName)
+  const safeDescription = escapeHtml(options.description)
+  const formattedAmount = formatEmailCurrency(options.amount, options.currency)
+  const formattedTotal = formatEmailCurrency(options.totalAmount, options.currency)
+  const dashboardUrl = `${APP_URL}/`
+  const safeDashboardUrl = escapeHtml(dashboardUrl)
+
+  return sendEmail({
+    to: options.to,
+    subject: `${options.ownerName} shared an expense with you - Balance Beacon`,
+    text: `Hi ${options.participantName},\n\n${options.ownerName} has shared an expense with you.\n\nExpense: ${options.description}\nTotal amount: ${formattedTotal}\nYour share: ${formattedAmount}\n\nLog in to Balance Beacon to view the details and mark it as paid when you settle up.\n\n${dashboardUrl}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">Shared Expense</h1>
+        <p>Hi ${escapeHtml(options.participantName)},</p>
+        <p><strong>${safeOwnerName}</strong> has shared an expense with you.</p>
+        <div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 24px 0;">
+          <p style="margin: 0 0 8px 0;"><strong>Expense:</strong> ${safeDescription}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Total amount:</strong> ${formattedTotal}</p>
+          <p style="margin: 0; font-size: 18px; color: #0070f3;"><strong>Your share:</strong> ${formattedAmount}</p>
+        </div>
+        <p style="margin: 24px 0;">
+          <a href="${safeDashboardUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View in Balance Beacon
+          </a>
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          Log in to view the details and mark it as paid when you settle up with ${safeOwnerName}.
+        </p>
+      </div>
+    `,
+  })
+}
+
+export interface PaymentReminderEmailOptions {
+  to: string
+  participantName: string
+  ownerName: string
+  amount: number
+  currency: string
+  description: string
+}
+
+export async function sendPaymentReminderEmail(
+  options: PaymentReminderEmailOptions,
+): Promise<{ success: boolean; messageId?: string }> {
+  const safeOwnerName = escapeHtml(options.ownerName)
+  const safeDescription = escapeHtml(options.description)
+  const formattedAmount = formatEmailCurrency(options.amount, options.currency)
+  const dashboardUrl = `${APP_URL}/`
+  const safeDashboardUrl = escapeHtml(dashboardUrl)
+
+  return sendEmail({
+    to: options.to,
+    subject: `Reminder: You owe ${formattedAmount} - Balance Beacon`,
+    text: `Hi ${options.participantName},\n\nThis is a friendly reminder from ${options.ownerName} about a shared expense.\n\nExpense: ${options.description}\nAmount owed: ${formattedAmount}\n\nLog in to Balance Beacon to view the details.\n\n${dashboardUrl}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">Payment Reminder</h1>
+        <p>Hi ${escapeHtml(options.participantName)},</p>
+        <p>This is a friendly reminder from <strong>${safeOwnerName}</strong> about a shared expense.</p>
+        <div style="background-color: #fff3cd; padding: 16px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #ffc107;">
+          <p style="margin: 0 0 8px 0;"><strong>Expense:</strong> ${safeDescription}</p>
+          <p style="margin: 0; font-size: 18px; color: #856404;"><strong>Amount owed:</strong> ${formattedAmount}</p>
+        </div>
+        <p style="margin: 24px 0;">
+          <a href="${safeDashboardUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View in Balance Beacon
+          </a>
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          Log in to view the details and settle up with ${safeOwnerName}.
+        </p>
+      </div>
+    `,
+  })
+}
+
+/**
+ * Format currency for email display
+ */
+function formatEmailCurrency(amount: number, currency: string): string {
+  const symbols: Record<string, string> = {
+    USD: '$',
+    EUR: '\u20AC',
+    ILS: '\u20AA',
+  }
+  const symbol = symbols[currency] || currency
+  return `${symbol}${amount.toFixed(2)}`
+}
