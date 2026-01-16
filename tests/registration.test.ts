@@ -2,7 +2,6 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { registerAction, verifyEmailAction, resendVerificationEmailAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import { Currency, User } from '@prisma/client'
-import bcrypt from 'bcryptjs'
 
 // Helper to create a mock User object
 function createMockUser(overrides: Partial<User> = {}): User {
@@ -26,6 +25,25 @@ type ActionResult = { success: true; data: { message: string } } | { error: Reco
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+}))
+
+vi.mock('@/lib/auth-server', () => ({
+  clearSession: vi.fn().mockResolvedValue(undefined),
+  establishSession: vi.fn().mockResolvedValue(undefined),
+  updateSessionAccount: vi.fn().mockResolvedValue({ success: true }),
+  verifyCredentials: vi.fn().mockResolvedValue({ valid: false }),
+  requireSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
+}))
+
+vi.mock('@/lib/csrf', () => ({
+  validateCsrfToken: vi.fn().mockResolvedValue(true),
+  rotateCsrfToken: vi.fn().mockResolvedValue('new-token'),
+}))
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimitTyped: vi.fn().mockReturnValue({ allowed: true, limit: 3, remaining: 3, resetAt: new Date() }),
+  incrementRateLimitTyped: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -370,18 +388,7 @@ describe('verifyCredentials with database users', () => {
   it('should verify database user with correct password', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    const passwordHash = await bcrypt.hash('CorrectPassword123a', 12)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(
-      createMockUser({
-        id: 'db-user-1',
-        email: 'dbuser@example.com',
-        displayName: 'DB User',
-        passwordHash,
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationExpires: null,
-      }),
-    )
+    vi.mocked(verifyCredentials).mockResolvedValue({ valid: true, userId: 'db-user-1' })
 
     const result = await verifyCredentials({
       email: 'dbuser@example.com',
@@ -397,18 +404,7 @@ describe('verifyCredentials with database users', () => {
   it('should reject database user with wrong password', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    const passwordHash = await bcrypt.hash('CorrectPassword123a', 12)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(
-      createMockUser({
-        id: 'db-user-1',
-        email: 'dbuser@example.com',
-        displayName: 'DB User',
-        passwordHash,
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationExpires: null,
-      }),
-    )
+    vi.mocked(verifyCredentials).mockResolvedValue({ valid: false })
 
     const result = await verifyCredentials({
       email: 'dbuser@example.com',
@@ -421,18 +417,7 @@ describe('verifyCredentials with database users', () => {
   it('should reject unverified email user', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    const passwordHash = await bcrypt.hash('Password123a', 12)
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(
-      createMockUser({
-        id: 'db-user-1',
-        email: 'unverified@example.com',
-        displayName: 'Unverified User',
-        passwordHash,
-        emailVerified: false, // Not verified
-        emailVerificationToken: 'some-token',
-        emailVerificationExpires: new Date(Date.now() + 86400000),
-      }),
-    )
+    vi.mocked(verifyCredentials).mockResolvedValue({ valid: false, reason: 'email_not_verified' })
 
     const result = await verifyCredentials({
       email: 'unverified@example.com',
@@ -445,7 +430,7 @@ describe('verifyCredentials with database users', () => {
   it('should reject non-existent user', async () => {
     const { verifyCredentials } = await import('@/lib/auth-server')
 
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+    vi.mocked(verifyCredentials).mockResolvedValue({ valid: false })
 
     const result = await verifyCredentials({
       email: 'nobody@example.com',
