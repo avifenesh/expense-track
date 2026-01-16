@@ -110,6 +110,7 @@ describe('createTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -149,6 +150,7 @@ describe('createTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -207,6 +209,7 @@ describe('createTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -245,6 +248,7 @@ describe('createTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -283,6 +287,7 @@ describe('createTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -330,6 +335,7 @@ describe('updateTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -365,6 +371,7 @@ describe('updateTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -411,6 +418,7 @@ describe('updateTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1', 'Account2'],
       defaultAccountName: 'Account1',
     })
@@ -463,6 +471,7 @@ describe('updateTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -508,6 +517,7 @@ describe('updateTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -561,6 +571,7 @@ describe('updateTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -615,6 +626,7 @@ describe('deleteTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -638,6 +650,7 @@ describe('deleteTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -674,6 +687,7 @@ describe('deleteTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -707,6 +721,7 @@ describe('deleteTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -743,6 +758,7 @@ describe('deleteTransactionAction', () => {
       displayName: 'Test User',
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })

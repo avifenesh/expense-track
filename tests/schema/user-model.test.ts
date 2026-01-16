@@ -42,6 +42,7 @@ describe('User Model Schema', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        hasCompletedOnboarding: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -73,6 +74,7 @@ describe('User Model Schema', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        hasCompletedOnboarding: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -100,6 +102,7 @@ describe('User Model Schema', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        hasCompletedOnboarding: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -423,6 +426,7 @@ describe('User Model Schema', () => {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
+        hasCompletedOnboarding: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [

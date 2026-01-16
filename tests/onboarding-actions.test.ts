@@ -340,6 +340,7 @@ describe('createQuickBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2024-01',
       planned: 500,
+      currency: Currency.USD,
       csrfToken: 'valid-token',
     })
 
@@ -355,6 +356,7 @@ describe('createQuickBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '202',
       planned: 500,
+      currency: Currency.USD,
       csrfToken: 'valid-token',
     })
 
@@ -370,6 +372,7 @@ describe('createQuickBudgetAction', () => {
       categoryId: 'cat-1',
       monthKey: '2024-01',
       planned: -100,
+      currency: Currency.USD,
       csrfToken: 'valid-token',
     })
 
@@ -392,14 +395,15 @@ describe('seedSampleDataAction', () => {
       name: 'TestAccount',
     } as any)
 
-    vi.mocked(prisma.category.upsert).mockImplementation((args: any) => {
-      return Promise.resolve({
-        id: `cat-${args.create.name}`,
-        name: args.create.name,
-        type: args.create.type,
-        userId: args.create.userId,
-      })
-    })
+    vi.mocked(prisma.category.upsert).mockImplementation(
+      (args: any) =>
+        Promise.resolve({
+          id: `cat-${args.create.name}`,
+          name: args.create.name,
+          type: args.create.type,
+          userId: args.create.userId,
+        }) as any,
+    )
 
     vi.mocked(prisma.transaction.create).mockResolvedValue({
       id: 'txn-1',
