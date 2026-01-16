@@ -5,7 +5,7 @@ param(
     [string]$BranchName
 )
 
-$WorktreePath = "..\expense-track-$BranchName"
+$WorktreePath = "..\balance-beacon-$BranchName"
 
 # Check if worktree already exists
 if (Test-Path $WorktreePath) {

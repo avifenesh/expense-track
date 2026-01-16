@@ -118,7 +118,7 @@ Use git worktrees for feature development to keep main clean.
 ./scripts/create-worktree.sh <branch-name>
 
 # Then
-cd ../expense-track-<branch-name>
+cd ../balance-beacon-<branch-name>
 npm install
 ```
 
@@ -145,9 +145,9 @@ gh pr merge <PR_NUMBER> --squash --delete-branch
 ### Cleanup
 
 ```bash
-cd ../expense-track
+cd ../balance-beacon
 git checkout main && git pull
-git worktree remove ../expense-track-<name>
+git worktree remove ../balance-beacon-<name>
 git fetch --prune
 ```
 

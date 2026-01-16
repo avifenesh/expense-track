@@ -1,4 +1,4 @@
-# Expense Track Mobile
+# Balance Beacon Mobile
 
 React Native mobile app built with Expo.
 

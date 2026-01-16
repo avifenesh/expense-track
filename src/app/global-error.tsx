@@ -5,10 +5,10 @@ import { Sentry } from '@/lib/monitoring/sentry-client'
 
 export default function GlobalError({
   error,
-  reset,
+  _reset,
 }: {
   error: Error & { digest?: string }
-  reset: () => void
+  _reset: () => void
 }) {
   useEffect(() => {
     // Don't report server action mismatch errors - they're expected during deployments
