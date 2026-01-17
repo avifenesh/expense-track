@@ -5,7 +5,7 @@ Last updated: 2026-01-17
 ## Summary
 
 **Total Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed This Session**: 28 issues (6 critical, 14 high, 7 medium, 1 low)
+**Fixed This Session**: 32 issues (6 critical, 14 high, 11 medium, 1 low)
 
 ## Critical Issues
 
@@ -283,4 +283,8 @@ Last updated: 2026-01-17
 - [x] Token expiry loose time comparison (security) - FIXED
 - [x] Add new database indexes (database) - FIXED
 - [x] Category name validation too loose (security) - FIXED (added max length and alphanumeric boundaries)
+- [x] Email verification token logged in dev (security) - FIXED (removed token from dev logging)
+- [x] CSRF validation uses NODE_ENV (security) - FIXED (now uses VITEST env var)
+- [x] failedSymbols Map unbounded growth (performance) - FIXED (added max size limit and cleanup)
+- [x] Chat widget stream reader not cleaned up (frontend) - FIXED (added readerRef and unmount cleanup)
 - [ ] All other medium issues above
