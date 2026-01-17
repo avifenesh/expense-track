@@ -155,16 +155,6 @@ export function serviceErrorToActionResult(
 }
 
 /**
- * Options for unified error handling
- */
-export interface ErrorHandlingOptions {
-  /** Action name for logging context */
-  action: string
-  /** Generic fallback message for unexpected errors */
-  fallbackMessage?: string
-}
-
-/**
  * Unified error handler for service layer.
  * Handles ServiceError instances and returns appropriate action results.
  * For Prisma errors, use handlePrismaError from prisma-errors.ts.
@@ -185,7 +175,6 @@ export interface ErrorHandlingOptions {
  */
 export function handleServiceLayerError(
   error: unknown,
-  _options: ErrorHandlingOptions,
 ): { success: false; error: Record<string, string[]> } | null {
   // Handle ServiceError instances
   if (isServiceError(error)) {
