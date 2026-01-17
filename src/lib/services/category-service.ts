@@ -21,8 +21,8 @@ export type CreateCategoryResult =
 
 /**
  * Create a new category or reactivate an archived one.
- * Handles the race condition where a user might try to create a category
- * with the same name as an archived category.
+ * Handles the race condition where concurrent requests might try to create
+ * the same category.
  *
  * @returns Success with category and whether it was reactivated, or error if duplicate
  */
@@ -43,26 +43,56 @@ export async function createOrReactivateCategory(input: CreateCategoryInput): Pr
 
   if (existing && existing.isArchived) {
     // Reactivate archived category with new properties
-    const category = await prisma.category.update({
-      where: { id: existing.id },
+    try {
+      const category = await prisma.category.update({
+        where: { id: existing.id },
+        data: {
+          isArchived: false,
+          color: input.color ?? null,
+        },
+      })
+      return { success: true, category, reactivated: true }
+    } catch (error) {
+      // Handle race condition: another request might have already reactivated it
+      if (isPrismaUniqueConstraintError(error)) {
+        return { success: false, error: 'DUPLICATE' }
+      }
+      throw error
+    }
+  }
+
+  // Create new category (with race condition handling)
+  try {
+    const category = await prisma.category.create({
       data: {
-        isArchived: false,
+        userId: input.userId,
+        name: input.name,
+        type: input.type,
         color: input.color ?? null,
       },
     })
-    return { success: true, category, reactivated: true }
+    return { success: true, category, reactivated: false }
+  } catch (error) {
+    // Handle race condition: another request might have created the category
+    if (isPrismaUniqueConstraintError(error)) {
+      return { success: false, error: 'DUPLICATE' }
+    }
+    throw error
   }
+}
 
-  // Create new category
-  const category = await prisma.category.create({
-    data: {
-      userId: input.userId,
-      name: input.name,
-      type: input.type,
-      color: input.color ?? null,
-    },
-  })
-  return { success: true, category, reactivated: false }
+/**
+ * Type guard for Prisma P2002 unique constraint errors.
+ */
+function isPrismaUniqueConstraintError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code: unknown }).code === 'P2002' &&
+    'name' in error &&
+    (error as { name: string }).name === 'PrismaClientKnownRequestError'
+  )
 }
 
 /**
