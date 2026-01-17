@@ -14,11 +14,8 @@ export interface TokenPayload {
   jti?: string
 }
 
-// Access JWT secret from centralized env validation
-const JWT_SECRET = env.jwtSecret
-
 export function generateAccessToken(userId: string, email: string): string {
-  return jwt.sign({ userId, email, type: 'access' }, JWT_SECRET, {
+  return jwt.sign({ userId, email, type: 'access' }, env.jwtSecret, {
     expiresIn: ACCESS_TOKEN_EXPIRY,
   })
 }
@@ -33,14 +30,14 @@ export function generateRefreshToken(
 } {
   const jti = randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS)
-  const token = jwt.sign({ userId, email, type: 'refresh', jti }, JWT_SECRET, {
+  const token = jwt.sign({ userId, email, type: 'refresh', jti }, env.jwtSecret, {
     expiresIn: REFRESH_TOKEN_EXPIRY_MS / 1000,
   })
   return { token, jti, expiresAt }
 }
 
 export function verifyAccessToken(token: string): TokenPayload {
-  const payload = jwt.verify(token, JWT_SECRET) as TokenPayload
+  const payload = jwt.verify(token, env.jwtSecret) as TokenPayload
   if (payload.type !== 'access') {
     throw new Error('Invalid token type')
   }
@@ -48,7 +45,7 @@ export function verifyAccessToken(token: string): TokenPayload {
 }
 
 export function verifyRefreshToken(token: string): TokenPayload {
-  const payload = jwt.verify(token, JWT_SECRET) as TokenPayload
+  const payload = jwt.verify(token, env.jwtSecret) as TokenPayload
   if (payload.type !== 'refresh' || !payload.jti) {
     throw new Error('Invalid token type')
   }

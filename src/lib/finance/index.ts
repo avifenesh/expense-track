@@ -1,5 +1,12 @@
-// Finance module - barrel export for backward compatibility
-// This file re-exports all public functions and types from the finance module
+/**
+ * Finance module - Public API
+ *
+ * This is the only entry point for the finance module.
+ * All public types and functions are exported here.
+ *
+ * @example
+ * import { getDashboardData, type DashboardData } from '@/lib/finance'
+ */
 
 // Types
 export type {

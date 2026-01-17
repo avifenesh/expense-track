@@ -1,4 +1,9 @@
-// Finance module - shared types
+/**
+ * Finance module - Public types
+ *
+ * All types in this file are part of the public API and exported via index.ts.
+ * Import from '@/lib/finance' (not directly from this file).
+ */
 import { Prisma, TransactionType, Currency, PaymentStatus, SplitType } from '@prisma/client'
 import type { getTransactionRequests } from './accounts'
 import type { getAccounts, getCategories } from './accounts'

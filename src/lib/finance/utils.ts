@@ -1,4 +1,9 @@
-// Finance module - utility functions
+/**
+ * Finance module - Internal utilities
+ *
+ * @internal These functions are for internal use within the finance module only.
+ * Do not import directly - use the public API from '@/lib/finance' instead.
+ */
 import { Prisma, TransactionType, Currency } from '@prisma/client'
 import { convertAmountWithCache, type RateCache } from '@/lib/currency'
 
