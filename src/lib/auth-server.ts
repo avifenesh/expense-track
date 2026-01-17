@@ -56,9 +56,9 @@ function isSessionTokenValid({
   const ts = parseInt(timestamp, 10)
   if (isNaN(ts)) return false
 
-  // Check session expiry
+  // Check session expiry (expire at or past the max age boundary)
   const now = Date.now()
-  if (now - ts > SESSION_MAX_AGE_MS) {
+  if (now >= ts + SESSION_MAX_AGE_MS) {
     return false
   }
 

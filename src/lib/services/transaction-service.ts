@@ -1,7 +1,7 @@
 import { Prisma, TransactionType, RequestStatus, Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getMonthStart } from '@/utils/date'
-import { toDecimalString } from '@/app/actions/shared'
+import { toDecimalString } from '@/utils/decimal'
 
 export interface CreateTransactionInput {
   accountId: string

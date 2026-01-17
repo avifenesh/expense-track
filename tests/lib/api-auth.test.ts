@@ -18,10 +18,11 @@ import { extractBearerToken, requireJwtAuth } from '@/lib/api-auth'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 
 describe('api-auth.ts', () => {
-  const testSecret = 'test-secret-key-for-jwt-testing'
+  // Use the JWT_SECRET from .env (loaded by vitest.config.ts via dotenv)
+  // The JWT module caches this value at load time
+  const testSecret = process.env.JWT_SECRET || 'test-jwt-secret-for-local-development'
 
   beforeEach(() => {
-    process.env.JWT_SECRET = testSecret
     vi.clearAllMocks()
   })
 

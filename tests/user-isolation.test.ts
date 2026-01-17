@@ -486,7 +486,7 @@ describe('User Isolation: Finance Module Data Access', () => {
       const result = await getCategories('user-a')
 
       expect(prisma.category.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-a' },
+        where: { userId: 'user-a', isArchived: false },
         orderBy: { name: 'asc' },
       })
       expect(result).toHaveLength(2)
@@ -503,7 +503,7 @@ describe('User Isolation: Finance Module Data Access', () => {
       const result = await getCategories()
 
       expect(prisma.category.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { isArchived: false },
         orderBy: { name: 'asc' },
       })
       expect(result).toHaveLength(2)

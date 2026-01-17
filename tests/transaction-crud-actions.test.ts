@@ -59,22 +59,33 @@ vi.mock('@prisma/client', async (importOriginal) => {
   }
 })
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    account: {
-      findUnique: vi.fn(),
+vi.mock('@/lib/prisma', () => {
+  const mockAccount = { findUnique: vi.fn() }
+  const mockTransaction = {
+    create: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  }
+  const mockRecurringTemplate = { create: vi.fn() }
+
+  return {
+    prisma: {
+      account: mockAccount,
+      transaction: mockTransaction,
+      recurringTemplate: mockRecurringTemplate,
+      // Mock $transaction to pass a tx client with the same mocks
+      $transaction: vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          account: mockAccount,
+          transaction: mockTransaction,
+          recurringTemplate: mockRecurringTemplate,
+        }
+        return callback(tx)
+      }),
     },
-    transaction: {
-      create: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    recurringTemplate: {
-      create: vi.fn(),
-    },
-  },
-}))
+  }
+})
 
 describe('createTransactionAction', () => {
   beforeEach(() => {

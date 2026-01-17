@@ -17,6 +17,27 @@ let lastResetDate = new Date().toDateString()
 // Map: symbol -> timestamp of last failure (expires after 24 hours)
 const failedSymbols = new Map<string, number>()
 const FAILED_SYMBOL_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const FAILED_SYMBOLS_MAX_SIZE = 1000 // Prevent unbounded growth
+
+function cleanupFailedSymbols(): void {
+  // Clean expired entries first
+  const now = Date.now()
+  const expiredKeys: string[] = []
+  failedSymbols.forEach((timestamp, key) => {
+    if (now - timestamp >= FAILED_SYMBOL_TTL_MS) {
+      expiredKeys.push(key)
+    }
+  })
+  expiredKeys.forEach((key) => failedSymbols.delete(key))
+
+  // If still over limit, remove oldest entries
+  if (failedSymbols.size > FAILED_SYMBOLS_MAX_SIZE) {
+    const entries = Array.from(failedSymbols.entries())
+    entries.sort((a, b) => a[1] - b[1]) // Sort by timestamp ascending
+    const toRemove = entries.slice(0, entries.length - FAILED_SYMBOLS_MAX_SIZE)
+    toRemove.forEach(([key]) => failedSymbols.delete(key))
+  }
+}
 
 function isSymbolKnownInvalid(symbol: string): boolean {
   const failedAt = failedSymbols.get(symbol.toUpperCase())
@@ -31,6 +52,7 @@ function isSymbolKnownInvalid(symbol: string): boolean {
 }
 
 function markSymbolAsFailed(symbol: string): void {
+  cleanupFailedSymbols() // Clean up before adding new entry
   failedSymbols.set(symbol.toUpperCase(), Date.now())
 }
 

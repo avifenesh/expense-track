@@ -71,9 +71,9 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
       - name: Security audit
-        run: npm audit --audit-level=moderate || true
-        # Note: Using || true to make this warning-only initially.
-        # Change to --audit-level=high and remove || true to make blocking.
+        run: npm audit --audit-level=high || echo "::warning::Security vulnerabilities found - see npm audit output above"
+        # Note: Using || echo to make this non-blocking. Prisma's dev dependency (hono) has
+        # known vulnerabilities that cannot be fixed without upgrading Prisma. See TECHNICAL_DEBT.md.
 
       - run: npm run check-types
 

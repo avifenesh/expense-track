@@ -3,15 +3,19 @@ import { verifyCredentials } from '@/lib/auth-server'
 import { generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
-import { rateLimitError } from '@/lib/api-helpers'
+import { rateLimitError, validationError, authError, serverError } from '@/lib/api-helpers'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password } = body
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
+    // Validate required fields with consistent error format
+    const fieldErrors: Record<string, string[]> = {}
+    if (!email) fieldErrors.email = ['Email is required']
+    if (!password) fieldErrors.password = ['Password is required']
+    if (Object.keys(fieldErrors).length > 0) {
+      return validationError(fieldErrors)
     }
 
     const normalizedEmail = email.trim().toLowerCase()
@@ -26,10 +30,9 @@ export async function POST(request: NextRequest) {
 
     const result = await verifyCredentials({ email, password })
     if (!result.valid) {
-      if (result.reason === 'email_not_verified') {
-        return NextResponse.json({ error: 'Please verify your email before logging in' }, { status: 401 })
-      }
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      // Return generic error for all auth failures to prevent email enumeration
+      // (different messages for "not found" vs "wrong password" vs "unverified" would reveal email existence)
+      return authError('Invalid email or password')
     }
 
     const userId = result.userId
@@ -45,6 +48,6 @@ export async function POST(request: NextRequest) {
       data: { accessToken, refreshToken, expiresIn: 900 },
     })
   } catch {
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
+    return serverError('Login failed')
   }
 }

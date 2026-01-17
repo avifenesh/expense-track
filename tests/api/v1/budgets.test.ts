@@ -80,7 +80,7 @@ describe('Budget API Routes', () => {
       const response = await UpsertBudget(request)
       const data = await response.json()
 
-      expect(response.status).toBe(200)
+      expect(response.status).toBe(201) // 201 for create, 200 for update
       expect(data.success).toBe(true)
       expect(data.data.id).toBeTruthy()
     })

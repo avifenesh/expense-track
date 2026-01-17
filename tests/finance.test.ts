@@ -119,7 +119,7 @@ describe('finance.ts', () => {
       const result = await financeLib.getCategories()
 
       expect(prisma.category.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { isArchived: false },
         orderBy: { name: 'asc' },
       })
       expect(result).toEqual(mockCategories)
@@ -129,6 +129,17 @@ describe('finance.ts', () => {
       vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as unknown as Category[])
 
       await financeLib.getCategories('user-123')
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-123', isArchived: false },
+        orderBy: { name: 'asc' },
+      })
+    })
+
+    it('should include archived categories when requested', async () => {
+      vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as unknown as Category[])
+
+      await financeLib.getCategories('user-123', true)
 
       expect(prisma.category.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-123' },

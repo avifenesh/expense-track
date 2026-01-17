@@ -144,7 +144,10 @@ export async function POST(request: NextRequest) {
     return forbiddenError('Access denied')
   }
 
-  // 4. Execute upsert
+  // 4. Check if budget exists (to determine 201 vs 200 status)
+  const existing = await getBudgetByKey({ accountId: data.accountId, categoryId: data.categoryId, month })
+
+  // 5. Execute upsert
   try {
     const budget = await upsertBudget({
       accountId: data.accountId,
@@ -154,7 +157,8 @@ export async function POST(request: NextRequest) {
       currency: data.currency,
       notes: data.notes,
     })
-    return successResponse({ id: budget.id }, 200)
+    // Return 201 for create, 200 for update
+    return successResponse({ id: budget.id }, existing ? 200 : 201)
   } catch {
     return serverError('Unable to save budget')
   }
