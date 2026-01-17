@@ -28,6 +28,9 @@ function createFilter<TItem, TFilter extends Record<string, unknown>>(
         const predicate = config[key as keyof TFilter]
         if (!predicate) return true
 
+        // Type assertion needed: TypeScript cannot narrow the value type through
+        // Object.entries iteration. The PredicateConfig type ensures each predicate
+        // receives its expected value type when called with the matching key.
         return predicate(item, value as NonNullable<TFilter[keyof TFilter]>)
       }),
     )
