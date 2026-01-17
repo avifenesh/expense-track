@@ -102,6 +102,15 @@ export function verifyWebhookSignature(
       return false
     }
 
+    // Validate hash format (SHA-256 produces 64 hex characters)
+    if (!/^[a-f0-9]{64}$/i.test(providedHash)) {
+      serverLogger.warn('PADDLE_WEBHOOK_INVALID_HASH_FORMAT', {
+        message: 'Provided hash is not valid SHA-256 hex',
+        hashLength: providedHash.length,
+      })
+      return false
+    }
+
     // Build signed payload: timestamp:rawBody
     const signedPayload = `${timestamp}:${rawBody}`
 

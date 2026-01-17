@@ -159,6 +159,38 @@ describe('paddle.ts', () => {
 
       expect(result).toBe(true)
     })
+
+    it('should return false for invalid hash format (wrong length)', () => {
+      const rawBody = JSON.stringify({ event_type: 'subscription.created' })
+      const currentTimestamp = Math.floor(Date.now() / 1000).toString()
+      // SHA-256 produces 64 hex chars, this is only 32
+      const shortHash = '0'.repeat(32)
+      const signature = `ts=${currentTimestamp};h1=${shortHash}`
+
+      const result = verifyWebhookSignature(rawBody, signature, webhookSecret)
+
+      expect(result).toBe(false)
+      expect(serverLogger.warn).toHaveBeenCalledWith(
+        'PADDLE_WEBHOOK_INVALID_HASH_FORMAT',
+        expect.any(Object),
+      )
+    })
+
+    it('should return false for invalid hash format (non-hex characters)', () => {
+      const rawBody = JSON.stringify({ event_type: 'subscription.created' })
+      const currentTimestamp = Math.floor(Date.now() / 1000).toString()
+      // Contains non-hex characters (g, h, etc.)
+      const invalidHash = 'ghijklmnopqrstuvwxyz0123456789abcdef0123456789abcdef01234567890'
+      const signature = `ts=${currentTimestamp};h1=${invalidHash}`
+
+      const result = verifyWebhookSignature(rawBody, signature, webhookSecret)
+
+      expect(result).toBe(false)
+      expect(serverLogger.warn).toHaveBeenCalledWith(
+        'PADDLE_WEBHOOK_INVALID_HASH_FORMAT',
+        expect.any(Object),
+      )
+    })
   })
 
   describe('parsePaddleEvent()', () => {
@@ -360,10 +392,10 @@ describe('paddle subscription functions', () => {
   })
 
   describe('linkPaddleSubscription()', () => {
-    it('should update subscription with Paddle IDs', async () => {
+    it('should upsert subscription with Paddle IDs', async () => {
       const { linkPaddleSubscription } = await import('@/lib/subscription')
 
-      vi.mocked(prisma.subscription.update).mockResolvedValue({
+      vi.mocked(prisma.subscription.upsert).mockResolvedValue({
         id: 'sub-1',
         userId: 'user-1',
         status: SubscriptionStatus.TRIALING,
@@ -380,13 +412,20 @@ describe('paddle subscription functions', () => {
 
       await linkPaddleSubscription('user-1', 'cus_123', 'sub_paddle_123', 'pri_123')
 
-      expect(prisma.subscription.update).toHaveBeenCalledWith({
+      expect(prisma.subscription.upsert).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
-        data: {
+        update: {
           paddleCustomerId: 'cus_123',
           paddleSubscriptionId: 'sub_paddle_123',
           paddlePriceId: 'pri_123',
         },
+        create: expect.objectContaining({
+          userId: 'user-1',
+          status: SubscriptionStatus.TRIALING,
+          paddleCustomerId: 'cus_123',
+          paddleSubscriptionId: 'sub_paddle_123',
+          paddlePriceId: 'pri_123',
+        }),
       })
     })
   })

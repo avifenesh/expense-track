@@ -190,6 +190,7 @@ export async function processExpiredSubscriptions(): Promise<number> {
 /**
  * Link a Paddle subscription to a user
  * Called when we receive subscription.created webhook
+ * Uses upsert to handle the case where subscription doesn't exist yet
  */
 export async function linkPaddleSubscription(
   userId: string,
@@ -197,9 +198,17 @@ export async function linkPaddleSubscription(
   paddleSubscriptionId: string,
   paddlePriceId: string,
 ): Promise<void> {
-  await prisma.subscription.update({
+  await prisma.subscription.upsert({
     where: { userId },
-    data: {
+    update: {
+      paddleCustomerId,
+      paddleSubscriptionId,
+      paddlePriceId,
+    },
+    create: {
+      userId,
+      status: SubscriptionStatus.TRIALING,
+      trialEndsAt: new Date(Date.now() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000),
       paddleCustomerId,
       paddleSubscriptionId,
       paddlePriceId,

@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
   const { userId, email } = auth
 
   try {
-
     // Get subscription state
     const subscriptionState = await getSubscriptionState(userId)
 

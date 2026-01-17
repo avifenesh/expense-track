@@ -72,12 +72,27 @@ export async function POST(request: NextRequest) {
     })
 
     // Check if this is a transient error that Paddle should retry
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    const isTransientError =
-      errorMessage.includes('ECONNREFUSED') ||
-      errorMessage.includes('ETIMEDOUT') ||
-      errorMessage.includes('database') ||
-      errorMessage.includes('connection')
+    const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+    // Known transient error patterns from various sources (DB drivers, network, etc.)
+    const transientPatterns = [
+      'econnrefused',
+      'etimedout',
+      'econnreset',
+      'epipe',
+      'database',
+      'connection',
+      'timeout',
+      'pool exhausted',
+      'too many connections',
+      'deadlock',
+      'lock wait',
+      'transaction',
+      'network',
+      'socket',
+      'unavailable',
+      'temporarily',
+    ]
+    const isTransientError = transientPatterns.some((pattern) => errorMessage.includes(pattern))
 
     if (isTransientError) {
       // Return 5xx so Paddle can retry on transient failures
@@ -182,6 +197,17 @@ async function handleSubscriptionActivated(event: PaddleWebhookEvent): Promise<v
   const periodStart = new Date(billingPeriod.starts_at)
   const periodEnd = new Date(billingPeriod.ends_at)
 
+  // Validate parsed dates
+  if (isNaN(periodStart.getTime()) || isNaN(periodEnd.getTime())) {
+    serverLogger.error('PADDLE_WEBHOOK_INVALID_BILLING_DATES', {
+      eventType: event.event_type,
+      subscriptionId: data.id,
+      startsAt: billingPeriod.starts_at,
+      endsAt: billingPeriod.ends_at,
+    })
+    return
+  }
+
   await activateSubscription(userId, periodStart, periodEnd)
 
   serverLogger.info('PADDLE_SUBSCRIPTION_ACTIVATED', {
@@ -208,6 +234,17 @@ async function handleSubscriptionUpdated(event: PaddleWebhookEvent): Promise<voi
   if (billingPeriod) {
     const periodStart = new Date(billingPeriod.starts_at)
     const periodEnd = new Date(billingPeriod.ends_at)
+
+    // Validate parsed dates
+    if (isNaN(periodStart.getTime()) || isNaN(periodEnd.getTime())) {
+      serverLogger.error('PADDLE_WEBHOOK_INVALID_BILLING_DATES', {
+        eventType: event.event_type,
+        subscriptionId: data.id,
+        startsAt: billingPeriod.starts_at,
+        endsAt: billingPeriod.ends_at,
+      })
+      return
+    }
 
     await updateSubscriptionPeriod(userId, periodStart, periodEnd)
 
@@ -262,6 +299,17 @@ async function handleTransactionCompleted(event: PaddleWebhookEvent): Promise<vo
   if (billingPeriod) {
     const periodStart = new Date(billingPeriod.starts_at)
     const periodEnd = new Date(billingPeriod.ends_at)
+
+    // Validate parsed dates
+    if (isNaN(periodStart.getTime()) || isNaN(periodEnd.getTime())) {
+      serverLogger.error('PADDLE_WEBHOOK_INVALID_BILLING_DATES', {
+        eventType: event.event_type,
+        transactionId: data.id,
+        startsAt: billingPeriod.starts_at,
+        endsAt: billingPeriod.ends_at,
+      })
+      return
+    }
 
     await activateSubscription(userId, periodStart, periodEnd)
 
