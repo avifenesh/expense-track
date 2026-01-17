@@ -64,7 +64,10 @@ describe('paddle.ts', () => {
 
     it('should return false for invalid signature', () => {
       const rawBody = JSON.stringify({ event_type: 'subscription.created' })
-      const signature = 'ts=1234567890;h1=invalid-hash'
+      // Use current timestamp but with wrong hash (same length as SHA-256 hex = 64 chars)
+      const currentTimestamp = Math.floor(Date.now() / 1000).toString()
+      const wrongHash = '0'.repeat(64) // Valid hex format but wrong value
+      const signature = `ts=${currentTimestamp};h1=${wrongHash}`
 
       const result = verifyWebhookSignature(rawBody, signature, webhookSecret)
 
