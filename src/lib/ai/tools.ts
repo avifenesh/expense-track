@@ -254,12 +254,12 @@ export function buildTools(ctx: ToolContext) {
       description: 'Get shared expenses and settlement balances with other users',
       inputSchema: z.object({}),
       execute: async () => {
-        const [sharedExpenses, balances] = await Promise.all([
+        const [sharedExpensesResult, balances] = await Promise.all([
           getSharedExpenses(ctx.userId),
           getSettlementBalance(ctx.userId),
         ])
 
-        const formattedExpenses = sharedExpenses.slice(0, 10).map((e) => ({
+        const formattedExpenses = sharedExpensesResult.items.slice(0, 10).map((e) => ({
           description: e.description ?? e.transaction.category.name,
           date: e.transaction.date.toISOString().split('T')[0],
           totalAmount: formatCurrency(e.totalAmount, e.currency),

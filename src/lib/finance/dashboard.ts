@@ -91,8 +91,8 @@ export async function getDashboardData({
       take: 1000, // Limit results to prevent unbounded queries
     }),
     getLastUpdateTime(),
-    userId ? getSharedExpenses(userId) : Promise.resolve([]),
-    userId ? getExpensesSharedWithMe(userId) : Promise.resolve([]),
+    userId ? getSharedExpenses(userId).then((r) => r.items) : Promise.resolve([]),
+    userId ? getExpensesSharedWithMe(userId).then((r) => r.items) : Promise.resolve([]),
     userId ? getSettlementBalance(userId) : Promise.resolve([]),
   ])
 
@@ -150,20 +150,39 @@ export async function getDashboardData({
   const actualNet = actualIncome - actualExpense
   const plannedNet = plannedIncome - plannedExpense
 
-  // Batch load exchange rates once for all conversions (fixes N+1 query pattern)
-  // Note: Uses today's rates for all conversions. For perfect historical accuracy,
-  // would need per-month rate loading. Current approach is acceptable for most use cases
-  // as rate fluctuations are typically small over short periods. See TECHNICAL_DEBT.md.
-  const rateCache = await batchLoadExchangeRates()
+  // Load exchange rates per-month for historical accuracy (fixes N+1 query pattern)
+  // Each month uses the exchange rate from the first day of that month, providing
+  // more accurate currency conversion for historical data while keeping performance
+  // acceptable through batching (one rate lookup per month rather than per transaction).
+  const uniqueMonths = new Set<string>()
+  uniqueMonths.add(getMonthKey(monthStart)) // Current month
+  uniqueMonths.add(getMonthKey(previousMonthStart)) // Previous month
+  historyTransactionsRaw.forEach((t) => uniqueMonths.add(getMonthKey(t.month as Date)))
 
-  // Convert previous month's transactions to preferred currency using cached rates
+  // Load rates for all unique months in parallel
+  const monthRates = new Map<string, Awaited<ReturnType<typeof batchLoadExchangeRates>>>()
+  await Promise.all(
+    Array.from(uniqueMonths).map(async (monthKey) => {
+      const monthDate = getMonthStartFromKey(monthKey)
+      const rates = await batchLoadExchangeRates(monthDate)
+      monthRates.set(monthKey, rates)
+    }),
+  )
+
+  // Helper to get rates for a specific month, with fallback to current month rates
+  const getRatesForMonth = (month: Date) => {
+    const key = getMonthKey(month)
+    return monthRates.get(key) ?? monthRates.get(getMonthKey(monthStart))!
+  }
+
+  // Convert previous month's transactions using that month's exchange rates
   const previousTransactionsConverted = previousTransactionsRaw.map((transaction) => ({
     type: transaction.type,
     amount: convertTransactionAmountSync(
       transaction.amount,
       transaction.currency,
       preferredCurrency,
-      rateCache,
+      getRatesForMonth(previousMonthStart),
     ),
   }))
 
@@ -195,14 +214,14 @@ export async function getDashboardData({
     }
   })
 
-  // Convert history transactions to preferred currency using cached rates
+  // Convert history transactions using each transaction's month's exchange rates
   const historyTransactionsConverted = historyTransactionsRaw.map((transaction) => ({
     type: transaction.type,
     amount: convertTransactionAmountSync(
       transaction.amount,
       transaction.currency,
       preferredCurrency,
-      rateCache,
+      getRatesForMonth(transaction.month as Date),
     ),
     month: transaction.month as Date,
   }))
