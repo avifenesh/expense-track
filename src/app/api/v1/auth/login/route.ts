@@ -30,10 +30,9 @@ export async function POST(request: NextRequest) {
 
     const result = await verifyCredentials({ email, password })
     if (!result.valid) {
-      if (result.reason === 'email_not_verified') {
-        return authError('Please verify your email before logging in')
-      }
-      return authError('Invalid credentials')
+      // Return generic error for all auth failures to prevent email enumeration
+      // (different messages for "not found" vs "wrong password" vs "unverified" would reveal email existence)
+      return authError('Invalid email or password')
     }
 
     const userId = result.userId

@@ -28,19 +28,26 @@ import {
 } from '@/schemas'
 import { z } from 'zod'
 
-async function createRecurringTemplateForTransaction(data: {
-  accountId: string
-  categoryId: string
-  type: TransactionType
-  amount: number
-  currency: Currency
-  date: Date
-  description?: string | null
-  monthStart: Date
-}): Promise<string> {
-  const dayOfMonth = data.date.getUTCDate()
+// Prisma transaction client type for optional transaction support
+type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
-  const template = await prisma.recurringTemplate.create({
+async function createRecurringTemplateForTransaction(
+  data: {
+    accountId: string
+    categoryId: string
+    type: TransactionType
+    amount: number
+    currency: Currency
+    date: Date
+    description?: string | null
+    monthStart: Date
+  },
+  tx?: PrismaTransactionClient,
+): Promise<string> {
+  const dayOfMonth = data.date.getUTCDate()
+  const client = tx ?? prisma
+
+  const template = await client.recurringTemplate.create({
     data: {
       accountId: data.accountId,
       categoryId: data.categoryId,
@@ -331,10 +338,14 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         return { error: 'not_found' as const }
       }
 
-      // Check access to the existing account (subscription already verified above)
-      const existingAccess = await ensureAccountAccess(existing.accountId)
-      if ('error' in existingAccess) {
-        return { error: 'access_denied' as const, details: existingAccess }
+      // Check access to the existing account using tx to maintain transaction integrity
+      // (subscription already verified in pre-flight checks above)
+      const existingAccount = await tx.account.findUnique({
+        where: { id: existing.accountId },
+        select: { userId: true },
+      })
+      if (!existingAccount || existingAccount.userId !== newAccountAccess.authUser.id) {
+        return { error: 'access_denied' as const }
       }
 
       // Use provided template ID, fall back to existing, or auto-create if marking as recurring
@@ -342,16 +353,19 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
 
       // Auto-create RecurringTemplate if transaction is being marked as recurring and has no template
       if (data.isRecurring && !recurringTemplateId) {
-        recurringTemplateId = await createRecurringTemplateForTransaction({
-          accountId: data.accountId,
-          categoryId: data.categoryId,
-          type: data.type,
-          amount: data.amount,
-          currency: data.currency,
-          date: data.date,
-          description: data.description,
-          monthStart,
-        })
+        recurringTemplateId = await createRecurringTemplateForTransaction(
+          {
+            accountId: data.accountId,
+            categoryId: data.categoryId,
+            type: data.type,
+            amount: data.amount,
+            currency: data.currency,
+            date: data.date,
+            description: data.description,
+            monthStart,
+          },
+          tx,
+        )
       }
 
       await tx.transaction.update({
@@ -378,12 +392,9 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
       if (result.error === 'not_found') {
         return generalError('Transaction not found')
       }
-      if (result.error === 'access_denied' && result.details) {
-        return result.details
+      if (result.error === 'access_denied') {
+        return { error: { accountId: ['You do not have access to this account'] } }
       }
-    }
-
-    if (!('success' in result)) {
       return generalError('Unable to update transaction')
     }
 

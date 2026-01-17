@@ -1,18 +1,19 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { createTransaction } from '@/lib/services/transaction-service'
 import { transactionSchema } from '@/schemas'
 import {
   validationError,
   authError,
   forbiddenError,
-  notFoundError,
   serverError,
   successResponse,
   rateLimitError,
+  subscriptionRequiredError,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { hasActiveSubscription } from '@/lib/subscription'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate with JWT
@@ -29,6 +30,12 @@ export async function POST(request: NextRequest) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check (required for creating transactions)
+  const isActive = await hasActiveSubscription(user.userId)
+  if (!isActive) {
+    return subscriptionRequiredError()
+  }
 
   // 2. Parse and validate input
   let body
@@ -48,22 +55,18 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Authorize account access
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) {
-    return notFoundError('Account not found')
-  }
-
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || account.userId !== user.userId) {
+    return forbiddenError('Access denied')
   }
 
   // 4. Execute business logic via service
   try {
     const transaction = await createTransaction(data)
     return successResponse({ id: transaction.id }, 201)
-  } catch {
+  } catch (error) {
+    console.error('Failed to create transaction:', error)
     return serverError('Unable to create transaction')
   }
 }
