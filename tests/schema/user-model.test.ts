@@ -139,6 +139,8 @@ describe('User Model Schema', () => {
         description: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null,
+        deletedBy: null,
       }
 
       vi.mocked(prisma.account.create).mockResolvedValue(mockAccount)
@@ -169,6 +171,8 @@ describe('User Model Schema', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         },
         {
           id: 'account-2',
@@ -181,6 +185,8 @@ describe('User Model Schema', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         },
       ]
 
@@ -207,6 +213,8 @@ describe('User Model Schema', () => {
         description: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null,
+        deletedBy: null,
       }
 
       // User 2's "Main" account - same name, different user
@@ -221,6 +229,8 @@ describe('User Model Schema', () => {
         description: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null,
+        deletedBy: null,
       }
 
       vi.mocked(prisma.account.create).mockResolvedValueOnce(account1).mockResolvedValueOnce(account2)
@@ -449,6 +459,8 @@ describe('User Model Schema', () => {
             description: null,
             createdAt: new Date(),
             updatedAt: new Date(),
+            deletedAt: null,
+            deletedBy: null,
           },
         ],
         categories: [

@@ -169,6 +169,8 @@ describe('buildFinancialContext', () => {
         preferredCurrency: null,
         color: null,
         icon: null,
+        deletedAt: null,
+        deletedBy: null,
       },
       {
         id: 'a2',
@@ -181,6 +183,8 @@ describe('buildFinancialContext', () => {
         preferredCurrency: null,
         color: null,
         icon: null,
+        deletedAt: null,
+        deletedBy: null,
       },
     ],
     categories: [

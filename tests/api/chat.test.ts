@@ -87,6 +87,8 @@ describe('POST /api/chat', () => {
     color: null,
     icon: null,
     description: null,
+    deletedAt: null,
+    deletedBy: null,
   }
 
   beforeEach(() => {

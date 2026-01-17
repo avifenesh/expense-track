@@ -22,6 +22,8 @@ const mockAccounts = [
     description: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
+    deletedBy: null,
   },
   {
     id: 'acc-secondary',
@@ -34,6 +36,8 @@ const mockAccounts = [
     description: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
+    deletedBy: null,
   },
 ]
 

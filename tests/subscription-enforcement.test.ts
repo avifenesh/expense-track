@@ -83,6 +83,8 @@ function createMockAccount(userId: string = 'user-1') {
     description: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
+    deletedBy: null,
   }
 }
 
