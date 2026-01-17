@@ -36,12 +36,15 @@ export {
   resendVerificationEmailAction,
 } from './actions/auth'
 
-// Account actions
+// User account actions (GDPR)
 export {
   persistActiveAccountAction,
   deleteAccountAction,
   exportUserDataAction,
 } from './actions/account'
+
+// Financial account actions
+export { deleteFinancialAccountAction } from './actions/accounts'
 
 // Holdings actions
 export {

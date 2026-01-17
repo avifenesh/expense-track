@@ -15,10 +15,12 @@ export interface DeleteBudgetInput {
   accountId: string
   categoryId: string
   month: Date
+  userId: string
 }
 
 /**
  * Upsert a budget (create or update based on unique constraint)
+ * If a soft-deleted budget exists, it will be restored.
  */
 export async function upsertBudget(input: UpsertBudgetInput) {
   return await prisma.budget.upsert({
@@ -33,6 +35,8 @@ export async function upsertBudget(input: UpsertBudgetInput) {
       planned: new Prisma.Decimal(toDecimalString(input.planned)),
       currency: input.currency,
       notes: input.notes ?? null,
+      deletedAt: null, // Clear soft delete on update (restore if previously deleted)
+      deletedBy: null,
     },
     create: {
       accountId: input.accountId,
@@ -46,31 +50,41 @@ export async function upsertBudget(input: UpsertBudgetInput) {
 }
 
 /**
- * Delete a budget by composite key
+ * Soft delete a budget by composite key
  */
 export async function deleteBudget(input: DeleteBudgetInput) {
-  return await prisma.budget.delete({
+  return await prisma.budget.update({
     where: {
       accountId_categoryId_month: {
         accountId: input.accountId,
         categoryId: input.categoryId,
         month: input.month,
       },
+      deletedAt: null, // Only delete non-deleted budgets
+    },
+    data: {
+      deletedAt: new Date(),
+      deletedBy: input.userId,
     },
   })
 }
 
+export interface GetBudgetByKeyInput {
+  accountId: string
+  categoryId: string
+  month: Date
+}
+
 /**
- * Get a budget by composite key
+ * Get a budget by composite key (excludes soft-deleted budgets)
  */
-export async function getBudgetByKey(input: DeleteBudgetInput) {
-  return await prisma.budget.findUnique({
+export async function getBudgetByKey(input: GetBudgetByKeyInput) {
+  return await prisma.budget.findFirst({
     where: {
-      accountId_categoryId_month: {
-        accountId: input.accountId,
-        categoryId: input.categoryId,
-        month: input.month,
-      },
+      accountId: input.accountId,
+      categoryId: input.categoryId,
+      month: input.month,
+      deletedAt: null,
     },
   })
 }

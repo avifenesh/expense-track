@@ -33,6 +33,7 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
     transaction: {
@@ -307,15 +308,16 @@ describe('recurring-service.ts', () => {
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.recurringTemplate.findUnique).mockResolvedValue(mockTemplate as never)
+      vi.mocked(prisma.recurringTemplate.findFirst).mockResolvedValue(mockTemplate as never)
 
       const result = await getRecurringTemplateById('tmpl-1')
 
+      expect(prisma.recurringTemplate.findFirst).toHaveBeenCalledWith({ where: { id: 'tmpl-1', deletedAt: null } })
       expect(result).toEqual(mockTemplate)
     })
 
     it('should return null when not found', async () => {
-      vi.mocked(prisma.recurringTemplate.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.recurringTemplate.findFirst).mockResolvedValue(null)
 
       const result = await getRecurringTemplateById('nonexistent')
 

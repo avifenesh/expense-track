@@ -9,6 +9,7 @@ export async function getBudgetsForMonth({ monthKey, accountId }: { monthKey: st
     where: {
       month: monthStart,
       accountId,
+      deletedAt: null,
     },
     include: {
       category: true,

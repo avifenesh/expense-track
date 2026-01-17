@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
   }
 
   const accounts = await prisma.account.findMany({
-    where: { userId: authUser.id },
+    where: { userId: authUser.id, deletedAt: null },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })

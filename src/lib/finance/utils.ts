@@ -42,12 +42,17 @@ export function buildAccountScopedWhere(
   base: Prisma.TransactionWhereInput,
   accountId?: string,
 ): Prisma.TransactionWhereInput {
+  const withDeletedFilter = {
+    ...base,
+    deletedAt: null,
+  }
+
   if (!accountId) {
-    return base
+    return withDeletedFilter
   }
 
   return {
-    ...base,
+    ...withDeletedFilter,
     accountId,
   }
 }

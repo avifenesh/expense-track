@@ -38,6 +38,8 @@ export async function upsertBudgetAction(input: BudgetInput) {
         planned: new Prisma.Decimal(toDecimalString(planned)),
         currency,
         notes: notes ?? null,
+        deletedAt: null, // Clear soft delete on update (restore if previously deleted)
+        deletedBy: null,
       },
       create: {
         accountId,
@@ -81,15 +83,22 @@ export async function deleteBudgetAction(input: z.infer<typeof deleteBudgetSchem
   if ('error' in access) {
     return access
   }
+  const { authUser } = access
 
   try {
-    await prisma.budget.delete({
+    // Soft delete: set deletedAt and deletedBy instead of hard delete
+    await prisma.budget.update({
       where: {
         accountId_categoryId_month: {
           accountId,
           categoryId,
           month,
         },
+        deletedAt: null, // Only delete non-deleted budgets
+      },
+      data: {
+        deletedAt: new Date(),
+        deletedBy: authUser.id,
       },
     })
 

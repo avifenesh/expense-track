@@ -236,7 +236,7 @@ export async function createQuickBudgetAction(input: CreateQuickBudgetInput) {
 
   // Verify account belongs to user
   const account = await prisma.account.findFirst({
-    where: { id: parsed.data.accountId, userId: authUser.id },
+    where: { id: parsed.data.accountId, userId: authUser.id, deletedAt: null },
   })
   if (!account) {
     return generalError('Account not found or access denied')
@@ -310,7 +310,7 @@ export async function seedSampleDataAction(input: SeedSampleDataInput) {
 
   // Get user's first account
   const account = await prisma.account.findFirst({
-    where: { userId: authUser.id },
+    where: { userId: authUser.id, deletedAt: null },
     orderBy: { createdAt: 'asc' },
   })
   if (!account) {

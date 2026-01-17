@@ -35,6 +35,7 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     transactionRequest: {
       create: vi.fn(),
@@ -75,7 +76,6 @@ import {
   getTransactionRequestById,
   approveTransactionRequest,
   rejectTransactionRequest,
-  getUserPrimaryAccount,
   type CreateTransactionInput,
   type UpdateTransactionInput,
   type CreateTransactionRequestInput,
@@ -437,7 +437,7 @@ describe('transaction-service.ts', () => {
   })
 
   describe('Phase 3: deleteTransaction()', () => {
-    it('should delete transaction by ID', async () => {
+    it('should soft delete transaction by ID', async () => {
       const mockTransaction = {
         id: 'txn-1',
         accountId: 'acc-1',
@@ -451,15 +451,20 @@ describe('transaction-service.ts', () => {
         isRecurring: false,
         isMutual: false,
         recurringTemplateId: null,
+        deletedAt: new Date(),
+        deletedBy: 'user-1',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.transaction.delete).mockResolvedValue(mockTransaction as never)
+      vi.mocked(prisma.transaction.update).mockResolvedValue(mockTransaction as never)
 
-      const result = await deleteTransaction('txn-1')
+      const result = await deleteTransaction('txn-1', 'user-1')
 
-      expect(prisma.transaction.delete).toHaveBeenCalledWith({ where: { id: 'txn-1' } })
+      expect(prisma.transaction.update).toHaveBeenCalledWith({
+        where: { id: 'txn-1' },
+        data: { deletedAt: expect.any(Date), deletedBy: 'user-1' },
+      })
       expect(result).toEqual(mockTransaction)
     })
 
@@ -467,9 +472,9 @@ describe('transaction-service.ts', () => {
       const error = new Error('Record not found')
       ;(error as PrismaError).code = 'P2025'
 
-      vi.mocked(prisma.transaction.delete).mockRejectedValue(error)
+      vi.mocked(prisma.transaction.update).mockRejectedValue(error)
 
-      await expect(deleteTransaction('nonexistent')).rejects.toThrow('Record not found')
+      await expect(deleteTransaction('nonexistent', 'user-1')).rejects.toThrow('Record not found')
     })
   })
 
@@ -488,20 +493,22 @@ describe('transaction-service.ts', () => {
         isRecurring: false,
         isMutual: false,
         recurringTemplateId: null,
+        deletedAt: null,
+        deletedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.transaction.findUnique).mockResolvedValue(mockTransaction as never)
+      vi.mocked(prisma.transaction.findFirst).mockResolvedValue(mockTransaction as never)
 
       const result = await getTransactionById('txn-1')
 
-      expect(prisma.transaction.findUnique).toHaveBeenCalledWith({ where: { id: 'txn-1' } })
+      expect(prisma.transaction.findFirst).toHaveBeenCalledWith({ where: { id: 'txn-1', deletedAt: null } })
       expect(result).toEqual(mockTransaction)
     })
 
     it('should return null when not found', async () => {
-      vi.mocked(prisma.transaction.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.transaction.findFirst).mockResolvedValue(null)
 
       const result = await getTransactionById('nonexistent')
 
@@ -892,42 +899,4 @@ describe('transaction-service.ts', () => {
     })
   })
 
-  describe('Phase 9: getUserPrimaryAccount()', () => {
-    it('should find SELF account from names', async () => {
-      const mockAccount = {
-        id: 'acc-1',
-        name: 'Account1',
-        type: 'SELF',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-
-      vi.mocked(prisma.account.findFirst).mockResolvedValue(mockAccount as never)
-
-      const result = await getUserPrimaryAccount(['Account1', 'Shared'])
-
-      expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: { name: { in: ['Account1', 'Shared'] }, type: 'SELF' },
-      })
-      expect(result).toEqual(mockAccount)
-    })
-
-    it('should return null when no account found', async () => {
-      vi.mocked(prisma.account.findFirst).mockResolvedValue(null)
-
-      const result = await getUserPrimaryAccount(['Nonexistent'])
-
-      expect(result).toBeNull()
-    })
-
-    it('should filter by type SELF', async () => {
-      vi.mocked(prisma.account.findFirst).mockResolvedValue(null)
-
-      await getUserPrimaryAccount(['Account1'])
-
-      expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: expect.objectContaining({ type: 'SELF' }),
-      })
-    })
-  })
 })

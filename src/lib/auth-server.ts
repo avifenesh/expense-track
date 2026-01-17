@@ -140,7 +140,7 @@ export async function updateSessionAccount(
     return { error: { general: ['No active session'] } }
   }
 
-  const account = await prisma.account.findUnique({ where: { id: accountId } })
+  const account = await prisma.account.findFirst({ where: { id: accountId, deletedAt: null } })
   if (!account) {
     return { error: { general: ['Account not found'] } }
   }

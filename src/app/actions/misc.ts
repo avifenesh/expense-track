@@ -75,6 +75,7 @@ export async function setBalanceAction(input: z.infer<typeof setBalanceSchema>) 
     where: {
       accountId,
       month: monthStart,
+      deletedAt: null,
     },
     select: {
       type: true,

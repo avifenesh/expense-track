@@ -106,6 +106,11 @@ export const applyRecurringSchema = z.object({
   csrfToken: z.string().min(1, 'Security token required'),
 })
 
+export const deleteRecurringTemplateSchema = z.object({
+  id: z.string().min(1),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
 // Category schemas
 export const categorySchema = z.object({
   name: z
@@ -227,13 +232,25 @@ export const setBalanceSchema = z.object({
   csrfToken: z.string().min(1, 'Security token required'),
 })
 
-// Account deletion schema (GDPR)
-export const deleteAccountSchema = z.object({
+// User account deletion schema (GDPR)
+export const deleteUserAccountSchema = z.object({
   confirmEmail: z.string().email('Please enter your email to confirm deletion'),
   csrfToken: z.string().min(1, 'Security token required'),
 })
 
-export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>
+export type DeleteUserAccountInput = z.infer<typeof deleteUserAccountSchema>
+
+// Financial account deletion schema (soft delete)
+export const deleteFinancialAccountSchema = z.object({
+  accountId: z.string().min(1, 'Account is required'),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type DeleteFinancialAccountInput = z.infer<typeof deleteFinancialAccountSchema>
+
+// Legacy alias for backwards compatibility
+export const deleteAccountSchema = deleteUserAccountSchema
+export type DeleteAccountInput = DeleteUserAccountInput
 
 // Expense sharing schemas
 export const participantSchema = z.object({

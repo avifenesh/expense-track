@@ -108,7 +108,8 @@ export async function GET(request: NextRequest) {
     month?: Date
     categoryId?: string
     type?: TransactionType
-  } = { accountId }
+    deletedAt: null
+  } = { accountId, deletedAt: null }
 
   if (monthKey) {
     try {

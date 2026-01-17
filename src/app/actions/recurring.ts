@@ -14,6 +14,7 @@ import {
   recurringTemplateSchema,
   toggleRecurringSchema,
   applyRecurringSchema,
+  deleteRecurringTemplateSchema,
   type RecurringTemplateInput,
 } from '@/schemas'
 
@@ -82,10 +83,12 @@ export async function toggleRecurringTemplateAction(input: z.infer<typeof toggle
 
   let template
   try {
-    template = await prisma.recurringTemplate.findUnique({ where: { id: parsed.data.id } })
+    template = await prisma.recurringTemplate.findFirst({
+      where: { id: parsed.data.id, deletedAt: null },
+    })
   } catch (error) {
     return handlePrismaError(error, {
-      action: 'toggleRecurringTemplate.findUnique',
+      action: 'toggleRecurringTemplate.findFirst',
       input: parsed.data,
       fallbackMessage: 'Unable to update recurring template',
     })
@@ -135,6 +138,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
 
   const where: Prisma.RecurringTemplateWhereInput = {
     isActive: true,
+    deletedAt: null,
     startMonth: { lte: monthStart },
     OR: [{ endMonth: null }, { endMonth: { gte: monthStart } }],
   }
@@ -155,6 +159,7 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
     where: {
       month: monthStart,
       recurringTemplateId: { in: templates.map((t) => t.id) },
+      deletedAt: null,
     },
     select: {
       recurringTemplateId: true,
@@ -209,4 +214,58 @@ export async function applyRecurringTemplatesAction(input: z.infer<typeof applyR
 
   revalidatePath('/')
   return success({ created: transactionsToCreate.length })
+}
+
+export async function deleteRecurringTemplateAction(
+  input: z.infer<typeof deleteRecurringTemplateSchema>,
+) {
+  const parsed = parseInput(deleteRecurringTemplateSchema, input)
+  if ('error' in parsed) return parsed
+
+  const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
+  let template
+  try {
+    template = await prisma.recurringTemplate.findFirst({
+      where: { id: parsed.data.id, deletedAt: null },
+    })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteRecurringTemplate.findFirst',
+      input: parsed.data,
+      fallbackMessage: 'Unable to delete recurring template',
+    })
+  }
+
+  if (!template) {
+    return generalError('Recurring template not found')
+  }
+
+  const access = await ensureAccountAccessWithSubscription(template.accountId)
+  if ('error' in access) {
+    return access
+  }
+  const { authUser } = access
+
+  try {
+    await prisma.recurringTemplate.update({
+      where: { id: parsed.data.id },
+      data: {
+        deletedAt: new Date(),
+        deletedBy: authUser.id,
+      },
+    })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'deleteRecurringTemplate',
+      accountId: template.accountId,
+      input: parsed.data,
+      notFoundMessage: 'Recurring template not found',
+      fallbackMessage: 'Unable to delete recurring template',
+    })
+  }
+
+  revalidatePath('/')
+  return successVoid()
 }

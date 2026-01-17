@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 export async function getAccounts(userId?: string) {
-  const where = userId ? { userId } : {}
+  const where = userId ? { userId, deletedAt: null } : { deletedAt: null }
   return prisma.account.findMany({
     where,
     orderBy: { name: 'asc' },

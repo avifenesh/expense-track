@@ -24,6 +24,7 @@ export async function getTransactionsForMonth({
         gte: monthStart,
         lt: nextMonthStart,
       },
+      deletedAt: null,
     },
     accountId,
   )
