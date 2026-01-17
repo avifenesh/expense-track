@@ -36,9 +36,12 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
-          POSTGRES_DB: ci
+          # Use GitHub Secrets for CI database credentials
+          # Set these in repo Settings > Secrets > Actions:
+          # CI_DB_USER, CI_DB_PASSWORD (optional, defaults provided for convenience)
+          POSTGRES_USER: ${{ secrets.CI_DB_USER || 'ci_user' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}
+          POSTGRES_DB: ci_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -46,6 +49,12 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
+    env:
+      # Database URL constructed from secrets (with secure defaults for repos without secrets configured)
+      CI_DATABASE_URL: postgresql://${{ secrets.CI_DB_USER || 'ci_user' }}:${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}@localhost:5432/ci_test
+      # Shadow database uses unique name per run to avoid conflicts in concurrent CI runs
+      CI_SHADOW_DATABASE_URL: postgresql://${{ secrets.CI_DB_USER || 'ci_user' }}:${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}@localhost:5432/shadow_${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -57,18 +66,27 @@ jobs:
 
       - run: npm ci
         env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+
+      - name: Create shadow database
+        run: |
+          PGPASSWORD="${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}" psql -h localhost -U "${{ secrets.CI_DB_USER || 'ci_user' }}" -d ci_test -c "CREATE DATABASE shadow_${{ github.run_id }};"
 
       - name: Verify migrations
         run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
         env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-          SHADOW_DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+          SHADOW_DATABASE_URL: ${{ env.CI_SHADOW_DATABASE_URL }}
 
       - name: Apply migrations
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+
+      - name: Cleanup shadow database
+        if: always()
+        run: |
+          PGPASSWORD="${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}" psql -h localhost -U "${{ secrets.CI_DB_USER || 'ci_user' }}" -d ci_test -c "DROP DATABASE IF EXISTS shadow_${{ github.run_id }};" || true
 
       - name: Security audit
         run: npm audit --audit-level=high || echo "::warning::Security vulnerabilities found - see npm audit output above"
@@ -81,8 +99,12 @@ jobs:
 
       - run: npm test
         env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-          AUTH_SESSION_SECRET: test-secret-for-ci-only
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+          # Test credentials - use secrets when available, with safe defaults for convenience
+          # Set CI_AUTH_SESSION_SECRET, CI_JWT_SECRET in repo Settings > Secrets > Actions
+          AUTH_SESSION_SECRET: ${{ secrets.CI_AUTH_SESSION_SECRET || 'ci-test-session-secret-not-for-production' }}
+          JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-test-jwt-secret-not-for-production' }}
+          # Legacy test user credentials (non-sensitive, used only for test fixtures)
           AUTH_USER1_NAME: avi
           AUTH_USER1_DISPLAY_NAME: Avi
           AUTH_USER1_EMAIL: avi@example.com
@@ -91,4 +113,3 @@ jobs:
           AUTH_USER2_DISPLAY_NAME: Serena
           AUTH_USER2_EMAIL: serena@example.com
           AUTH_USER2_PASSWORD_HASH: $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5P5myWU5j5aG2
-          JWT_SECRET: test-jwt-secret-for-ci-only
