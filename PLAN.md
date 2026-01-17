@@ -124,7 +124,7 @@ Transform personal finance app into commercial multi-tenant service with mobile 
 - [ ] #34 - Set up email service for transactional emails
 - [ ] #35 - Implement Google OAuth integration
 - [ ] #36 - Implement GitHub OAuth integration
-- [ ] #137 - Integrate payment provider for subscriptions
+- [x] #137 - Integrate payment provider for subscriptions (Paddle)
 
 ### Caching & Performance
 

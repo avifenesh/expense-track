@@ -1,4 +1,5 @@
-import { useAuth } from '../contexts';
+import { useShallow } from 'zustand/shallow';
+import { useAuthStore } from '../stores';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -8,14 +9,18 @@ interface AuthState {
 }
 
 /**
- * Hook to access authentication state from AuthContext.
+ * Hook to access authentication state from Zustand store.
  * Used by navigation to determine which stack to show.
- *
- * This hook wraps useAuth for compatibility with existing navigation code.
- * Task #71 will add secure token persistence using expo-secure-store.
+ * Uses shallow comparison to prevent unnecessary re-renders.
  */
 export function useAuthState(): AuthState {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuthStore(
+    useShallow((state) => ({
+      isAuthenticated: state.isAuthenticated,
+      isLoading: state.isLoading,
+      user: state.user,
+    }))
+  );
 
   return {
     isAuthenticated,

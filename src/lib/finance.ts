@@ -2,7 +2,7 @@
 import { Prisma, TransactionType, Currency, PaymentStatus, SplitType } from '@prisma/client'
 import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
-import { formatMonthLabel, getMonthKey, getMonthStartFromKey } from '@/utils/date'
+import { getMonthKey, getMonthStartFromKey } from '@/utils/date'
 import {
   convertAmount,
   getLastUpdateTime,
