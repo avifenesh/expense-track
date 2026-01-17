@@ -20,8 +20,69 @@ import {
 } from '@/lib/subscription'
 
 /**
+ * In-memory cache for processed webhook event IDs to prevent replay attacks.
+ * Implemented as a bounded FIFO cache with TTL expiration.
+ *
+ * Note: This is an in-memory implementation that resets on cold start.
+ * For production with high reliability requirements, consider:
+ * - Redis-backed deduplication
+ * - Database table for processed events
+ *
+ * TTL: 24 hours (Paddle may retry within this window)
+ * Max size: 10,000 events (hard cap with FIFO eviction)
+ */
+const processedEventIds = new Map<string, number>()
+const EVENT_ID_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const MAX_CACHED_EVENTS = 10000 // Hard cap with FIFO eviction
+
+/**
+ * Check if an event has already been processed (replay protection)
+ * @returns true if this is a duplicate event that should be skipped
+ */
+function isDuplicateEvent(eventId: string): boolean {
+  const now = Date.now()
+
+  // Check if event was already processed and still within TTL
+  const processedAt = processedEventIds.get(eventId)
+  if (processedAt !== undefined) {
+    if (now - processedAt < EVENT_ID_TTL_MS) {
+      return true // Duplicate within TTL
+    }
+    // Expired - remove and allow reprocessing
+    processedEventIds.delete(eventId)
+  }
+
+  return false
+}
+
+/**
+ * Mark an event as processed with bounded cache size.
+ * Uses FIFO eviction when cache is full.
+ */
+function markEventProcessed(eventId: string): void {
+  const now = Date.now()
+
+  // Enforce hard cap: evict oldest entries if at max capacity
+  if (processedEventIds.size >= MAX_CACHED_EVENTS) {
+    // Evict oldest 10% to avoid frequent evictions
+    const evictCount = Math.ceil(MAX_CACHED_EVENTS * 0.1)
+    const iterator = processedEventIds.keys()
+    for (let i = 0; i < evictCount; i++) {
+      const key = iterator.next().value
+      if (key) processedEventIds.delete(key)
+    }
+  }
+
+  processedEventIds.set(eventId, now)
+}
+
+/**
  * Paddle webhook endpoint
  * Handles subscription lifecycle events from Paddle Billing
+ *
+ * Security:
+ * - Verifies webhook signature using PADDLE_WEBHOOK_SECRET
+ * - Implements event_id deduplication to prevent replay attacks
  *
  * Events handled:
  * - subscription.created: New subscription created → link Paddle IDs
@@ -56,6 +117,17 @@ export async function POST(request: NextRequest) {
     // Parse and handle the event
     const event = parsePaddleEvent(rawBody)
 
+    // Check for replay attack (duplicate event_id)
+    if (isDuplicateEvent(event.event_id)) {
+      serverLogger.info('PADDLE_WEBHOOK_DUPLICATE', {
+        eventType: event.event_type,
+        eventId: event.event_id,
+        message: 'Duplicate event detected, skipping',
+      })
+      // Return 200 to acknowledge - Paddle doesn't need to retry
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
     serverLogger.info('PADDLE_WEBHOOK_RECEIVED', {
       eventType: event.event_type,
       eventId: event.event_id,
@@ -63,6 +135,9 @@ export async function POST(request: NextRequest) {
     })
 
     await handlePaddleEvent(event)
+
+    // Mark event as processed after successful handling
+    markEventProcessed(event.event_id)
 
     return NextResponse.json({ received: true })
   } catch (error) {
