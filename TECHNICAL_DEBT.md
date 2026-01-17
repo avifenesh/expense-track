@@ -5,16 +5,12 @@ Last updated: 2026-01-17
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed This Session**: 35 issues (9 critical, 14 high, 11 medium, 1 low)
-**Remaining**: 54 issues (1 critical, 10 high, 29 medium, 14 low)
+**Fixed Total**: 46 issues (10 critical, 16 high, 17 medium, 3 low)
+**Remaining**: 43 issues (0 critical, 8 high, 23 medium, 12 low)
 
-## Critical Issues (1 remaining)
+## Critical Issues (0 remaining)
 
-### Security
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Hard-coded CI database credentials | .github/workflows/ci.yml:39-41 | Use GitHub Secrets | small |
+All critical issues resolved.
 
 ### Blocked (not counted)
 
@@ -22,14 +18,7 @@ Last updated: 2026-01-17
 |-------|------|-----|--------|
 | Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
-## High Issues (10 remaining)
-
-### Security
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| In-memory rate limiting resets on cold start | src/lib/rate-limit.ts | Document limitation, consider Redis | large |
-| Missing secrets rotation documentation | N/A | Create docs/SECRET_ROTATION.md | large |
+## High Issues (8 remaining)
 
 ### Performance
 
@@ -60,18 +49,7 @@ Last updated: 2026-01-17
 |-------|------|-----|--------|
 | Keyboard navigation missing on settings menu | src/components/dashboard/dashboard-page.tsx:341-400 | Add focus trap and arrow key navigation | medium |
 
-## Medium Issues (29 remaining)
-
-### Security
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Password reset tokens not cleaned up | src/app/actions/auth.ts:143-201 | Add scheduled cleanup job | medium |
-| PostgreSQL SSL not enforced | .env.example | Require sslmode=require in production | small |
-| Migration shadow DB conflict | .github/workflows/ci.yml:62-66 | Create unique shadow DB per run | medium |
-| No cron rate limiting | src/app/api/cron/subscriptions/route.ts | Add rate limit by secret/IP | medium |
-| Sentry config not validated at build | next.config.js | Throw if SENTRY_ENABLED but creds missing | small |
-| Paddle webhook replay attack possible | src/app/api/webhooks/paddle/route.ts | Add event_id deduplication | medium |
+## Medium Issues (23 remaining)
 
 ### Performance
 
@@ -143,14 +121,7 @@ Last updated: 2026-01-17
 | No deployment health check | CI/CD pipeline | Add health endpoint polling after deploy | small |
 | Missing centralized env validation | Multiple lib files | Create src/lib/env-schema.ts | medium |
 
-## Low Issues (14 remaining)
-
-### Security
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Display name regex allows "- - -" | src/app/api/v1/auth/register/route.ts:23 | Require alphanumeric at start/end | small |
-| Test secrets committed in workflow | .github/workflows/ci.yml:85-94 | Move to GitHub Secrets | small |
+## Low Issues (12 remaining)
 
 ### Performance
 
@@ -201,9 +172,9 @@ Last updated: 2026-01-17
 
 ---
 
-## Fixed This Session (35 issues)
+## Fixed This Session (46 issues)
 
-### Critical (9 fixed)
+### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
 - [x] Remove committed .env.docker/.env.e2e (security)
 - [x] Add subscription checks to API endpoints (categories, holdings, recurring)
@@ -211,8 +182,9 @@ Last updated: 2026-01-17
 - [x] Implement GET endpoints for /transactions, /budgets, /categories (PR #169)
 - [x] Add subscription enforcement to all mutating API routes (PR #169)
 - [x] Implement limit/offset pagination on list endpoints (PR #169)
+- [x] Hard-coded CI database credentials → GitHub Secrets (PR #170)
 
-### High (14 fixed)
+### High (16 fixed)
 - [x] Make security audit blocking (CI)
 - [x] Make njsscan blocking (CI)
 - [x] Validate secrets at startup - JWT_SECRET at module load
@@ -226,8 +198,10 @@ Last updated: 2026-01-17
 - [x] Fix race condition in transaction update (atomic Prisma transaction)
 - [x] Add rate limit headers helper (successResponseWithRateLimit)
 - [x] Standardize validation error format (login uses validationError())
+- [x] In-memory rate limiting documented with limitations (PR #170)
+- [x] Missing secrets rotation documentation → docs/SECRET_ROTATION.md (PR #170)
 
-### Medium (11 fixed)
+### Medium (17 fixed)
 - [x] Token expiry loose time comparison (>= instead of >)
 - [x] Add new database indexes (4 indexes)
 - [x] Category name validation (max length + alphanumeric boundaries)
@@ -235,6 +209,14 @@ Last updated: 2026-01-17
 - [x] CSRF validation uses VITEST env var (not NODE_ENV)
 - [x] failedSymbols Map size limit (max 1000 with cleanup)
 - [x] Chat widget stream reader cleanup on unmount
+- [x] PostgreSQL SSL not enforced → documented in .env.example (PR #170)
+- [x] Migration shadow DB conflict → unique shadow DB per run (PR #170)
+- [x] Sentry config not validated at build → throws if enabled without DSN (PR #170)
+- [x] No cron rate limiting → added IP-based rate limiting (PR #174)
+- [x] Paddle webhook replay attack → event_id deduplication (PR #174)
+- [x] Password reset tokens not cleaned up → /api/cron/cleanup endpoint (PR #174)
 
-### Low (1 fixed)
+### Low (3 fixed)
 - [x] Token expiry comparison boundary
+- [x] Display name regex allows "- - -" → require alphanumeric start/end (PR #174)
+- [x] Test secrets committed in workflow → moved to GitHub Secrets (PR #170)
