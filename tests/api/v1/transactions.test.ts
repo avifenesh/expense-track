@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { POST as CreateTransaction } from '@/app/api/v1/transactions/route'
+import { GET as GetTransactions, POST as CreateTransaction } from '@/app/api/v1/transactions/route'
 import { PUT as UpdateTransaction, DELETE as DeleteTransaction } from '@/app/api/v1/transactions/[id]/route'
 import { POST as CreateRequest } from '@/app/api/v1/transactions/requests/route'
 import { POST as ApproveRequest } from '@/app/api/v1/transactions/requests/[id]/approve/route'
@@ -169,6 +169,161 @@ describe('Transaction API Routes', () => {
 
       const response = await CreateTransaction(request)
       expect(response.status).toBe(400)
+    })
+  })
+
+  describe('GET /api/v1/transactions', () => {
+    beforeEach(async () => {
+      // Create test transactions for GET tests
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+      await prisma.transaction.createMany({
+        data: [
+          {
+            accountId,
+            categoryId,
+            type: 'EXPENSE',
+            amount: 100,
+            currency: 'USD',
+            date: now,
+            month: monthStart,
+            description: 'TEST_GetTransaction1',
+          },
+          {
+            accountId,
+            categoryId,
+            type: 'INCOME',
+            amount: 200,
+            currency: 'USD',
+            date: now,
+            month: monthStart,
+            description: 'TEST_GetTransaction2',
+          },
+          {
+            accountId,
+            categoryId,
+            type: 'EXPENSE',
+            amount: 50,
+            currency: 'USD',
+            date: now,
+            month: monthStart,
+            description: 'TEST_GetTransaction3',
+          },
+        ],
+      })
+    })
+
+    it('returns transactions with valid JWT and accountId', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data.transactions).toBeDefined()
+      expect(data.data.transactions.length).toBeGreaterThanOrEqual(3)
+      expect(data.data.total).toBeGreaterThanOrEqual(3)
+      expect(typeof data.data.hasMore).toBe('boolean')
+    })
+
+    it('returns transactions with category data', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      const transaction = data.data.transactions[0]
+      expect(transaction.category).toBeDefined()
+      expect(transaction.category.id).toBeTruthy()
+      expect(transaction.category.name).toBeTruthy()
+    })
+
+    it('returns 401 with missing token', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}`, {
+        method: 'GET',
+      })
+
+      const response = await GetTransactions(request)
+      expect(response.status).toBe(401)
+    })
+
+    it('returns 403 for unauthorized account access', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${otherAccountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      expect(response.status).toBe(403)
+    })
+
+    it('returns 400 with missing accountId', async () => {
+      const request = new NextRequest('http://localhost/api/v1/transactions', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      expect(response.status).toBe(400)
+    })
+
+    it('returns 400 with invalid type filter', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}&type=INVALID`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      expect(response.status).toBe(400)
+    })
+
+    it('filters by type correctly', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}&type=EXPENSE`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.transactions.every((t: { type: string }) => t.type === 'EXPENSE')).toBe(true)
+    })
+
+    it('respects pagination limit', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}&limit=2`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.transactions.length).toBe(2)
+      expect(data.data.hasMore).toBe(true)
+    })
+
+    it('respects pagination offset', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}&limit=2&offset=2`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.transactions.length).toBeGreaterThanOrEqual(1)
     })
   })
 

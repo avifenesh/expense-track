@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { POST as UpsertBudget, DELETE as DeleteBudget } from '@/app/api/v1/budgets/route'
+import { GET as GetBudgets, POST as UpsertBudget, DELETE as DeleteBudget } from '@/app/api/v1/budgets/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
@@ -80,7 +80,7 @@ describe('Budget API Routes', () => {
       const response = await UpsertBudget(request)
       const data = await response.json()
 
-      expect(response.status).toBe(200)
+      expect(response.status).toBe(201) // 201 for create, 200 for update
       expect(data.success).toBe(true)
       expect(data.data.id).toBeTruthy()
     })
@@ -207,6 +207,112 @@ describe('Budget API Routes', () => {
 
       const response = await UpsertBudget(request)
       expect(response.status).toBe(400)
+    })
+  })
+
+  describe('GET /api/v1/budgets', () => {
+    beforeEach(async () => {
+      // Create test budgets for GET tests
+      await prisma.budget.createMany({
+        data: [
+          {
+            accountId,
+            categoryId,
+            month: getMonthStartFromKey(testMonthKey),
+            planned: 500,
+            currency: 'USD',
+            notes: 'TEST_Budget1',
+          },
+          {
+            accountId,
+            categoryId,
+            month: getMonthStartFromKey('2024-02'),
+            planned: 600,
+            currency: 'USD',
+            notes: 'TEST_Budget2',
+          },
+        ],
+      })
+    })
+
+    afterEach(async () => {
+      await prisma.budget.deleteMany({
+        where: { month: { in: [getMonthStartFromKey(testMonthKey), getMonthStartFromKey('2024-02')] } },
+      })
+    })
+
+    it('returns budgets with valid JWT and accountId', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/budgets?accountId=${accountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetBudgets(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data.budgets).toBeDefined()
+      expect(data.data.budgets.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('returns budgets with category data', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/budgets?accountId=${accountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetBudgets(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      const budget = data.data.budgets[0]
+      expect(budget.category).toBeDefined()
+      expect(budget.category.id).toBeTruthy()
+      expect(budget.category.name).toBeTruthy()
+    })
+
+    it('returns 401 with missing token', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/budgets?accountId=${accountId}`, {
+        method: 'GET',
+      })
+
+      const response = await GetBudgets(request)
+      expect(response.status).toBe(401)
+    })
+
+    it('returns 403 for unauthorized account access', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/budgets?accountId=${otherAccountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetBudgets(request)
+      expect(response.status).toBe(403)
+    })
+
+    it('returns 400 with missing accountId', async () => {
+      const request = new NextRequest('http://localhost/api/v1/budgets', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetBudgets(request)
+      expect(response.status).toBe(400)
+    })
+
+    it('filters by month correctly', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/budgets?accountId=${accountId}&month=${testMonthKey}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetBudgets(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.budgets.length).toBeGreaterThanOrEqual(1)
+      expect(data.data.budgets.every((b: { month: string }) => b.month.startsWith('2024-01'))).toBe(true)
     })
   })
 

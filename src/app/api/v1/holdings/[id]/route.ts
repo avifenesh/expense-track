@@ -9,6 +9,7 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
@@ -29,6 +30,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate input
   let body
@@ -79,6 +84,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return rateLimitError(rateLimitCheck.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Check holding exists and belongs to user (via account)
   const existing = await getHoldingById(id, user.userId)

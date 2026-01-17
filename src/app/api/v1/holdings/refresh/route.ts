@@ -1,15 +1,15 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { refreshHoldingPrices } from '@/lib/services/holding-service'
 import { refreshHoldingPricesSchema } from '@/schemas'
 import {
   validationError,
   authError,
   forbiddenError,
-  notFoundError,
   serverError,
   successResponse,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
+
   // 2. Parse and validate input
   let body
   try {
@@ -47,13 +51,10 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Authorize account access
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) return notFoundError('Account not found')
-
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || account.userId !== user.userId) {
+    return forbiddenError('Access denied')
   }
 
   // 4. Execute refresh

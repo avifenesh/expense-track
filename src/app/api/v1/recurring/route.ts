@@ -1,21 +1,19 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { upsertRecurringTemplate } from '@/lib/services/recurring-service'
 import { recurringTemplateSchema } from '@/schemas'
 import {
   validationError,
   authError,
   forbiddenError,
-  notFoundError,
   serverError,
   successResponse,
   rateLimitError,
-  subscriptionRequiredError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
-import { hasActiveSubscription } from '@/lib/subscription'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -33,13 +31,11 @@ export async function POST(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 2. Check subscription status
-  const isActive = await hasActiveSubscription(user.userId)
-  if (!isActive) {
-    return subscriptionRequiredError()
-  }
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
-  // 3. Parse and validate input
+  // 2. Parse and validate input
   let body
   try {
     body = await request.json()
@@ -63,23 +59,17 @@ export async function POST(request: NextRequest) {
     return validationError({ endMonthKey: ['End month must be after the start month'] })
   }
 
-  // 4. Authorize account access
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) return notFoundError('Account not found')
-
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || account.userId !== user.userId) {
+    return forbiddenError('Access denied')
   }
 
-  // 4b. If updating, verify existing template belongs to the requested account
+  // 4. If updating, verify existing template belongs to the requested account
   if (data.id) {
     const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
-    if (!existing) {
-      return notFoundError('Template not found')
-    }
-    if (existing.accountId !== data.accountId) {
-      return forbiddenError('Cannot change template account')
+    if (!existing || existing.accountId !== data.accountId) {
+      return forbiddenError('Access denied')
     }
   }
 

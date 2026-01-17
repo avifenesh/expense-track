@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import jwt from 'jsonwebtoken'
+
+// Set JWT_SECRET before module imports (module caches it at load time)
+const TEST_JWT_SECRET = 'test-secret-key-for-jwt-testing'
+process.env.JWT_SECRET = TEST_JWT_SECRET
+
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -10,7 +15,7 @@ import {
 
 describe('JWT Token Generation', () => {
   beforeEach(() => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
+    process.env.JWT_SECRET = TEST_JWT_SECRET
   })
 
   afterEach(() => {

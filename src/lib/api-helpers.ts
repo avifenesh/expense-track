@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getRateLimitHeaders, type RateLimitType } from '@/lib/rate-limit'
+import { getSubscriptionState } from './subscription'
 
 /**
  * Standard error response with optional field-level errors
@@ -61,13 +62,6 @@ export function serverError(message = 'Internal server error') {
 }
 
 /**
- * 402 Payment Required - Subscription inactive
- */
-export function subscriptionRequiredError(message = 'Active subscription required') {
-  return errorResponse(message, 402)
-}
-
-/**
  * Success response with data
  */
 export function successResponse<T>(data: T, status = 200) {
@@ -86,4 +80,26 @@ export function successResponseWithRateLimit<T>(
 ) {
   const headers = getRateLimitHeaders(userId, rateLimitType)
   return NextResponse.json({ success: true, data }, { status, headers })
+}
+
+/**
+ * 403 Subscription Required - User needs active subscription
+ */
+export function subscriptionRequiredError(message = 'Active subscription required') {
+  return NextResponse.json(
+    { error: message, code: 'SUBSCRIPTION_REQUIRED' },
+    { status: 403 },
+  )
+}
+
+/**
+ * Check if user has an active subscription
+ * Returns null if subscription is valid, or a response if not
+ */
+export async function checkSubscription(userId: string): Promise<NextResponse | null> {
+  const state = await getSubscriptionState(userId)
+  if (!state.canAccessApp) {
+    return subscriptionRequiredError()
+  }
+  return null
 }
