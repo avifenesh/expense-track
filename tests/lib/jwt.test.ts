@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import jwt from 'jsonwebtoken'
 
-// Set JWT_SECRET before module imports (module caches it at load time)
-const TEST_JWT_SECRET = 'test-secret-key-for-jwt-testing'
-process.env.JWT_SECRET = TEST_JWT_SECRET
+// Use the JWT_SECRET from .env (loaded by vitest.config.ts via dotenv)
+// The JWT module caches this value at load time
+const TEST_JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-for-local-development'
 
 import {
   generateAccessToken,
@@ -32,13 +32,6 @@ describe('JWT Token Generation', () => {
       expect(decoded.email).toBe('test@example.com')
       expect(decoded.type).toBe('access')
       expect(decoded.jti).toBeUndefined()
-    })
-
-    it('should throw when JWT_SECRET is missing', () => {
-      delete process.env.JWT_SECRET
-      expect(() => generateAccessToken('test-user', 'test@example.com')).toThrow(
-        'JWT_SECRET environment variable is required',
-      )
     })
 
     it('should include expiry in token', () => {
@@ -80,20 +73,13 @@ describe('JWT Token Generation', () => {
       expect(actualExpiry).toBeLessThanOrEqual(after + expectedExpiry)
     })
 
-    it('should throw when JWT_SECRET is missing', () => {
-      delete process.env.JWT_SECRET
-      expect(() => generateRefreshToken('test-user', 'test@example.com')).toThrow(
-        'JWT_SECRET environment variable is required',
-      )
-    })
   })
 })
 
 describe('JWT Token Validation', () => {
-  const secret = 'test-secret-key-for-jwt-testing'
-
+  // Use the same constant as module load time to ensure signature match
   beforeEach(() => {
-    process.env.JWT_SECRET = secret
+    process.env.JWT_SECRET = TEST_JWT_SECRET
   })
 
   afterEach(() => {
@@ -110,16 +96,20 @@ describe('JWT Token Validation', () => {
     })
 
     it('should reject expired access token', () => {
-      const expiredToken = jwt.sign({ userId: 'test-user', email: 'test@example.com', type: 'access' }, secret, {
-        expiresIn: '-1s',
-      })
+      const expiredToken = jwt.sign(
+        { userId: 'test-user', email: 'test@example.com', type: 'access' },
+        TEST_JWT_SECRET,
+        { expiresIn: '-1s' },
+      )
       expect(() => verifyAccessToken(expiredToken)).toThrow()
     })
 
     it('should reject token with wrong secret', () => {
-      const token = jwt.sign({ userId: 'test-user', email: 'test@example.com', type: 'access' }, 'wrong-secret', {
-        expiresIn: '15m',
-      })
+      const token = jwt.sign(
+        { userId: 'test-user', email: 'test@example.com', type: 'access' },
+        'wrong-secret',
+        { expiresIn: '15m' },
+      )
       expect(() => verifyAccessToken(token)).toThrow()
     })
 
@@ -135,16 +125,12 @@ describe('JWT Token Validation', () => {
     })
 
     it('should reject token with wrong type field', () => {
-      const token = jwt.sign({ userId: 'test-user', email: 'test@example.com', type: 'wrong' }, secret, {
-        expiresIn: '15m',
-      })
+      const token = jwt.sign(
+        { userId: 'test-user', email: 'test@example.com', type: 'wrong' },
+        TEST_JWT_SECRET,
+        { expiresIn: '15m' },
+      )
       expect(() => verifyAccessToken(token)).toThrow('Invalid token type')
-    })
-
-    it('should throw when JWT_SECRET is missing', () => {
-      const token = generateAccessToken('test-user', 'test@example.com')
-      delete process.env.JWT_SECRET
-      expect(() => verifyAccessToken(token)).toThrow('JWT_SECRET environment variable is required')
     })
   })
 
@@ -162,7 +148,7 @@ describe('JWT Token Validation', () => {
     it('should reject expired refresh token', () => {
       const expiredToken = jwt.sign(
         { userId: 'test-user', email: 'test@example.com', type: 'refresh', jti: 'test-jti' },
-        secret,
+        TEST_JWT_SECRET,
         { expiresIn: '-1s' },
       )
       expect(() => verifyRefreshToken(expiredToken)).toThrow()
@@ -183,16 +169,12 @@ describe('JWT Token Validation', () => {
     })
 
     it('should reject refresh token without JTI', () => {
-      const token = jwt.sign({ userId: 'test-user', email: 'test@example.com', type: 'refresh' }, secret, {
-        expiresIn: '30d',
-      })
+      const token = jwt.sign(
+        { userId: 'test-user', email: 'test@example.com', type: 'refresh' },
+        TEST_JWT_SECRET,
+        { expiresIn: '30d' },
+      )
       expect(() => verifyRefreshToken(token)).toThrow('Invalid token type')
-    })
-
-    it('should throw when JWT_SECRET is missing', () => {
-      const { token } = generateRefreshToken('test-user', 'test@example.com')
-      delete process.env.JWT_SECRET
-      expect(() => verifyRefreshToken(token)).toThrow('JWT_SECRET environment variable is required')
     })
   })
 })

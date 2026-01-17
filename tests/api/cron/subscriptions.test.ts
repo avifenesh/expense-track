@@ -26,6 +26,8 @@ const mockServerLogger = serverLogger as {
   error: ReturnType<typeof vi.fn>
 }
 
+const TEST_SECRET = 'test-cron-secret'
+
 function createRequest(authHeader?: string): NextRequest {
   const headers = new Headers()
   if (authHeader) {
@@ -37,12 +39,17 @@ function createRequest(authHeader?: string): NextRequest {
   })
 }
 
+function createAuthenticatedRequest(): NextRequest {
+  return createRequest(`Bearer ${TEST_SECRET}`)
+}
+
 describe('GET /api/cron/subscriptions', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
     vi.clearAllMocks()
     process.env = { ...originalEnv }
+    process.env.CRON_SECRET = TEST_SECRET
   })
 
   afterEach(() => {
@@ -51,7 +58,6 @@ describe('GET /api/cron/subscriptions', () => {
 
   describe('Authorization', () => {
     it('returns 401 when CRON_SECRET is set but authorization header is missing', async () => {
-      process.env.CRON_SECRET = 'test-secret'
       const request = createRequest()
 
       const response = await GET(request)
@@ -65,7 +71,6 @@ describe('GET /api/cron/subscriptions', () => {
     })
 
     it('returns 401 when CRON_SECRET is set but authorization header is wrong', async () => {
-      process.env.CRON_SECRET = 'test-secret'
       const request = createRequest('Bearer wrong-secret')
 
       const response = await GET(request)
@@ -76,34 +81,33 @@ describe('GET /api/cron/subscriptions', () => {
     })
 
     it('allows access when CRON_SECRET matches authorization header', async () => {
-      process.env.CRON_SECRET = 'test-secret'
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(0)
-      const request = createRequest('Bearer test-secret')
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
 
       expect(response.status).toBe(200)
     })
 
-    it('allows access when CRON_SECRET is not set (development mode)', async () => {
+    it('returns 500 when CRON_SECRET is not configured', async () => {
       delete process.env.CRON_SECRET
-      mockProcessExpiredSubscriptions.mockResolvedValueOnce(0)
       const request = createRequest()
 
       const response = await GET(request)
+      const data = await response.json()
 
-      expect(response.status).toBe(200)
+      expect(response.status).toBe(500)
+      expect(data.error).toBe('Server configuration error')
+      expect(mockServerLogger.error).toHaveBeenCalledWith('Cron subscription expiration: CRON_SECRET not configured', {
+        action: 'cron.subscriptions',
+      })
     })
   })
 
   describe('Success path', () => {
-    beforeEach(() => {
-      delete process.env.CRON_SECRET // Allow unauthenticated access for tests
-    })
-
     it('returns 200 with success response when no subscriptions expired', async () => {
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(0)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
       const data = await response.json()
@@ -116,7 +120,7 @@ describe('GET /api/cron/subscriptions', () => {
 
     it('returns 200 with expired count when subscriptions are expired', async () => {
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(5)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
       const data = await response.json()
@@ -128,7 +132,7 @@ describe('GET /api/cron/subscriptions', () => {
 
     it('logs success with expired count', async () => {
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(3)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       await GET(request)
 
@@ -140,7 +144,7 @@ describe('GET /api/cron/subscriptions', () => {
 
     it('timestamp is valid ISO 8601 format', async () => {
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(0)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
       const data = await response.json()
@@ -152,13 +156,9 @@ describe('GET /api/cron/subscriptions', () => {
   })
 
   describe('Error handling', () => {
-    beforeEach(() => {
-      delete process.env.CRON_SECRET
-    })
-
     it('returns 500 when processExpiredSubscriptions throws', async () => {
       mockProcessExpiredSubscriptions.mockRejectedValueOnce(new Error('Database error'))
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
       const data = await response.json()
@@ -171,7 +171,7 @@ describe('GET /api/cron/subscriptions', () => {
     it('logs error when processing fails', async () => {
       const testError = new Error('Database connection failed')
       mockProcessExpiredSubscriptions.mockRejectedValueOnce(testError)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       await GET(request)
 
@@ -186,7 +186,7 @@ describe('GET /api/cron/subscriptions', () => {
       mockProcessExpiredSubscriptions.mockRejectedValueOnce(
         new Error('FATAL: password authentication failed for user "postgres"'),
       )
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
       const data = await response.json()
@@ -198,13 +198,9 @@ describe('GET /api/cron/subscriptions', () => {
   })
 
   describe('Integration with processExpiredSubscriptions', () => {
-    beforeEach(() => {
-      delete process.env.CRON_SECRET
-    })
-
     it('calls processExpiredSubscriptions exactly once', async () => {
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(0)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       await GET(request)
 
@@ -213,7 +209,7 @@ describe('GET /api/cron/subscriptions', () => {
 
     it('handles large number of expired subscriptions', async () => {
       mockProcessExpiredSubscriptions.mockResolvedValueOnce(10000)
-      const request = createRequest()
+      const request = createAuthenticatedRequest()
 
       const response = await GET(request)
       const data = await response.json()

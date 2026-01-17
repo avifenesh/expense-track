@@ -45,6 +45,7 @@ vi.mock('@/lib/subscription', () => ({
     daysRemaining: 30,
     canAccessApp: true,
   }),
+  createTrialSubscription: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Mock Prisma enums
@@ -286,17 +287,22 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
 
   describe('Category Names - Stored XSS', () => {
     it('should safely store and escape XSS payloads in category names', async () => {
+      // Schema requires alphanumeric start/end, so wrap payloads
+      // This tests that XSS payloads embedded in valid names are still escaped
       for (const payload of CRITICAL_XSS_PAYLOADS) {
         vi.clearAllMocks()
 
+        // Wrap payload with alphanumeric chars to pass schema validation
+        const wrappedPayload = `A${payload}Z`
+
         vi.mocked(prisma.category.create).mockResolvedValueOnce({
           id: 'test-category-id',
-          name: payload,
+          name: wrappedPayload,
           type: TransactionType.EXPENSE,
         } as any)
 
         const result = await createCategoryAction({
-          name: payload,
+          name: wrappedPayload,
           type: TransactionType.EXPENSE,
           color: null,
           csrfToken: 'valid-csrf-token',
@@ -306,11 +312,11 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
 
         // Verify category name stored as-is
         const createCall = vi.mocked(prisma.category.create).mock.calls[0]
-        expect(createCall[0].data.name).toBe(payload)
+        expect(createCall[0].data.name).toBe(wrappedPayload)
 
         // Verify React escaping prevents XSS
-        const rendered = `<span>${escapeHtmlLikeReact(payload)}</span>`
-        assertNoExecutableScript(rendered, payload)
+        const rendered = `<span>${escapeHtmlLikeReact(wrappedPayload)}</span>`
+        assertNoExecutableScript(rendered, wrappedPayload)
       }
     })
 
