@@ -26,7 +26,7 @@ export function ExpensesSharedWithMe({ participations }: ExpensesSharedWithMePro
     startTransition(async () => {
       const result = await declineShareAction({ participantId, csrfToken })
       if ('error' in result) {
-        toast.error(result.error.general?.[0] || 'Could not decline')
+        toast.error(result.error.general?.[0] || 'Unable to decline share.')
         return
       }
       toast.success('Share declined')

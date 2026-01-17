@@ -29,7 +29,7 @@ export function RequestList({ requests, preferredCurrency: _preferredCurrency }:
     startTransition(async () => {
       const result = await approveTransactionRequestAction({ id, csrfToken })
       if ('error' in result) {
-        setFeedback({ type: 'error', message: 'Failed to approve request.' })
+        setFeedback({ type: 'error', message: 'Unable to approve request.' })
         return
       }
       setFeedback({ type: 'success', message: 'Request approved and logged.' })
@@ -41,7 +41,7 @@ export function RequestList({ requests, preferredCurrency: _preferredCurrency }:
     startTransition(async () => {
       const result = await rejectTransactionRequestAction({ id, csrfToken })
       if ('error' in result) {
-        setFeedback({ type: 'error', message: 'Failed to reject request.' })
+        setFeedback({ type: 'error', message: 'Unable to decline request.' })
         return
       }
       setFeedback({ type: 'success', message: 'Request rejected.' })

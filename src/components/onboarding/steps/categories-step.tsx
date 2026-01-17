@@ -75,7 +75,7 @@ export function CategoriesStep({ existingCount, onSubmit, onBack, onSkip, isPend
 
       <div className="space-y-4">
         <div>
-          <h4 className="mb-2 text-sm font-medium text-white">Expense Categories</h4>
+          <h4 className="mb-2 text-sm font-medium text-white">Expense categories</h4>
           <div className="grid grid-cols-2 gap-2">
             {expenseCategories.map((cat) => (
               <label
@@ -95,7 +95,7 @@ export function CategoriesStep({ existingCount, onSubmit, onBack, onSkip, isPend
         </div>
 
         <div>
-          <h4 className="mb-2 text-sm font-medium text-white">Income Categories</h4>
+          <h4 className="mb-2 text-sm font-medium text-white">Income categories</h4>
           <div className="grid grid-cols-2 gap-2">
             {incomeCategories.map((cat) => (
               <label
@@ -124,7 +124,7 @@ export function CategoriesStep({ existingCount, onSubmit, onBack, onSkip, isPend
           Back
         </Button>
         <Button onClick={handleSubmit} className="flex-1" disabled={isPending} loading={isPending}>
-          {selectedCount > 0 ? `Create ${selectedCount} Categories` : 'Continue'}
+          {selectedCount > 0 ? `Create ${selectedCount} categories` : 'Continue'}
         </Button>
         <Button onClick={onSkip} variant="ghost" disabled={isPending}>
           Skip

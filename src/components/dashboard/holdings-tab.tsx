@@ -145,7 +145,7 @@ export default function HoldingsTab({
     startAction(async () => {
       const result = await deleteHoldingAction({ id: holdingId, csrfToken })
       if ('error' in result) {
-        setFeedback({ type: 'error', message: 'Failed to delete holding' })
+        setFeedback({ type: 'error', message: 'Unable to delete holding.' })
         return
       }
 
@@ -160,7 +160,7 @@ export default function HoldingsTab({
     startAction(async () => {
       const result = await refreshHoldingPricesAction({ accountId: activeAccount, csrfToken })
       if ('error' in result) {
-        setFeedback({ type: 'error', message: 'Failed to refresh prices' })
+        setFeedback({ type: 'error', message: 'Unable to refresh prices.' })
         return
       }
 

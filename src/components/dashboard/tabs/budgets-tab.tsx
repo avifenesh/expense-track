@@ -107,7 +107,7 @@ export function BudgetsTab({
         const serverErrors = result.error as FormErrors
         setFormErrors(serverErrors)
         validation.setFieldsFromServer(serverErrors)
-        toast.error('Could not save budget.')
+        toast.error('Unable to save budget.')
         return
       }
       toast.success('Budget updated.')
@@ -131,7 +131,7 @@ export function BudgetsTab({
       })
       setDeletingBudgetKey(null)
       if ('error' in result) {
-        toast.error('Could not remove budget entry.')
+        toast.error('Unable to remove budget.')
         return
       }
       toast.success('Budget removed.')

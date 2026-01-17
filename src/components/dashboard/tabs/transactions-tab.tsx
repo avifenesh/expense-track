@@ -364,7 +364,7 @@ export function TransactionsTab({
     startTransaction(async () => {
       const result = await deleteTransactionAction({ id, csrfToken })
       if ('error' in result) {
-        toast.error('Could not delete transaction. The item has been restored.')
+        toast.error('Unable to delete transaction. The item has been restored.')
         router.refresh() // Refresh to restore the item
         return
       }
