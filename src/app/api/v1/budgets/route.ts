@@ -10,10 +10,100 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+
+export async function GET(request: NextRequest) {
+  // 1. Authenticate with JWT
+  let user
+  try {
+    user = requireJwtAuth(request)
+  } catch (error) {
+    return authError(error instanceof Error ? error.message : 'Unauthorized')
+  }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
+
+  // 2. Parse query parameters
+  const { searchParams } = new URL(request.url)
+  const accountId = searchParams.get('accountId')
+  const monthKey = searchParams.get('month')
+
+  // Validate required accountId
+  if (!accountId) {
+    return validationError({ accountId: ['accountId is required'] })
+  }
+
+  // 3. Authorize account access
+  const account = await prisma.account.findUnique({ where: { id: accountId } })
+  if (!account) {
+    return forbiddenError('Account not found')
+  }
+
+  const authUser = await getUserAuthInfo(user.userId)
+  if (!authUser.accountNames.includes(account.name)) {
+    return forbiddenError('You do not have access to this account')
+  }
+
+  // 4. Build query filters
+  const where: {
+    accountId: string
+    month?: Date
+  } = { accountId }
+
+  if (monthKey) {
+    try {
+      where.month = getMonthStartFromKey(monthKey)
+    } catch {
+      return validationError({ month: ['month must be in YYYY-MM format'] })
+    }
+  }
+
+  // 5. Execute query
+  try {
+    const budgets = await prisma.budget.findMany({
+      where,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            color: true,
+          },
+        },
+      },
+      orderBy: [{ month: 'desc' }, { category: { name: 'asc' } }],
+    })
+
+    return successResponse({
+      budgets: budgets.map((b) => ({
+        id: b.id,
+        accountId: b.accountId,
+        categoryId: b.categoryId,
+        month: b.month.toISOString().split('T')[0],
+        planned: b.planned.toString(),
+        currency: b.currency,
+        notes: b.notes,
+        category: b.category,
+      })),
+    })
+  } catch {
+    return serverError('Unable to fetch budgets')
+  }
+}
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -30,6 +120,10 @@ export async function POST(request: NextRequest) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate input
   let body
@@ -91,6 +185,10 @@ export async function DELETE(request: NextRequest) {
     return rateLimitError(rateLimitCheck.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate query params
   const url = new URL(request.url)

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Currency } from '@prisma/client'
+import { Currency, SubscriptionStatus } from '@prisma/client'
 
 // Fixed test user ID that matches the JWT tokens generated in tests
 export const TEST_USER_ID = 'api-test-user'
@@ -31,6 +31,20 @@ export async function getApiTestUser() {
       preferredCurrency: Currency.USD,
     },
   })
+
+  // Ensure test user has an active trial subscription
+  const trialEndsAt = new Date()
+  trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+  await prisma.subscription.upsert({
+    where: { userId: TEST_USER_ID },
+    update: { status: SubscriptionStatus.TRIALING, trialEndsAt },
+    create: {
+      userId: TEST_USER_ID,
+      status: SubscriptionStatus.TRIALING,
+      trialEndsAt,
+    },
+  })
+
   testUser = user
   return user
 }
@@ -56,6 +70,20 @@ export async function getOtherTestUser() {
       preferredCurrency: Currency.USD,
     },
   })
+
+  // Ensure other test user has an active trial subscription
+  const trialEndsAt = new Date()
+  trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+  await prisma.subscription.upsert({
+    where: { userId: OTHER_USER_ID },
+    update: { status: SubscriptionStatus.TRIALING, trialEndsAt },
+    create: {
+      userId: OTHER_USER_ID,
+      status: SubscriptionStatus.TRIALING,
+      trialEndsAt,
+    },
+  })
+
   otherUser = user
   return user
 }

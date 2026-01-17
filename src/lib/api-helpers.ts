@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getSubscriptionState } from './subscription'
 
 /**
  * Standard error response with optional field-level errors
@@ -64,4 +65,26 @@ export function serverError(message = 'Internal server error') {
  */
 export function successResponse<T>(data: T, status = 200) {
   return NextResponse.json({ success: true, data }, { status })
+}
+
+/**
+ * 403 Subscription Required - User needs active subscription
+ */
+export function subscriptionRequiredError(message = 'Active subscription required') {
+  return NextResponse.json(
+    { error: message, code: 'SUBSCRIPTION_REQUIRED' },
+    { status: 403 },
+  )
+}
+
+/**
+ * Check if user has an active subscription
+ * Returns null if subscription is valid, or a response if not
+ */
+export async function checkSubscription(userId: string): Promise<NextResponse | null> {
+  const state = await getSubscriptionState(userId)
+  if (!state.canAccessApp) {
+    return subscriptionRequiredError()
+  }
+  return null
 }
