@@ -648,6 +648,8 @@ describe('auth-server.ts', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         })
 
         // Mock user with access to the account
@@ -716,6 +718,8 @@ describe('auth-server.ts', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         })
 
         // Mock user without access to acc-account2
@@ -749,6 +753,8 @@ describe('auth-server.ts', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         })
 
         // Mock user with access to the shared account
@@ -780,6 +786,8 @@ describe('auth-server.ts', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         })
 
         // Mock user2 with access to the shared account
@@ -812,6 +820,8 @@ describe('auth-server.ts', () => {
           description: null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
         })
 
         // Mock user without access to acc-wrong-case

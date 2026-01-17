@@ -154,7 +154,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   // 3. Execute delete
   try {
-    await deleteTransaction(id)
+    await deleteTransaction(id, user.userId)
     return successResponse({ id })
   } catch {
     return serverError('Unable to delete transaction')

@@ -148,6 +148,8 @@ function mockAccount(partial: Partial<Account>): Account {
     description: partial.description ?? null,
     createdAt: partial.createdAt ?? new Date(),
     updatedAt: partial.updatedAt ?? new Date(),
+    deletedAt: partial.deletedAt ?? null,
+    deletedBy: partial.deletedBy ?? null,
   }
 }
 

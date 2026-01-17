@@ -72,6 +72,8 @@ function createMockAccount(overrides: Partial<{
     description: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
+    deletedBy: null,
   }
 }
 
