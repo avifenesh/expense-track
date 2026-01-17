@@ -69,8 +69,10 @@ jobs:
           DATABASE_URL: ${{ env.CI_DATABASE_URL }}
 
       - name: Create shadow database
-        run: |
-          PGPASSWORD="${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}" psql -h localhost -U "${{ secrets.CI_DB_USER || 'ci_user' }}" -d ci_test -c "CREATE DATABASE shadow_${{ github.run_id }};"
+        run: psql -h localhost -U "$PGUSER" -d ci_test -c "CREATE DATABASE shadow_${{ github.run_id }};"
+        env:
+          PGUSER: ${{ secrets.CI_DB_USER || 'ci_user' }}
+          PGPASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}
 
       - name: Verify migrations
         run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
@@ -85,8 +87,10 @@ jobs:
 
       - name: Cleanup shadow database
         if: always()
-        run: |
-          PGPASSWORD="${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}" psql -h localhost -U "${{ secrets.CI_DB_USER || 'ci_user' }}" -d ci_test -c "DROP DATABASE IF EXISTS shadow_${{ github.run_id }};" || true
+        run: psql -h localhost -U "$PGUSER" -d ci_test -c "DROP DATABASE IF EXISTS shadow_${{ github.run_id }};" || true
+        env:
+          PGUSER: ${{ secrets.CI_DB_USER || 'ci_user' }}
+          PGPASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci_password_secure' }}
 
       - name: Security audit
         run: npm audit --audit-level=high || echo "::warning::Security vulnerabilities found - see npm audit output above"

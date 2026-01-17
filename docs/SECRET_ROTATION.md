@@ -78,14 +78,22 @@ Database credentials should be rotated when:
 -- Create new user
 CREATE USER app_user_new WITH ENCRYPTED PASSWORD 'new_secure_password';
 
--- Grant permissions (match existing user's permissions)
-GRANT ALL PRIVILEGES ON DATABASE expense_track TO app_user_new;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_user_new;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO app_user_new;
+-- Grant minimal required permissions (principle of least privilege)
+-- Avoid GRANT ALL PRIVILEGES - it includes dangerous permissions like DROP, TRUNCATE, ALTER
+GRANT CONNECT ON DATABASE expense_track TO app_user_new;
+GRANT USAGE ON SCHEMA public TO app_user_new;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user_new;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user_new;
+
+-- For future objects created by migrations (run as superuser/migration user)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user_new;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_user_new;
 
 -- After rotation is confirmed working
 DROP USER app_user_old;
 ```
+
+**Note:** Schema migrations should be run by a separate privileged user (e.g., `migration_user`) that has `CREATE`, `ALTER`, and `DROP` permissions. The application user should only have CRUD permissions.
 
 ### PADDLE_API_KEY
 
@@ -137,15 +145,19 @@ Used to verify Paddle webhook signatures.
 
 Authenticates cron job requests.
 
-**Preparation:**
+**Preparation (Zero-Downtime):**
 1. Generate new secret: `openssl rand -hex 32`
-2. Update cron job configuration with new secret
+2. Add the new secret to your environment as `CRON_SECRET_NEW`
+3. Update application code to accept tokens authorized by either `CRON_SECRET` or `CRON_SECRET_NEW`
 
 **Rotation Steps:**
-1. Update cron job caller (Vercel Cron, GitHub Actions, etc.) with new secret
-2. Update `CRON_SECRET` in production environment
-3. Deploy the application
-4. Verify next cron execution succeeds
+1. Deploy the application with support for both secrets
+2. Update the cron job caller (Vercel Cron, GitHub Actions, etc.) to use the new secret
+3. Verify that cron executions are succeeding with the new secret
+4. In a future deployment, set `CRON_SECRET` to the new value and remove `CRON_SECRET_NEW`
+5. Deploy to clean up the old secret support
+
+**Note:** This zero-downtime approach prevents any cron job failures during rotation. The application temporarily accepts both the old and new secrets, ensuring continuity.
 
 ### GOOGLE_GENERATIVE_AI_API_KEY
 

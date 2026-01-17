@@ -32,9 +32,6 @@ if (isSentryEnabled) {
     missingVars.push('SENTRY_DSN or NEXT_PUBLIC_SENTRY_DSN')
   }
 
-  // Source map upload requires these (optional but warn if missing)
-  const hasSourceMapConfig = process.env.SENTRY_ORG && process.env.SENTRY_PROJECT && process.env.SENTRY_AUTH_TOKEN
-
   if (missingVars.length > 0) {
     throw new Error(
       `Sentry is enabled (SENTRY_ENABLED=true) but required configuration is missing:\n` +
@@ -44,13 +41,9 @@ if (isSentryEnabled) {
     )
   }
 
-  if (!hasSourceMapConfig) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      '[Sentry] Warning: Source map upload is not configured. ' +
-        'Set SENTRY_ORG, SENTRY_PROJECT, and SENTRY_AUTH_TOKEN to enable source maps in error reports.'
-    )
-  }
+  // Note: Source map upload config (SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN) is optional.
+  // If not configured, Sentry will work but error reports won't have source maps.
+  // This is intentionally not logged per repo logging rules (no console.*).
 }
 
 // Only apply Sentry in production builds
