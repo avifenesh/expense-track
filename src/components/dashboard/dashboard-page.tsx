@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState, useTransition } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Currency } from '@prisma/client'
@@ -189,18 +189,102 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number }>({})
 
-  // Close settings menu on Escape key
+  // Refs for settings menu keyboard navigation and positioning
+  const settingsButtonRef = useRef<HTMLButtonElement>(null)
+  const settingsMenuRef = useRef<HTMLDivElement>(null)
+
+  // Calculate menu position to keep it in viewport
+  const calculateMenuPosition = useCallback(() => {
+    if (!settingsButtonRef.current || !settingsMenuRef.current) return
+
+    const buttonRect = settingsButtonRef.current.getBoundingClientRect()
+    const menuHeight = settingsMenuRef.current.offsetHeight
+    const viewportHeight = window.innerHeight
+    const padding = 8
+
+    // If menu would overflow bottom, position above button
+    if (buttonRect.bottom + menuHeight + padding > viewportHeight) {
+      setMenuPosition({ bottom: viewportHeight - buttonRect.top + padding })
+    } else {
+      setMenuPosition({ top: buttonRect.bottom + padding })
+    }
+  }, [])
+
+  // Settings menu keyboard navigation with arrow keys and focus trap
+  const handleMenuKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Get only enabled menu items (skip disabled ones)
+      const menuItems = settingsMenuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])')
+      if (!menuItems || menuItems.length === 0) return
+
+      const itemCount = menuItems.length
+
+      // Find current index among enabled items
+      const currentEnabledIndex = Array.from(menuItems).findIndex(
+        (item) => item === document.activeElement,
+      )
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault()
+          {
+            const nextIndex = currentEnabledIndex < 0 ? 0 : (currentEnabledIndex + 1) % itemCount
+            ;(menuItems[nextIndex] as HTMLElement)?.focus()
+          }
+          break
+        case 'ArrowUp':
+          event.preventDefault()
+          {
+            const prevIndex =
+              currentEnabledIndex < 0 ? itemCount - 1 : (currentEnabledIndex - 1 + itemCount) % itemCount
+            ;(menuItems[prevIndex] as HTMLElement)?.focus()
+          }
+          break
+        case 'Escape':
+          event.preventDefault()
+          setShowSettingsMenu(false)
+          settingsButtonRef.current?.focus()
+          break
+        case 'Tab':
+          // Close menu on Tab to prevent double focus movement
+          event.preventDefault()
+          setShowSettingsMenu(false)
+          settingsButtonRef.current?.focus()
+          break
+        case 'Home':
+          event.preventDefault()
+          ;(menuItems[0] as HTMLElement)?.focus()
+          break
+        case 'End':
+          event.preventDefault()
+          ;(menuItems[itemCount - 1] as HTMLElement)?.focus()
+          break
+      }
+    },
+    [],
+  )
+
+  // Focus management and position calculation when menu opens
   useEffect(() => {
     if (!showSettingsMenu) return
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowSettingsMenu(false)
-      }
+
+    // Use requestAnimationFrame to ensure the menu is rendered before measuring
+    const rafId = requestAnimationFrame(() => {
+      calculateMenuPosition()
+      // Focus first menu item when menu opens
+      const firstItem = settingsMenuRef.current?.querySelector('[role="menuitem"]') as HTMLElement | null
+      firstItem?.focus()
+    })
+
+    document.addEventListener('keydown', handleMenuKeyDown)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      document.removeEventListener('keydown', handleMenuKeyDown)
     }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [showSettingsMenu])
+  }, [showSettingsMenu, calculateMenuPosition, handleMenuKeyDown])
 
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
@@ -340,10 +424,14 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           {/* Right side actions - Settings dropdown */}
           <div className="relative">
             <Button
+              ref={settingsButtonRef}
               type="button"
               variant="ghost"
               className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
               onClick={() => setShowSettingsMenu((prev) => !prev)}
+              aria-haspopup="menu"
+              aria-expanded={showSettingsMenu}
+              aria-controls="settings-menu"
             >
               <Settings className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Account</span>
@@ -354,14 +442,21 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                 <div
                   className="fixed inset-0 z-40"
                   onClick={() => setShowSettingsMenu(false)}
-                  role="button"
-                  aria-label="Close settings menu"
-                  tabIndex={-1}
+                  aria-hidden="true"
                 />
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl">
+                <div
+                  ref={settingsMenuRef}
+                  id="settings-menu"
+                  role="menu"
+                  aria-label="Account settings"
+                  className="fixed right-4 z-50 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl"
+                  style={menuPosition.bottom ? { bottom: menuPosition.bottom } : { top: menuPosition.top }}
+                >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10 focus:bg-white/10 focus:outline-none"
                     onClick={() => {
                       setShowSettingsMenu(false)
                       setShowExportDialog(true)
@@ -372,7 +467,9 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                   </button>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10 focus:bg-white/10 focus:outline-none"
                     onClick={() => {
                       setShowSettingsMenu(false)
                       handleLogout()
@@ -382,10 +479,12 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                     <LogOut className="h-4 w-4" />
                     {isPendingLogout ? 'Signing out...' : 'Sign out'}
                   </button>
-                  <div className="my-1 h-px bg-white/10" />
+                  <div className="my-1 h-px bg-white/10" role="separator" />
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-400 hover:bg-rose-500/10"
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10 focus:outline-none"
                     onClick={() => {
                       setShowSettingsMenu(false)
                       setShowDeleteDialog(true)

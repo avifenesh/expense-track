@@ -154,8 +154,14 @@ export function ShareExpenseForm({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/20 bg-slate-900 p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop - disable interactions while submitting */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={!isPending ? onClose : undefined}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-white/20 bg-slate-900 p-6 shadow-xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="rounded-full bg-sky-500/20 p-2">
             <Users className="h-5 w-5 text-sky-300" />
@@ -300,10 +306,10 @@ export function ShareExpenseForm({
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" loading={isPending} disabled={participants.length === 0}>
+            <Button type="submit" className="flex-1" loading={isPending} disabled={participants.length === 0 || isPending}>
               Share expense
             </Button>
           </div>
