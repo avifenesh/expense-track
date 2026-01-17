@@ -53,7 +53,7 @@ function TransactionFormSkeleton() {
           <Skeleton className="h-10 w-full" />
         </div>
         <div className="space-y-2">
-          <Skeleton className="h-4 w-18" />
+          <Skeleton className="h-4 w-20" />
           <Skeleton className="h-10 w-full" />
         </div>
         <div className="space-y-2">
@@ -404,8 +404,18 @@ export function TransactionsTab({
     startTransaction(async () => {
       const result = await deleteTransactionAction({ id, csrfToken })
       if ('error' in result) {
-        toast.error('Unable to delete transaction. The item has been restored.')
-        rollback() // Restore the item using optimistic rollback
+        // Check if error is "not found" - transaction already deleted on server
+        const isNotFound = result.error?.general?.some((msg: string) =>
+          msg.toLowerCase().includes('not found')
+        )
+        if (isNotFound) {
+          // Transaction doesn't exist on server, keep it removed from UI
+          toast.info('Transaction was already removed.')
+        } else {
+          // Transient error - restore the item
+          toast.error('Unable to delete transaction. The item has been restored.')
+          rollback()
+        }
         return
       }
       if (editingTransaction?.id === id) {
@@ -456,7 +466,10 @@ export function TransactionsTab({
           </CardHeader>
           <CardContent>
             {categories.length === 0 ? (
-              <TransactionFormSkeleton />
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+                <p className="text-sm font-medium text-white">No categories available</p>
+                <p className="text-xs text-slate-400">Please create a category before adding a transaction.</p>
+              </div>
             ) : (
             <form id="transaction-form" onSubmit={handleTransactionSubmit} className="grid gap-4" tabIndex={-1}>
               {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}

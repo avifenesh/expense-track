@@ -180,7 +180,7 @@ export default function HoldingsTab({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
+    <div role="tabpanel" id="panel-holdings" aria-labelledby="tab-holdings" className="grid gap-6 lg:grid-cols-[400px_1fr]">
       <Card className="border-white/15 bg-white/10 h-fit">
         <CardHeader className="gap-1">
           <CardTitle

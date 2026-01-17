@@ -15,7 +15,6 @@ export function useOptimisticList<T extends { id: string }>(serverItems: T[]): O
 
   // Track mounted state to prevent updates after unmount
   useEffect(() => {
-    mountedRef.current = true
     return () => {
       mountedRef.current = false
     }
@@ -32,7 +31,8 @@ export function useOptimisticList<T extends { id: string }>(serverItems: T[]): O
   useEffect(() => {
     safeSetItems(serverItems)
     previousItemsRef.current = serverItems
-  }, [serverItems, safeSetItems])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- safeSetItems is stable (empty deps)
+  }, [serverItems])
 
   const optimisticAdd = useCallback((item: T) => {
     safeSetItems((current) => {
