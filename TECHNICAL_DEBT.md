@@ -5,8 +5,8 @@ Last updated: 2026-01-17
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed Total**: 76 issues (10 critical, 20 high, 37 medium, 9 low)
-**Remaining**: 13 issues (see sections below for full counts)
+**Fixed Total**: 81 issues (10 critical, 20 high, 41 medium, 10 low)
+**Remaining**: 8 issues (see sections below for full counts)
 
 ## Critical Issues (0 remaining)
 
@@ -35,7 +35,7 @@ All critical issues resolved.
 | Missing account switching security tests | tests/user-isolation.test.ts | Add updateSessionAccount attack tests | medium |
 | Missing subscription state edge case tests | tests/transaction-crud-actions.test.ts | Add trial/expired/cancelled tests | medium |
 
-## Medium Issues (15 remaining)
+## Medium Issues (11 remaining)
 
 ### Performance
 
@@ -44,7 +44,6 @@ All critical issues resolved.
 | Dashboard cache stores large JSON | src/lib/dashboard-cache.ts:88-92 | Add size validation, reject > 512KB | medium |
 | Missing pagination on shared expenses | src/lib/finance.ts:768-790, 840-862 | Add take: 50 with cursor pagination | small |
 | FX rates use today's date for historical conversions | src/lib/finance.ts:548-552 | Load per-month rates for historical accuracy | medium |
-| Repeated account lookups in API routes | Multiple API files | Create checkAccountAccess() utility | medium |
 
 ### Architecture
 
@@ -59,7 +58,6 @@ All critical issues resolved.
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Rate limit isolation not verified | tests/api/v1/auth-login-rate-limit.test.ts:70-90 | Assert rate limit counter per email | small |
-| API response format not validated | tests/api/v1/transactions.test.ts:92-98 | Verify against API_CONTRACTS schema | medium |
 | Flaky date-dependent tests | tests/transaction-crud-actions.test.ts:136 | Use vi.setSystemTime() | small |
 
 ### API Design
@@ -67,17 +65,15 @@ All critical issues resolved.
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Generic error messages mask real issues | src/app/api/v1/categories/route.ts:50-51 | Distinguish error types in catch | medium |
-| Inconsistent response data format | Multiple endpoints | Return full resource on mutations | medium |
 | Missing GET parameter validation | src/app/api/v1/budgets/route.ts:96-106 | Add explicit null checks | small |
 
 ### DevOps
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
-| No deployment health check | CI/CD pipeline | Add health endpoint polling after deploy | small |
 | Missing centralized env validation | Multiple lib files | Create src/lib/env-schema.ts | medium |
 
-## Low Issues (6 remaining)
+## Low Issues (5 remaining)
 
 ### Performance
 
@@ -109,15 +105,9 @@ All critical issues resolved.
 | SharedExpense index ordering | prisma/schema.prisma:246-247 | Add @@index([ownerId, createdAt]) | small |
 | No audit trail for deletions | prisma/schema.prisma | Consider soft delete on Transaction, Budget | large |
 
-### API Design
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Missing documentation comments | All route.ts files | Add JSDoc to all handlers | small |
-
 ---
 
-## Fixed This Session (70 issues)
+## Fixed This Session (75 issues)
 
 ### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
@@ -149,7 +139,7 @@ All critical issues resolved.
 - [x] N+1 query in getUserAuthInfo → consolidated auth checks (PR #178)
 - [x] Inconsistent auth patterns across actions → standardized on ensureAccountAccessWithSubscription (PR #178)
 
-### Medium (33 fixed)
+### Medium (37 fixed)
 - [x] Modal backdrop clickable during submission → pointer-events-none (PR #171)
 - [x] CSRF token fetch failure → loading/error state with toast (PR #171)
 - [x] PropDrilling in dashboard tabs → DashboardContext (PR #171)
@@ -179,8 +169,12 @@ All critical issues resolved.
 - [x] No error response TypeScript types → ApiResponse, ApiErrorResponse exports (PR #175)
 - [x] Inconsistent authorization patterns → standardized withApiAuth middleware (PR #175)
 - [x] Auth module session/user separation → validateSessionToken() + getDbUserBasic() (PR #178)
+- [x] Repeated account lookups in API routes → centralized ensureApiAccountOwnership helper (PR #180)
+- [x] API response format not validated → full response schema assertions in tests (PR #180)
+- [x] Inconsistent response data format → mutations return full resources per API_CONTRACTS (PR #180)
+- [x] No deployment health check → verify-deployment CI job with retry logic (PR #180)
 
-### Low (9 fixed)
+### Low (10 fixed)
 - [x] Holdings delete button loading state → deletingId tracking (PR #176)
 - [x] Transaction form empty state → message instead of skeleton (PR #176)
 - [x] useOptimisticList unmount cleanup → mounted ref (PR #176)
@@ -190,6 +184,7 @@ All critical issues resolved.
 - [x] Display name regex allows "- - -" → require alphanumeric start/end (PR #174)
 - [x] Test secrets committed in workflow → moved to GitHub Secrets (PR #170)
 - [x] Decimal precision not tested → added 0.1+0.2 precision tests (PR #177)
+- [x] Missing documentation comments → JSDoc added to all API route handlers (PR #180)
 
 ### Test Quality - Agent 2 (6 fixed in PRs #172, #177)
 - [x] Missing CSRF validation tests in budget actions → added CSRF token tests (PR #172)
