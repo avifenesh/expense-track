@@ -119,7 +119,7 @@ jobs:
           AUTH_USER2_PASSWORD_HASH: $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5P5myWU5j5aG2
 
   # Post-deployment health check job
-  # Runs only when DEPLOYMENT_URL secret is configured and on push to main
+  # Runs only when DEPLOYMENT_URL GitHub Variable is configured and on push to main
   verify-deployment:
     runs-on: ubuntu-latest
     needs: check

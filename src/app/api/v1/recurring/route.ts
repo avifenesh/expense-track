@@ -11,7 +11,6 @@ import {
   rateLimitError,
   checkSubscription,
 } from '@/lib/api-helpers'
-import { prisma } from '@/lib/prisma'
 import { ensureApiAccountOwnership, ensureApiRecurringOwnership } from '@/lib/api-auth-helpers'
 import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
