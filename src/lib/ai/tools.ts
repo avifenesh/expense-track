@@ -36,7 +36,7 @@ export function buildTools(ctx: ToolContext) {
     getMonthSummary: tool({
       description:
         'Get the current month summary including total income, expenses, net flow, and budget status',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const data = await getCachedDashboardData({
           monthKey: ctx.monthKey,
@@ -68,13 +68,13 @@ export function buildTools(ctx: ToolContext) {
 
     getBudgetStatus: tool({
       description: 'Get budget vs actual spending for all categories this month',
-      parameters: z.object({
+      inputSchema: z.object({
         categoryType: z
           .enum(['INCOME', 'EXPENSE', 'ALL'])
           .optional()
           .describe('Filter by category type'),
       }),
-      execute: async ({ categoryType }) => {
+      execute: async ({ categoryType }: { categoryType?: 'INCOME' | 'EXPENSE' | 'ALL' }) => {
         const data = await getCachedDashboardData({
           monthKey: ctx.monthKey,
           accountId: ctx.accountId,
@@ -117,12 +117,20 @@ export function buildTools(ctx: ToolContext) {
 
     getRecentTransactions: tool({
       description: 'Get recent transactions with optional filtering by type and category name',
-      parameters: z.object({
+      inputSchema: z.object({
         limit: z.number().min(1).max(50).optional().describe('Max transactions to return (default 10)'),
         type: z.enum(['INCOME', 'EXPENSE']).optional().describe('Filter by transaction type'),
         categoryName: z.string().optional().describe('Filter by category name (partial match)'),
       }),
-      execute: async ({ limit = 10, type, categoryName }) => {
+      execute: async ({
+        limit = 10,
+        type,
+        categoryName,
+      }: {
+        limit?: number
+        type?: 'INCOME' | 'EXPENSE'
+        categoryName?: string
+      }) => {
         const transactions = await getTransactionsForMonth({
           monthKey: ctx.monthKey,
           accountId: ctx.accountId,
@@ -164,7 +172,7 @@ export function buildTools(ctx: ToolContext) {
 
     getSpendingTrends: tool({
       description: 'Get 6-month spending history showing income, expenses, and net by month',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const data = await getCachedDashboardData({
           monthKey: ctx.monthKey,
@@ -201,7 +209,7 @@ export function buildTools(ctx: ToolContext) {
 
     getHoldings: tool({
       description: 'Get investment holdings with current prices and performance',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const holdings = await getHoldingsWithPrices({
           accountId: ctx.accountId,
@@ -244,7 +252,7 @@ export function buildTools(ctx: ToolContext) {
 
     getSharedExpenses: tool({
       description: 'Get shared expenses and settlement balances with other users',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const [sharedExpenses, balances] = await Promise.all([
           getSharedExpenses(ctx.userId),

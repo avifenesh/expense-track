@@ -26,7 +26,7 @@ vi.mock('@/lib/server-logger', () => ({
 // Mock AI SDK to avoid actual API calls
 vi.mock('ai', () => ({
   streamText: vi.fn().mockReturnValue({
-    toDataStreamResponse: vi.fn().mockReturnValue(
+    toTextStreamResponse: vi.fn().mockReturnValue(
       new Response('mock stream', { status: 200 }),
     ),
   }),
@@ -73,10 +73,21 @@ describe('POST /api/chat', () => {
     passwordHash: 'hash',
     accountNames: ['Test Account'],
     defaultAccountName: 'Test Account',
-    preferredCurrency: null,
+    preferredCurrency: 'USD' as const,
     hasCompletedOnboarding: true,
   }
-  const mockAccount = { id: 'account-123', name: 'Test Account', userId: 'user-123' }
+  const mockAccount = {
+    id: 'account-123',
+    name: 'Test Account',
+    userId: 'user-123',
+    preferredCurrency: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    type: 'SELF' as const,
+    color: null,
+    icon: null,
+    description: null,
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()

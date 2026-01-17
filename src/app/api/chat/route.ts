@@ -131,7 +131,7 @@ export async function POST(request: Request) {
   })
 
   try {
-    // 8. Stream with Gemini 3 Flash
+    // 8. Stream with Gemini 1.5 Flash
     const result = streamText({
       model: google('gemini-1.5-flash-latest'),
       system: systemPrompt,
@@ -140,11 +140,11 @@ export async function POST(request: Request) {
         content: m.content,
       })),
       tools,
-      maxTokens: 1024,
+      maxOutputTokens: 1024,
       temperature: 0.7,
     })
 
-    return result.toDataStreamResponse()
+    return result.toTextStreamResponse()
   } catch (error) {
     serverLogger.error('AI chat stream error', { error, userId, accountId })
     return new Response(
