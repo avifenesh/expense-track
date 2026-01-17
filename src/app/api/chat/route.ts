@@ -69,18 +69,19 @@ export async function POST(request: Request) {
     )
 
     // Stream response using Gemini Flash
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = streamText({
-      model: google('gemini-2.0-flash'),
+      model: google('gemini-2.0-flash') as any,
       system: `${SYSTEM_PROMPT}\n\n=== USER'S FINANCIAL DATA ===\n${financialContext}`,
       messages: messages.map((m: { role: string; content: string }) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
-      maxTokens: 1024,
+      maxOutputTokens: 1024,
       temperature: 0.7,
     })
 
-    return result.toDataStreamResponse()
+    return result.toTextStreamResponse()
   } catch (error) {
     console.error('Chat API error:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
