@@ -3,6 +3,7 @@ import { google } from '@ai-sdk/google'
 import { buildFinancialContext } from '@/lib/ai/context'
 import { requireSession } from '@/lib/auth-server'
 import { Currency } from '@prisma/client'
+import { serverLogger } from '@/lib/server-logger'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -69,8 +70,8 @@ export async function POST(request: Request) {
     )
 
     // Stream response using Gemini Flash
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = streamText({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       model: google('gemini-2.0-flash') as any,
       system: `${SYSTEM_PROMPT}\n\n=== USER'S FINANCIAL DATA ===\n${financialContext}`,
       messages: messages.map((m: { role: string; content: string }) => ({
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
 
     return result.toTextStreamResponse()
   } catch (error) {
-    console.error('Chat API error:', error)
+    serverLogger.error('CHAT_API_ERROR', { error: String(error) })
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
