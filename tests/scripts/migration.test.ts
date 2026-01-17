@@ -246,6 +246,9 @@ describe('Migration Logic', () => {
         currentPeriodStart: null,
         currentPeriodEnd: null,
         canceledAt: null,
+        paddleCustomerId: null,
+        paddleSubscriptionId: null,
+        paddlePriceId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -277,6 +280,9 @@ describe('Migration Logic', () => {
         currentPeriodStart: new Date(),
         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         canceledAt: null,
+        paddleCustomerId: null,
+        paddleSubscriptionId: null,
+        paddlePriceId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -363,6 +369,9 @@ describe('Migration Logic', () => {
         currentPeriodStart: null,
         currentPeriodEnd: null,
         canceledAt: null,
+        paddleCustomerId: null,
+        paddleSubscriptionId: null,
+        paddlePriceId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
