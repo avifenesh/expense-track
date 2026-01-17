@@ -46,15 +46,11 @@ export async function GET(request: NextRequest) {
     return validationError({ accountId: ['accountId is required'] })
   }
 
-  // 3. Authorize account access
+  // 3. Authorize account access (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: accountId } })
-  if (!account) {
-    return forbiddenError('Account not found')
-  }
-
   const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || !authUser.accountNames.includes(account.name)) {
+    return forbiddenError('Access denied')
   }
 
   // 4. Build query filters
@@ -143,15 +139,11 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
   const month = getMonthStartFromKey(data.monthKey)
 
-  // 3. Authorize account access
+  // 3. Authorize account access (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) {
-    return forbiddenError('Account not found')
-  }
-
   const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || !authUser.accountNames.includes(account.name)) {
+    return forbiddenError('Access denied')
   }
 
   // 4. Execute upsert
@@ -206,15 +198,11 @@ export async function DELETE(request: NextRequest) {
   const data = parsed.data
   const month = getMonthStartFromKey(data.monthKey)
 
-  // 3. Authorize account access
+  // 3. Authorize account access (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) {
-    return forbiddenError('Account not found')
-  }
-
   const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || !authUser.accountNames.includes(account.name)) {
+    return forbiddenError('Access denied')
   }
 
   // 4. Check budget exists

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { POST as CreateCategory } from '@/app/api/v1/categories/route'
+import { GET as GetCategories, POST as CreateCategory } from '@/app/api/v1/categories/route'
 import { PATCH as ArchiveCategory } from '@/app/api/v1/categories/[id]/archive/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
@@ -185,6 +185,117 @@ describe('Category API Routes', () => {
 
       const response = await CreateCategory(duplicateRequest)
       expect(response.status).toBe(500)
+    })
+  })
+
+  describe('GET /api/v1/categories', () => {
+    beforeEach(async () => {
+      // Create test categories for GET tests
+      await prisma.category.createMany({
+        data: [
+          { userId: testUserId, name: 'TEST_GetExpense1', type: 'EXPENSE', color: '#FF0000' },
+          { userId: testUserId, name: 'TEST_GetExpense2', type: 'EXPENSE', color: '#00FF00' },
+          { userId: testUserId, name: 'TEST_GetIncome1', type: 'INCOME', color: '#0000FF' },
+          { userId: testUserId, name: 'TEST_GetArchived', type: 'EXPENSE', isArchived: true },
+        ],
+      })
+    })
+
+    it('returns categories with valid JWT', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetCategories(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data.categories).toBeDefined()
+      expect(data.data.categories.length).toBeGreaterThanOrEqual(3) // Excludes archived by default
+    })
+
+    it('returns categories with full data', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetCategories(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      const category = data.data.categories.find((c: { name: string }) => c.name === 'TEST_GetExpense1')
+      expect(category).toBeDefined()
+      expect(category.id).toBeTruthy()
+      expect(category.name).toBe('TEST_GetExpense1')
+      expect(category.type).toBe('EXPENSE')
+      expect(category.color).toBe('#FF0000')
+      expect(category.isArchived).toBe(false)
+    })
+
+    it('filters by type correctly', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories?type=INCOME', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetCategories(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      const testIncomeCategories = data.data.categories.filter((c: { name: string }) => c.name.startsWith('TEST_Get'))
+      expect(testIncomeCategories.length).toBe(1)
+      expect(testIncomeCategories[0].type).toBe('INCOME')
+    })
+
+    it('excludes archived categories by default', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetCategories(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      const archivedCategory = data.data.categories.find((c: { name: string }) => c.name === 'TEST_GetArchived')
+      expect(archivedCategory).toBeUndefined()
+    })
+
+    it('includes archived categories when requested', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories?includeArchived=true', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetCategories(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      const archivedCategory = data.data.categories.find((c: { name: string }) => c.name === 'TEST_GetArchived')
+      expect(archivedCategory).toBeDefined()
+      expect(archivedCategory.isArchived).toBe(true)
+    })
+
+    it('returns 401 with missing token', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories', {
+        method: 'GET',
+      })
+
+      const response = await GetCategories(request)
+      expect(response.status).toBe(401)
+    })
+
+    it('returns 400 with invalid type', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories?type=INVALID', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetCategories(request)
+      expect(response.status).toBe(400)
     })
   })
 

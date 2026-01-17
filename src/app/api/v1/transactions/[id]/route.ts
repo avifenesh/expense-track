@@ -10,6 +10,7 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
@@ -31,6 +32,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate input
   let body
@@ -59,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (existing.accountId !== data.accountId) {
     const newAccountOwnership = await ensureApiAccountOwnership(data.accountId, user.userId)
     if (!newAccountOwnership.allowed) {
-      return forbiddenError('You do not have access to the new account')
+      return forbiddenError('Access denied')
     }
   }
 
@@ -89,6 +94,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return rateLimitError(rateLimitCheck.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Check existing transaction (with userId filter via account)
   const existing = await getTransactionById(id, user.userId)
