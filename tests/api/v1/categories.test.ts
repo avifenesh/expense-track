@@ -155,7 +155,7 @@ describe('Category API Routes', () => {
       expect(response.status).toBe(400)
     })
 
-    it('returns 500 for duplicate category name', async () => {
+    it('returns 400 for duplicate category name', async () => {
       // First create
       const firstRequest = new NextRequest('http://localhost/api/v1/categories', {
         method: 'POST',
@@ -184,7 +184,8 @@ describe('Category API Routes', () => {
       })
 
       const response = await CreateCategory(duplicateRequest)
-      expect(response.status).toBe(500)
+      // Duplicate category returns 400 validation error, not 500 server error
+      expect(response.status).toBe(400)
     })
   })
 
