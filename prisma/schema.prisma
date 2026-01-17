@@ -247,6 +247,7 @@ model SharedExpense {
 
   @@index([ownerId])
   @@index([createdAt])
+  @@index([ownerId, createdAt]) // Composite index for owner's expenses sorted by date
 }
 
 model ExpenseParticipant {
@@ -313,6 +314,7 @@ model RefreshToken {
   @@index([userId])
   @@index([jti])
   @@index([expiresAt])
+  @@index([expiresAt, userId]) // Composite index for expired token cleanup queries
 }
 
 enum AccountType {
