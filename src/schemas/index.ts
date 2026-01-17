@@ -66,20 +66,30 @@ export const deleteBudgetSchema = z.object({
 })
 
 // Recurring template schemas
-export const recurringTemplateSchema = z.object({
-  id: z.string().optional(),
-  accountId: z.string().min(1),
-  categoryId: z.string().min(1),
-  type: z.nativeEnum(TransactionType),
-  amount: z.coerce.number().min(0.01),
-  currency: z.nativeEnum(Currency).default(Currency.USD),
-  dayOfMonth: z.coerce.number().min(1).max(31),
-  description: z.string().max(240).optional().nullable(),
-  startMonthKey: z.string().min(7, 'Start month is required'),
-  endMonthKey: z.string().min(7).optional().nullable(),
-  isActive: z.boolean().optional().default(true),
-  csrfToken: z.string().min(1, 'Security token required'),
-})
+export const recurringTemplateSchema = z
+  .object({
+    id: z.string().optional(),
+    accountId: z.string().min(1),
+    categoryId: z.string().min(1),
+    type: z.nativeEnum(TransactionType),
+    amount: z.coerce.number().min(0.01),
+    currency: z.nativeEnum(Currency).default(Currency.USD),
+    dayOfMonth: z.coerce.number().min(1).max(31),
+    description: z.string().max(240).optional().nullable(),
+    startMonthKey: z.string().min(7, 'Start month is required'),
+    endMonthKey: z.string().min(7).optional().nullable(),
+    isActive: z.boolean().optional().default(true),
+    csrfToken: z.string().min(1, 'Security token required'),
+  })
+  .refine(
+    (data) => {
+      if (data.endMonthKey) {
+        return data.endMonthKey >= data.startMonthKey
+      }
+      return true
+    },
+    { message: 'End month must be on or after start month', path: ['endMonthKey'] },
+  )
 
 export type RecurringTemplateInput = z.infer<typeof recurringTemplateSchema>
 

@@ -3,10 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { successVoid } from '@/lib/action-result'
+import { successVoid, failure } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, requireCsrfToken, requireAuthUser, requireActiveSubscription } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
+import { createOrReactivateCategory } from '@/lib/services/category-service'
 
 export async function createCategoryAction(input: z.infer<typeof categorySchema>) {
   const parsed = parseInput(categorySchema, input)
@@ -23,23 +24,16 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
   if ('error' in auth) return auth
   const { authUser } = auth
 
-  try {
-    await prisma.category.create({
-      data: {
-        userId: authUser.id,
-        name: parsed.data.name,
-        type: parsed.data.type,
-        color: parsed.data.color ?? null,
-      },
-    })
-  } catch (error) {
-    return handlePrismaError(error, {
-      action: 'createCategory',
-      userId: authUser.id,
-      input: parsed.data,
-      uniqueMessage: 'A category with this name already exists',
-      fallbackMessage: 'Unable to create category',
-    })
+  // Use service function that handles archived category reactivation
+  const result = await createOrReactivateCategory({
+    userId: authUser.id,
+    name: parsed.data.name,
+    type: parsed.data.type,
+    color: parsed.data.color,
+  })
+
+  if (!result.success) {
+    return failure({ name: ['A category with this name already exists'] })
   }
 
   revalidatePath('/')

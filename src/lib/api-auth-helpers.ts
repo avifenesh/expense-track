@@ -12,6 +12,32 @@ export interface OwnershipResult {
   reason?: string
 }
 
+/** Result type for generic resource ownership check */
+export type ResourceOwnershipResult<T> =
+  | { allowed: true; resource: T }
+  | { allowed: false; reason: string }
+
+/**
+ * Generic resource ownership verification.
+ * Fetches a resource and verifies the user has access to it.
+ *
+ * @param fetchFn - Function that fetches the resource (should include userId filter)
+ * @param resourceType - Human-readable resource type for error messages
+ * @returns The resource if found and allowed, or an error result
+ */
+export async function ensureResourceOwnership<T>(
+  fetchFn: () => Promise<T | null>,
+  resourceType: string,
+): Promise<ResourceOwnershipResult<T>> {
+  const resource = await fetchFn()
+
+  if (!resource) {
+    return { allowed: false, reason: `${resourceType} not found or access denied` }
+  }
+
+  return { allowed: true, resource }
+}
+
 /**
  * Verify that a category belongs to the specified user
  */

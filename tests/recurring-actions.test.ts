@@ -186,7 +186,7 @@ describe('upsertRecurringTemplateAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.endMonthKey).toContain('End month must be after the start month')
+      expect(result.error.endMonthKey).toContain('End month must be on or after start month')
     }
   })
 
