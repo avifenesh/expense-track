@@ -4,7 +4,6 @@ import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { getMonthKey, getMonthStartFromKey } from '@/utils/date'
 import {
-  convertAmount,
   getLastUpdateTime,
   batchLoadExchangeRates,
   convertAmountWithCache,
@@ -225,24 +224,6 @@ function convertTransactionAmountSync(
   return convertAmountWithCache(originalAmount, fromCurrency, toCurrency, rateCache)
 }
 
-async function convertTransactionAmount(
-  amount: Prisma.Decimal | number,
-  fromCurrency: Currency,
-  toCurrency: Currency | undefined,
-  date: Date,
-  _context: string,
-): Promise<number> {
-  const originalAmount = decimalToNumber(amount)
-  if (!toCurrency || fromCurrency === toCurrency) {
-    return originalAmount
-  }
-  try {
-    return await convertAmount(originalAmount, fromCurrency, toCurrency, date)
-  } catch {
-    return originalAmount
-  }
-}
-
 function buildAccountScopedWhere(base: Prisma.TransactionWhereInput, accountId?: string): Prisma.TransactionWhereInput {
   if (!accountId) {
     return base
@@ -262,8 +243,12 @@ export async function getAccounts(userId?: string) {
   })
 }
 
-export async function getCategories(userId?: string) {
-  const where = userId ? { userId } : {}
+export async function getCategories(userId?: string, includeArchived = false) {
+  // Build where clause with clearer logic
+  const where: { userId?: string; isArchived?: boolean } = userId ? { userId } : {}
+  if (!includeArchived) {
+    where.isArchived = false
+  }
   return prisma.category.findMany({
     where,
     orderBy: { name: 'asc' },
@@ -479,6 +464,7 @@ export async function getDashboardData({
       orderBy: {
         month: 'asc',
       },
+      take: 1000, // Limit results to prevent unbounded queries
     }),
     getLastUpdateTime(),
     userId ? getSharedExpenses(userId) : Promise.resolve([]),
@@ -540,19 +526,22 @@ export async function getDashboardData({
   const actualNet = actualIncome - actualExpense
   const plannedNet = plannedIncome - plannedExpense
 
-  // Convert previous month's transactions to preferred currency
-  const previousTransactionsConverted = await Promise.all(
-    previousTransactionsRaw.map(async (transaction) => ({
-      type: transaction.type,
-      amount: await convertTransactionAmount(
-        transaction.amount,
-        transaction.currency,
-        preferredCurrency,
-        transaction.date,
-        'previous transaction',
-      ),
-    })),
-  )
+  // Batch load exchange rates once for all conversions (fixes N+1 query pattern)
+  // Note: Uses today's rates for all conversions. For perfect historical accuracy,
+  // would need per-month rate loading. Current approach is acceptable for most use cases
+  // as rate fluctuations are typically small over short periods. See TECHNICAL_DEBT.md.
+  const rateCache = await batchLoadExchangeRates()
+
+  // Convert previous month's transactions to preferred currency using cached rates
+  const previousTransactionsConverted = previousTransactionsRaw.map((transaction) => ({
+    type: transaction.type,
+    amount: convertTransactionAmountSync(
+      transaction.amount,
+      transaction.currency,
+      preferredCurrency,
+      rateCache,
+    ),
+  }))
 
   const previousIncome = sumByType(previousTransactionsConverted, TransactionType.INCOME)
   const previousExpense = sumByType(previousTransactionsConverted, TransactionType.EXPENSE)
@@ -582,20 +571,17 @@ export async function getDashboardData({
     }
   })
 
-  // Convert history transactions to preferred currency
-  const historyTransactionsConverted = await Promise.all(
-    historyTransactionsRaw.map(async (transaction) => ({
-      type: transaction.type,
-      amount: await convertTransactionAmount(
-        transaction.amount,
-        transaction.currency,
-        preferredCurrency,
-        transaction.date,
-        'history transaction',
-      ),
-      month: transaction.month as Date,
-    })),
-  )
+  // Convert history transactions to preferred currency using cached rates
+  const historyTransactionsConverted = historyTransactionsRaw.map((transaction) => ({
+    type: transaction.type,
+    amount: convertTransactionAmountSync(
+      transaction.amount,
+      transaction.currency,
+      preferredCurrency,
+      rateCache,
+    ),
+    month: transaction.month as Date,
+  }))
 
   const historySeed = new Map<string, { income: number; expense: number }>()
   for (let offset = 5; offset >= 0; offset -= 1) {

@@ -38,7 +38,7 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-vi.mock('@/app/actions/shared', () => ({
+vi.mock('@/utils/decimal', () => ({
   toDecimalString: vi.fn((value: number) => {
     const DECIMAL_PRECISION = 2
     const AMOUNT_SCALE = Math.pow(10, DECIMAL_PRECISION)
@@ -48,7 +48,7 @@ vi.mock('@/app/actions/shared', () => ({
 
 // Import after mocks
 import { prisma } from '@/lib/prisma'
-import { toDecimalString } from '@/app/actions/shared'
+import { toDecimalString } from '@/utils/decimal'
 import {
   upsertBudget,
   deleteBudget,

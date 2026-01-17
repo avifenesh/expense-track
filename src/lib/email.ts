@@ -29,6 +29,11 @@ function escapeHtml(str: string): string {
 // Check if email is configured
 const isEmailConfigured = SMTP_HOST && SMTP_USER && SMTP_PASS
 
+// In production, email MUST be configured for user flows (verification, password reset)
+if (process.env.NODE_ENV === 'production' && !isEmailConfigured) {
+  throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS are required in production for email functionality')
+}
+
 // Create transporter only if configured
 const transporter = isEmailConfigured
   ? nodemailer.createTransport({

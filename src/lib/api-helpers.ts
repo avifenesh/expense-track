@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getRateLimitHeaders, type RateLimitType } from '@/lib/rate-limit'
 import { getSubscriptionState } from './subscription'
 
 /**
@@ -65,6 +66,20 @@ export function serverError(message = 'Internal server error') {
  */
 export function successResponse<T>(data: T, status = 200) {
   return NextResponse.json({ success: true, data }, { status })
+}
+
+/**
+ * Success response with rate limit headers
+ * Use this for API endpoints that have rate limiting to provide visibility to clients
+ */
+export function successResponseWithRateLimit<T>(
+  data: T,
+  userId: string,
+  rateLimitType: RateLimitType = 'default',
+  status = 200,
+) {
+  const headers = getRateLimitHeaders(userId, rateLimitType)
+  return NextResponse.json({ success: true, data }, { status, headers })
 }
 
 /**

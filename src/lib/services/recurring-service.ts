@@ -1,6 +1,6 @@
 import { Prisma, TransactionType, Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { toDecimalString } from '@/app/actions/shared'
+import { toDecimalString } from '@/utils/decimal'
 import { getMonthStartFromKey } from '@/utils/date'
 import { getDaysInMonth } from 'date-fns'
 

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Execute create (categories are scoped to user)
+  // 4. Execute create (categories are scoped to user)
   try {
     const category = await createCategory({
       userId: user.userId,

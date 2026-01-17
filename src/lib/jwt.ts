@@ -21,9 +21,11 @@ function getJwtSecret(): string {
   return secret
 }
 
+// Validate JWT secret at module load time (fail fast)
+const JWT_SECRET = getJwtSecret()
+
 export function generateAccessToken(userId: string, email: string): string {
-  const secret = getJwtSecret()
-  return jwt.sign({ userId, email, type: 'access' }, secret, {
+  return jwt.sign({ userId, email, type: 'access' }, JWT_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRY,
   })
 }
@@ -36,18 +38,16 @@ export function generateRefreshToken(
   jti: string
   expiresAt: Date
 } {
-  const secret = getJwtSecret()
   const jti = randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS)
-  const token = jwt.sign({ userId, email, type: 'refresh', jti }, secret, {
+  const token = jwt.sign({ userId, email, type: 'refresh', jti }, JWT_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRY_MS / 1000,
   })
   return { token, jti, expiresAt }
 }
 
 export function verifyAccessToken(token: string): TokenPayload {
-  const secret = getJwtSecret()
-  const payload = jwt.verify(token, secret) as TokenPayload
+  const payload = jwt.verify(token, JWT_SECRET) as TokenPayload
   if (payload.type !== 'access') {
     throw new Error('Invalid token type')
   }
@@ -55,8 +55,7 @@ export function verifyAccessToken(token: string): TokenPayload {
 }
 
 export function verifyRefreshToken(token: string): TokenPayload {
-  const secret = getJwtSecret()
-  const payload = jwt.verify(token, secret) as TokenPayload
+  const payload = jwt.verify(token, JWT_SECRET) as TokenPayload
   if (payload.type !== 'refresh' || !payload.jti) {
     throw new Error('Invalid token type')
   }

@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     return forbiddenError('Access denied')
   }
 
-  // 3b. If updating, verify existing template belongs to the requested account
+  // 4. If updating, verify existing template belongs to the requested account
   if (data.id) {
     const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
     if (!existing || existing.accountId !== data.accountId) {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 4. Execute upsert
+  // 5. Execute upsert
   try {
     const template = await upsertRecurringTemplate({
       id: data.id,

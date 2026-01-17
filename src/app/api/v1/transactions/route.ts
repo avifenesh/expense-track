@@ -202,7 +202,8 @@ export async function POST(request: NextRequest) {
   try {
     const transaction = await createTransaction(data)
     return successResponse({ id: transaction.id }, 201)
-  } catch {
+  } catch (error) {
+    serverLogger.error('Failed to create transaction', { action: 'POST /api/v1/transactions' }, error)
     return serverError('Unable to create transaction')
   }
 }

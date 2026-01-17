@@ -16,19 +16,23 @@ import { getCsrfToken, validateCsrfToken, rotateCsrfToken, CSRF_COOKIE } from '@
 
 describe('CSRF Token Library', () => {
   const originalNodeEnv = process.env.NODE_ENV
+  const originalVitest = process.env.VITEST
 
   beforeEach(() => {
     // Force production mode for CSRF tests (integration tests use 'test' mode to skip validation)
     // @ts-expect-error - NODE_ENV is read-only in types, but writable at runtime
     process.env.NODE_ENV = 'production'
+    // Temporarily disable VITEST flag to test actual CSRF validation logic
+    delete process.env.VITEST
     vi.clearAllMocks()
     mockCookies.get.mockReturnValue(undefined)
   })
 
   afterEach(() => {
-    // Restore original NODE_ENV
+    // Restore original NODE_ENV and VITEST
     // @ts-expect-error - NODE_ENV is read-only in types, but writable at runtime
     process.env.NODE_ENV = originalNodeEnv
+    process.env.VITEST = originalVitest
   })
 
   describe('getCsrfToken', () => {

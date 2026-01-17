@@ -86,11 +86,12 @@ model Budget {
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  account    Account  @relation(fields: [accountId], references: [id])
-  category   Category @relation(fields: [categoryId], references: [id])
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, categoryId, month])
   @@index([month])
+  @@index([accountId, month])
 }
 
 model Category {
@@ -157,8 +158,8 @@ model Holding {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  account     Account  @relation(fields: [accountId], references: [id])
-  category    Category @relation(fields: [categoryId], references: [id])
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, categoryId, symbol])
   @@index([accountId])
@@ -179,8 +180,8 @@ model RecurringTemplate {
   endMonth     DateTime?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
-  account      Account         @relation(fields: [accountId], references: [id])
-  category     Category        @relation(fields: [categoryId], references: [id])
+  account      Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category     Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@index([isActive])
@@ -219,13 +220,14 @@ model Transaction {
   currency            Currency           @default(USD)
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
-  account             Account            @relation(fields: [accountId], references: [id])
-  category            Category           @relation(fields: [categoryId], references: [id])
-  recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id])
+  account             Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category            Category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id], onDelete: SetNull)
   sharedExpense       SharedExpense?
 
   @@index([accountId, month])
   @@index([month])
+  @@index([date])
 }
 
 model SharedExpense {
@@ -265,6 +267,7 @@ model ExpenseParticipant {
   @@unique([sharedExpenseId, userId])
   @@index([userId])
   @@index([status])
+  @@index([userId, status])
 }
 
 enum SplitType {
@@ -290,9 +293,11 @@ model TransactionRequest {
   status      RequestStatus @default(PENDING)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  category    Category      @relation(fields: [categoryId], references: [id])
-  from        Account       @relation("SentRequests", fields: [fromId], references: [id])
-  to          Account       @relation("ReceivedRequests", fields: [toId], references: [id])
+  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  from        Account       @relation("SentRequests", fields: [fromId], references: [id], onDelete: Cascade)
+  to          Account       @relation("ReceivedRequests", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([toId])
 }
 
 model RefreshToken {

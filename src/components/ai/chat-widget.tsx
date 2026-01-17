@@ -41,6 +41,7 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null)
 
   // Throttled streaming: track pending content and use RAF to batch updates
   const streamingContentRef = useRef<{ sessionId: string; messageId: string; content: string } | null>(null)
@@ -308,6 +309,8 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
         ])
         return
       }
+      // Store reader ref for cleanup on unmount
+      readerRef.current = reader
       const decoder = new TextDecoder()
       let assistantContent = ''
 
@@ -418,15 +421,38 @@ export function ChatWidget({ accountId, monthKey, preferredCurrency }: ChatWidge
       }
     } finally {
       abortRef.current = null
+      readerRef.current = null
       setIsLoading(false)
     }
   }
 
   const handleStop = useCallback(() => {
     try {
+      // Cancel the reader first to stop processing stream data
+      readerRef.current?.cancel()
+    } catch {
+      // Ignore cancel errors
+    }
+    try {
       abortRef.current?.abort()
     } catch {
       // Ignore abort errors
+    }
+  }, [])
+
+  // Cleanup on unmount: cancel any in-flight streaming
+  useEffect(() => {
+    return () => {
+      try {
+        readerRef.current?.cancel()
+      } catch {
+        // Ignore cancel errors during unmount
+      }
+      try {
+        abortRef.current?.abort()
+      } catch {
+        // Ignore abort errors during unmount
+      }
     }
   }, [])
 

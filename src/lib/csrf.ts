@@ -67,8 +67,9 @@ export async function getCsrfToken(): Promise<string> {
 }
 
 export async function validateCsrfToken(submittedToken: string | undefined | null): Promise<boolean> {
-  // Skip CSRF validation in test environment
-  if (process.env.NODE_ENV === 'test') {
+  // Skip CSRF validation in Vitest test environment only
+  // Use VITEST env var which is set by Vitest, not NODE_ENV which could be manipulated
+  if (process.env.VITEST === 'true') {
     return true
   }
 

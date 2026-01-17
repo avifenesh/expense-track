@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
     })
 
     if (process.env.NODE_ENV === 'development') {
+      // Log for development debugging, but never log the actual token
       serverLogger.info('Email verification required', {
         email: normalizedEmail,
-        token: verificationToken,
         expires: verificationExpires.toISOString(),
       })
     }

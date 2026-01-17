@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     return forbiddenError('Access denied')
   }
 
-  // 4. Validate category has isHolding = true
+  // 5. Validate category has isHolding = true
   try {
     await validateHoldingCategory(data.categoryId)
   } catch (error) {
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     return validationError({ categoryId: [message] })
   }
 
-  // 5. Validate stock symbol with API
+  // 6. Validate stock symbol with API
   try {
     await validateStockSymbol(data.symbol)
   } catch (error) {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     return validationError({ symbol: [message] })
   }
 
-  // 6. Execute create
+  // 7. Execute create
   try {
     const holding = await createHolding(data)
     return successResponse({ id: holding.id }, 201)
