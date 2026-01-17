@@ -104,10 +104,11 @@ describe('Transaction API Routes', () => {
           currency: expect.stringMatching(/^(USD|EUR|ILS)$/),
           date: expect.any(String),
           month: expect.any(String),
-          description: expect.toBeOneOf([expect.any(String), null]),
           isRecurring: expect.any(Boolean),
         }),
       })
+      // Validate description is string or null (can't use expect.toBeOneOf in objectContaining)
+      expect(data.data.description === null || typeof data.data.description === 'string').toBe(true)
       // Verify specific values
       expect(data.data.accountId).toBe(accountId)
       expect(data.data.categoryId).toBe(categoryId)
@@ -261,7 +262,6 @@ describe('Transaction API Routes', () => {
           currency: expect.stringMatching(/^(USD|EUR|ILS)$/),
           date: expect.any(String),
           month: expect.any(String),
-          description: expect.toBeOneOf([expect.any(String), null]),
           isRecurring: expect.any(Boolean),
           category: expect.objectContaining({
             id: expect.any(String),
@@ -270,6 +270,8 @@ describe('Transaction API Routes', () => {
           }),
         }),
       )
+      // Validate description is string or null
+      expect(transaction.description === null || typeof transaction.description === 'string').toBe(true)
     })
 
     it('returns transactions with category data', async () => {
@@ -420,10 +422,11 @@ describe('Transaction API Routes', () => {
           currency: expect.stringMatching(/^(USD|EUR|ILS)$/),
           date: expect.any(String),
           month: expect.any(String),
-          description: expect.toBeOneOf([expect.any(String), null]),
           isRecurring: expect.any(Boolean),
         }),
       })
+      // Validate description is string or null
+      expect(data.data.description === null || typeof data.data.description === 'string').toBe(true)
       // Verify the update values
       expect(data.data.amount).toBe('75')
       expect(data.data.description).toBe('TEST_Updated')
