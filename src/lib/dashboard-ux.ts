@@ -94,12 +94,24 @@ export type RecurringFilter = {
   accountId?: string
 }
 
-export const filterRecurringTemplates = createFilter<RecurringTemplateSummary, RecurringFilter>({
+// Recurring filter wraps createFilter with default behavior for includeInactive
+const baseRecurringFilter = createFilter<RecurringTemplateSummary, RecurringFilter>({
   type: (item, value) => item.type === value,
   accountId: (item, value) => item.accountId === value,
-  // includeInactive: when true, include all; when false, only include active items
-  includeInactive: (item, value) => (value ? true : item.isActive),
 })
+
+export function filterRecurringTemplates(templates: RecurringTemplateSummary[], filter: RecurringFilter) {
+  // Apply base predicates first
+  let result = baseRecurringFilter(templates, filter)
+
+  // Apply includeInactive filter (default: only show active)
+  // When undefined/false, exclude inactive items; when true, include all
+  if (!filter.includeInactive) {
+    result = result.filter((t) => t.isActive)
+  }
+
+  return result
+}
 
 export type CategoryFilter = {
   search?: string
@@ -109,16 +121,20 @@ export type CategoryFilter = {
 
 type Category = DashboardData['categories'][number]
 
-// Category filter uses createFilter for simple predicates, with custom search logic
-const baseCategoryFilter = createFilter<Category, Pick<CategoryFilter, 'type' | 'includeArchived'>>({
+// Category filter uses createFilter for type predicate, with custom search and archive logic
+const baseCategoryFilter = createFilter<Category, Pick<CategoryFilter, 'type'>>({
   type: (item, value) => item.type === value,
-  // includeArchived: when true, include all; when false/undefined, exclude archived
-  includeArchived: (item, value) => (value ? true : !item.isArchived),
 })
 
 export function filterCategories(categories: Category[], filter: CategoryFilter) {
   // Apply base predicates first
   let result = baseCategoryFilter(categories, filter)
+
+  // Apply includeArchived filter (default: exclude archived)
+  // When undefined/false, exclude archived items; when true, include all
+  if (!filter.includeArchived) {
+    result = result.filter((c) => !c.isArchived)
+  }
 
   // Then apply search filter
   const searchTerm = filter.search?.trim().toLowerCase() ?? ''

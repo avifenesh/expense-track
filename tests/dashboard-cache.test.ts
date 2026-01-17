@@ -327,7 +327,7 @@ describe('dashboard-cache.ts', () => {
         type: 'EXPENSE',
         amount: 100,
         currency: Currency.USD,
-        date: new Date().toISOString(),
+        date: '2024-01-15T12:00:00.000Z', // Fixed date for deterministic tests
         description: 'A'.repeat(200), // Long descriptions to inflate size
         category: { id: 'cat1', name: 'Category' },
         account: { id: 'acc1', name: 'Account' },

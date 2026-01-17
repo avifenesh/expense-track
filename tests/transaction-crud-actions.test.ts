@@ -9,6 +9,10 @@ import { Currency, TransactionType } from '@prisma/client'
 // Using mid-month to avoid edge cases with month transitions
 const FIXED_TEST_DATE = new Date('2026-01-15T12:00:00.000Z')
 
+// Note: Each describe block has its own beforeEach/afterEach for time mocking.
+// This is intentional for test isolation - each suite can be run independently
+// and the pattern is explicit about time mocking being required for each suite.
+
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
