@@ -1,33 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { serverLogger } from '@/lib/server-logger'
-
-/**
- * In-memory rate limiter for cron endpoints
- * Limits to 1 request per minute per IP
- */
-const cronRateLimit = new Map<string, number>()
-const CRON_RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1 minute
-
-function checkCronRateLimit(identifier: string): boolean {
-  const now = Date.now()
-  const lastRequest = cronRateLimit.get(identifier)
-
-  // Cleanup old entries (older than 5 minutes)
-  if (cronRateLimit.size > 100) {
-    const cutoff = now - 5 * 60 * 1000
-    for (const [key, timestamp] of cronRateLimit) {
-      if (timestamp < cutoff) cronRateLimit.delete(key)
-    }
-  }
-
-  if (lastRequest && now - lastRequest < CRON_RATE_LIMIT_WINDOW_MS) {
-    return false // Rate limited
-  }
-
-  cronRateLimit.set(identifier, now)
-  return true // Allowed
-}
+import { checkCronRateLimit } from '@/lib/rate-limit'
 
 /**
  * Cron endpoint for database cleanup tasks.
@@ -35,7 +9,7 @@ function checkCronRateLimit(identifier: string): boolean {
  *
  * Tasks performed:
  * - Clean up expired password reset tokens (older than 24 hours)
- * - Clean up expired email verification tokens (older than 24 hours)
+ * - Clean up expired email verification tokens (older than 48 hours)
  * - Clean up expired refresh tokens
  *
  * Security:

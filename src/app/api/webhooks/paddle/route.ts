@@ -21,7 +21,7 @@ import {
 
 /**
  * In-memory cache for processed webhook event IDs to prevent replay attacks.
- * Events are stored with their processing timestamp.
+ * Implemented as a bounded FIFO cache with TTL expiration.
  *
  * Note: This is an in-memory implementation that resets on cold start.
  * For production with high reliability requirements, consider:
@@ -29,10 +29,11 @@ import {
  * - Database table for processed events
  *
  * TTL: 24 hours (Paddle may retry within this window)
+ * Max size: 10,000 events (hard cap with FIFO eviction)
  */
 const processedEventIds = new Map<string, number>()
 const EVENT_ID_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
-const MAX_CACHED_EVENTS = 10000 // Prevent unbounded memory growth
+const MAX_CACHED_EVENTS = 10000 // Hard cap with FIFO eviction
 
 /**
  * Check if an event has already been processed (replay protection)
@@ -41,24 +42,13 @@ const MAX_CACHED_EVENTS = 10000 // Prevent unbounded memory growth
 function isDuplicateEvent(eventId: string): boolean {
   const now = Date.now()
 
-  // Cleanup expired entries if cache is getting large
-  if (processedEventIds.size > MAX_CACHED_EVENTS / 2) {
-    const cutoff = now - EVENT_ID_TTL_MS
-    for (const [id, timestamp] of processedEventIds) {
-      if (timestamp < cutoff) {
-        processedEventIds.delete(id)
-      }
-    }
-  }
-
-  // Check if event was already processed
+  // Check if event was already processed and still within TTL
   const processedAt = processedEventIds.get(eventId)
   if (processedAt !== undefined) {
-    // Still within TTL window - this is a duplicate
     if (now - processedAt < EVENT_ID_TTL_MS) {
-      return true
+      return true // Duplicate within TTL
     }
-    // Expired - allow reprocessing (shouldn't happen normally)
+    // Expired - remove and allow reprocessing
     processedEventIds.delete(eventId)
   }
 
@@ -66,10 +56,24 @@ function isDuplicateEvent(eventId: string): boolean {
 }
 
 /**
- * Mark an event as processed
+ * Mark an event as processed with bounded cache size.
+ * Uses FIFO eviction when cache is full.
  */
 function markEventProcessed(eventId: string): void {
-  processedEventIds.set(eventId, Date.now())
+  const now = Date.now()
+
+  // Enforce hard cap: evict oldest entries if at max capacity
+  if (processedEventIds.size >= MAX_CACHED_EVENTS) {
+    // Evict oldest 10% to avoid frequent evictions
+    const evictCount = Math.ceil(MAX_CACHED_EVENTS * 0.1)
+    const iterator = processedEventIds.keys()
+    for (let i = 0; i < evictCount; i++) {
+      const key = iterator.next().value
+      if (key) processedEventIds.delete(key)
+    }
+  }
+
+  processedEventIds.set(eventId, now)
 }
 
 /**
