@@ -15,9 +15,15 @@ import type { AuthScreenProps } from '../../navigation/types';
 import { useAuth } from '../../contexts';
 import { validateEmail } from '../../lib/validation';
 import { ApiError } from '../../services/api';
+import { getBiometricTypeLabel } from '../../services/biometric';
 
 export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
-  const { login } = useAuth();
+  const {
+    login,
+    loginWithBiometric,
+    biometricCapability,
+    isBiometricEnabled,
+  } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +78,38 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
       setIsLoading(false);
     }
   };
+
+  const handleBiometricLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await loginWithBiometric();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.code === 'BIOMETRIC_FAILED') {
+          setError(err.message);
+        } else if (err.code === 'NO_CREDENTIALS') {
+          setError('No saved credentials. Please sign in with your password.');
+        } else if (err.code === 'SESSION_EXPIRED') {
+          setError('Session expired. Please sign in with your password.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Biometric authentication failed. Please use your password.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const biometricLabel = biometricCapability
+    ? getBiometricTypeLabel(biometricCapability.biometricType)
+    : 'Biometric';
+
+  const showBiometricButton =
+    biometricCapability?.isAvailable && isBiometricEnabled;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,6 +170,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
                 style={[styles.button, isLoading && styles.buttonDisabled]}
                 onPress={handleLogin}
                 disabled={isLoading}
+                testID="login-button"
               >
                 {isLoading ? (
                   <ActivityIndicator color="#0f172a" />
@@ -139,6 +178,22 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
                   <Text style={styles.buttonText}>Sign In</Text>
                 )}
               </Pressable>
+
+              {showBiometricButton && (
+                <Pressable
+                  style={[styles.biometricButton, isLoading && styles.buttonDisabled]}
+                  onPress={handleBiometricLogin}
+                  disabled={isLoading}
+                  testID="biometric-login-button"
+                >
+                  <Text style={styles.biometricIcon}>
+                    {biometricCapability?.biometricType === 'faceId' ? '👤' : '👆'}
+                  </Text>
+                  <Text style={styles.biometricButtonText}>
+                    Use {biometricLabel}
+                  </Text>
+                </Pressable>
+              )}
             </View>
 
             <Pressable
@@ -246,6 +301,24 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#0f172a',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  biometricButton: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  biometricIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  biometricButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
