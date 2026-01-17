@@ -2,6 +2,7 @@ import 'server-only'
 
 import jwt from 'jsonwebtoken'
 import { randomBytes } from 'crypto'
+import { env } from './env-schema'
 
 const ACCESS_TOKEN_EXPIRY = '15m'
 const REFRESH_TOKEN_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000
@@ -13,16 +14,8 @@ export interface TokenPayload {
   jti?: string
 }
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error('JWT_SECRET environment variable is required')
-  }
-  return secret
-}
-
-// Validate JWT secret at module load time (fail fast)
-const JWT_SECRET = getJwtSecret()
+// Access JWT secret from centralized env validation
+const JWT_SECRET = env.jwtSecret
 
 export function generateAccessToken(userId: string, email: string): string {
   return jwt.sign({ userId, email, type: 'access' }, JWT_SECRET, {
