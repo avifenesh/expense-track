@@ -55,7 +55,9 @@ describe('getSharedExpenses', () => {
 
     const result = await getSharedExpenses('user-1')
 
-    expect(result).toEqual([])
+    expect(result.items).toEqual([])
+    expect(result.hasMore).toBe(false)
+    expect(result.nextCursor).toBeNull()
     expect(prisma.sharedExpense.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { ownerId: 'user-1' },
@@ -99,8 +101,8 @@ describe('getSharedExpenses', () => {
 
     const result = await getSharedExpenses('user-1')
 
-    expect(result).toHaveLength(1)
-    expect(result[0]).toMatchObject({
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]).toMatchObject({
       id: 'shared-1',
       transactionId: 'tx-1',
       splitType: SplitType.EQUAL,
@@ -111,8 +113,8 @@ describe('getSharedExpenses', () => {
       totalPaid: 0,
       allSettled: false,
     })
-    expect(result[0].participants).toHaveLength(1)
-    expect(result[0].participants[0]).toMatchObject({
+    expect(result.items[0].participants).toHaveLength(1)
+    expect(result.items[0].participants[0]).toMatchObject({
       id: 'part-1',
       shareAmount: 50,
       status: PaymentStatus.PENDING,
@@ -168,9 +170,9 @@ describe('getSharedExpenses', () => {
 
     const result = await getSharedExpenses('user-1')
 
-    expect(result[0].totalOwed).toBe(50) // Only pending
-    expect(result[0].totalPaid).toBe(50) // Only paid
-    expect(result[0].allSettled).toBe(false)
+    expect(result.items[0].totalOwed).toBe(50) // Only pending
+    expect(result.items[0].totalPaid).toBe(50) // Only paid
+    expect(result.items[0].allSettled).toBe(false)
   })
 
   it('should mark allSettled true when all participants paid or declined', async () => {
@@ -209,7 +211,7 @@ describe('getSharedExpenses', () => {
 
     const result = await getSharedExpenses('user-1')
 
-    expect(result[0].allSettled).toBe(true)
+    expect(result.items[0].allSettled).toBe(true)
   })
 })
 
@@ -223,7 +225,9 @@ describe('getExpensesSharedWithMe', () => {
 
     const result = await getExpensesSharedWithMe('user-1')
 
-    expect(result).toEqual([])
+    expect(result.items).toEqual([])
+    expect(result.hasMore).toBe(false)
+    expect(result.nextCursor).toBeNull()
     expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: 'user-1' },
@@ -263,21 +267,21 @@ describe('getExpensesSharedWithMe', () => {
 
     const result = await getExpensesSharedWithMe('user-1')
 
-    expect(result).toHaveLength(1)
-    expect(result[0]).toMatchObject({
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]).toMatchObject({
       id: 'part-1',
       shareAmount: 50,
       sharePercentage: 50,
       status: PaymentStatus.PENDING,
       paidAt: null,
     })
-    expect(result[0].sharedExpense).toMatchObject({
+    expect(result.items[0].sharedExpense).toMatchObject({
       id: 'shared-1',
       splitType: SplitType.PERCENTAGE,
       totalAmount: 100,
       currency: Currency.USD,
     })
-    expect(result[0].sharedExpense.owner).toMatchObject({
+    expect(result.items[0].sharedExpense.owner).toMatchObject({
       email: 'owner@example.com',
       displayName: 'Owner User',
     })
