@@ -5,8 +5,8 @@ Last updated: 2026-01-18
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed Total**: 69 issues (10 critical, 19 high, 33 medium, 7 low)
-**Remaining**: 20 issues (5 high, 7 medium, 8 low)
+**Fixed Total**: 75 issues (10 critical, 19 high, 36 medium, 10 low)
+**Remaining**: 14 issues (5 high, 4 medium, 5 low)
 
 ## Critical Issues (0 remaining)
 
@@ -35,15 +35,13 @@ All critical issues resolved.
 | Missing account switching security tests | tests/user-isolation.test.ts | Add updateSessionAccount attack tests | medium |
 | Missing subscription state edge case tests | tests/transaction-crud-actions.test.ts | Add trial/expired/cancelled tests | medium |
 
-## Medium Issues (7 remaining)
+## Medium Issues (4 remaining)
 
 ### Architecture
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Tight coupling: cache imports finance | src/lib/dashboard-cache.ts:4-5 | Generify cache to accept compute function | medium |
-| Inconsistent data validation strategy | Services vs Actions vs API | Add validation at service layer boundary | medium |
-| Inconsistent error handling between layers | Services vs Actions | Standardize error handling at service layer | medium |
 
 ### Test Quality
 
@@ -58,19 +56,7 @@ All critical issues resolved.
 | Generic error messages mask real issues | src/app/api/v1/categories/route.ts:50-51 | Distinguish error types in catch | medium |
 | Missing GET parameter validation | src/app/api/v1/budgets/route.ts:96-106 | Add explicit null checks | small |
 
-### DevOps
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Missing centralized env validation | Multiple lib files | Create src/lib/env-schema.ts | medium |
-
-## Low Issues (8 remaining)
-
-### Performance
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| RefreshToken index could be composite | prisma/schema.prisma:308-310 | Add @@index([expiresAt, userId]) | small |
+## Low Issues (5 remaining)
 
 ### Architecture
 
@@ -90,13 +76,11 @@ All critical issues resolved.
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
-| Decimal precision inconsistency | Multiple files | Document quantity vs amount precision | small |
-| SharedExpense index ordering | prisma/schema.prisma:246-247 | Add @@index([ownerId, createdAt]) | small |
-| No audit trail for deletions | prisma/schema.prisma | Consider soft delete on Transaction, Budget | large |
+| No audit trail for deletions | prisma/schema.prisma | DEFERRED - Requires full soft delete impl across all queries | large |
 
 ---
 
-## Fixed This Session (81 issues)
+## Fixed This Session (87 issues)
 
 ### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
@@ -189,3 +173,12 @@ All critical issues resolved.
 - [x] Semantic duplication: filter functions → generic createFilter predicate utility (PR #179)
 - [x] Flaky date-dependent tests → vi.setSystemTime() with fixed test date (PR #179)
 - [x] Null field handling not asserted → objectContaining assertions for null preservation (PR #179)
+
+### Services & Database - Agent 4 (6 fixed in PR #181)
+- [x] Inconsistent data validation strategy → typed ServiceError classes (NotFoundError, ValidationError, etc.)
+- [x] Inconsistent error handling between layers → unified handleServiceLayerError() and serviceErrorToActionResult()
+- [x] Missing centralized env validation → src/lib/env-schema.ts with Zod validation and type-safe accessors
+- [x] RefreshToken index could be composite → added @@index([expiresAt, userId]) for cleanup queries
+- [x] SharedExpense index ordering → added @@index([ownerId, createdAt]) for sorted listings
+- [x] Decimal precision inconsistency → documented in schema header and docs/DECIMAL_PRECISION.md
+- [ ] No audit trail for deletions → DEFERRED: Requires full soft delete implementation across all queries
