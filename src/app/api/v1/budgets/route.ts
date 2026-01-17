@@ -16,6 +16,20 @@ async function verifyAccountOwnership(accountId: string, userId: string) {
   )
 }
 
+/**
+ * GET /api/v1/budgets
+ *
+ * Retrieves budgets for an authenticated user's account.
+ *
+ * @query accountId - Required. The account to fetch budgets from.
+ * @query month - Optional. Filter by month (YYYY-MM format).
+ *
+ * @returns {Object} { budgets: Budget[] }
+ * @throws {400} Validation error - Missing or invalid parameters
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
     // Parse query parameters with explicit validation
@@ -80,6 +94,24 @@ export async function GET(request: NextRequest) {
   })
 }
 
+/**
+ * POST /api/v1/budgets
+ *
+ * Creates or updates a budget for a specific account/category/month combination.
+ *
+ * @body accountId - Required. The account for the budget.
+ * @body categoryId - Required. The category for the budget.
+ * @body monthKey - Required. The month (YYYY-MM format).
+ * @body planned - Required. The planned budget amount.
+ * @body currency - Required. Currency code (USD, EUR, or ILS).
+ * @body notes - Optional. Budget notes.
+ *
+ * @returns {Budget} The created/updated budget with all fields
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account or subscription expired
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function POST(request: NextRequest) {
   return withApiAuth(
     request,
@@ -117,8 +149,19 @@ export async function POST(request: NextRequest) {
           currency: data.currency,
           notes: data.notes,
         })
-        // Return 201 for create, 200 for update
-        return successResponse({ id: budget.id }, existing ? 200 : 201)
+        // Return 201 for create, 200 for update - return full budget
+        return successResponse(
+          {
+            id: budget.id,
+            accountId: budget.accountId,
+            categoryId: budget.categoryId,
+            month: formatDateForApi(budget.month),
+            planned: budget.planned.toString(),
+            currency: budget.currency,
+            notes: budget.notes,
+          },
+          existing ? 200 : 201,
+        )
       } catch (error) {
         serverLogger.error('Failed to save budget', { action: 'POST /api/v1/budgets', userId: user.userId }, error)
         return serverError('Unable to save budget')
@@ -128,6 +171,22 @@ export async function POST(request: NextRequest) {
   )
 }
 
+/**
+ * DELETE /api/v1/budgets
+ *
+ * Deletes a budget entry for a specific account/category/month combination.
+ *
+ * @query accountId - Required. The account ID.
+ * @query categoryId - Required. The category ID.
+ * @query monthKey - Required. The month (YYYY-MM format).
+ *
+ * @returns {Object} { deleted: true }
+ * @throws {400} Validation error - Missing or invalid parameters
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account or subscription expired
+ * @throws {404} Not found - Budget entry does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function DELETE(request: NextRequest) {
   return withApiAuth(
     request,

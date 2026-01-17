@@ -117,3 +117,28 @@ jobs:
           AUTH_USER2_DISPLAY_NAME: Serena
           AUTH_USER2_EMAIL: serena@example.com
           AUTH_USER2_PASSWORD_HASH: $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5P5myWU5j5aG2
+
+  # Post-deployment health check job
+  # Runs only when DEPLOYMENT_URL secret is configured and on push to main
+  verify-deployment:
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOYMENT_URL != ''
+    timeout-minutes: 5
+    steps:
+      - name: Verify deployment health
+        run: |
+          echo "Checking health endpoint at $DEPLOYMENT_URL/api/health"
+          for i in {1..10}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL/api/health" || echo "000")
+            if [ "$response" = "200" ]; then
+              echo "Health check passed on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i: Health check returned $response, retrying in 5s..."
+            sleep 5
+          done
+          echo "Health check failed after 10 attempts"
+          exit 1
+        env:
+          DEPLOYMENT_URL: ${{ vars.DEPLOYMENT_URL }}

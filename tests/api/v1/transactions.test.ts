@@ -71,7 +71,7 @@ describe('Transaction API Routes', () => {
   })
 
   describe('POST /api/v1/transactions', () => {
-    it('creates transaction with valid JWT', async () => {
+    it('creates transaction with valid JWT and returns full resource', async () => {
       const request = new NextRequest('http://localhost/api/v1/transactions', {
         method: 'POST',
         headers: {
@@ -93,8 +93,27 @@ describe('Transaction API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(201)
-      expect(data.success).toBe(true)
-      expect(data.data.id).toBeTruthy()
+      expect(data).toEqual({
+        success: true,
+        data: expect.objectContaining({
+          id: expect.any(String),
+          accountId: expect.any(String),
+          categoryId: expect.any(String),
+          type: expect.stringMatching(/^(INCOME|EXPENSE)$/),
+          amount: expect.any(String), // Decimal as string per API_CONTRACTS
+          currency: expect.stringMatching(/^(USD|EUR|ILS)$/),
+          date: expect.any(String),
+          month: expect.any(String),
+          description: expect.toBeOneOf([expect.any(String), null]),
+          isRecurring: expect.any(Boolean),
+        }),
+      })
+      // Verify specific values
+      expect(data.data.accountId).toBe(accountId)
+      expect(data.data.categoryId).toBe(categoryId)
+      expect(data.data.type).toBe('EXPENSE')
+      expect(data.data.amount).toBe('50')
+      expect(data.data.currency).toBe('USD')
     })
 
     it('returns 401 with missing token', async () => {
@@ -214,7 +233,7 @@ describe('Transaction API Routes', () => {
       })
     })
 
-    it('returns transactions with valid JWT and accountId', async () => {
+    it('returns transactions with valid JWT and accountId with full schema', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${validToken}` },
@@ -229,6 +248,28 @@ describe('Transaction API Routes', () => {
       expect(data.data.transactions.length).toBeGreaterThanOrEqual(3)
       expect(data.data.total).toBeGreaterThanOrEqual(3)
       expect(typeof data.data.hasMore).toBe('boolean')
+
+      // Validate transaction schema per API_CONTRACTS.md
+      const transaction = data.data.transactions[0]
+      expect(transaction).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          accountId: expect.any(String),
+          categoryId: expect.any(String),
+          type: expect.stringMatching(/^(INCOME|EXPENSE)$/),
+          amount: expect.any(String),
+          currency: expect.stringMatching(/^(USD|EUR|ILS)$/),
+          date: expect.any(String),
+          month: expect.any(String),
+          description: expect.toBeOneOf([expect.any(String), null]),
+          isRecurring: expect.any(Boolean),
+          category: expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+            type: expect.stringMatching(/^(INCOME|EXPENSE)$/),
+          }),
+        }),
+      )
     })
 
     it('returns transactions with category data', async () => {
@@ -346,7 +387,7 @@ describe('Transaction API Routes', () => {
       transactionId = transaction.id
     })
 
-    it('updates transaction with valid JWT', async () => {
+    it('updates transaction with valid JWT and returns full resource', async () => {
       const request = new NextRequest(`http://localhost/api/v1/transactions/${transactionId}`, {
         method: 'PUT',
         headers: {
@@ -368,8 +409,24 @@ describe('Transaction API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.success).toBe(true)
-      expect(data.data.id).toBe(transactionId)
+      expect(data).toEqual({
+        success: true,
+        data: expect.objectContaining({
+          id: transactionId,
+          accountId: expect.any(String),
+          categoryId: expect.any(String),
+          type: expect.stringMatching(/^(INCOME|EXPENSE)$/),
+          amount: expect.any(String),
+          currency: expect.stringMatching(/^(USD|EUR|ILS)$/),
+          date: expect.any(String),
+          month: expect.any(String),
+          description: expect.toBeOneOf([expect.any(String), null]),
+          isRecurring: expect.any(Boolean),
+        }),
+      })
+      // Verify the update values
+      expect(data.data.amount).toBe('75')
+      expect(data.data.description).toBe('TEST_Updated')
     })
 
     it('returns 404 for non-existent transaction', async () => {

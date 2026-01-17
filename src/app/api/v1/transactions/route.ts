@@ -12,6 +12,7 @@ import {
   checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
+import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { TransactionType } from '@prisma/client'
@@ -20,6 +21,24 @@ import { serverLogger } from '@/lib/server-logger'
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
 
+/**
+ * GET /api/v1/transactions
+ *
+ * Retrieves paginated transactions for an authenticated user's account.
+ *
+ * @query accountId - Required. The account to fetch transactions from.
+ * @query month - Optional. Filter by month (YYYY-MM format).
+ * @query categoryId - Optional. Filter by category.
+ * @query type - Optional. Filter by type (INCOME or EXPENSE).
+ * @query limit - Optional. Number of results (default: 50, max: 100).
+ * @query offset - Optional. Pagination offset.
+ *
+ * @returns {Object} { transactions: Transaction[], total: number, hasMore: boolean }
+ * @throws {400} Validation error - Missing or invalid parameters
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function GET(request: NextRequest) {
   // 1. Authenticate with JWT
   let user
@@ -78,8 +97,8 @@ export async function GET(request: NextRequest) {
   }
 
   // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: accountId } })
-  if (!account || account.userId !== user.userId) {
+  const accountOwnership = await ensureApiAccountOwnership(accountId, user.userId)
+  if (!accountOwnership.allowed) {
     return forbiddenError('Access denied')
   }
 
@@ -154,6 +173,27 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/v1/transactions
+ *
+ * Creates a new transaction for an authenticated user's account.
+ *
+ * @body accountId - Required. The account to create the transaction in.
+ * @body categoryId - Required. The category for the transaction.
+ * @body type - Required. Transaction type (INCOME or EXPENSE).
+ * @body amount - Required. Transaction amount (positive number).
+ * @body currency - Required. Currency code (USD, EUR, or ILS).
+ * @body date - Required. Transaction date (YYYY-MM-DD or ISO format).
+ * @body description - Optional. Transaction description.
+ * @body isRecurring - Optional. Whether this is a recurring transaction.
+ *
+ * @returns {Transaction} The created transaction with all fields
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account or subscription expired
+ * @throws {429} Rate limited - Too many requests
+ * @throws {500} Server error - Unable to create transaction
+ */
 export async function POST(request: NextRequest) {
   // 1. Authenticate with JWT
   let user
@@ -193,15 +233,29 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
 
   // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account || account.userId !== user.userId) {
+  const accountOwnership = await ensureApiAccountOwnership(data.accountId, user.userId)
+  if (!accountOwnership.allowed) {
     return forbiddenError('Access denied')
   }
 
   // 4. Execute business logic via service
   try {
     const transaction = await createTransaction(data)
-    return successResponse({ id: transaction.id }, 201)
+    return successResponse(
+      {
+        id: transaction.id,
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        type: transaction.type,
+        amount: transaction.amount.toString(),
+        currency: transaction.currency,
+        date: formatDateForApi(transaction.date),
+        month: formatDateForApi(transaction.month),
+        description: transaction.description,
+        isRecurring: transaction.isRecurring,
+      },
+      201,
+    )
   } catch (error) {
     serverLogger.error('Failed to create transaction', { action: 'POST /api/v1/transactions' }, error)
     return serverError('Unable to create transaction')

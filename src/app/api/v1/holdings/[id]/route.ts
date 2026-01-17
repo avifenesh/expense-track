@@ -13,6 +13,23 @@ import {
 } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
+/**
+ * PUT /api/v1/holdings/[id]
+ *
+ * Updates an existing holding.
+ *
+ * @param id - The holding ID (path parameter)
+ * @body quantity - Required. Updated number of shares/units.
+ * @body averageCost - Required. Updated average cost per share.
+ * @body notes - Optional. Holding notes.
+ *
+ * @returns {Holding} The updated holding with all fields
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - Subscription expired
+ * @throws {404} Not found - Holding does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -60,13 +77,35 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   // 4. Execute update
   try {
-    await updateHolding(data)
-    return successResponse({ id })
+    const updated = await updateHolding(data)
+    return successResponse({
+      id: updated.id,
+      accountId: updated.accountId,
+      categoryId: updated.categoryId,
+      symbol: updated.symbol,
+      name: updated.name,
+      quantity: updated.quantity.toString(),
+      averageCost: updated.averageCost.toString(),
+      currency: updated.currency,
+    })
   } catch {
     return serverError('Unable to update holding')
   }
 }
 
+/**
+ * DELETE /api/v1/holdings/[id]
+ *
+ * Deletes an existing holding.
+ *
+ * @param id - The holding ID (path parameter)
+ *
+ * @returns {Object} { id: string } - The deleted holding's ID
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - Subscription expired
+ * @throws {404} Not found - Holding does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 

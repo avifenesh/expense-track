@@ -6,6 +6,19 @@ import { validationError, successResponse } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { TransactionType } from '@prisma/client'
 
+/**
+ * GET /api/v1/categories
+ *
+ * Retrieves categories for the authenticated user.
+ *
+ * @query type - Optional. Filter by type (INCOME or EXPENSE).
+ * @query includeArchived - Optional. Include archived categories (default: false).
+ *
+ * @returns {Object} { categories: Category[] }
+ * @throws {400} Validation error - Invalid type parameter
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
     // Parse query parameters
@@ -53,6 +66,21 @@ export async function GET(request: NextRequest) {
   })
 }
 
+/**
+ * POST /api/v1/categories
+ *
+ * Creates a new category or reactivates an archived one with the same name.
+ *
+ * @body name - Required. Category name.
+ * @body type - Required. Category type (INCOME or EXPENSE).
+ * @body color - Required. Category color (hex code).
+ *
+ * @returns {Category} The created/reactivated category with all fields
+ * @throws {400} Validation error - Invalid input or duplicate name
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - Subscription expired
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function POST(request: NextRequest) {
   return withApiAuth(
     request,
@@ -82,8 +110,20 @@ export async function POST(request: NextRequest) {
         return validationError({ name: ['A category with this name already exists'] })
       }
 
-      // Return 201 for new, 200 for reactivated
-      return successResponse({ id: result.category.id }, result.reactivated ? 200 : 201)
+      const category = result.category
+      // Return 201 for new, 200 for reactivated - return full category
+      return successResponse(
+        {
+          id: category.id,
+          name: category.name,
+          type: category.type,
+          color: category.color,
+          isArchived: category.isArchived,
+          isHolding: category.isHolding,
+          userId: category.userId,
+        },
+        result.reactivated ? 200 : 201,
+      )
     },
     { requireSubscription: true },
   )

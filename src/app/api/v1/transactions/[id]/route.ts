@@ -14,7 +14,30 @@ import {
 } from '@/lib/api-helpers'
 import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { formatDateForApi } from '@/utils/date'
 
+/**
+ * PUT /api/v1/transactions/[id]
+ *
+ * Updates an existing transaction.
+ *
+ * @param id - The transaction ID (path parameter)
+ * @body accountId - Required. The account the transaction belongs to.
+ * @body categoryId - Required. The category for the transaction.
+ * @body type - Required. Transaction type (INCOME or EXPENSE).
+ * @body amount - Required. Transaction amount (positive number).
+ * @body currency - Required. Currency code (USD, EUR, or ILS).
+ * @body date - Required. Transaction date (YYYY-MM-DD or ISO format).
+ * @body description - Optional. Transaction description.
+ * @body isRecurring - Optional. Whether this is a recurring transaction.
+ *
+ * @returns {Transaction} The updated transaction with all fields
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the transaction or account
+ * @throws {404} Not found - Transaction does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -70,13 +93,37 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   // 5. Execute update
   try {
-    await updateTransaction(data)
-    return successResponse({ id })
+    const updated = await updateTransaction(data)
+    return successResponse({
+      id: updated.id,
+      accountId: updated.accountId,
+      categoryId: updated.categoryId,
+      type: updated.type,
+      amount: updated.amount.toString(),
+      currency: updated.currency,
+      date: formatDateForApi(updated.date),
+      month: formatDateForApi(updated.month),
+      description: updated.description,
+      isRecurring: updated.isRecurring,
+    })
   } catch {
     return serverError('Unable to update transaction')
   }
 }
 
+/**
+ * DELETE /api/v1/transactions/[id]
+ *
+ * Deletes an existing transaction.
+ *
+ * @param id - The transaction ID (path parameter)
+ *
+ * @returns {Object} { id: string } - The deleted transaction's ID
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - Subscription expired
+ * @throws {404} Not found - Transaction does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 

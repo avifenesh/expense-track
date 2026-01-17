@@ -12,10 +12,35 @@ import {
   checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
-import { getMonthStartFromKey } from '@/utils/date'
+import { ensureApiAccountOwnership, ensureApiRecurringOwnership } from '@/lib/api-auth-helpers'
+import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { serverLogger } from '@/lib/server-logger'
 
+/**
+ * POST /api/v1/recurring
+ *
+ * Creates or updates a recurring transaction template.
+ *
+ * @body id - Optional. Template ID for updates.
+ * @body accountId - Required. The account for the template.
+ * @body categoryId - Required. The category for generated transactions.
+ * @body type - Required. Transaction type (INCOME or EXPENSE).
+ * @body amount - Required. Transaction amount.
+ * @body currency - Required. Currency code (USD, EUR, or ILS).
+ * @body dayOfMonth - Required. Day of month to generate transaction (1-31).
+ * @body description - Optional. Transaction description.
+ * @body startMonthKey - Required. Start month (YYYY-MM format).
+ * @body endMonthKey - Optional. End month (YYYY-MM format).
+ * @body isActive - Optional. Whether template is active (default: true).
+ *
+ * @returns {RecurringTemplate} The created/updated template with all fields
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account/template or subscription expired
+ * @throws {429} Rate limited - Too many requests
+ * @throws {500} Server error - Unable to save template
+ */
 export async function POST(request: NextRequest) {
   // 1. Authenticate
   let user
@@ -56,15 +81,15 @@ export async function POST(request: NextRequest) {
   // Schema's .refine() ensures endMonth >= startMonth, replacing the previous manual validation
 
   // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account || account.userId !== user.userId) {
+  const accountOwnership = await ensureApiAccountOwnership(data.accountId, user.userId)
+  if (!accountOwnership.allowed) {
     return forbiddenError('Access denied')
   }
 
-  // 4. If updating, verify existing template belongs to the requested account
+  // 4. If updating, verify existing template belongs to the user
   if (data.id) {
-    const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
-    if (!existing || existing.accountId !== data.accountId) {
+    const templateOwnership = await ensureApiRecurringOwnership(data.id, user.userId)
+    if (!templateOwnership.allowed) {
       return forbiddenError('Access denied')
     }
   }
@@ -84,7 +109,22 @@ export async function POST(request: NextRequest) {
       endMonth,
       isActive: data.isActive,
     })
-    return successResponse({ id: template.id }, data.id ? 200 : 201)
+    return successResponse(
+      {
+        id: template.id,
+        accountId: template.accountId,
+        categoryId: template.categoryId,
+        type: template.type,
+        amount: template.amount.toString(),
+        currency: template.currency,
+        dayOfMonth: template.dayOfMonth,
+        description: template.description,
+        startMonth: formatDateForApi(template.startMonth),
+        endMonth: template.endMonth ? formatDateForApi(template.endMonth) : null,
+        isActive: template.isActive,
+      },
+      data.id ? 200 : 201,
+    )
   } catch (error) {
     serverLogger.error('Failed to save recurring template', { action: 'POST /api/v1/recurring' }, error)
     return serverError('Unable to save recurring template')
