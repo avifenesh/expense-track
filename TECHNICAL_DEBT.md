@@ -1,12 +1,12 @@
 # Technical Debt
 
-Last updated: 2026-01-17
+Last updated: 2026-01-18
 
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed Total**: 81 issues (10 critical, 20 high, 41 medium, 10 low)
-**Remaining**: 8 issues (see sections below for full counts)
+**Fixed Total**: 69 issues (10 critical, 19 high, 33 medium, 7 low)
+**Remaining**: 20 issues (5 high, 7 medium, 8 low)
 
 ## Critical Issues (0 remaining)
 
@@ -18,7 +18,7 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
-## High Issues (4 remaining)
+## High Issues (5 remaining)
 
 ### Architecture
 
@@ -35,15 +35,7 @@ All critical issues resolved.
 | Missing account switching security tests | tests/user-isolation.test.ts | Add updateSessionAccount attack tests | medium |
 | Missing subscription state edge case tests | tests/transaction-crud-actions.test.ts | Add trial/expired/cancelled tests | medium |
 
-## Medium Issues (11 remaining)
-
-### Performance
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Dashboard cache stores large JSON | src/lib/dashboard-cache.ts:88-92 | Add size validation, reject > 512KB | medium |
-| Missing pagination on shared expenses | src/lib/finance.ts:768-790, 840-862 | Add take: 50 with cursor pagination | small |
-| FX rates use today's date for historical conversions | src/lib/finance.ts:548-552 | Load per-month rates for historical accuracy | medium |
+## Medium Issues (7 remaining)
 
 ### Architecture
 
@@ -58,7 +50,6 @@ All critical issues resolved.
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Rate limit isolation not verified | tests/api/v1/auth-login-rate-limit.test.ts:70-90 | Assert rate limit counter per email | small |
-| Flaky date-dependent tests | tests/transaction-crud-actions.test.ts:136 | Use vi.setSystemTime() | small |
 
 ### API Design
 
@@ -73,7 +64,7 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Missing centralized env validation | Multiple lib files | Create src/lib/env-schema.ts | medium |
 
-## Low Issues (5 remaining)
+## Low Issues (8 remaining)
 
 ### Performance
 
@@ -88,13 +79,11 @@ All critical issues resolved.
 | Circular dependency risk in cache | src/lib/dashboard-cache.ts | Keep as thin wrapper, no re-exports | small |
 | No boundary between public/private types | src/lib/finance.ts:14-198 | Add @private JSDoc or barrel exports | small |
 | Action CSRF patterns inconsistent | Multiple action files | Ensure all use same pipeline | small |
-| Semantic duplication: filter functions | src/lib/dashboard-ux.ts:9-85 | Abstract to generic predicate filter | low |
 
 ### Test Quality
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
-| Null field handling not fully asserted | tests/transaction-crud-actions.test.ts:206-243 | Add objectContaining assertions | small |
 | SQL injection test missing for user lookup | tests/expense-sharing-actions.test.ts | Add email injection payload test | small |
 
 ### Database
@@ -107,7 +96,7 @@ All critical issues resolved.
 
 ---
 
-## Fixed This Session (75 issues)
+## Fixed This Session (81 issues)
 
 ### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
@@ -192,3 +181,11 @@ All critical issues resolved.
 - [x] Budget service Decimal mock inconsistent → unified MockDecimal with toFixed (PR #177)
 - [x] Dashboard cache invalidation not asserted → added invalidateDashboardCache assertions (PR #177)
 - [x] Concurrent transaction modification untested → added P2025 race condition tests (PR #177)
+
+### Finance/Cache - Agent 3 (6 fixed in PR #179)
+- [x] Dashboard cache stores large JSON → added 512KB size validation with skip-on-oversized (PR #179)
+- [x] Missing pagination on shared expenses → cursor-based pagination with 50 record default (PR #179)
+- [x] FX rates use today's date → per-month rate loading for historical accuracy (PR #179)
+- [x] Semantic duplication: filter functions → generic createFilter predicate utility (PR #179)
+- [x] Flaky date-dependent tests → vi.setSystemTime() with fixed test date (PR #179)
+- [x] Null field handling not asserted → objectContaining assertions for null preservation (PR #179)
