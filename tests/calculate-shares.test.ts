@@ -218,13 +218,14 @@ describe('calculateShares', () => {
         expect(share1).toBe(33.33)
         expect(share2).toBe(33.33)
 
-        // Sum of participant shares (owner also gets 33.33)
-        const ownerShare = 100 / 3
-        const totalDistributed = share1 + share2 + ownerShare
+        // The owner's share is the remainder, which absorbs rounding differences
+        const participantTotal = share1 + share2
+        const ownerShare = 100 - participantTotal
 
-        // Due to rounding, total distributed is ~99.99, not exactly 100
-        // This documents the known rounding behavior
-        expect(totalDistributed).toBeCloseTo(99.99, 1)
+        // The sum of all shares must equal the total amount, and we verify
+        // the owner's share is different due to rounding
+        expect(participantTotal + ownerShare).toBe(100)
+        expect(ownerShare).toBeCloseTo(33.34, 2)
       })
 
       it('should split evenly when divisible (100/2 = 50 each)', () => {

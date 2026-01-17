@@ -681,7 +681,7 @@ describe('updateTransactionAction', () => {
       type: TransactionType.EXPENSE,
       amount: 75,
       currency: Currency.USD,
-      date: new Date(),
+      date: new Date('2024-01-15'),
       csrfToken: 'test-token',
       description: 'Updated',
       isRecurring: false,
