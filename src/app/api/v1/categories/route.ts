@@ -2,8 +2,16 @@ import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { createCategory } from '@/lib/services/category-service'
 import { categorySchema } from '@/schemas'
-import { validationError, authError, serverError, successResponse, rateLimitError } from '@/lib/api-helpers'
+import {
+  validationError,
+  authError,
+  serverError,
+  successResponse,
+  rateLimitError,
+  subscriptionRequiredError,
+} from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { hasActiveSubscription } from '@/lib/subscription'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -21,7 +29,13 @@ export async function POST(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 2. Parse and validate input
+  // 2. Check subscription status
+  const isActive = await hasActiveSubscription(user.userId)
+  if (!isActive) {
+    return subscriptionRequiredError()
+  }
+
+  // 3. Parse and validate input
   let body
   try {
     body = await request.json()
@@ -38,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Execute create (categories are scoped to user)
+  // 4. Execute create (categories are scoped to user)
   try {
     const category = await createCategory({
       userId: user.userId,

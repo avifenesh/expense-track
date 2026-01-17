@@ -5,13 +5,8 @@ import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
 import { validateCsrfToken } from '@/lib/csrf'
 import { hasActiveSubscription, getSubscriptionState, type SubscriptionState } from '@/lib/subscription'
 
-// Currency precision: 2 decimal places (cents), scale factor 100
-const DECIMAL_PRECISION = 2
-const AMOUNT_SCALE = Math.pow(10, DECIMAL_PRECISION)
-
-export function toDecimalString(input: number) {
-  return (Math.round(input * AMOUNT_SCALE) / AMOUNT_SCALE).toFixed(DECIMAL_PRECISION)
-}
+// Re-export from utils for backwards compatibility with actions
+export { toDecimalString } from '@/utils/decimal'
 
 export function parseInput<T>(
   schema: z.ZodSchema<T>,

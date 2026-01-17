@@ -60,6 +60,13 @@ export function serverError(message = 'Internal server error') {
 }
 
 /**
+ * 402 Payment Required - Subscription inactive
+ */
+export function subscriptionRequiredError(message = 'Active subscription required') {
+  return errorResponse(message, 402)
+}
+
+/**
  * Success response with data
  */
 export function successResponse<T>(data: T, status = 200) {

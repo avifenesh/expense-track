@@ -1,6 +1,6 @@
 import { Prisma, Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { toDecimalString } from '@/app/actions/shared'
+import { toDecimalString } from '@/utils/decimal'
 
 export interface UpsertBudgetInput {
   accountId: string

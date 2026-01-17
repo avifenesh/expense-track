@@ -9,10 +9,12 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  subscriptionRequiredError,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { hasActiveSubscription } from '@/lib/subscription'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -30,7 +32,13 @@ export async function POST(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 2. Parse and validate input
+  // 2. Check subscription status
+  const isActive = await hasActiveSubscription(user.userId)
+  if (!isActive) {
+    return subscriptionRequiredError()
+  }
+
+  // 3. Parse and validate input
   let body
   try {
     body = await request.json()
@@ -54,7 +62,7 @@ export async function POST(request: NextRequest) {
     return validationError({ endMonthKey: ['End month must be after the start month'] })
   }
 
-  // 3. Authorize account access
+  // 4. Authorize account access
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
   if (!account) return forbiddenError('Account not found')
 
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
     return forbiddenError('You do not have access to this account')
   }
 
-  // 3b. If updating, verify existing template belongs to the requested account
+  // 4b. If updating, verify existing template belongs to the requested account
   if (data.id) {
     const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
     if (!existing) {
@@ -74,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 4. Execute upsert
+  // 5. Execute upsert
   try {
     const template = await upsertRecurringTemplate({
       id: data.id,

@@ -10,9 +10,11 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  subscriptionRequiredError,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { hasActiveSubscription } from '@/lib/subscription'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -30,7 +32,13 @@ export async function POST(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 2. Parse and validate input
+  // 2. Check subscription status
+  const isActive = await hasActiveSubscription(user.userId)
+  if (!isActive) {
+    return subscriptionRequiredError()
+  }
+
+  // 3. Parse and validate input
   let body
   try {
     body = await request.json()
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Authorize account access
+  // 4. Authorize account access
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
   if (!account) return forbiddenError('Account not found')
 
@@ -59,7 +67,7 @@ export async function POST(request: NextRequest) {
     return forbiddenError('You do not have access to this account')
   }
 
-  // 4. Validate category has isHolding = true
+  // 5. Validate category has isHolding = true
   try {
     await validateHoldingCategory(data.categoryId)
   } catch (error) {
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest) {
     return validationError({ categoryId: [message] })
   }
 
-  // 5. Validate stock symbol with API
+  // 6. Validate stock symbol with API
   try {
     await validateStockSymbol(data.symbol)
   } catch (error) {
@@ -75,7 +83,7 @@ export async function POST(request: NextRequest) {
     return validationError({ symbol: [message] })
   }
 
-  // 6. Execute create
+  // 7. Execute create
   try {
     const holding = await createHolding(data)
     return successResponse({ id: holding.id }, 201)
