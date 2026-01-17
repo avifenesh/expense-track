@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       return validationError(error.fieldErrors)
     }
     if (isServiceError(error)) {
-      return validationError({ categoryId: [error.message] })
+      return serverError(error.message)
     }
     return validationError({ categoryId: ['Invalid category'] })
   }
