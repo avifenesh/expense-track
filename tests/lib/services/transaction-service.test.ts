@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { TransactionType, RequestStatus, Currency } from '@prisma/client'
+import { NotFoundError, ValidationError } from '@/lib/services/errors'
 
 // Mock Prisma.Decimal
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -744,7 +745,7 @@ describe('transaction-service.ts', () => {
     it('should throw error if request not found', async () => {
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(null)
 
-      await expect(approveTransactionRequest('nonexistent')).rejects.toThrow('Transaction request not found')
+      await expect(approveTransactionRequest('nonexistent')).rejects.toThrow(NotFoundError)
     })
 
     it('should throw error if request already approved', async () => {
@@ -764,7 +765,7 @@ describe('transaction-service.ts', () => {
 
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as never)
 
-      await expect(approveTransactionRequest('req-1')).rejects.toThrow('Request is already approved')
+      await expect(approveTransactionRequest('req-1')).rejects.toThrow(ValidationError)
     })
 
     it('should throw error if request already rejected', async () => {
@@ -784,7 +785,7 @@ describe('transaction-service.ts', () => {
 
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as never)
 
-      await expect(approveTransactionRequest('req-1')).rejects.toThrow('Request is already rejected')
+      await expect(approveTransactionRequest('req-1')).rejects.toThrow(ValidationError)
     })
   })
 
@@ -847,7 +848,7 @@ describe('transaction-service.ts', () => {
     it('should throw error if request not found', async () => {
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(null)
 
-      await expect(rejectTransactionRequest('nonexistent')).rejects.toThrow('Transaction request not found')
+      await expect(rejectTransactionRequest('nonexistent')).rejects.toThrow(NotFoundError)
     })
 
     it('should throw error if request already approved', async () => {
@@ -867,7 +868,7 @@ describe('transaction-service.ts', () => {
 
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as never)
 
-      await expect(rejectTransactionRequest('req-1')).rejects.toThrow('Request is already approved')
+      await expect(rejectTransactionRequest('req-1')).rejects.toThrow(ValidationError)
     })
 
     it('should throw error if request already rejected', async () => {
@@ -887,7 +888,7 @@ describe('transaction-service.ts', () => {
 
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as never)
 
-      await expect(rejectTransactionRequest('req-1')).rejects.toThrow('Request is already rejected')
+      await expect(rejectTransactionRequest('req-1')).rejects.toThrow(ValidationError)
     })
   })
 
