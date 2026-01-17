@@ -92,6 +92,46 @@ describe('upsertBudgetAction', () => {
     }
   })
 
+  it('should reject request with invalid CSRF token', async () => {
+    const { validateCsrfToken } = await import('@/lib/csrf')
+    vi.mocked(validateCsrfToken).mockResolvedValueOnce(false)
+
+    const result = await upsertBudgetAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      monthKey: '2026-01',
+      planned: 1000,
+      csrfToken: 'invalid-token',
+      currency: Currency.USD,
+      notes: 'Test budget',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(
+        result.error.general?.some((msg: string) => msg.toLowerCase().includes('security')) ||
+          result.error.csrfToken !== undefined,
+      ).toBe(true)
+    }
+  })
+
+  it('should reject request with missing CSRF token', async () => {
+    const result = await upsertBudgetAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      monthKey: '2026-01',
+      planned: 1000,
+      csrfToken: '',
+      currency: Currency.USD,
+      notes: 'Test budget',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.csrfToken).toBeDefined()
+    }
+  })
+
   it('should fail when user does not have access to account', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
@@ -250,6 +290,40 @@ describe('deleteBudgetAction', () => {
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
+    }
+  })
+
+  it('should reject request with invalid CSRF token', async () => {
+    const { validateCsrfToken } = await import('@/lib/csrf')
+    vi.mocked(validateCsrfToken).mockResolvedValueOnce(false)
+
+    const result = await deleteBudgetAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      monthKey: '2026-01',
+      csrfToken: 'invalid-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(
+        result.error.general?.some((msg: string) => msg.toLowerCase().includes('security')) ||
+          result.error.csrfToken !== undefined,
+      ).toBe(true)
+    }
+  })
+
+  it('should reject request with missing CSRF token', async () => {
+    const result = await deleteBudgetAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      monthKey: '2026-01',
+      csrfToken: '',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.csrfToken).toBeDefined()
     }
   })
 

@@ -88,4 +88,42 @@ describe('Auth login rate limiting', () => {
     const user2Response = await loginPost(buildRequest('user2@example.com'))
     expect(user2Response.status).not.toBe(429)
   })
+
+  it('should track rate limit counter per email, not globally', async () => {
+    const buildRequest = (email: string) =>
+      new NextRequest('http://localhost/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'bad-password' }),
+      })
+
+    // Make 3 attempts for user1
+    for (let i = 0; i < 3; i++) {
+      await loginPost(buildRequest('user1@example.com'))
+    }
+
+    // Make 3 attempts for user2
+    for (let i = 0; i < 3; i++) {
+      await loginPost(buildRequest('user2@example.com'))
+    }
+
+    // If rate limit was global (6 total attempts), user3 would be blocked
+    // But since it's per-email, user3 should still have 5 attempts available
+    const user3Response = await loginPost(buildRequest('user3@example.com'))
+    expect(user3Response.status).not.toBe(429)
+
+    // Verify user1 can still make 2 more attempts (had 3, limit is 5)
+    for (let i = 0; i < 2; i++) {
+      const response = await loginPost(buildRequest('user1@example.com'))
+      expect(response.status).not.toBe(429)
+    }
+
+    // Now make the 6th attempt for user1, which should be rate limited
+    const user1Response6 = await loginPost(buildRequest('user1@example.com'))
+    expect(user1Response6.status).toBe(429)
+
+    // user2 should still have 2 attempts remaining
+    const user2Response4 = await loginPost(buildRequest('user2@example.com'))
+    expect(user2Response4.status).not.toBe(429)
+  })
 })
