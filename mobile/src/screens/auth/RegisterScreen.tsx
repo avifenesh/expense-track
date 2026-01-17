@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AuthScreenProps } from '../../navigation/types';
-import { useAuth } from '../../contexts';
+import { useAuthStore } from '../../stores';
 import {
   validateEmail,
   validatePassword,
@@ -22,7 +22,7 @@ import {
 import { ApiError } from '../../services/api';
 
 export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
-  const { register } = useAuth();
+  const register = useAuthStore((state) => state.register);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
