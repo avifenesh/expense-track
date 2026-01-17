@@ -185,10 +185,8 @@ export interface ErrorHandlingOptions {
  */
 export function handleServiceLayerError(
   error: unknown,
-  options: ErrorHandlingOptions,
+  _options: ErrorHandlingOptions,
 ): { success: false; error: Record<string, string[]> } | null {
-  const { fallbackMessage = 'An unexpected error occurred' } = options
-
   // Handle ServiceError instances
   if (isServiceError(error)) {
     return serviceErrorToActionResult(error)
