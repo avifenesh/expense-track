@@ -320,9 +320,14 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   const { authUser } = subscriptionCheck
 
   // Verify new account access using authUser from subscription check (avoids duplicate auth)
-  const newAccount = await prisma.account.findUnique({ where: { id: data.accountId } })
+  let newAccount
+  try {
+    newAccount = await prisma.account.findUnique({ where: { id: data.accountId } })
+  } catch {
+    return { error: { general: ['Unable to verify the target account. Try again shortly.'] } }
+  }
   if (!newAccount || newAccount.userId !== authUser.id) {
-    return { error: { accountId: ['You do not have access to this account'] } }
+    return { error: { accountId: ['You do not have access to the target account'] } }
   }
 
   try {
@@ -397,7 +402,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         return generalError('Transaction not found')
       }
       if (result.error === 'access_denied') {
-        return { error: { accountId: ['You do not have access to this account'] } }
+        return { error: { accountId: ['You do not have access to the original account'] } }
       }
       return generalError('Unable to update transaction')
     }

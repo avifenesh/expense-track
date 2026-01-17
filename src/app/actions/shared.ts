@@ -171,17 +171,15 @@ export async function ensureAccountAccessWithSubscription(
     return { error: { accountId: ['You do not have access to this account'] } }
   }
 
-  // Check subscription status
-  const isActive = await hasActiveSubscription(authUser.id)
-  if (!isActive) {
+  // Check subscription status (single call - avoids redundant DB query)
+  const subscriptionState = await getSubscriptionState(authUser.id)
+  if (!subscriptionState.canAccessApp) {
     return {
       error: {
         subscription: ['Your subscription has expired. Please upgrade to continue using the app.'],
       },
     }
   }
-
-  const subscriptionState = await getSubscriptionState(authUser.id)
 
   return { account, authUser, subscriptionState }
 }
