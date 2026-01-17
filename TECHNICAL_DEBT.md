@@ -23,6 +23,7 @@ Last updated: 2026-01-17
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Hard-coded CI database credentials | .github/workflows/ci.yml:39-41 | Use GitHub Secrets | small |
+| Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
 ## High Issues (10 remaining)
 
