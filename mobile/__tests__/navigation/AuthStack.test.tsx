@@ -3,6 +3,12 @@ import { render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthStack } from '../../src/navigation/AuthStack';
 import { AuthProvider } from '../../src/contexts';
+import { tokenStorage } from '../../src/lib/tokenStorage';
+
+jest.mock('../../src/lib/tokenStorage');
+jest.mock('../../src/services/auth');
+
+const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
@@ -13,6 +19,20 @@ const renderWithProviders = (component: React.ReactElement) => {
 };
 
 describe('AuthStack', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockTokenStorage.getStoredCredentials.mockResolvedValue({
+      accessToken: null,
+      refreshToken: null,
+      email: null,
+      hasCompletedOnboarding: false,
+    });
+    mockTokenStorage.setStoredCredentials.mockResolvedValue(undefined);
+    mockTokenStorage.setTokens.mockResolvedValue(undefined);
+    mockTokenStorage.clearTokens.mockResolvedValue(undefined);
+    mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
+  });
+
   it('renders login screen by default', () => {
     renderWithProviders(<AuthStack />);
 

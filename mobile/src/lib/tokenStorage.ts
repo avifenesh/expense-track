@@ -1,7 +1,16 @@
 import * as SecureStore from 'expo-secure-store';
 
-const ACCESS_TOKEN_KEY = 'expense_track_access_token';
-const REFRESH_TOKEN_KEY = 'expense_track_refresh_token';
+const ACCESS_TOKEN_KEY = 'balance_beacon_access_token';
+const REFRESH_TOKEN_KEY = 'balance_beacon_refresh_token';
+const USER_EMAIL_KEY = 'balance_beacon_user_email';
+const ONBOARDING_COMPLETE_KEY = 'balance_beacon_onboarding_complete';
+
+export interface StoredCredentials {
+  accessToken: string | null;
+  refreshToken: string | null;
+  email: string | null;
+  hasCompletedOnboarding: boolean;
+}
 
 export const tokenStorage = {
   async getAccessToken(): Promise<string | null> {
@@ -20,9 +29,30 @@ export const tokenStorage = {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
   },
 
+  async getEmail(): Promise<string | null> {
+    return SecureStore.getItemAsync(USER_EMAIL_KEY);
+  },
+
+  async setEmail(email: string): Promise<void> {
+    await SecureStore.setItemAsync(USER_EMAIL_KEY, email);
+  },
+
+  async getOnboardingComplete(): Promise<boolean> {
+    const value = await SecureStore.getItemAsync(ONBOARDING_COMPLETE_KEY);
+    return value === 'true';
+  },
+
+  async setOnboardingComplete(complete: boolean): Promise<void> {
+    await SecureStore.setItemAsync(ONBOARDING_COMPLETE_KEY, complete ? 'true' : 'false');
+  },
+
   async clearTokens(): Promise<void> {
-    await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    await Promise.all([
+      SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
+      SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+      SecureStore.deleteItemAsync(USER_EMAIL_KEY),
+      SecureStore.deleteItemAsync(ONBOARDING_COMPLETE_KEY),
+    ]);
   },
 
   async getTokens(): Promise<{ accessToken: string | null; refreshToken: string | null }> {
@@ -37,6 +67,35 @@ export const tokenStorage = {
     await Promise.all([
       SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
       SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+    ]);
+  },
+
+  async getStoredCredentials(): Promise<StoredCredentials> {
+    const [accessToken, refreshToken, email, onboardingComplete] = await Promise.all([
+      SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
+      SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
+      SecureStore.getItemAsync(USER_EMAIL_KEY),
+      SecureStore.getItemAsync(ONBOARDING_COMPLETE_KEY),
+    ]);
+    return {
+      accessToken,
+      refreshToken,
+      email,
+      hasCompletedOnboarding: onboardingComplete === 'true',
+    };
+  },
+
+  async setStoredCredentials(
+    accessToken: string,
+    refreshToken: string,
+    email: string,
+    hasCompletedOnboarding: boolean
+  ): Promise<void> {
+    await Promise.all([
+      SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
+      SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+      SecureStore.setItemAsync(USER_EMAIL_KEY, email),
+      SecureStore.setItemAsync(ONBOARDING_COMPLETE_KEY, hasCompletedOnboarding ? 'true' : 'false'),
     ]);
   },
 };

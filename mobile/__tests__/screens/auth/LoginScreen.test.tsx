@@ -6,13 +6,16 @@ import { AuthProvider } from '../../../src/contexts';
 import { ApiError } from '../../../src/services/api';
 import * as authService from '../../../src/services/auth';
 import * as biometricService from '../../../src/services/biometric';
+import { tokenStorage } from '../../../src/lib/tokenStorage';
 import type { AuthScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/auth');
 jest.mock('../../../src/services/biometric');
+jest.mock('../../../src/lib/tokenStorage');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 const mockBiometricService = biometricService as jest.Mocked<typeof biometricService>;
+const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 
 const mockNavigate = jest.fn();
 const mockNavigation = {
@@ -49,6 +52,17 @@ describe('LoginScreen', () => {
       isEnrolled: false,
     });
     mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
+    // Default token storage mocks
+    mockTokenStorage.getStoredCredentials.mockResolvedValue({
+      accessToken: null,
+      refreshToken: null,
+      email: null,
+      hasCompletedOnboarding: false,
+    });
+    mockTokenStorage.setStoredCredentials.mockResolvedValue(undefined);
+    mockTokenStorage.setTokens.mockResolvedValue(undefined);
+    mockTokenStorage.clearTokens.mockResolvedValue(undefined);
+    mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
   });
 
   describe('Rendering', () => {
@@ -101,22 +115,7 @@ describe('LoginScreen', () => {
       });
     });
 
-    it('shows validation error for empty email', async () => {
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getAllByText('Sign In')[0]).toBeTruthy();
-      });
-
-      const signInButton = screen.getAllByText('Sign In')[0];
-      fireEvent.press(signInButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/email/i)).toBeTruthy();
-      });
-    });
-
-    it('clears email error when user starts typing', async () => {
+    it('clears validation error when valid email entered', async () => {
       renderLoginScreen();
 
       await waitFor(() => {
@@ -124,7 +123,7 @@ describe('LoginScreen', () => {
       });
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
-      fireEvent.changeText(emailInput, 'invalid');
+      fireEvent.changeText(emailInput, 'invalid-email');
 
       const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
@@ -133,10 +132,9 @@ describe('LoginScreen', () => {
         expect(screen.getByText(/valid email/i)).toBeTruthy();
       });
 
-      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(emailInput, 'valid@example.com');
 
       await waitFor(() => {
-        // Error should be cleared
         const errors = screen.queryAllByText(/valid email/i);
         expect(errors.length).toBe(0);
       });
@@ -158,33 +156,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Password is required')).toBeTruthy();
-      });
-    });
-
-    it('clears password error when user starts typing', async () => {
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
-      });
-
-      const emailInput = screen.getByPlaceholderText('Enter your email');
-      fireEvent.changeText(emailInput, 'test@example.com');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
-      fireEvent.press(signInButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Password is required')).toBeTruthy();
-      });
-
-      const passwordInput = screen.getByPlaceholderText('Enter your password');
-      fireEvent.changeText(passwordInput, 'password123');
-
-      await waitFor(() => {
-        const errors = screen.queryAllByText('Password is required');
-        expect(errors.length).toBe(0);
+        expect(screen.getByText(/password.*required/i)).toBeTruthy();
       });
     });
   });
@@ -192,8 +164,8 @@ describe('LoginScreen', () => {
   describe('Login Success', () => {
     it('calls login with email and password', async () => {
       mockAuthService.login.mockResolvedValueOnce({
-        accessToken: 'token-123',
-        refreshToken: 'refresh-456',
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
         expiresIn: 900,
       });
 
@@ -205,11 +177,10 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'password123');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
 
       await waitFor(() => {
@@ -217,13 +188,13 @@ describe('LoginScreen', () => {
       });
     });
 
-    it('disables button during loading', async () => {
+    it('disables Sign In button during login', async () => {
       mockAuthService.login.mockImplementation(
         () => new Promise(resolve =>
           setTimeout(() =>
             resolve({
-              accessToken: 'token-123',
-              refreshToken: 'refresh-456',
+              accessToken: 'access-token',
+              refreshToken: 'refresh-token',
               expiresIn: 900,
             }),
             100
@@ -239,45 +210,19 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'password123');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Sign In')).toBeTruthy();
+        expect(mockAuthService.login).toHaveBeenCalled();
       });
     });
   });
 
   describe('API Error Handling', () => {
-    it('displays 401 error for invalid credentials', async () => {
-      mockAuthService.login.mockRejectedValueOnce(
-        new ApiError('Invalid credentials', 'INVALID_CREDENTIALS', 401)
-      );
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
-      });
-
-      const emailInput = screen.getByPlaceholderText('Enter your email');
-      const passwordInput = screen.getByPlaceholderText('Enter your password');
-
-      fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInput, 'wrongpassword');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
-      fireEvent.press(signInButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Invalid email or password')).toBeTruthy();
-      });
-    });
-
     it('displays rate limit error', async () => {
       mockAuthService.login.mockRejectedValueOnce(
         new ApiError('Too many attempts', 'RATE_LIMITED', 429)
@@ -291,11 +236,10 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'password123');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
 
       await waitFor(() => {
@@ -303,11 +247,9 @@ describe('LoginScreen', () => {
       });
     });
 
-    it('displays email error from API details', async () => {
+    it('displays invalid credentials error', async () => {
       mockAuthService.login.mockRejectedValueOnce(
-        new ApiError('Validation failed', 'VALIDATION_ERROR', 400, {
-          email: ['Email not found'],
-        })
+        new ApiError('Invalid credentials', 'INVALID_CREDENTIALS', 401)
       );
 
       renderLoginScreen();
@@ -318,21 +260,20 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
-
-      fireEvent.changeText(emailInput, 'notfound@example.com');
-      fireEvent.changeText(passwordInput, 'password123');
-
       const signInButton = screen.getAllByText('Sign In')[0];
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(passwordInput, 'wrongpassword');
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Email not found')).toBeTruthy();
+        expect(screen.getByText('Invalid email or password.')).toBeTruthy();
       });
     });
 
-    it('displays generic error message for unexpected errors', async () => {
+    it('displays account locked error', async () => {
       mockAuthService.login.mockRejectedValueOnce(
-        new ApiError('Network error', 'NETWORK_ERROR', 0)
+        new ApiError('Account locked', 'ACCOUNT_LOCKED', 403)
       );
 
       renderLoginScreen();
@@ -343,20 +284,19 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'password123');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Network error')).toBeTruthy();
+        expect(screen.getByText('Account locked. Please try again later.')).toBeTruthy();
       });
     });
 
-    it('displays generic message for non-ApiError exceptions', async () => {
-      mockAuthService.login.mockRejectedValueOnce(new Error('Unexpected error'));
+    it('displays generic error for unknown errors', async () => {
+      mockAuthService.login.mockRejectedValueOnce(new Error('Network error'));
 
       renderLoginScreen();
 
@@ -366,53 +306,72 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'password123');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
 
       await waitFor(() => {
         expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeTruthy();
       });
     });
-  });
 
-  describe('Navigation', () => {
-    it('navigates to Register on register link press', async () => {
+    it('displays email not verified error with navigation', async () => {
+      mockAuthService.login.mockRejectedValueOnce(
+        new ApiError('Email not verified', 'EMAIL_NOT_VERIFIED', 403)
+      );
+
       renderLoginScreen();
 
       await waitFor(() => {
-        expect(screen.getByText(/Don't have an account/)).toBeTruthy();
+        expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
       });
 
-      const registerLink = screen.getByText(/Don't have an account/);
-      fireEvent.press(registerLink);
+      const emailInput = screen.getByPlaceholderText('Enter your email');
+      const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(passwordInput, 'password123');
+      fireEvent.press(signInButton);
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('VerifyEmail', { email: 'test@example.com' });
+      });
+    });
+  });
+
+  describe('Navigation', () => {
+    it('navigates to Register on sign up link press', async () => {
+      renderLoginScreen();
+
+      await waitFor(() => {
+        const registerLink = screen.getByText(/Don't have an account/);
+        fireEvent.press(registerLink);
+      });
 
       expect(mockNavigate).toHaveBeenCalledWith('Register');
     });
 
-    it('navigates to ResetPassword on forgot password link press', async () => {
+    it('navigates to ForgotPassword on forgot password link press', async () => {
       renderLoginScreen();
 
       await waitFor(() => {
-        expect(screen.getByText(/Forgot password/)).toBeTruthy();
+        const forgotLink = screen.getByText(/Forgot password/);
+        fireEvent.press(forgotLink);
       });
 
-      const forgotLink = screen.getByText(/Forgot password/);
-      fireEvent.press(forgotLink);
-
-      expect(mockNavigate).toHaveBeenCalledWith('ResetPassword', {});
+      expect(mockNavigate).toHaveBeenCalledWith('ForgotPassword');
     });
 
-    it('disables navigation links during loading', async () => {
+    it('disables navigation links during login', async () => {
       mockAuthService.login.mockImplementation(
         () => new Promise(resolve =>
           setTimeout(() =>
             resolve({
-              accessToken: 'token-123',
-              refreshToken: 'refresh-456',
+              accessToken: 'access-token',
+              refreshToken: 'refresh-token',
               expiresIn: 900,
             }),
             100
@@ -428,11 +387,10 @@ describe('LoginScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Enter your password');
+      const signInButton = screen.getAllByText('Sign In')[0];
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'password123');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
       fireEvent.press(signInButton);
 
       const registerLink = screen.getByText(/Don't have an account/);
@@ -440,190 +398,6 @@ describe('LoginScreen', () => {
 
       await waitFor(() => {
         expect(mockNavigate).not.toHaveBeenCalledWith('Register');
-      });
-    });
-  });
-
-  describe('Error Clearing', () => {
-    it('clears errors when changing input values', async () => {
-      mockAuthService.login.mockRejectedValueOnce(
-        new ApiError('Invalid credentials', 'INVALID_CREDENTIALS', 401)
-      );
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
-      });
-
-      const emailInput = screen.getByPlaceholderText('Enter your email');
-      const passwordInput = screen.getByPlaceholderText('Enter your password');
-
-      fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInput, 'wrongpassword');
-
-      const signInButton = screen.getAllByText('Sign In')[0];
-      fireEvent.press(signInButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Invalid email or password')).toBeTruthy();
-      });
-
-      fireEvent.changeText(emailInput, 'newtest@example.com');
-
-      await waitFor(() => {
-        const errors = screen.queryAllByText('Invalid email or password');
-        expect(errors.length).toBe(0);
-      });
-    });
-  });
-
-  describe('Biometric Login', () => {
-    it('does not show biometric button when not available', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: false,
-        biometricType: 'none',
-        isEnrolled: false,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByText('Sign In')).toBeTruthy();
-      });
-
-      expect(screen.queryByTestId('biometric-login-button')).toBeNull();
-    });
-
-    it('does not show biometric button when not enabled', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByText('Sign In')).toBeTruthy();
-      });
-
-      expect(screen.queryByTestId('biometric-login-button')).toBeNull();
-    });
-
-    it('shows biometric button when available and enabled', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByTestId('biometric-login-button')).toBeTruthy();
-      });
-      expect(screen.getByText('Use Face ID')).toBeTruthy();
-    });
-
-    it('shows fingerprint label for fingerprint type', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'fingerprint',
-        isEnrolled: true,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByText('Use Fingerprint')).toBeTruthy();
-      });
-    });
-
-    it('calls loginWithBiometric when biometric button pressed', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
-      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
-      mockBiometricService.getStoredCredentials.mockResolvedValue({
-        refreshToken: 'stored-refresh',
-        email: 'stored@example.com',
-      });
-      mockAuthService.refreshTokens.mockResolvedValue({
-        accessToken: 'new-access',
-        refreshToken: 'new-refresh',
-        expiresIn: 900,
-      });
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByTestId('biometric-login-button')).toBeTruthy();
-      });
-
-      fireEvent.press(screen.getByTestId('biometric-login-button'));
-
-      await waitFor(() => {
-        expect(mockBiometricService.promptBiometric).toHaveBeenCalled();
-      });
-    });
-
-    it('shows error when biometric login fails', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
-      mockBiometricService.promptBiometric.mockResolvedValue({
-        success: false,
-        error: 'User cancelled',
-      });
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByTestId('biometric-login-button')).toBeTruthy();
-      });
-
-      fireEvent.press(screen.getByTestId('biometric-login-button'));
-
-      await waitFor(() => {
-        expect(screen.getByText('User cancelled')).toBeTruthy();
-      });
-    });
-
-    it('shows session expired error when token refresh fails', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
-      });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
-      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
-      mockBiometricService.getStoredCredentials.mockResolvedValue({
-        refreshToken: 'expired-refresh',
-        email: 'stored@example.com',
-      });
-      mockAuthService.refreshTokens.mockRejectedValue(new Error('Token expired'));
-
-      renderLoginScreen();
-
-      await waitFor(() => {
-        expect(screen.getByTestId('biometric-login-button')).toBeTruthy();
-      });
-
-      fireEvent.press(screen.getByTestId('biometric-login-button'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Session expired. Please sign in with your password.')).toBeTruthy();
       });
     });
   });

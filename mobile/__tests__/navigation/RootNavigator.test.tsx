@@ -3,6 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { RootNavigator } from '../../src/navigation/RootNavigator';
 import { AuthProvider } from '../../src/contexts';
+import { tokenStorage } from '../../src/lib/tokenStorage';
+
+jest.mock('../../src/lib/tokenStorage');
+jest.mock('../../src/services/auth');
 
 jest.mock('../../src/hooks/useAuthState', () => ({
   useAuthState: jest.fn(),
@@ -11,6 +15,7 @@ jest.mock('../../src/hooks/useAuthState', () => ({
 import { useAuthState } from '../../src/hooks/useAuthState';
 
 const mockUseAuthState = useAuthState as jest.Mock;
+const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
@@ -23,6 +28,16 @@ const renderWithProviders = (component: React.ReactElement) => {
 describe('RootNavigator', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTokenStorage.getStoredCredentials.mockResolvedValue({
+      accessToken: null,
+      refreshToken: null,
+      email: null,
+      hasCompletedOnboarding: false,
+    });
+    mockTokenStorage.setStoredCredentials.mockResolvedValue(undefined);
+    mockTokenStorage.setTokens.mockResolvedValue(undefined);
+    mockTokenStorage.clearTokens.mockResolvedValue(undefined);
+    mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
   });
 
   it('shows loading indicator while checking auth', () => {
