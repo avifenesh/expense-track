@@ -13,6 +13,9 @@ vi.mock('@prisma/client', async (importOriginal) => {
     toString() {
       return String(this.value)
     }
+    toFixed(decimals: number) {
+      return Number(this.value).toFixed(decimals)
+    }
   }
 
   return {
@@ -82,6 +85,7 @@ const mockDecimal = (value: string) => ({
   value,
   toNumber: () => Number(value),
   toString: () => value,
+  toFixed: (decimals: number) => Number(value).toFixed(decimals),
 })
 
 // Prisma error type

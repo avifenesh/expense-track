@@ -13,6 +13,9 @@ vi.mock('@prisma/client', async (importOriginal) => {
     toString() {
       return String(this.value)
     }
+    toFixed(decimals: number) {
+      return Number(this.value).toFixed(decimals)
+    }
   }
 
   return {
