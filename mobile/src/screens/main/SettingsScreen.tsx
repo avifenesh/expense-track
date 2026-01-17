@@ -1,10 +1,59 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
 import { APP_NAME, APP_VERSION } from '../../constants';
+import { useAuth } from '../../contexts';
+import { getBiometricTypeLabel } from '../../services/biometric';
 
 export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
+  const {
+    logout,
+    biometricCapability,
+    isBiometricEnabled,
+    enableBiometric,
+    disableBiometric,
+  } = useAuth();
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+  const [biometricError, setBiometricError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleToggleBiometric = async () => {
+    setBiometricError(null);
+    setIsBiometricLoading(true);
+    try {
+      if (isBiometricEnabled) {
+        await disableBiometric();
+      } else {
+        await enableBiometric();
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setBiometricError(err.message);
+      } else {
+        setBiometricError('Failed to update biometric settings');
+      }
+    } finally {
+      setIsBiometricLoading(false);
+    }
+  };
+
+  const biometricLabel = biometricCapability
+    ? getBiometricTypeLabel(biometricCapability.biometricType)
+    : 'Biometric';
+
+  const showBiometricOption = biometricCapability?.isAvailable;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -31,6 +80,36 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
             </Pressable>
           </View>
         </View>
+
+        {showBiometricOption && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Security</Text>
+            <View style={styles.menuGroup}>
+              <View style={styles.menuItem}>
+                <View style={styles.menuItemLeft}>
+                  <Text style={styles.menuText}>{biometricLabel}</Text>
+                  <Text style={styles.menuSubtext}>Quick unlock with {biometricLabel}</Text>
+                </View>
+                {isBiometricLoading ? (
+                  <ActivityIndicator color="#38bdf8" testID="biometric-loading" />
+                ) : (
+                  <Switch
+                    value={isBiometricEnabled}
+                    onValueChange={handleToggleBiometric}
+                    trackColor={{ false: '#475569', true: '#38bdf8' }}
+                    thumbColor={isBiometricEnabled ? '#fff' : '#94a3b8'}
+                    testID="biometric-switch"
+                  />
+                )}
+              </View>
+            </View>
+            {biometricError && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{biometricError}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data</Text>
@@ -64,8 +143,17 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
           </View>
         </View>
 
-        <Pressable style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Sign Out</Text>
+        <Pressable
+          style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
+          onPress={handleLogout}
+          disabled={isLoggingOut}
+          testID="logout-button"
+        >
+          {isLoggingOut ? (
+            <ActivityIndicator color="#ef4444" />
+          ) : (
+            <Text style={styles.logoutText}>Sign Out</Text>
+          )}
         </Pressable>
 
         <Text style={styles.appName}>{APP_NAME}</Text>
@@ -116,9 +204,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
+  menuItemLeft: {
+    flex: 1,
+  },
   menuText: {
     fontSize: 16,
     color: '#fff',
+  },
+  menuSubtext: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
   },
   menuValue: {
     fontSize: 16,
@@ -131,12 +227,25 @@ const styles = StyleSheet.create({
   dangerText: {
     color: '#ef4444',
   },
+  errorContainer: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+  },
   logoutButton: {
     backgroundColor: 'rgba(239,68,68,0.1)',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 24,
+  },
+  logoutButtonDisabled: {
+    opacity: 0.6,
   },
   logoutText: {
     fontSize: 16,

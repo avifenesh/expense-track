@@ -11,6 +11,7 @@ export { OnboardingCategoriesScreen } from './onboarding/OnboardingCategoriesScr
 export { OnboardingBudgetScreen } from './onboarding/OnboardingBudgetScreen';
 export { OnboardingSampleDataScreen } from './onboarding/OnboardingSampleDataScreen';
 export { OnboardingCompleteScreen } from './onboarding/OnboardingCompleteScreen';
+export { OnboardingBiometricScreen } from './onboarding/OnboardingBiometricScreen';
 
 // Main screens
 export { DashboardScreen } from './main/DashboardScreen';

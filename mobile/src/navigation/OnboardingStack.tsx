@@ -8,6 +8,7 @@ import {
   OnboardingBudgetScreen,
   OnboardingSampleDataScreen,
   OnboardingCompleteScreen,
+  OnboardingBiometricScreen,
 } from '../screens';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
@@ -45,6 +46,10 @@ export function OnboardingStack() {
       <Stack.Screen
         name="OnboardingComplete"
         component={OnboardingCompleteScreen}
+      />
+      <Stack.Screen
+        name="OnboardingBiometric"
+        component={OnboardingBiometricScreen}
       />
     </Stack.Navigator>
   );
