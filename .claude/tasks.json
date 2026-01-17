@@ -64,8 +64,22 @@
       "url": "https://github.com/avifenesh/expense-track/issues/155"
     }
   ],
-  "lastUpdated": "2026-01-17T00:30:00Z",
+  "lastUpdated": "2026-01-17T00:50:00Z",
   "tasks": [
+    {
+      "id": "80",
+      "source": "github",
+      "title": "Implement biometric authentication on mobile",
+      "description": "Add Face ID/Touch ID for quick login with password fallback",
+      "labels": ["mobile", "security"],
+      "milestone": "Sprint 3: Mobile App",
+      "branch": "feature/biometric-auth-80",
+      "status": "shipped",
+      "claimedAt": "2026-01-17T00:10:00Z",
+      "completedAt": "2026-01-17T00:50:00Z",
+      "pr": "https://github.com/avifenesh/balance-beacon/pull/162",
+      "mergeCommit": "fcca2dc"
+    },
     {
       "id": "71",
       "source": "github",
