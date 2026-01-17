@@ -1,14 +1,14 @@
 // Dashboard caching module - caches expensive dashboard aggregations
 import { Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getDashboardData, type DashboardData } from '@/lib/finance'
-import { getAccounts } from '@/lib/finance'
 
 // Cache TTL: 5 minutes
 const CACHE_TTL_SECONDS = 5 * 60
 
 // In-memory request deduplication (per-process)
-const inFlightRequests = new Map<string, Promise<DashboardData>>()
+// Map is keyed by cache key, stores Promise of any type
+// Type safety is maintained through the generic getCachedData<T> function
+const inFlightRequests = new Map<string, Promise<unknown>>()
 
 // Cache metrics (per-process)
 const metrics = {
@@ -34,30 +34,33 @@ function generateCacheKey(params: {
 }
 
 /**
- * Get cached dashboard data or compute and cache if missing/stale
- * Implements request deduplication to prevent thundering herd
+ * Generic cache function that accepts a compute function.
+ * Decouples caching logic from specific data computation.
  *
- * Note: If accounts are pre-fetched and provided, caching is bypassed
- * to avoid cache key complexity with arrays
+ * Note: Type safety for inFlightRequests is maintained by:
+ * 1. Using the same cacheKey for storing and retrieving
+ * 2. The caller providing consistent generic type T
+ * This is a deliberate trade-off for supporting multiple data types in a single cache.
+ *
+ * @param cacheKey - Unique key for this cached data
+ * @param computeFn - Function that computes the data if cache miss
+ * @param metadata - Required metadata for cache storage (monthKey is required)
+ * @returns The cached or freshly computed data
  */
-export async function getCachedDashboardData(params: {
-  monthKey: string
-  accountId: string
-  preferredCurrency?: Currency
-  accounts?: Awaited<ReturnType<typeof getAccounts>>
-  userId?: string
-}): Promise<DashboardData> {
-  // If accounts are explicitly provided, bypass cache (used for pre-fetched data optimization)
-  if (params.accounts) {
-    return getDashboardData(params)
-  }
-
-  const cacheKey = generateCacheKey(params)
-
+export async function getCachedData<T>(
+  cacheKey: string,
+  computeFn: () => Promise<T>,
+  metadata: {
+    monthKey: string
+    accountId?: string | null
+    preferredCurrency?: Currency | null
+  },
+): Promise<T> {
   // 1. Check in-flight request deduplication
   const existing = inFlightRequests.get(cacheKey)
   if (existing) {
-    return existing
+    // Type safety: The same cacheKey guarantees the same type T
+    return existing as Promise<T>
   }
 
   // 2. Check database cache (with TTL)
@@ -71,7 +74,7 @@ export async function getCachedDashboardData(params: {
     if (cached && cached.fetchedAt > TTL_THRESHOLD) {
       // Cache hit - return cached data
       metrics.cacheHit++
-      return JSON.parse(cached.data as string) as DashboardData
+      return JSON.parse(cached.data as string) as T
     }
   } catch {
     // Cache read error - fall through to fresh computation
@@ -81,7 +84,7 @@ export async function getCachedDashboardData(params: {
   // 3. Cache miss or stale - compute fresh data with deduplication
   const computePromise = (async () => {
     try {
-      const data = await getDashboardData(params)
+      const data = await computeFn()
 
       // Store in cache
       try {
@@ -95,9 +98,9 @@ export async function getCachedDashboardData(params: {
           create: {
             cacheKey,
             data: dataJson,
-            monthKey: params.monthKey,
-            accountId: params.accountId || null,
-            preferredCurrency: params.preferredCurrency || null,
+            monthKey: metadata.monthKey,
+            accountId: metadata.accountId || null,
+            preferredCurrency: metadata.preferredCurrency || null,
             fetchedAt: new Date(),
           },
         })
@@ -116,6 +119,56 @@ export async function getCachedDashboardData(params: {
 
   inFlightRequests.set(cacheKey, computePromise)
   return computePromise
+}
+
+// Lazy import to break circular dependency, using a promise-based singleton
+// This avoids race conditions when multiple requests trigger imports simultaneously
+type FinanceModule = typeof import('@/lib/finance')
+let financeModulePromise: Promise<FinanceModule> | null = null
+
+async function ensureFinanceImports(): Promise<FinanceModule> {
+  if (!financeModulePromise) {
+    financeModulePromise = import('@/lib/finance')
+  }
+  return financeModulePromise
+}
+
+// Import the DashboardData type for backward compatibility
+type DashboardData = import('@/lib/finance').DashboardData
+type AccountsResult = Awaited<ReturnType<typeof import('@/lib/finance').getAccounts>>
+
+/**
+ * Get cached dashboard data or compute and cache if missing/stale
+ * Implements request deduplication to prevent thundering herd
+ *
+ * Note: If accounts are pre-fetched and provided, caching is bypassed
+ * to avoid cache key complexity with arrays
+ */
+export async function getCachedDashboardData(params: {
+  monthKey: string
+  accountId: string
+  preferredCurrency?: Currency
+  accounts?: AccountsResult
+  userId?: string
+}): Promise<DashboardData> {
+  const finance = await ensureFinanceImports()
+
+  // If accounts are explicitly provided, bypass cache (used for pre-fetched data optimization)
+  if (params.accounts) {
+    return finance.getDashboardData(params)
+  }
+
+  const cacheKey = generateCacheKey(params)
+
+  return getCachedData<DashboardData>(
+    cacheKey,
+    () => finance.getDashboardData(params),
+    {
+      monthKey: params.monthKey,
+      accountId: params.accountId || null,
+      preferredCurrency: params.preferredCurrency || null,
+    },
+  )
 }
 
 /**
