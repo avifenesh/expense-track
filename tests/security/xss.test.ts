@@ -93,6 +93,7 @@ vi.mock('@/lib/prisma', () => {
       },
       category: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
       },
@@ -306,6 +307,9 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
 
         // Wrap payload with alphanumeric chars to pass schema validation
         const wrappedPayload = `A${payload}Z`
+
+        // Mock no existing category found (needed for createOrReactivateCategory)
+        vi.mocked(prisma.category.findFirst).mockResolvedValueOnce(null)
 
         vi.mocked(prisma.category.create).mockResolvedValueOnce({
           id: 'test-category-id',

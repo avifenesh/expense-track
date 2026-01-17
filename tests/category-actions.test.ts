@@ -53,6 +53,7 @@ vi.mock('@prisma/client', async (importOriginal) => {
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     category: {
+      findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
     },
@@ -62,6 +63,8 @@ vi.mock('@/lib/prisma', () => ({
 describe('createCategoryAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default: no existing category found
+    vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
   })
 
   it('should successfully create a category', async () => {
@@ -135,7 +138,18 @@ describe('createCategoryAction', () => {
   })
 
   it('should handle duplicate category error', async () => {
-    vi.mocked(prisma.category.create).mockRejectedValue(new Error('Unique constraint'))
+    // Mock finding an existing active category
+    vi.mocked(prisma.category.findFirst).mockResolvedValue({
+      id: 'existing-cat',
+      name: 'Groceries',
+      type: TransactionType.EXPENSE,
+      color: '#FF0000',
+      isArchived: false,
+      isHolding: false,
+      userId: 'test-user',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any)
 
     const result = await createCategoryAction({
       name: 'Groceries',
@@ -146,7 +160,7 @@ describe('createCategoryAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('Unable to create category')
+      expect(result.error.name).toContain('A category with this name already exists')
     }
   })
 

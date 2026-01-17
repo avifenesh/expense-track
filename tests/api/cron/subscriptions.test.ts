@@ -72,6 +72,7 @@ describe('GET /api/cron/subscriptions', () => {
       expect(data.error).toBe('Unauthorized')
       expect(mockServerLogger.warn).toHaveBeenCalledWith('Cron subscription expiration: unauthorized access attempt', {
         action: 'cron.subscriptions',
+        clientIp: 'unknown',
       })
     })
 
