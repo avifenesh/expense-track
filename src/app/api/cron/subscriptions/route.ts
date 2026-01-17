@@ -3,17 +3,48 @@ import { processExpiredSubscriptions } from '@/lib/subscription'
 import { serverLogger } from '@/lib/server-logger'
 
 /**
+ * In-memory rate limiter for cron endpoints
+ * Limits to 1 request per minute per IP/secret combination
+ */
+const cronRateLimit = new Map<string, number>()
+const CRON_RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1 minute
+
+function checkCronRateLimit(identifier: string): boolean {
+  const now = Date.now()
+  const lastRequest = cronRateLimit.get(identifier)
+
+  // Cleanup old entries (older than 5 minutes)
+  if (cronRateLimit.size > 100) {
+    const cutoff = now - 5 * 60 * 1000
+    for (const [key, timestamp] of cronRateLimit) {
+      if (timestamp < cutoff) cronRateLimit.delete(key)
+    }
+  }
+
+  if (lastRequest && now - lastRequest < CRON_RATE_LIMIT_WINDOW_MS) {
+    return false // Rate limited
+  }
+
+  cronRateLimit.set(identifier, now)
+  return true // Allowed
+}
+
+/**
  * Cron endpoint to expire subscriptions.
  * Can be called by Railway cron service or any scheduler.
  *
  * Alternative: Run `npx tsx scripts/expire-subscriptions.ts` directly.
  *
- * Security: Requires CRON_SECRET authorization header to prevent unauthorized access.
+ * Security:
+ * - Requires CRON_SECRET authorization header to prevent unauthorized access
+ * - Rate limited to 1 request per minute per IP to prevent abuse
+ *
  * Set CRON_SECRET env var and pass as Bearer token.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 
   // Verify cron secret - always required for security
   if (!cronSecret) {
@@ -26,8 +57,25 @@ export async function GET(request: NextRequest) {
   if (authHeader !== `Bearer ${cronSecret}`) {
     serverLogger.warn('Cron subscription expiration: unauthorized access attempt', {
       action: 'cron.subscriptions',
+      clientIp,
     })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Rate limit by IP to prevent abuse (even with valid secret)
+  const rateLimitKey = `cron:${clientIp}`
+  if (!checkCronRateLimit(rateLimitKey)) {
+    serverLogger.warn('Cron subscription expiration: rate limited', {
+      action: 'cron.subscriptions',
+      clientIp,
+    })
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait before retrying.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': '60' },
+      },
+    )
   }
 
   try {

@@ -20,8 +20,65 @@ import {
 } from '@/lib/subscription'
 
 /**
+ * In-memory cache for processed webhook event IDs to prevent replay attacks.
+ * Events are stored with their processing timestamp.
+ *
+ * Note: This is an in-memory implementation that resets on cold start.
+ * For production with high reliability requirements, consider:
+ * - Redis-backed deduplication
+ * - Database table for processed events
+ *
+ * TTL: 24 hours (Paddle may retry within this window)
+ */
+const processedEventIds = new Map<string, number>()
+const EVENT_ID_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const MAX_CACHED_EVENTS = 10000 // Prevent unbounded memory growth
+
+/**
+ * Check if an event has already been processed (replay protection)
+ * @returns true if this is a duplicate event that should be skipped
+ */
+function isDuplicateEvent(eventId: string): boolean {
+  const now = Date.now()
+
+  // Cleanup expired entries if cache is getting large
+  if (processedEventIds.size > MAX_CACHED_EVENTS / 2) {
+    const cutoff = now - EVENT_ID_TTL_MS
+    for (const [id, timestamp] of processedEventIds) {
+      if (timestamp < cutoff) {
+        processedEventIds.delete(id)
+      }
+    }
+  }
+
+  // Check if event was already processed
+  const processedAt = processedEventIds.get(eventId)
+  if (processedAt !== undefined) {
+    // Still within TTL window - this is a duplicate
+    if (now - processedAt < EVENT_ID_TTL_MS) {
+      return true
+    }
+    // Expired - allow reprocessing (shouldn't happen normally)
+    processedEventIds.delete(eventId)
+  }
+
+  return false
+}
+
+/**
+ * Mark an event as processed
+ */
+function markEventProcessed(eventId: string): void {
+  processedEventIds.set(eventId, Date.now())
+}
+
+/**
  * Paddle webhook endpoint
  * Handles subscription lifecycle events from Paddle Billing
+ *
+ * Security:
+ * - Verifies webhook signature using PADDLE_WEBHOOK_SECRET
+ * - Implements event_id deduplication to prevent replay attacks
  *
  * Events handled:
  * - subscription.created: New subscription created → link Paddle IDs
@@ -56,6 +113,17 @@ export async function POST(request: NextRequest) {
     // Parse and handle the event
     const event = parsePaddleEvent(rawBody)
 
+    // Check for replay attack (duplicate event_id)
+    if (isDuplicateEvent(event.event_id)) {
+      serverLogger.info('PADDLE_WEBHOOK_DUPLICATE', {
+        eventType: event.event_type,
+        eventId: event.event_id,
+        message: 'Duplicate event detected, skipping',
+      })
+      // Return 200 to acknowledge - Paddle doesn't need to retry
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
     serverLogger.info('PADDLE_WEBHOOK_RECEIVED', {
       eventType: event.event_type,
       eventId: event.event_id,
@@ -63,6 +131,9 @@ export async function POST(request: NextRequest) {
     })
 
     await handlePaddleEvent(event)
+
+    // Mark event as processed after successful handling
+    markEventProcessed(event.event_id)
 
     return NextResponse.json({ received: true })
   } catch (error) {
