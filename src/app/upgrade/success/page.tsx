@@ -49,18 +49,20 @@ export default async function UpgradeSuccessPage() {
               <p className="text-slate-300">
                 Your subscription is now active. Thank you for supporting Balance Beacon!
               </p>
-              <div className="rounded-lg bg-white/5 p-4 text-sm text-slate-400">
-                <p>
-                  Your subscription renews on{' '}
-                  <strong className="text-white">
-                    {subscriptionState.currentPeriodEnd?.toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </strong>
-                </p>
-              </div>
+              {subscriptionState.currentPeriodEnd && (
+                <div className="rounded-lg bg-white/5 p-4 text-sm text-slate-400">
+                  <p>
+                    Your subscription renews on{' '}
+                    <strong className="text-white">
+                      {subscriptionState.currentPeriodEnd.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </strong>
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-slate-300">

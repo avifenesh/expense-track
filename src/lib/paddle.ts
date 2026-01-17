@@ -11,6 +11,8 @@ const PADDLE_API_URL = {
 
 // Maximum age for webhook timestamps (5 minutes in seconds)
 const MAX_WEBHOOK_AGE_SECONDS = 5 * 60
+// Maximum future time tolerance for clock skew (60 seconds)
+const MAX_WEBHOOK_FUTURE_SECONDS = 60
 
 export type PaddleEnvironment = 'sandbox' | 'production'
 
@@ -77,7 +79,7 @@ export function verifyWebhookSignature(
     const timestamp = tsMatch.replace('ts=', '')
     const providedHash = h1Match.replace('h1=', '')
 
-    // Validate timestamp to prevent replay attacks
+    // Validate timestamp to prevent replay attacks and future-dated webhooks
     const webhookTime = parseInt(timestamp, 10)
     const currentTime = Math.floor(Date.now() / 1000)
     if (isNaN(webhookTime) || currentTime - webhookTime > MAX_WEBHOOK_AGE_SECONDS) {
@@ -86,6 +88,16 @@ export function verifyWebhookSignature(
         webhookTime,
         currentTime,
         ageSeconds: currentTime - webhookTime,
+      })
+      return false
+    }
+    // Reject timestamps too far in the future (clock skew tolerance: 60s)
+    if (webhookTime - currentTime > MAX_WEBHOOK_FUTURE_SECONDS) {
+      serverLogger.warn('PADDLE_WEBHOOK_TIMESTAMP_FUTURE', {
+        message: 'Webhook timestamp is too far in the future',
+        webhookTime,
+        currentTime,
+        aheadSeconds: webhookTime - currentTime,
       })
       return false
     }

@@ -129,6 +129,36 @@ describe('paddle.ts', () => {
         expect.any(Object),
       )
     })
+
+    it('should return false for future timestamp (too far ahead)', () => {
+      const rawBody = JSON.stringify({ event_type: 'subscription.created' })
+      // Create signature with timestamp 5 minutes in the future (exceeds 60 second tolerance)
+      const futureTimestamp = Math.floor(Date.now() / 1000) + 300
+      const signedPayload = `${futureTimestamp}:${rawBody}`
+      const hash = crypto.createHmac('sha256', webhookSecret).update(signedPayload).digest('hex')
+      const signature = `ts=${futureTimestamp};h1=${hash}`
+
+      const result = verifyWebhookSignature(rawBody, signature, webhookSecret)
+
+      expect(result).toBe(false)
+      expect(serverLogger.warn).toHaveBeenCalledWith(
+        'PADDLE_WEBHOOK_TIMESTAMP_FUTURE',
+        expect.any(Object),
+      )
+    })
+
+    it('should allow timestamp slightly in the future (clock skew)', () => {
+      const rawBody = JSON.stringify({ event_type: 'subscription.created' })
+      // Create signature with timestamp 30 seconds in the future (within 60 second tolerance)
+      const slightlyFutureTimestamp = Math.floor(Date.now() / 1000) + 30
+      const signedPayload = `${slightlyFutureTimestamp}:${rawBody}`
+      const hash = crypto.createHmac('sha256', webhookSecret).update(signedPayload).digest('hex')
+      const signature = `ts=${slightlyFutureTimestamp};h1=${hash}`
+
+      const result = verifyWebhookSignature(rawBody, signature, webhookSecret)
+
+      expect(result).toBe(true)
+    })
   })
 
   describe('parsePaddleEvent()', () => {
