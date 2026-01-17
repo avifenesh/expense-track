@@ -553,9 +553,10 @@ describe('User Isolation: Account Switching Security', () => {
 
       expect('error' in result).toBe(true)
       if ('error' in result) {
+        const errorObj = result.error as Record<string, string[] | undefined>
         expect(
-          result.error.accountId?.some((msg: string) => msg.includes('do not have access')) ||
-            result.error.general?.some((msg: string) => msg.includes('not available')),
+          errorObj.accountId?.some((msg: string) => msg.includes('do not have access')) ||
+            errorObj.general?.some((msg: string) => msg.includes('not available')),
         ).toBe(true)
       }
     })
@@ -602,9 +603,10 @@ describe('User Isolation: Account Switching Security', () => {
 
         expect('error' in result).toBe(true)
         if ('error' in result) {
+          const errorObj = result.error as Record<string, string[] | undefined>
           expect(
-            result.error.accountId?.some((msg: string) => msg.includes('do not have access')) ||
-              result.error.general?.some((msg: string) => msg.includes('not available')),
+            errorObj.accountId?.some((msg: string) => msg.includes('do not have access')) ||
+              errorObj.general?.some((msg: string) => msg.includes('not available')),
           ).toBe(true)
         }
       }
@@ -612,8 +614,7 @@ describe('User Isolation: Account Switching Security', () => {
 
     it('should allow switching to account owned by same user', async () => {
       const { persistActiveAccountAction } = await import('@/app/actions/auth')
-      const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-      const { updateSessionAccount } = await import('@/lib/auth-server')
+      const { requireSession, getDbUserAsAuthUser, updateSessionAccount } = await import('@/lib/auth-server')
 
       vi.mocked(requireSession).mockResolvedValue({
         userEmail: 'owner@example.com',

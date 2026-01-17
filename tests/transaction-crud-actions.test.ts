@@ -873,7 +873,7 @@ describe('subscription state edge cases', () => {
     const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
     vi.mocked(hasActiveSubscription).mockResolvedValue(false)
     vi.mocked(getSubscriptionState).mockResolvedValue({
-      status: 'TRIAL_EXPIRED',
+      status: 'EXPIRED',
       isActive: false,
       trialEndsAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // Expired 1 day ago
       currentPeriodEnd: null,
@@ -908,7 +908,7 @@ describe('subscription state edge cases', () => {
     const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
     vi.mocked(hasActiveSubscription).mockResolvedValue(false)
     vi.mocked(getSubscriptionState).mockResolvedValue({
-      status: 'CANCELLED',
+      status: 'CANCELED',
       isActive: false,
       trialEndsAt: null,
       currentPeriodEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // Ended 5 days ago
@@ -943,7 +943,7 @@ describe('subscription state edge cases', () => {
     const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
     vi.mocked(hasActiveSubscription).mockResolvedValue(false)
     vi.mocked(getSubscriptionState).mockResolvedValue({
-      status: 'CANCELLED',
+      status: 'CANCELED',
       isActive: false,
       trialEndsAt: null,
       currentPeriodEnd: null,
@@ -979,7 +979,7 @@ describe('subscription state edge cases', () => {
     const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
     vi.mocked(hasActiveSubscription).mockResolvedValue(false)
     vi.mocked(getSubscriptionState).mockResolvedValue({
-      status: 'CANCELLED',
+      status: 'CANCELED',
       isActive: false,
       trialEndsAt: null,
       currentPeriodEnd: null,

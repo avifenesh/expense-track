@@ -755,17 +755,27 @@ describe('SQL injection protection', () => {
       currency: Currency.USD,
     } as any)
 
-    // User lookup returns null for malicious email
-    vi.mocked(prisma.user.findMany).mockResolvedValue([])
+    // Test with syntactically valid emails containing SQL-like content
+    // These pass email validation but test how special characters are handled in DB queries
+    const sqlLikeEmails = [
+      "test'--@example.com", // SQL comment injection in valid email
+      "user'+OR+'1'='1@test.com", // SQL OR injection in valid email
+      'select*from@users.com', // SQL keywords as email parts
+    ]
 
-    const result = await shareExpenseAction({
-      transactionId: 'tx-1',
-      splitType: SplitType.EQUAL,
-      participants: [{ email: "'; DROP TABLE users; --" }],
-      csrfToken: 'test-token',
-    })
+    for (const email of sqlLikeEmails) {
+      // User lookup returns null - Prisma uses parameterized queries
+      vi.mocked(prisma.user.findMany).mockResolvedValue([])
 
-    // Should handle safely - either validation error or not found
-    expect('error' in result).toBe(true)
+      const result = await shareExpenseAction({
+        transactionId: 'tx-1',
+        splitType: SplitType.EQUAL,
+        participants: [{ email }],
+        csrfToken: 'test-token',
+      })
+
+      // Should handle safely - either validation error or not found
+      expect('error' in result).toBe(true)
+    }
   })
 })

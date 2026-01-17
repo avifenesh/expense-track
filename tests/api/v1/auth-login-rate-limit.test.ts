@@ -118,7 +118,7 @@ describe('Auth login rate limiting', () => {
       expect(response.status).not.toBe(429)
     }
 
-    // Now user1 should be rate limited (6th attempt)
+    // Now make the 6th attempt for user1, which should be rate limited
     const user1Response6 = await loginPost(buildRequest('user1@example.com'))
     expect(user1Response6.status).toBe(429)
 
