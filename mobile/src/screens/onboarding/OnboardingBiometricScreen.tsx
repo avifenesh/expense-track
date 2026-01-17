@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '../../stores';
 import { getBiometricTypeLabel } from '../../services/biometric';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
 export function OnboardingBiometricScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingBiometric'>) {
-  const { biometricCapability, enableBiometric, updateUser } = useAuth();
+  const biometricCapability = useAuthStore((state) => state.biometricCapability);
+  const enableBiometric = useAuthStore((state) => state.enableBiometric);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
