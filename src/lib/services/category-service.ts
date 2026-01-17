@@ -1,5 +1,6 @@
 import { TransactionType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { ServiceError } from './errors'
 
 export interface CreateCategoryInput {
   userId: string
@@ -67,7 +68,7 @@ export async function createOrReactivateCategory(input: CreateCategoryInput): Pr
 
     if (!category) {
       // Should not happen if updateMany succeeded
-      throw new Error('Category not found after reactivation')
+      throw new ServiceError('Category not found after reactivation', 'INTERNAL_ERROR', 500)
     }
 
     return { success: true, category, reactivated: true }

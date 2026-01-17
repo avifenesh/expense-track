@@ -1,6 +1,7 @@
 import { Prisma, Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { toDecimalString } from '@/utils/decimal'
+import { NotFoundError, ValidationError } from './errors'
 
 export interface CreateHoldingInput {
   accountId: string
@@ -117,11 +118,11 @@ export async function validateHoldingCategory(categoryId: string, userId?: strin
   })
 
   if (!category) {
-    throw new Error('Category not found')
+    throw new NotFoundError('Category', categoryId)
   }
 
   if (!category.isHolding) {
-    throw new Error('Category must be marked as a holding category')
+    throw ValidationError.field('categoryId', 'Category must be marked as a holding category')
   }
 
   return true
