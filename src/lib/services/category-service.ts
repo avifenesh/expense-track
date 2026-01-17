@@ -14,8 +14,60 @@ export interface ArchiveCategoryInput {
   isArchived: boolean
 }
 
+/** Result type for createOrReactivateCategory */
+export type CreateCategoryResult =
+  | { success: true; category: Awaited<ReturnType<typeof prisma.category.create>>; reactivated: boolean }
+  | { success: false; error: 'DUPLICATE' }
+
 /**
- * Create a new category
+ * Create a new category or reactivate an archived one.
+ * Handles the race condition where a user might try to create a category
+ * with the same name as an archived category.
+ *
+ * @returns Success with category and whether it was reactivated, or error if duplicate
+ */
+export async function createOrReactivateCategory(input: CreateCategoryInput): Promise<CreateCategoryResult> {
+  // Check if category with same name and type exists
+  const existing = await prisma.category.findFirst({
+    where: {
+      userId: input.userId,
+      name: input.name,
+      type: input.type,
+    },
+  })
+
+  if (existing && !existing.isArchived) {
+    // Category exists and is active - reject duplicate
+    return { success: false, error: 'DUPLICATE' }
+  }
+
+  if (existing && existing.isArchived) {
+    // Reactivate archived category with new properties
+    const category = await prisma.category.update({
+      where: { id: existing.id },
+      data: {
+        isArchived: false,
+        color: input.color ?? null,
+      },
+    })
+    return { success: true, category, reactivated: true }
+  }
+
+  // Create new category
+  const category = await prisma.category.create({
+    data: {
+      userId: input.userId,
+      name: input.name,
+      type: input.type,
+      color: input.color ?? null,
+    },
+  })
+  return { success: true, category, reactivated: false }
+}
+
+/**
+ * Create a new category (legacy - throws on duplicate)
+ * @deprecated Use createOrReactivateCategory instead for better handling
  */
 export async function createCategory(input: CreateCategoryInput) {
   return await prisma.category.create({

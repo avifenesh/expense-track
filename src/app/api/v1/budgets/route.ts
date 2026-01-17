@@ -3,9 +3,18 @@ import { withApiAuth, parseJsonBody } from '@/lib/api-middleware'
 import { upsertBudget, deleteBudget, getBudgetByKey } from '@/lib/services/budget-service'
 import { budgetApiSchema, deleteBudgetApiSchema } from '@/schemas/api'
 import { validationError, forbiddenError, notFoundError, serverError, successResponse } from '@/lib/api-helpers'
+import { ensureResourceOwnership } from '@/lib/api-auth-helpers'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { serverLogger } from '@/lib/server-logger'
+
+/** Helper to verify account ownership */
+async function verifyAccountOwnership(accountId: string, userId: string) {
+  return ensureResourceOwnership(
+    () => prisma.account.findFirst({ where: { id: accountId, userId } }),
+    'Account',
+  )
+}
 
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
@@ -19,9 +28,9 @@ export async function GET(request: NextRequest) {
       return validationError({ accountId: ['accountId is required'] })
     }
 
-    // Authorize account access by userId (single check to prevent enumeration)
-    const account = await prisma.account.findUnique({ where: { id: accountId } })
-    if (!account || account.userId !== user.userId) {
+    // Authorize account access using centralized helper
+    const accountCheck = await verifyAccountOwnership(accountId, user.userId)
+    if (!accountCheck.allowed) {
       return forbiddenError('Access denied')
     }
 
@@ -89,9 +98,9 @@ export async function POST(request: NextRequest) {
       const data = parsed.data
       const month = getMonthStartFromKey(data.monthKey)
 
-      // Authorize account access by userId (single check to prevent enumeration)
-      const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-      if (!account || account.userId !== user.userId) {
+      // Authorize account access using centralized helper
+      const accountCheck = await verifyAccountOwnership(data.accountId, user.userId)
+      if (!accountCheck.allowed) {
         return forbiddenError('Access denied')
       }
 
@@ -138,9 +147,9 @@ export async function DELETE(request: NextRequest) {
       const data = parsed.data
       const month = getMonthStartFromKey(data.monthKey)
 
-      // Authorize account access by userId (single check to prevent enumeration)
-      const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-      if (!account || account.userId !== user.userId) {
+      // Authorize account access using centralized helper
+      const accountCheck = await verifyAccountOwnership(data.accountId, user.userId)
+      if (!accountCheck.allowed) {
         return forbiddenError('Access denied')
       }
 

@@ -3,10 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { successVoid } from '@/lib/action-result'
+import { successVoid, failure } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, requireCsrfToken, requireAuthUser, requireActiveSubscription } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
+import { createOrReactivateCategory } from '@/lib/services/category-service'
 
 export async function createCategoryAction(input: z.infer<typeof categorySchema>) {
   const parsed = parseInput(categorySchema, input)
@@ -23,58 +24,16 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
   if ('error' in auth) return auth
   const { authUser } = auth
 
-  try {
-    // Use upsert to handle race condition and archived category reactivation:
-    // - If category exists and is archived, unarchive it with updated properties
-    // - If category doesn't exist, create it
-    // - If category exists and is not archived, the unique constraint prevents duplicates
-    const existing = await prisma.category.findFirst({
-      where: {
-        userId: authUser.id,
-        name: parsed.data.name,
-        type: parsed.data.type,
-      },
-    })
+  // Use service function that handles archived category reactivation
+  const result = await createOrReactivateCategory({
+    userId: authUser.id,
+    name: parsed.data.name,
+    type: parsed.data.type,
+    color: parsed.data.color,
+  })
 
-    if (existing && !existing.isArchived) {
-      // Category exists and is active - reject duplicate
-      return handlePrismaError(new Error('P2002'), {
-        action: 'createCategory',
-        userId: authUser.id,
-        input: parsed.data,
-        uniqueMessage: 'A category with this name already exists',
-        fallbackMessage: 'Unable to create category',
-      })
-    }
-
-    if (existing && existing.isArchived) {
-      // Reactivate archived category with new properties
-      await prisma.category.update({
-        where: { id: existing.id },
-        data: {
-          isArchived: false,
-          color: parsed.data.color ?? null,
-        },
-      })
-    } else {
-      // Create new category
-      await prisma.category.create({
-        data: {
-          userId: authUser.id,
-          name: parsed.data.name,
-          type: parsed.data.type,
-          color: parsed.data.color ?? null,
-        },
-      })
-    }
-  } catch (error) {
-    return handlePrismaError(error, {
-      action: 'createCategory',
-      userId: authUser.id,
-      input: parsed.data,
-      uniqueMessage: 'A category with this name already exists',
-      fallbackMessage: 'Unable to create category',
-    })
+  if (!result.success) {
+    return failure({ name: ['A category with this name already exists'] })
   }
 
   revalidatePath('/')

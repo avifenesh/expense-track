@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server'
 import { withApiAuth, parseJsonBody } from '@/lib/api-middleware'
-import { createCategory } from '@/lib/services/category-service'
+import { createOrReactivateCategory } from '@/lib/services/category-service'
 import { categoryApiSchema } from '@/schemas/api'
-import { validationError, successResponse, serverError } from '@/lib/api-helpers'
+import { validationError, successResponse } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { TransactionType } from '@prisma/client'
-import { Prisma } from '@prisma/client'
-import { serverLogger } from '@/lib/server-logger'
 
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
@@ -72,25 +70,20 @@ export async function POST(request: NextRequest) {
 
       const data = parsed.data
 
-      // Execute create with proper error handling
-      try {
-        const category = await createCategory({
-          userId: user.userId,
-          name: data.name,
-          type: data.type,
-          color: data.color,
-        })
-        return successResponse({ id: category.id }, 201)
-      } catch (error) {
-        // Distinguish error types for better client feedback
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          if (error.code === 'P2002') {
-            return validationError({ name: ['A category with this name already exists'] })
-          }
-        }
-        serverLogger.error('Failed to create category', { action: 'POST /api/v1/categories', userId: user.userId }, error)
-        return serverError('Unable to create category')
+      // Use service function that handles archived category reactivation
+      const result = await createOrReactivateCategory({
+        userId: user.userId,
+        name: data.name,
+        type: data.type,
+        color: data.color,
+      })
+
+      if (!result.success) {
+        return validationError({ name: ['A category with this name already exists'] })
       }
+
+      // Return 201 for new, 200 for reactivated
+      return successResponse({ id: result.category.id }, result.reactivated ? 200 : 201)
     },
     { requireSubscription: true },
   )
