@@ -94,7 +94,7 @@ describe('finance.ts', () => {
       const result = await financeLib.getAccounts()
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { deletedAt: null },
         orderBy: { name: 'asc' },
       })
       expect(result).toEqual(mockAccounts)
@@ -106,7 +106,7 @@ describe('finance.ts', () => {
       await financeLib.getAccounts('user-123')
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-123' },
+        where: { userId: 'user-123', deletedAt: null },
         orderBy: { name: 'asc' },
       })
     })
@@ -443,7 +443,7 @@ describe('finance.ts', () => {
       })
 
       const callArg = vi.mocked(prisma.recurringTemplate.findMany).mock.calls[0]?.[0]
-      expect(callArg?.where).toEqual({ accountId: 'acc1' })
+      expect(callArg?.where).toEqual({ accountId: 'acc1', deletedAt: null })
     })
 
     it('should order templates by dayOfMonth', async () => {

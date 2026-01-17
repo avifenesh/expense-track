@@ -120,12 +120,13 @@ describe('Transaction Flow Integration', () => {
 
     expect(deleteResult).toEqual({ success: true })
 
-    // 6. Verify deletion
+    // 6. Verify soft deletion
     const deleted = await prisma.transaction.findUnique({
       where: { id: transactionId },
     })
 
-    expect(deleted).toBeNull()
+    expect(deleted).not.toBeNull()
+    expect(deleted?.deletedAt).not.toBeNull()
   })
 
   it('handles transaction with different types and currencies', async () => {
@@ -202,12 +203,15 @@ describe('Transaction Flow Integration', () => {
       expect(deleteResult).toEqual({ success: true })
     }
 
-    // Verify all deleted
+    // Verify all soft deleted
     const remaining = await prisma.transaction.findMany({
       where: { id: { in: createdIds } },
     })
 
-    expect(remaining).toHaveLength(0)
+    expect(remaining).toHaveLength(3) // Still exist but soft deleted
+    for (const tx of remaining) {
+      expect(tx.deletedAt).not.toBeNull()
+    }
   })
 
   it('correctly sets month field from date', async () => {

@@ -66,17 +66,17 @@ vi.mock('@/lib/subscription', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     category: {
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
     },
     holding: {
       create: vi.fn(),
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
-      delete: vi.fn(),
     },
   },
 }))
@@ -105,7 +105,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -151,7 +151,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -196,7 +196,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -242,7 +242,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -323,7 +323,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -363,7 +363,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -403,7 +403,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -449,7 +449,7 @@ describe('createHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -503,12 +503,12 @@ describe('updateHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+    vi.mocked(prisma.holding.findFirst).mockResolvedValue({
       id: 'holding-1',
       accountId: 'acc-1',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -543,7 +543,7 @@ describe('updateHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.holding.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.holding.findFirst).mockResolvedValue(null)
 
     const result = await updateHoldingAction({
       id: 'nonexistent',
@@ -573,12 +573,12 @@ describe('updateHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+    vi.mocked(prisma.holding.findFirst).mockResolvedValue({
       id: 'holding-1',
       accountId: 'acc-other',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-other',
       name: 'UnauthorizedAccount',
       type: 'SELF',
@@ -613,12 +613,12 @@ describe('updateHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+    vi.mocked(prisma.holding.findFirst).mockResolvedValue({
       id: 'holding-1',
       accountId: 'acc-1',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -661,25 +661,29 @@ describe('deleteHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+    vi.mocked(prisma.holding.findFirst).mockResolvedValue({
       id: 'holding-1',
       accountId: 'acc-1',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
 
-    vi.mocked(prisma.holding.delete).mockResolvedValue({} as any)
+    vi.mocked(prisma.holding.update).mockResolvedValue({} as any)
 
     const result = await deleteHoldingAction({ id: 'holding-1', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: true })
-    expect(prisma.holding.delete).toHaveBeenCalledWith({
+    expect(prisma.holding.update).toHaveBeenCalledWith({
       where: { id: 'holding-1' },
+      data: {
+        deletedAt: expect.any(Date),
+        deletedBy: 'test-user',
+      },
     })
   })
 
@@ -697,19 +701,19 @@ describe('deleteHoldingAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.holding.findUnique).mockResolvedValue({
+    vi.mocked(prisma.holding.findFirst).mockResolvedValue({
       id: 'holding-1',
       accountId: 'acc-1',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
 
-    vi.mocked(prisma.holding.delete).mockRejectedValue(new Error('Foreign key constraint'))
+    vi.mocked(prisma.holding.update).mockRejectedValue(new Error('Foreign key constraint'))
 
     const result = await deleteHoldingAction({ id: 'holding-1', csrfToken: 'test-token' })
 
@@ -739,7 +743,7 @@ describe('refreshHoldingPricesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -781,7 +785,7 @@ describe('refreshHoldingPricesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -813,7 +817,7 @@ describe('refreshHoldingPricesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -853,7 +857,7 @@ describe('refreshHoldingPricesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-unauthorized',
       name: 'UnauthorizedAccount',
       type: 'SELF',
@@ -882,7 +886,7 @@ describe('refreshHoldingPricesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',

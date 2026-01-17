@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET as GetBudgets, POST as UpsertBudget, DELETE as DeleteBudget } from '@/app/api/v1/budgets/route'
 import { generateAccessToken } from '@/lib/jwt'
+import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { getApiTestUser, getOtherTestUser, TEST_USER_ID } from './helpers'
@@ -14,7 +15,8 @@ describe('Budget API Routes', () => {
   const testMonthKey = '2024-01'
 
   beforeEach(async () => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
+    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
+    resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys
@@ -346,7 +348,7 @@ describe('Budget API Routes', () => {
       expect(data.success).toBe(true)
       expect(data.data.deleted).toBe(true)
 
-      // Verify budget was deleted
+      // Verify budget was soft deleted
       const budget = await prisma.budget.findUnique({
         where: {
           accountId_categoryId_month: {
@@ -356,7 +358,8 @@ describe('Budget API Routes', () => {
           },
         },
       })
-      expect(budget).toBeNull()
+      expect(budget).not.toBeNull()
+      expect(budget?.deletedAt).not.toBeNull()
     })
 
     it('returns 404 for non-existent budget', async () => {

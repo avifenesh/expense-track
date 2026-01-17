@@ -89,7 +89,7 @@ vi.mock('@/lib/server-logger', () => ({
 
 import { requireCsrfToken, requireAuthUser } from '@/app/actions/shared'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
-import { exportUserDataAction } from '@/app/actions/auth'
+import { exportUserDataAction } from '@/app/actions/account'
 import { prisma } from '@/lib/prisma'
 import { serverLogger } from '@/lib/server-logger'
 

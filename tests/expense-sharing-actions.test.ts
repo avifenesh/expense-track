@@ -74,7 +74,7 @@ vi.mock('@prisma/client', async (importOriginal) => {
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     transaction: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     user: {
       findMany: vi.fn(),
@@ -82,11 +82,14 @@ vi.mock('@/lib/prisma', () => ({
     },
     sharedExpense: {
       create: vi.fn(),
-      findUnique: vi.fn(),
       delete: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
     expenseParticipant: {
       createMany: vi.fn(),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
     },
@@ -128,7 +131,7 @@ describe('shareExpenseAction', () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue(null)
 
     const result = await shareExpenseAction({
       transactionId: 'tx-nonexistent',
@@ -147,7 +150,7 @@ describe('shareExpenseAction', () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       account: { userId: 'other-user' },
       sharedExpense: null,
@@ -170,7 +173,7 @@ describe('shareExpenseAction', () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       account: { userId: 'user-owner' },
       sharedExpense: { id: 'shared-1' },
@@ -193,7 +196,7 @@ describe('shareExpenseAction', () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       account: { userId: 'user-owner' },
       sharedExpense: null,
@@ -218,7 +221,7 @@ describe('shareExpenseAction', () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       account: { userId: 'user-owner' },
       sharedExpense: null,
@@ -747,7 +750,7 @@ describe('SQL injection protection', () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       account: { userId: 'user-owner' },
       sharedExpense: null,

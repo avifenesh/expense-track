@@ -203,7 +203,7 @@ describe('approveTransactionRequestAction', () => {
       status: 'PENDING',
     }
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'serena-id',
       name: 'OtherAccount',
       type: 'SELF',
@@ -250,7 +250,7 @@ describe('rejectTransactionRequestAction', () => {
       status: 'PENDING',
     }
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'serena-id',
       name: 'OtherAccount',
       type: 'SELF',

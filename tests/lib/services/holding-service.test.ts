@@ -302,18 +302,22 @@ describe('holding-service.ts', () => {
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.holding.delete).mockResolvedValue(mockHolding as never)
+      const softDeletedHolding = { ...mockHolding, deletedAt: new Date(), deletedBy: 'user-1' }
+      vi.mocked(prisma.holding.update).mockResolvedValue(softDeletedHolding as never)
 
-      await deleteHolding('hold-1')
+      await deleteHolding('hold-1', 'user-1')
 
-      expect(prisma.holding.delete).toHaveBeenCalledWith({ where: { id: 'hold-1' } })
+      expect(prisma.holding.update).toHaveBeenCalledWith({
+        where: { id: 'hold-1' },
+        data: { deletedAt: expect.any(Date), deletedBy: 'user-1' },
+      })
     })
 
     it('should handle holding not found', async () => {
       const error = new Error('Record not found')
       ;(error as PrismaError).code = 'P2025'
 
-      vi.mocked(prisma.holding.delete).mockRejectedValue(error)
+      vi.mocked(prisma.holding.update).mockRejectedValue(error)
 
       await expect(deleteHolding('nonexistent')).rejects.toThrow('Record not found')
     })

@@ -8,6 +8,7 @@ import { POST as RejectRequest } from '@/app/api/v1/transactions/requests/[id]/r
 import { generateAccessToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, TEST_USER_ID } from './helpers'
+import { resetEnvCache } from '@/lib/env-schema'
 
 describe('Transaction API Routes', () => {
   let validToken: string
@@ -16,7 +17,8 @@ describe('Transaction API Routes', () => {
   let categoryId: string
 
   beforeEach(async () => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
+    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
+    resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys
@@ -503,8 +505,10 @@ describe('Transaction API Routes', () => {
       expect(response.status).toBe(200)
       expect(data.success).toBe(true)
 
+      // Soft delete - record exists but has deletedAt set
       const deleted = await prisma.transaction.findUnique({ where: { id: transactionId } })
-      expect(deleted).toBeNull()
+      expect(deleted).not.toBeNull()
+      expect(deleted?.deletedAt).not.toBeNull()
     })
 
     it('returns 404 for non-existent transaction', async () => {

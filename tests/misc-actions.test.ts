@@ -62,7 +62,7 @@ vi.mock('@/lib/subscription', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     category: {
       findFirst: vi.fn(),
@@ -197,7 +197,7 @@ describe('setBalanceAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -254,7 +254,7 @@ describe('setBalanceAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -311,7 +311,7 @@ describe('setBalanceAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -354,7 +354,7 @@ describe('setBalanceAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -404,7 +404,7 @@ describe('setBalanceAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -466,7 +466,7 @@ describe('setBalanceAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',

@@ -59,9 +59,13 @@ export async function updateHolding(input: UpdateHoldingInput) {
 /**
  * Delete a holding
  */
-export async function deleteHolding(id: string) {
-  return await prisma.holding.delete({
+export async function deleteHolding(id: string, deletedBy?: string) {
+  return await prisma.holding.update({
     where: { id },
+    data: {
+      deletedAt: new Date(),
+      deletedBy: deletedBy ?? null,
+    },
   })
 }
 
