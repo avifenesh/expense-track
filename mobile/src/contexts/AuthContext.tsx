@@ -53,29 +53,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const enabled = await biometricService.isBiometricEnabled();
         setIsBiometricEnabled(enabled);
 
-        if (enabled && capability.isAvailable) {
-          // Attempt biometric login on app start
-          const result = await biometricService.promptBiometric('Unlock Balance Beacon');
-          if (result.success) {
-            const credentials = await biometricService.getStoredCredentials();
-            if (credentials) {
-              try {
-                const tokens = await authService.refreshTokens(credentials.refreshToken);
-                setAccessToken(tokens.accessToken);
-                setRefreshTokenValue(tokens.refreshToken);
-                setUser({
-                  id: null,
-                  email: credentials.email,
-                  hasCompletedOnboarding: true,
-                });
-              } catch {
-                // Token refresh failed, clear credentials
-                await biometricService.clearStoredCredentials();
-                setIsBiometricEnabled(false);
-              }
-            }
-          }
-        }
+        // Don't auto-prompt on app start - let user initiate biometric login
+        // This follows platform guidelines (iOS/Android) and provides better UX
       } catch {
         // Biometric initialization failed, continue without it
       } finally {
@@ -163,13 +142,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authService.refreshTokens(refreshTokenValue);
       setAccessToken(response.accessToken);
       setRefreshTokenValue(response.refreshToken);
+      // Update stored refresh token if biometric is enabled
+      if (isBiometricEnabled && user?.email) {
+        await biometricService.enableBiometric(response.refreshToken, user.email);
+      }
     } catch (error) {
       setUser(null);
       setAccessToken(null);
       setRefreshTokenValue(null);
       throw error;
     }
-  }, [refreshTokenValue]);
+  }, [refreshTokenValue, isBiometricEnabled, user?.email]);
 
   const updateUser = useCallback((updates: Partial<User>) => {
     setUser((currentUser) => {
@@ -201,6 +184,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const tokens = await authService.refreshTokens(credentials.refreshToken);
       setAccessToken(tokens.accessToken);
       setRefreshTokenValue(tokens.refreshToken);
+      // Update stored refresh token since the old one was rotated
+      await biometricService.enableBiometric(tokens.refreshToken, credentials.email);
       setUser({
         id: null,
         email: credentials.email,

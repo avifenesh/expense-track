@@ -9,7 +9,7 @@ export function OnboardingCompleteScreen({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.stepIndicator}>Step 5 of 5</Text>
+        <Text style={styles.stepIndicator}>Step 5 of 6</Text>
         <View style={styles.successIcon}>
           <Text style={styles.successEmoji}>✓</Text>
         </View>
