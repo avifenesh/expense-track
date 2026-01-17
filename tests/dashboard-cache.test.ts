@@ -336,7 +336,8 @@ describe('dashboard-cache.ts', () => {
 
       const oversizedData: DashboardData = {
         ...mockDashboardData,
-        transactions: largeTransactions as DashboardData['transactions'],
+        // Cast through unknown for test mock data that doesn't have all fields
+        transactions: largeTransactions as unknown as DashboardData['transactions'],
       }
 
       // Verify the data is actually over the limit
