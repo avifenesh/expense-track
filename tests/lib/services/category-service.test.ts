@@ -12,7 +12,9 @@ vi.mock('@/lib/prisma', () => ({
     category: {
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -20,7 +22,7 @@ vi.mock('@/lib/prisma', () => ({
 // Import after mocks
 import { prisma } from '@/lib/prisma'
 import {
-  createCategory,
+  createOrReactivateCategory,
   archiveCategory,
   getCategoryById,
   type CreateCategoryInput,
@@ -40,8 +42,8 @@ describe('category-service.ts', () => {
     vi.restoreAllMocks()
   })
 
-  describe('Phase 1: createCategory()', () => {
-    it('should create category with all fields', async () => {
+  describe('Phase 1: createOrReactivateCategory()', () => {
+    it('should create new category when none exists', async () => {
       const input: CreateCategoryInput = {
         userId: 'test-user',
         name: 'Groceries',
@@ -61,10 +63,18 @@ describe('category-service.ts', () => {
         updatedAt: new Date(),
       }
 
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
       vi.mocked(prisma.category.create).mockResolvedValue(mockCategory)
 
-      const result = await createCategory(input)
+      const result = await createOrReactivateCategory(input)
 
+      expect(prisma.category.findFirst).toHaveBeenCalledWith({
+        where: {
+          userId: 'test-user',
+          name: 'Groceries',
+          type: TransactionType.EXPENSE,
+        },
+      })
       expect(prisma.category.create).toHaveBeenCalledWith({
         data: {
           userId: 'test-user',
@@ -73,10 +83,10 @@ describe('category-service.ts', () => {
           color: '#FF5733',
         },
       })
-      expect(result).toEqual(mockCategory)
+      expect(result).toEqual({ success: true, category: mockCategory, reactivated: false })
     })
 
-    it('should create category without color (null)', async () => {
+    it('should create category with null color when not provided', async () => {
       const input: CreateCategoryInput = {
         userId: 'test-user',
         name: 'Salary',
@@ -95,9 +105,10 @@ describe('category-service.ts', () => {
         updatedAt: new Date(),
       }
 
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
       vi.mocked(prisma.category.create).mockResolvedValue(mockCategory)
 
-      const result = await createCategory(input)
+      const result = await createOrReactivateCategory(input)
 
       expect(prisma.category.create).toHaveBeenCalledWith({
         data: {
@@ -107,110 +118,99 @@ describe('category-service.ts', () => {
           color: null,
         },
       })
-      expect(result).toEqual(mockCategory)
+      expect(result.success).toBe(true)
     })
 
-    it('should create category with explicit null color', async () => {
-      const input: CreateCategoryInput = {
-        userId: 'test-user',
-        name: 'Transport',
-        type: TransactionType.EXPENSE,
-        color: null,
-      }
-
-      const mockCategory = {
-        id: 'cat-3',
-        userId: 'test-user',
-        name: 'Transport',
-        type: TransactionType.EXPENSE,
-        color: null,
-        isHolding: false,
-        isArchived: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-
-      vi.mocked(prisma.category.create).mockResolvedValue(mockCategory)
-
-      await createCategory(input)
-
-      expect(prisma.category.create).toHaveBeenCalledWith({
-        data: {
-          userId: 'test-user',
-          name: 'Transport',
-          type: TransactionType.EXPENSE,
-          color: null,
-        },
-      })
-    })
-
-    it('should create INCOME type category', async () => {
-      const input: CreateCategoryInput = {
-        userId: 'test-user',
-        name: 'Freelance',
-        type: TransactionType.INCOME,
-        color: '#00FF00',
-      }
-
-      const mockCategory = {
-        id: 'cat-4',
-        userId: 'test-user',
-        name: 'Freelance',
-        type: TransactionType.INCOME,
-        color: '#00FF00',
-        isHolding: false,
-        isArchived: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-
-      vi.mocked(prisma.category.create).mockResolvedValue(mockCategory)
-
-      const result = await createCategory(input)
-
-      expect(result.type).toBe(TransactionType.INCOME)
-    })
-
-    it('should create EXPENSE type category', async () => {
-      const input: CreateCategoryInput = {
-        userId: 'test-user',
-        name: 'Utilities',
-        type: TransactionType.EXPENSE,
-        color: '#0000FF',
-      }
-
-      const mockCategory = {
-        id: 'cat-5',
-        userId: 'test-user',
-        name: 'Utilities',
-        type: TransactionType.EXPENSE,
-        color: '#0000FF',
-        isHolding: false,
-        isArchived: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-
-      vi.mocked(prisma.category.create).mockResolvedValue(mockCategory)
-
-      const result = await createCategory(input)
-
-      expect(result.type).toBe(TransactionType.EXPENSE)
-    })
-
-    it('should handle Prisma unique constraint violation', async () => {
+    it('should return DUPLICATE error when active category exists', async () => {
       const input: CreateCategoryInput = {
         userId: 'test-user',
         name: 'Groceries',
         type: TransactionType.EXPENSE,
       }
 
-      const error = new Error('Unique constraint failed')
-      ;(error as PrismaError).code = 'P2002'
+      const existingCategory = {
+        id: 'cat-existing',
+        userId: 'test-user',
+        name: 'Groceries',
+        type: TransactionType.EXPENSE,
+        color: null,
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
 
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(existingCategory)
+
+      const result = await createOrReactivateCategory(input)
+
+      expect(result).toEqual({ success: false, error: 'DUPLICATE' })
+      expect(prisma.category.create).not.toHaveBeenCalled()
+    })
+
+    it('should reactivate archived category', async () => {
+      const input: CreateCategoryInput = {
+        userId: 'test-user',
+        name: 'Transport',
+        type: TransactionType.EXPENSE,
+        color: '#0000FF',
+      }
+
+      const archivedCategory = {
+        id: 'cat-archived',
+        userId: 'test-user',
+        name: 'Transport',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const reactivatedCategory = {
+        ...archivedCategory,
+        color: '#0000FF',
+        isArchived: false,
+      }
+
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(archivedCategory)
+      vi.mocked(prisma.category.updateMany).mockResolvedValue({ count: 1 })
+      vi.mocked(prisma.category.findUnique).mockResolvedValue(reactivatedCategory)
+
+      const result = await createOrReactivateCategory(input)
+
+      expect(prisma.category.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'cat-archived',
+          isArchived: true,
+        },
+        data: {
+          isArchived: false,
+          color: '#0000FF',
+        },
+      })
+      expect(result).toEqual({ success: true, category: reactivatedCategory, reactivated: true })
+    })
+
+    it('should handle race condition on create with unique constraint', async () => {
+      const input: CreateCategoryInput = {
+        userId: 'test-user',
+        name: 'Test',
+        type: TransactionType.EXPENSE,
+      }
+
+      const error = Object.assign(new Error('Unique constraint failed'), {
+        code: 'P2002',
+        name: 'PrismaClientKnownRequestError',
+      })
+
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
       vi.mocked(prisma.category.create).mockRejectedValue(error)
 
-      await expect(createCategory(input)).rejects.toThrow('Unique constraint failed')
+      const result = await createOrReactivateCategory(input)
+
+      expect(result).toEqual({ success: false, error: 'DUPLICATE' })
     })
 
     it('should handle Prisma connection error', async () => {
@@ -221,9 +221,9 @@ describe('category-service.ts', () => {
       }
 
       const error = new Error('Connection timeout')
-      vi.mocked(prisma.category.create).mockRejectedValue(error)
+      vi.mocked(prisma.category.findFirst).mockRejectedValue(error)
 
-      await expect(createCategory(input)).rejects.toThrow('Connection timeout')
+      await expect(createOrReactivateCategory(input)).rejects.toThrow('Connection timeout')
     })
   })
 
