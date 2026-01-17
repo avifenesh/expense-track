@@ -1,9 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { createTransactionAction, updateTransactionAction, deleteTransactionAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { Currency, TransactionType } from '@prisma/client'
+
+// Fixed test date to avoid flaky tests around month boundaries
+// Using mid-month to avoid edge cases with month transitions
+const FIXED_TEST_DATE = new Date('2026-01-15T12:00:00.000Z')
+
+// Note: Each describe block has its own beforeEach/afterEach for time mocking.
+// This is intentional for test isolation - each suite can be run independently
+// and the pattern is explicit about time mocking being required for each suite.
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -91,6 +99,12 @@ vi.mock('@/lib/prisma', () => {
 describe('createTransactionAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set fixed system time to ensure consistent date behavior in tests
+    vi.setSystemTime(FIXED_TEST_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should fail when session is missing', async () => {
@@ -118,7 +132,7 @@ describe('createTransactionAction', () => {
 
   it('should successfully create an expense transaction', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -163,7 +177,7 @@ describe('createTransactionAction', () => {
 
   it('should successfully create an income transaction', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -220,9 +234,9 @@ describe('createTransactionAction', () => {
     }
   })
 
-  it('should accept null description', async () => {
+  it('should accept null description and preserve it in database call', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -257,11 +271,21 @@ describe('createTransactionAction', () => {
     })
 
     expect(result).toEqual({ success: true })
+
+    // Verify null description is explicitly preserved (not converted to empty string or omitted)
+    expect(prisma.transaction.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: null,
+        accountId: 'acc-1',
+        categoryId: 'cat-1',
+        type: TransactionType.EXPENSE,
+      }),
+    })
   })
 
   it('should create recurring transaction', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -300,7 +324,7 @@ describe('createTransactionAction', () => {
 
   it('should fail when database create throws error', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -344,11 +368,16 @@ describe('createTransactionAction', () => {
 describe('updateTransactionAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should fail when transaction not found', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -384,7 +413,7 @@ describe('updateTransactionAction', () => {
 
   it('should successfully update transaction', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -441,7 +470,7 @@ describe('updateTransactionAction', () => {
 
   it('should handle account change', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -494,7 +523,7 @@ describe('updateTransactionAction', () => {
 
   it('should fail when user lacks access to existing transaction account', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -540,7 +569,7 @@ describe('updateTransactionAction', () => {
 
   it('should fail when changing to unauthorized account', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -594,7 +623,7 @@ describe('updateTransactionAction', () => {
 
   it('should fail when database update throws error', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -643,7 +672,7 @@ describe('updateTransactionAction', () => {
 
   it('should handle concurrent modification (P2025 - record deleted between find and update)', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -699,11 +728,16 @@ describe('updateTransactionAction', () => {
 describe('deleteTransactionAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should fail when transaction not found', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -727,7 +761,7 @@ describe('deleteTransactionAction', () => {
 
   it('should successfully delete transaction', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -769,7 +803,7 @@ describe('deleteTransactionAction', () => {
 
   it('should fail when user lacks access to transaction account', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -803,7 +837,7 @@ describe('deleteTransactionAction', () => {
 
   it('should fail when database delete throws error', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -840,7 +874,7 @@ describe('deleteTransactionAction', () => {
 
   it('should handle concurrent deletion (P2025 - record deleted between find and delete)', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -882,7 +916,7 @@ describe('deleteTransactionAction', () => {
 
   it('should fail when database findUnique throws error', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -908,8 +942,9 @@ describe('deleteTransactionAction', () => {
 describe('subscription state edge cases', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -1115,14 +1150,19 @@ describe('subscription state edge cases', () => {
     expect('error' in result).toBe(true)
     expect(prisma.transaction.delete).not.toHaveBeenCalled()
   })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 })
 
 describe('auto-create RecurringTemplate', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
-    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
       id: 'test-user',
@@ -1312,5 +1352,9 @@ describe('auto-create RecurringTemplate', () => {
         dayOfMonth: 31,
       }),
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 })

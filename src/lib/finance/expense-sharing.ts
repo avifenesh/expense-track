@@ -2,12 +2,29 @@
 import { Currency, PaymentStatus, SplitType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { decimalToNumber } from './utils'
-import type { SharedExpenseSummary, ExpenseParticipationSummary, SettlementBalance } from './types'
+import type {
+  SharedExpenseSummary,
+  ExpenseParticipationSummary,
+  SettlementBalance,
+  PaginationOptions,
+  PaginatedResult,
+} from './types'
+import { DEFAULT_PAGINATION_LIMIT } from './types'
 
 /**
  * Get expenses shared by a user with others.
+ * Supports cursor-based pagination for efficient loading of large lists.
+ *
+ * @param userId - The user who shared the expenses
+ * @param options - Optional pagination options (cursor, limit)
+ * @returns Paginated result with shared expenses
  */
-export async function getSharedExpenses(userId: string): Promise<SharedExpenseSummary[]> {
+export async function getSharedExpenses(
+  userId: string,
+  options?: PaginationOptions,
+): Promise<PaginatedResult<SharedExpenseSummary>> {
+  const limit = options?.limit ?? DEFAULT_PAGINATION_LIMIT
+
   const sharedExpenses = await prisma.sharedExpense.findMany({
     where: { ownerId: userId },
     include: {
@@ -28,10 +45,19 @@ export async function getSharedExpenses(userId: string): Promise<SharedExpenseSu
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    // Order by createdAt then id for stable cursor pagination across tied timestamps
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1, // Fetch one extra to check if more exist
+    ...(options?.cursor && {
+      cursor: { id: options.cursor },
+      skip: 1, // Skip the cursor itself
+    }),
   })
 
-  return sharedExpenses.map((expense) => {
+  const hasMore = sharedExpenses.length > limit
+  const results = hasMore ? sharedExpenses.slice(0, limit) : sharedExpenses
+
+  const items = results.map((expense) => {
     const totalAmount = decimalToNumber(expense.totalAmount)
     const participants = expense.participants.map((p) => ({
       id: p.id,
@@ -74,12 +100,28 @@ export async function getSharedExpenses(userId: string): Promise<SharedExpenseSu
       allSettled,
     }
   })
+
+  return {
+    items,
+    nextCursor: hasMore ? items[items.length - 1].id : null,
+    hasMore,
+  }
 }
 
 /**
  * Get expenses shared with a user by others.
+ * Supports cursor-based pagination for efficient loading of large lists.
+ *
+ * @param userId - The user who participates in the shared expenses
+ * @param options - Optional pagination options (cursor, limit)
+ * @returns Paginated result with expense participations
  */
-export async function getExpensesSharedWithMe(userId: string): Promise<ExpenseParticipationSummary[]> {
+export async function getExpensesSharedWithMe(
+  userId: string,
+  options?: PaginationOptions,
+): Promise<PaginatedResult<ExpenseParticipationSummary>> {
+  const limit = options?.limit ?? DEFAULT_PAGINATION_LIMIT
+
   const participations = await prisma.expenseParticipant.findMany({
     where: { userId },
     include: {
@@ -100,10 +142,19 @@ export async function getExpensesSharedWithMe(userId: string): Promise<ExpensePa
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    // Order by createdAt then id for stable cursor pagination across tied timestamps
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1, // Fetch one extra to check if more exist
+    ...(options?.cursor && {
+      cursor: { id: options.cursor },
+      skip: 1, // Skip the cursor itself
+    }),
   })
 
-  return participations.map((p) => ({
+  const hasMore = participations.length > limit
+  const results = hasMore ? participations.slice(0, limit) : participations
+
+  const items = results.map((p) => ({
     id: p.id,
     shareAmount: decimalToNumber(p.shareAmount),
     sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
@@ -128,6 +179,12 @@ export async function getExpensesSharedWithMe(userId: string): Promise<ExpensePa
       owner: p.sharedExpense.owner,
     },
   }))
+
+  return {
+    items,
+    nextCursor: hasMore ? items[items.length - 1].id : null,
+    hasMore,
+  }
 }
 
 /**

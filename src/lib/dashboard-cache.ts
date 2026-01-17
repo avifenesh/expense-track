@@ -1,9 +1,13 @@
 // Dashboard caching module - caches expensive dashboard aggregations
 import { Currency } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { serverLogger } from '@/lib/server-logger'
 
 // Cache TTL: 5 minutes
 const CACHE_TTL_SECONDS = 5 * 60
+
+// Maximum cache payload size (512KB) to prevent DB bloat
+const MAX_CACHE_SIZE_BYTES = 512 * 1024
 
 // In-memory request deduplication (per-process)
 // Map is keyed by cache key, stores Promise of any type
@@ -86,9 +90,22 @@ export async function getCachedData<T>(
     try {
       const data = await computeFn()
 
-      // Store in cache
+      // Store in cache (skip if payload too large to prevent DB bloat)
       try {
         const dataJson = JSON.stringify(data)
+
+        if (dataJson.length > MAX_CACHE_SIZE_BYTES) {
+          // Skip caching for oversized payloads, return computed data directly
+          // This handles edge cases like users with unusually large transaction histories
+          serverLogger.warn('DASHBOARD_CACHE_PAYLOAD_TOO_LARGE', {
+            payloadSize: dataJson.length,
+            maxSize: MAX_CACHE_SIZE_BYTES,
+            cacheKey,
+          })
+          metrics.cacheMiss++
+          return data
+        }
+
         await prisma.dashboardCache.upsert({
           where: { cacheKey },
           update: {
@@ -263,4 +280,11 @@ export function getInFlightRequestsCount(): number {
  */
 export function clearInFlightRequests(): void {
   inFlightRequests.clear()
+}
+
+/**
+ * Get maximum cache size in bytes (for testing)
+ */
+export function getMaxCacheSizeBytes(): number {
+  return MAX_CACHE_SIZE_BYTES
 }

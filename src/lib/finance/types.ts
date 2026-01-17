@@ -3,6 +3,22 @@ import { Prisma, TransactionType, Currency, PaymentStatus, SplitType } from '@pr
 import type { getTransactionRequests } from './accounts'
 import type { getAccounts, getCategories } from './accounts'
 
+// Pagination options for cursor-based pagination
+export type PaginationOptions = {
+  cursor?: string
+  limit?: number
+}
+
+// Generic paginated result type
+export type PaginatedResult<T> = {
+  items: T[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+// Default pagination limit
+export const DEFAULT_PAGINATION_LIMIT = 50
+
 export type MonetaryStat = {
   label: string
   amount: number
