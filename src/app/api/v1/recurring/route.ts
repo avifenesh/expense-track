@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { upsertRecurringTemplate } from '@/lib/services/recurring-service'
-import { recurringTemplateSchema } from '@/schemas'
+import { recurringTemplateApiSchema } from '@/schemas/api'
 import {
   validationError,
   authError,
@@ -44,8 +44,7 @@ export async function POST(request: NextRequest) {
     return validationError({ body: ['Invalid JSON'] })
   }
 
-  const apiSchema = recurringTemplateSchema.omit({ csrfToken: true })
-  const parsed = apiSchema.safeParse(body)
+  const parsed = recurringTemplateApiSchema.safeParse(body)
 
   if (!parsed.success) {
     return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
@@ -54,11 +53,7 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
   const startMonth = getMonthStartFromKey(data.startMonthKey)
   const endMonth = data.endMonthKey ? getMonthStartFromKey(data.endMonthKey) : null
-
-  // Validate end month is after start month
-  if (endMonth && endMonth < startMonth) {
-    return validationError({ endMonthKey: ['End month must be after the start month'] })
-  }
+  // Schema's .refine() ensures endMonth >= startMonth, replacing the previous manual validation
 
   // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
