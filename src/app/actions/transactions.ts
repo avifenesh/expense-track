@@ -303,8 +303,12 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  // Pre-flight: Check new account access if moving to a different account
-  // This is done outside the transaction to avoid holding locks during auth checks
+  // Pre-flight checks outside the transaction to avoid holding locks during auth checks
+  // 1. Check subscription status (user-level, independent of specific transaction)
+  const subscriptionCheck = await requireActiveSubscription()
+  if ('error' in subscriptionCheck) return subscriptionCheck
+
+  // 2. Check new account access if moving to a different account
   const newAccountAccess = await ensureAccountAccess(data.accountId)
   if ('error' in newAccountAccess) {
     return newAccountAccess
@@ -327,8 +331,8 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         return { error: 'not_found' as const }
       }
 
-      // Check access to the existing account
-      const existingAccess = await ensureAccountAccessWithSubscription(existing.accountId)
+      // Check access to the existing account (subscription already verified above)
+      const existingAccess = await ensureAccountAccess(existing.accountId)
       if ('error' in existingAccess) {
         return { error: 'access_denied' as const, details: existingAccess }
       }

@@ -81,6 +81,7 @@ Last updated: 2026-01-17
 |-------|------|-----|--------|
 | Dashboard cache stores large JSON | src/lib/dashboard-cache.ts:88-92 | Add size validation, reject > 512KB | medium |
 | Missing pagination on shared expenses | src/lib/finance.ts:768-790, 840-862 | Add take: 50 with cursor pagination | small |
+| FX rates use today's date for historical conversions | src/lib/finance.ts:548-552 | Load per-month rates for historical accuracy | medium |
 | Repeated account lookups in API routes | Multiple API files | Create checkAccountAccess() utility | medium |
 | React settings menu re-adds event listener | src/components/dashboard/dashboard-page.tsx:193-203 | Use useCallback for stable handler | small |
 | Holdings tab refetches on currency change | src/components/dashboard/holdings-tab.tsx:54-97 | Remove preferredCurrency from loadHoldings deps | small |

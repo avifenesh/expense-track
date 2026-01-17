@@ -263,11 +263,11 @@ export async function getAccounts(userId?: string) {
 }
 
 export async function getCategories(userId?: string, includeArchived = false) {
-  const where = userId
-    ? { userId, ...(includeArchived ? {} : { isArchived: false }) }
-    : includeArchived
-      ? {}
-      : { isArchived: false }
+  // Build where clause with clearer logic
+  const where: { userId?: string; isArchived?: boolean } = userId ? { userId } : {}
+  if (!includeArchived) {
+    where.isArchived = false
+  }
   return prisma.category.findMany({
     where,
     orderBy: { name: 'asc' },
@@ -546,6 +546,9 @@ export async function getDashboardData({
   const plannedNet = plannedIncome - plannedExpense
 
   // Batch load exchange rates once for all conversions (fixes N+1 query pattern)
+  // Note: Uses today's rates for all conversions. For perfect historical accuracy,
+  // would need per-month rate loading. Current approach is acceptable for most use cases
+  // as rate fluctuations are typically small over short periods. See TECHNICAL_DEBT.md.
   const rateCache = await batchLoadExchangeRates()
 
   // Convert previous month's transactions to preferred currency using cached rates
