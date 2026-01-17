@@ -14,6 +14,7 @@ import {
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     })
     return successResponse({ id: template.id }, data.id ? 200 : 201)
   } catch (error) {
-    console.error('Failed to save recurring template:', error)
+    serverLogger.error('Failed to save recurring template', { action: 'POST /api/v1/recurring' }, error)
     return serverError('Unable to save recurring template')
   }
 }

@@ -13,6 +13,7 @@ import {
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     const result = await refreshHoldingPrices({ accountId: data.accountId })
     return successResponse(result)
   } catch (error) {
-    console.error('Failed to refresh holding prices:', error)
+    serverLogger.error('Failed to refresh holding prices', { action: 'POST /api/v1/holdings/refresh' }, error)
     return serverError('Unable to refresh stock prices')
   }
 }

@@ -15,6 +15,7 @@ import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { getMonthStartFromKey } from '@/utils/date'
 import { TransactionType } from '@prisma/client'
+import { serverLogger } from '@/lib/server-logger'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
@@ -148,7 +149,7 @@ export async function GET(request: NextRequest) {
       hasMore,
     })
   } catch (error) {
-    console.error('Failed to fetch transactions:', error)
+    serverLogger.error('Failed to fetch transactions', { action: 'GET /api/v1/transactions' }, error)
     return serverError('Unable to fetch transactions')
   }
 }

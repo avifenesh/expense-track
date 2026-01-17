@@ -5,6 +5,7 @@ import { transactionRequestSchema } from '@/schemas'
 import { validationError, authError, serverError, successResponse, rateLimitError } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     })
     return successResponse({ id: transactionRequest.id }, 201)
   } catch (error) {
-    console.error('Failed to create transaction request:', error)
+    serverLogger.error('Failed to create transaction request', { action: 'POST /api/v1/transactions/requests' }, error)
     return serverError('Unable to create transaction request')
   }
 }

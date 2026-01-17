@@ -15,6 +15,7 @@ import {
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function GET(request: NextRequest) {
   // 1. Authenticate with JWT
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (error) {
-    console.error('Failed to fetch budgets:', error)
+    serverLogger.error('Failed to fetch budgets', { action: 'GET /api/v1/budgets' }, error)
     return serverError('Unable to fetch budgets')
   }
 }

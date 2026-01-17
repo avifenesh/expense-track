@@ -13,6 +13,7 @@ import {
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     })
     return successResponse(result)
   } catch (error) {
-    console.error('Failed to apply recurring templates:', error)
+    serverLogger.error('Failed to apply recurring templates', { action: 'POST /api/v1/recurring/apply' }, error)
     return serverError('Unable to create recurring transactions')
   }
 }
