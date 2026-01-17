@@ -391,12 +391,16 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
       <div className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-slate-900/95 px-4 py-2.5 backdrop-blur-md lg:px-6 lg:py-3">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
           {/* Tab navigation */}
-          <div className="flex items-center gap-1 overflow-x-auto">
+          <div role="tablist" aria-label="Dashboard sections" className="flex items-center gap-1 overflow-x-auto">
             {TABS.map(({ value, label, icon: Icon }) => (
               <Button
                 key={value}
                 type="button"
                 variant="ghost"
+                role="tab"
+                id={`tab-${value}`}
+                aria-selected={activeTab === value}
+                aria-controls={`panel-${value}`}
                 className={cn(
                   'h-9 gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition',
                   activeTab === value ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white',
@@ -637,10 +641,10 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
               variant="ghost"
               className="h-6 px-2 text-xs text-slate-300 hover:bg-white/10"
               onClick={handleRefreshRates}
-              loading={isPendingRates}
+              disabled={isPendingRates}
               title="Refresh exchange rates"
             >
-              <RefreshCcw className="h-3 w-3" />
+              <RefreshCcw className={cn('h-3 w-3', isPendingRates && 'animate-spin')} />
             </Button>
           </div>
         )}

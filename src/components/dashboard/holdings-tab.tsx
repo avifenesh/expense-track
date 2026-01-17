@@ -50,6 +50,7 @@ export default function HoldingsTab({
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPendingAction, startAction] = useTransition()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const loadHoldings = useCallback(
     async (accountId: string, signal?: AbortSignal) => {
@@ -59,7 +60,8 @@ export default function HoldingsTab({
       setError(null)
 
       try {
-        const params = new URLSearchParams({ accountId, preferredCurrency })
+        // Note: preferredCurrency is not included - formatting happens in render
+        const params = new URLSearchParams({ accountId })
         const response = await fetch(`/api/holdings?${params.toString()}`, {
           signal,
           cache: 'no-store',
@@ -85,7 +87,7 @@ export default function HoldingsTab({
         }
       }
     },
-    [preferredCurrency],
+    [], // accountId is passed as parameter, no deps needed
   )
 
   useEffect(() => {
@@ -141,16 +143,21 @@ export default function HoldingsTab({
     }
 
     setFeedback(null)
+    setDeletingId(holdingId)
 
     startAction(async () => {
-      const result = await deleteHoldingAction({ id: holdingId, csrfToken })
-      if ('error' in result) {
-        setFeedback({ type: 'error', message: 'Unable to delete holding.' })
-        return
-      }
+      try {
+        const result = await deleteHoldingAction({ id: holdingId, csrfToken })
+        if ('error' in result) {
+          setFeedback({ type: 'error', message: 'Unable to delete holding.' })
+          return
+        }
 
-      setFeedback({ type: 'success', message: 'Holding deleted' })
-      await loadHoldings(activeAccount)
+        setFeedback({ type: 'success', message: 'Holding deleted' })
+        await loadHoldings(activeAccount)
+      } finally {
+        setDeletingId(null)
+      }
     })
   }
 
@@ -334,9 +341,13 @@ export default function HoldingsTab({
                   </div>
                   <button
                     onClick={() => handleDelete(holding.id, holding.symbol)}
-                    className="text-xs text-rose-400 transition hover:text-rose-300"
+                    disabled={isPendingAction || deletingId === holding.id}
+                    className={cn(
+                      'text-xs text-rose-400 transition hover:text-rose-300',
+                      (isPendingAction || deletingId === holding.id) && 'opacity-50 cursor-not-allowed',
+                    )}
                   >
-                    Delete
+                    {deletingId === holding.id ? 'Deleting…' : 'Delete'}
                   </button>
                 </div>
 

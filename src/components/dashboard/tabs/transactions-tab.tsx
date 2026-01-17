@@ -21,6 +21,7 @@ import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { useOptimisticList, generateTempId } from '@/hooks/useOptimisticList'
 import { useFormValidation, validators } from '@/hooks/useFormValidation'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   DashboardCategory,
   DashboardAccount,
@@ -30,6 +31,44 @@ import {
   typeFilterOptions,
   currencyOptions,
 } from './types'
+
+function TransactionFormSkeleton() {
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-18" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+    </div>
+  )
+}
 
 type FormErrors = Partial<Record<string, string[]>>
 
@@ -61,6 +100,7 @@ export function TransactionsTab({
     optimisticAdd,
     optimisticUpdate,
     optimisticDelete,
+    rollback,
   } = useOptimisticList(transactions)
 
   // Form validation with blur-based validation
@@ -365,7 +405,7 @@ export function TransactionsTab({
       const result = await deleteTransactionAction({ id, csrfToken })
       if ('error' in result) {
         toast.error('Unable to delete transaction. The item has been restored.')
-        router.refresh() // Refresh to restore the item
+        rollback() // Restore the item using optimistic rollback
         return
       }
       if (editingTransaction?.id === id) {
@@ -415,6 +455,9 @@ export function TransactionsTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {categories.length === 0 ? (
+              <TransactionFormSkeleton />
+            ) : (
             <form id="transaction-form" onSubmit={handleTransactionSubmit} className="grid gap-4" tabIndex={-1}>
               {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}
               <div className="grid gap-4 md:grid-cols-2">
@@ -605,6 +648,7 @@ export function TransactionsTab({
                 )}
               </div>
             </form>
+            )}
           </CardContent>
         </Card>
 
