@@ -3,10 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { successVoid, generalError } from '@/lib/action-result'
+import { successVoid } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
-import { parseInput, requireCsrfToken, requireActiveSubscription } from './shared'
+import { parseInput, requireCsrfToken, requireAuthUser, requireActiveSubscription } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
 
 export async function createCategoryAction(input: z.infer<typeof categorySchema>) {
@@ -16,21 +15,13 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  let session
-  try {
-    session = await requireSession()
-  } catch {
-    return generalError('Your session expired. Please sign in again.')
-  }
-
-  const authUser = await getDbUserAsAuthUser(session.userEmail)
-  if (!authUser) {
-    return generalError('User record not found')
-  }
-
   // Check subscription before allowing category creation
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
+
+  const auth = await requireAuthUser()
+  if ('error' in auth) return auth
+  const { authUser } = auth
 
   try {
     await prisma.category.create({
@@ -62,21 +53,13 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  let session
-  try {
-    session = await requireSession()
-  } catch {
-    return generalError('Your session expired. Please sign in again.')
-  }
-
-  const authUser = await getDbUserAsAuthUser(session.userEmail)
-  if (!authUser) {
-    return generalError('User record not found')
-  }
-
   // Check subscription before allowing category archive
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
+
+  const auth = await requireAuthUser()
+  if ('error' in auth) return auth
+  const { authUser } = auth
 
   try {
     await prisma.category.update({

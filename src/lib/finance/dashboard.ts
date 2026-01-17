@@ -1,0 +1,286 @@
+// Finance module - dashboard data aggregation
+import { TransactionType, Currency } from '@prisma/client'
+import { subMonths } from 'date-fns'
+import { prisma } from '@/lib/prisma'
+import { getMonthKey, getMonthStartFromKey } from '@/utils/date'
+import { getLastUpdateTime, batchLoadExchangeRates } from '@/lib/currency'
+import { decimalToNumber, sumByType, convertTransactionAmountSync, buildAccountScopedWhere } from './utils'
+import { getAccounts, getCategories, getTransactionRequests } from './accounts'
+import { getTransactionsForMonth } from './transactions'
+import { getBudgetsForMonth } from './budgets'
+import { getRecurringTemplates } from './recurring'
+import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance } from './expense-sharing'
+import type { DashboardData, CategoryBudgetSummary, MonetaryStat, MonthlyHistoryPoint } from './types'
+
+export async function getDashboardData({
+  monthKey,
+  accountId,
+  preferredCurrency,
+  accounts: providedAccounts,
+  userId,
+}: {
+  monthKey: string
+  accountId: string
+  preferredCurrency?: Currency
+  accounts?: Awaited<ReturnType<typeof getAccounts>>
+  userId?: string
+}): Promise<DashboardData> {
+  const monthStart = getMonthStartFromKey(monthKey)
+  const previousMonthStart = subMonths(monthStart, 1)
+  const accounts = providedAccounts ?? (await getAccounts(userId))
+
+  const [
+    categories,
+    budgets,
+    transactions,
+    transactionRequests,
+    recurringTemplates,
+    previousTransactionsRaw,
+    historyTransactionsRaw,
+    exchangeRateLastUpdate,
+    sharedExpenses,
+    expensesSharedWithMe,
+    settlementBalances,
+  ] = await Promise.all([
+    getCategories(userId),
+    getBudgetsForMonth({ monthKey, accountId }),
+    getTransactionsForMonth({
+      monthKey,
+      accountId,
+      preferredCurrency,
+    }),
+    getTransactionRequests({ accountId, status: 'PENDING' }),
+    getRecurringTemplates({ accountId }),
+    prisma.transaction.findMany({
+      where: buildAccountScopedWhere(
+        {
+          date: {
+            gte: previousMonthStart,
+            lt: monthStart,
+          },
+        },
+        accountId,
+      ),
+      select: {
+        type: true,
+        amount: true,
+        currency: true,
+        date: true,
+      },
+    }),
+    prisma.transaction.findMany({
+      where: buildAccountScopedWhere(
+        {
+          month: {
+            gte: subMonths(monthStart, 5),
+            lte: monthStart,
+          },
+        },
+        accountId,
+      ),
+      select: {
+        type: true,
+        amount: true,
+        currency: true,
+        date: true,
+        month: true,
+      },
+      orderBy: {
+        month: 'asc',
+      },
+      take: 1000, // Limit results to prevent unbounded queries
+    }),
+    getLastUpdateTime(),
+    userId ? getSharedExpenses(userId) : Promise.resolve([]),
+    userId ? getExpensesSharedWithMe(userId) : Promise.resolve([]),
+    userId ? getSettlementBalance(userId) : Promise.resolve([]),
+  ])
+
+  const transactionsWithNumbers = transactions
+
+  // Use converted amounts for calculations when preferred currency is set
+  const totals = transactionsWithNumbers.map((t) => ({
+    type: t.type,
+    amount: t.convertedAmount,
+  }))
+
+  const actualIncome = sumByType(totals, TransactionType.INCOME)
+  const actualExpense = sumByType(totals, TransactionType.EXPENSE)
+
+  // Group transactions by category for per-budget calculations
+  const expensesByCategory = new Map<string, number>()
+  const incomeByCategory = new Map<string, number>()
+
+  transactionsWithNumbers.forEach((transaction) => {
+    const map = transaction.type === TransactionType.EXPENSE ? expensesByCategory : incomeByCategory
+    const current = map.get(transaction.categoryId) ?? 0
+    map.set(transaction.categoryId, current + transaction.convertedAmount)
+  })
+
+  // Calculate planned and remaining amounts per-budget (only counting transactions in budgeted categories)
+  const { plannedIncome, remainingIncome } = budgets
+    .filter((budget) => budget.category.type === TransactionType.INCOME)
+    .reduce(
+      (acc, budget) => {
+        const planned = decimalToNumber(budget.planned)
+        const actual = incomeByCategory.get(budget.categoryId) ?? 0
+        return {
+          plannedIncome: acc.plannedIncome + planned,
+          remainingIncome: acc.remainingIncome + (planned - actual),
+        }
+      },
+      { plannedIncome: 0, remainingIncome: 0 },
+    )
+
+  const { plannedExpense, remainingExpense } = budgets
+    .filter((budget) => budget.category.type === TransactionType.EXPENSE)
+    .reduce(
+      (acc, budget) => {
+        const planned = decimalToNumber(budget.planned)
+        const actual = expensesByCategory.get(budget.categoryId) ?? 0
+        return {
+          plannedExpense: acc.plannedExpense + planned,
+          remainingExpense: acc.remainingExpense + (planned - actual),
+        }
+      },
+      { plannedExpense: 0, remainingExpense: 0 },
+    )
+
+  const projectedNet = actualIncome + Math.max(remainingIncome, 0) - (actualExpense + Math.max(remainingExpense, 0))
+  const actualNet = actualIncome - actualExpense
+  const plannedNet = plannedIncome - plannedExpense
+
+  // Batch load exchange rates once for all conversions (fixes N+1 query pattern)
+  // Note: Uses today's rates for all conversions. For perfect historical accuracy,
+  // would need per-month rate loading. Current approach is acceptable for most use cases
+  // as rate fluctuations are typically small over short periods. See TECHNICAL_DEBT.md.
+  const rateCache = await batchLoadExchangeRates()
+
+  // Convert previous month's transactions to preferred currency using cached rates
+  const previousTransactionsConverted = previousTransactionsRaw.map((transaction) => ({
+    type: transaction.type,
+    amount: convertTransactionAmountSync(
+      transaction.amount,
+      transaction.currency,
+      preferredCurrency,
+      rateCache,
+    ),
+  }))
+
+  const previousIncome = sumByType(previousTransactionsConverted, TransactionType.INCOME)
+  const previousExpense = sumByType(previousTransactionsConverted, TransactionType.EXPENSE)
+
+  const previousNet = previousIncome - previousExpense
+  const change = actualNet - previousNet
+
+  const budgetsSummary: CategoryBudgetSummary[] = budgets.map((budget) => {
+    const planned = decimalToNumber(budget.planned)
+    const actual =
+      budget.category.type === TransactionType.EXPENSE
+        ? (expensesByCategory.get(budget.categoryId) ?? 0)
+        : (incomeByCategory.get(budget.categoryId) ?? 0)
+    const remaining = planned - actual
+
+    return {
+      budgetId: budget.id,
+      accountId: budget.accountId,
+      accountName: budget.account.name,
+      categoryId: budget.categoryId,
+      categoryName: budget.category.name,
+      categoryType: budget.category.type,
+      planned,
+      actual,
+      remaining,
+      month: monthKey,
+    }
+  })
+
+  // Convert history transactions to preferred currency using cached rates
+  const historyTransactionsConverted = historyTransactionsRaw.map((transaction) => ({
+    type: transaction.type,
+    amount: convertTransactionAmountSync(
+      transaction.amount,
+      transaction.currency,
+      preferredCurrency,
+      rateCache,
+    ),
+    month: transaction.month as Date,
+  }))
+
+  const historySeed = new Map<string, { income: number; expense: number }>()
+  for (let offset = 5; offset >= 0; offset -= 1) {
+    const key = getMonthKey(subMonths(monthStart, offset))
+    historySeed.set(key, { income: 0, expense: 0 })
+  }
+
+  const historyGrouped = historyTransactionsConverted.reduce((acc, entry) => {
+    const key = getMonthKey(entry.month)
+    const existing = acc.get(key) ?? { income: 0, expense: 0 }
+    if (entry.type === TransactionType.INCOME) {
+      existing.income += entry.amount
+    } else {
+      existing.expense += entry.amount
+    }
+    acc.set(key, existing)
+    return acc
+  }, historySeed)
+
+  const history: MonthlyHistoryPoint[] = Array.from(historyGrouped.entries())
+    .map(([key, value]) => ({
+      month: key,
+      income: value.income,
+      expense: value.expense,
+      net: value.income - value.expense,
+    }))
+    .sort((a, b) => (a.month > b.month ? 1 : -1))
+
+  const stats: MonetaryStat[] = [
+    {
+      label: 'Saved so far',
+      amount: actualNet,
+      variant: actualNet >= 0 ? 'positive' : 'negative',
+      helper: 'Income minus expenses this month',
+    },
+    {
+      label: 'On track for',
+      amount: projectedNet,
+      variant: projectedNet >= 0 ? 'positive' : 'negative',
+      helper: 'Where you\'ll be at month end',
+    },
+    {
+      label: 'Left to spend',
+      amount: Math.max(remainingExpense, 0),
+      variant: remainingExpense <= 0 ? 'neutral' : 'negative',
+      helper: 'Budget not yet used',
+    },
+    {
+      label: 'Monthly goal',
+      amount: plannedNet,
+      variant: plannedNet >= 0 ? 'positive' : 'negative',
+      helper: 'Your target for the month',
+    },
+  ]
+
+  return {
+    month: monthKey,
+    stats,
+    budgets: budgetsSummary,
+    transactions: transactionsWithNumbers,
+    recurringTemplates,
+    transactionRequests,
+    accounts,
+    categories,
+    holdings: [], // Will be populated separately in page.tsx
+    comparison: {
+      previousMonth: getMonthKey(previousMonthStart),
+      previousNet,
+      change,
+    },
+    history,
+    exchangeRateLastUpdate,
+    preferredCurrency,
+    sharedExpenses,
+    expensesSharedWithMe,
+    settlementBalances,
+  }
+}
