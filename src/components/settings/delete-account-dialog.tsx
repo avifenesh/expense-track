@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,53 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
   const [confirmEmail, setConfirmEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // Focus trap - keeps focus within dialog when open
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+    // Focus the confirm email input field when dialog opens (using specific id)
+    const inputElement = dialog.querySelector<HTMLInputElement>('#confirm-email')
+    inputElement?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+        return
+      }
+
+      if (e.key !== 'Tab') return
+
+      // Recompute focusable elements each time to account for disabled state changes
+      const focusableElements = dialog.querySelectorAll(focusableSelector)
+      if (focusableElements.length === 0) return
+
+      const firstElement = focusableElements[0] as HTMLElement
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+
+      // Trap focus within the dialog
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement?.focus()
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement?.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   // Client-side email check for immediate UX feedback (server also validates)
   const isEmailMatch = confirmEmail.toLowerCase() === userEmail.toLowerCase()
@@ -53,6 +100,7 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-dialog-title"
