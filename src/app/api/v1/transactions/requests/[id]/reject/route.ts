@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { rejectTransactionRequest, getTransactionRequestById } from '@/lib/services/transaction-service'
 import {
   authError,
@@ -36,14 +36,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return notFoundError('Transaction request not found')
   }
 
-  // 3. Authorize access to 'to' account
+  // 3. Authorize access to 'to' account by userId
   const toAccount = await prisma.account.findUnique({
     where: { id: transactionRequest.toId },
   })
-  const authUser = await getUserAuthInfo(user.userId)
-
-  if (!toAccount || !authUser.accountNames.includes(toAccount.name)) {
-    return forbiddenError('You do not have access to this transaction request')
+  if (!toAccount || toAccount.userId !== user.userId) {
+    return forbiddenError('Access denied')
   }
 
   // 4. Reject request

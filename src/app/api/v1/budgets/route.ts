@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { upsertBudget, deleteBudget, getBudgetByKey } from '@/lib/services/budget-service'
 import { budgetSchema, deleteBudgetSchema } from '@/schemas'
 import {
@@ -13,8 +13,9 @@ import {
   checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
-import { getMonthStartFromKey } from '@/utils/date'
+import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function GET(request: NextRequest) {
   // 1. Authenticate with JWT
@@ -32,9 +33,7 @@ export async function GET(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+  // Note: No subscription check for GET - users can always view their data
 
   // 2. Parse query parameters
   const { searchParams } = new URL(request.url)
@@ -46,10 +45,9 @@ export async function GET(request: NextRequest) {
     return validationError({ accountId: ['accountId is required'] })
   }
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -89,14 +87,15 @@ export async function GET(request: NextRequest) {
         id: b.id,
         accountId: b.accountId,
         categoryId: b.categoryId,
-        month: b.month.toISOString().split('T')[0],
+        month: formatDateForApi(b.month),
         planned: b.planned.toString(),
         currency: b.currency,
         notes: b.notes,
         category: b.category,
       })),
     })
-  } catch {
+  } catch (error) {
+    serverLogger.error('Failed to fetch budgets', { action: 'GET /api/v1/budgets' }, error)
     return serverError('Unable to fetch budgets')
   }
 }
@@ -139,10 +138,9 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
   const month = getMonthStartFromKey(data.monthKey)
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -198,10 +196,9 @@ export async function DELETE(request: NextRequest) {
   const data = parsed.data
   const month = getMonthStartFromKey(data.monthKey)
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
