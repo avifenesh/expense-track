@@ -5,8 +5,8 @@ Last updated: 2026-01-17
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed Total**: 46 issues (10 critical, 16 high, 17 medium, 3 low)
-**Remaining**: 43 issues (0 critical, 8 high, 23 medium, 12 low)
+**Fixed Total**: 53 issues (10 critical, 16 high, 24 medium, 3 low)
+**Remaining**: 28 medium issues (see sections below for full counts)
 
 ## Critical Issues (0 remaining)
 
@@ -49,7 +49,7 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Keyboard navigation missing on settings menu | src/components/dashboard/dashboard-page.tsx:341-400 | Add focus trap and arrow key navigation | medium |
 
-## Medium Issues (23 remaining)
+## Medium Issues (28 remaining)
 
 ### Performance
 
@@ -66,9 +66,7 @@ All critical issues resolved.
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
-| Duplicated access control logic | src/lib/api-auth-helpers.ts:18-88 | Create generic ensureResourceOwnership | small |
 | Tight coupling: cache imports finance | src/lib/dashboard-cache.ts:4-5 | Generify cache to accept compute function | medium |
-| Missing abstraction: repeated API auth | Multiple API routes | Extract requireApiResourceAccess middleware | small |
 | Inconsistent data validation strategy | Services vs Actions vs API | Add validation at service layer boundary | medium |
 | Auth module handles session AND user | src/lib/auth-server.ts | Consider separating session vs user lookup | medium |
 | Inconsistent error handling between layers | Services vs Actions | Standardize error handling at service layer | medium |
@@ -85,23 +83,13 @@ All critical issues resolved.
 | API response format not validated | tests/api/v1/transactions.test.ts:92-98 | Verify against API_CONTRACTS schema | medium |
 | Flaky date-dependent tests | tests/transaction-crud-actions.test.ts:136 | Use vi.setSystemTime() | small |
 
-### Database
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| No database-level date validation | prisma/schema.prisma:178-179 | Add CHECK constraint for endMonth >= startMonth | medium |
-| Category unique constraint race condition | src/app/actions/categories.ts:36 | Use upsert with isArchived: false | medium |
-
 ### API Design
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Generic error messages mask real issues | src/app/api/v1/categories/route.ts:50-51 | Distinguish error types in catch | medium |
 | Inconsistent response data format | Multiple endpoints | Return full resource on mutations | medium |
-| Inconsistent authorization patterns | Multiple API routes | Standardize on helper function | medium |
-| CSRF token in all schemas | src/schemas/index.ts | Create separate API schemas | small |
 | Missing GET parameter validation | src/app/api/v1/budgets/route.ts:96-106 | Add explicit null checks | small |
-| No error response TypeScript types | src/lib/api-helpers.ts | Export ApiResponse, ValidationError types | small |
 
 ### Frontend
 
@@ -172,7 +160,7 @@ All critical issues resolved.
 
 ---
 
-## Fixed This Session (46 issues)
+## Fixed This Session (53 issues)
 
 ### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
@@ -201,7 +189,7 @@ All critical issues resolved.
 - [x] In-memory rate limiting documented with limitations (PR #170)
 - [x] Missing secrets rotation documentation → docs/SECRET_ROTATION.md (PR #170)
 
-### Medium (17 fixed)
+### Medium (24 fixed)
 - [x] Token expiry loose time comparison (>= instead of >)
 - [x] Add new database indexes (4 indexes)
 - [x] Category name validation (max length + alphanumeric boundaries)
@@ -215,6 +203,13 @@ All critical issues resolved.
 - [x] No cron rate limiting → added IP-based rate limiting (PR #174)
 - [x] Paddle webhook replay attack → event_id deduplication (PR #174)
 - [x] Password reset tokens not cleaned up → /api/cron/cleanup endpoint (PR #174)
+- [x] Duplicated access control logic → generic ensureResourceOwnership helper (PR #175)
+- [x] Missing API auth middleware → withApiAuth centralized middleware (PR #175)
+- [x] No database-level date validation → CHECK constraint endMonth >= startMonth (PR #175)
+- [x] Category unique constraint race condition → atomic reactivate with updateMany (PR #175)
+- [x] CSRF token in all schemas → separate API schemas without CSRF (PR #175)
+- [x] No error response TypeScript types → ApiResponse, ApiErrorResponse exports (PR #175)
+- [x] Inconsistent authorization patterns → standardized withApiAuth middleware (PR #175)
 
 ### Low (3 fixed)
 - [x] Token expiry comparison boundary
