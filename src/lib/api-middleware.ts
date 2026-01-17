@@ -1,8 +1,8 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireJwtAuth, type JwtUser } from '@/lib/api-auth'
-import { checkRateLimit, incrementRateLimit, type RateLimitType } from '@/lib/rate-limit'
+import { requireJwtAuth, type AuthenticatedUser } from '@/lib/api-auth'
+import { checkRateLimitTyped, incrementRateLimitTyped, type RateLimitType } from '@/lib/rate-limit'
 import { authError, rateLimitError, serverError, checkSubscription } from '@/lib/api-helpers'
 import { serverLogger } from '@/lib/server-logger'
 
@@ -42,13 +42,13 @@ export interface ApiMiddlewareOptions {
  */
 export async function withApiAuth(
   request: NextRequest,
-  handler: (user: JwtUser) => Promise<NextResponse>,
+  handler: (user: AuthenticatedUser) => Promise<NextResponse>,
   options: ApiMiddlewareOptions = {},
 ): Promise<NextResponse> {
   const { rateLimitType = 'default', requireSubscription = false, skipRateLimit = false } = options
 
   // 1. Authenticate with JWT
-  let user: JwtUser
+  let user: AuthenticatedUser
   try {
     user = requireJwtAuth(request)
   } catch (error) {
@@ -57,11 +57,11 @@ export async function withApiAuth(
 
   // 2. Rate limit check
   if (!skipRateLimit) {
-    const rateLimit = checkRateLimit(user.userId, rateLimitType)
+    const rateLimit = checkRateLimitTyped(user.userId, rateLimitType)
     if (!rateLimit.allowed) {
       return rateLimitError(rateLimit.resetAt)
     }
-    incrementRateLimit(user.userId, rateLimitType)
+    incrementRateLimitTyped(user.userId, rateLimitType)
   }
 
   // 3. Subscription check (if required)
