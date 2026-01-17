@@ -4,10 +4,13 @@ import { Text, Pressable } from 'react-native';
 import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
 import { ApiError } from '../../src/services/api';
 import * as authService from '../../src/services/auth';
+import * as biometricService from '../../src/services/biometric';
 
 jest.mock('../../src/services/auth');
+jest.mock('../../src/services/biometric');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
+const mockBiometricService = biometricService as jest.Mocked<typeof biometricService>;
 
 // Test component that uses the hook
 function TestComponent() {
@@ -16,11 +19,16 @@ function TestComponent() {
     isLoading,
     user,
     accessToken,
+    biometricCapability,
+    isBiometricEnabled,
     login,
     logout,
     register,
     refreshToken,
     updateUser,
+    loginWithBiometric,
+    enableBiometric,
+    disableBiometric,
   } = useAuth();
 
   return (
@@ -29,6 +37,8 @@ function TestComponent() {
       <Text testID="is-authenticated">{isAuthenticated ? 'authenticated' : 'not-authenticated'}</Text>
       <Text testID="user-email">{user?.email || 'no-email'}</Text>
       <Text testID="access-token">{accessToken || 'no-token'}</Text>
+      <Text testID="biometric-type">{biometricCapability?.biometricType || 'none'}</Text>
+      <Text testID="biometric-enabled">{isBiometricEnabled ? 'enabled' : 'disabled'}</Text>
 
       <Pressable
         testID="login-btn"
@@ -58,6 +68,18 @@ function TestComponent() {
       >
         <Text>Update User</Text>
       </Pressable>
+
+      <Pressable testID="biometric-login-btn" onPress={() => loginWithBiometric()}>
+        <Text>Biometric Login</Text>
+      </Pressable>
+
+      <Pressable testID="enable-biometric-btn" onPress={() => enableBiometric()}>
+        <Text>Enable Biometric</Text>
+      </Pressable>
+
+      <Pressable testID="disable-biometric-btn" onPress={() => disableBiometric()}>
+        <Text>Disable Biometric</Text>
+      </Pressable>
     </>
   );
 }
@@ -65,17 +87,26 @@ function TestComponent() {
 describe('AuthContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default mocks for biometric service
+    mockBiometricService.checkBiometricCapability.mockResolvedValue({
+      isAvailable: false,
+      biometricType: 'none',
+      isEnrolled: false,
+    });
+    mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
   });
 
   describe('Provider Initialization', () => {
-    it('provides initial context values', () => {
+    it('provides initial context values', async () => {
       render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
       expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
       expect(screen.getByTestID('user-email')).toHaveTextContent('no-email');
       expect(screen.getByTestID('access-token')).toHaveTextContent('no-token');
@@ -94,6 +125,82 @@ describe('AuthContext', () => {
 
       spy.mockRestore();
     });
+
+    it('checks biometric capability on init', async () => {
+      mockBiometricService.checkBiometricCapability.mockResolvedValue({
+        isAvailable: true,
+        biometricType: 'faceId',
+        isEnrolled: true,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+      expect(screen.getByTestID('biometric-type')).toHaveTextContent('faceId');
+    });
+
+    it('attempts biometric login on init when enabled', async () => {
+      mockBiometricService.checkBiometricCapability.mockResolvedValue({
+        isAvailable: true,
+        biometricType: 'faceId',
+        isEnrolled: true,
+      });
+      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
+      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
+      mockBiometricService.getStoredCredentials.mockResolvedValue({
+        refreshToken: 'stored-refresh',
+        email: 'stored@example.com',
+      });
+      mockAuthService.refreshTokens.mockResolvedValue({
+        accessToken: 'new-access',
+        refreshToken: 'new-refresh',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+      expect(screen.getByTestID('user-email')).toHaveTextContent('stored@example.com');
+    });
+
+    it('clears credentials when biometric login fails token refresh', async () => {
+      mockBiometricService.checkBiometricCapability.mockResolvedValue({
+        isAvailable: true,
+        biometricType: 'faceId',
+        isEnrolled: true,
+      });
+      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
+      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
+      mockBiometricService.getStoredCredentials.mockResolvedValue({
+        refreshToken: 'expired-refresh',
+        email: 'stored@example.com',
+      });
+      mockAuthService.refreshTokens.mockRejectedValue(new Error('Token expired'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+      expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      expect(mockBiometricService.clearStoredCredentials).toHaveBeenCalled();
+    });
   });
 
   describe('Login', () => {
@@ -109,6 +216,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('login-btn'));
 
@@ -131,6 +242,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       fireEvent.press(screen.getByTestID('login-btn'));
 
       await waitFor(() => {
@@ -146,6 +261,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('login-btn'));
 
@@ -169,6 +288,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       fireEvent.press(screen.getByTestID('login-btn'));
 
       await waitFor(() => {
@@ -181,6 +304,36 @@ describe('AuthContext', () => {
         expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
         expect(screen.getByTestID('user-email')).toHaveTextContent('no-email');
         expect(screen.getByTestID('access-token')).toHaveTextContent('no-token');
+      });
+    });
+
+    it('clears biometric credentials on logout', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      fireEvent.press(screen.getByTestID('logout-btn'));
+
+      await waitFor(() => {
+        expect(mockBiometricService.clearStoredCredentials).toHaveBeenCalled();
       });
     });
 
@@ -198,6 +351,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('login-btn'));
 
@@ -224,6 +381,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('login-btn'));
 
@@ -253,6 +414,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       fireEvent.press(screen.getByTestID('register-btn'));
 
       await waitFor(() => {
@@ -279,6 +444,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       fireEvent.press(screen.getByTestID('register-btn'));
 
       await waitFor(() => {
@@ -294,6 +463,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('register-btn'));
 
@@ -322,6 +495,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('login-btn'));
 
@@ -355,6 +532,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       fireEvent.press(screen.getByTestID('login-btn'));
 
       await waitFor(() => {
@@ -375,6 +556,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('refresh-token-btn'));
 
@@ -398,6 +583,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       fireEvent.press(screen.getByTestID('login-btn'));
 
       await waitFor(() => {
@@ -415,6 +604,10 @@ describe('AuthContext', () => {
           <TestComponent />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
 
       fireEvent.press(screen.getByTestID('update-user-btn'));
 
@@ -436,6 +629,10 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
       expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
 
       fireEvent.press(screen.getByTestID('login-btn'));
@@ -443,6 +640,218 @@ describe('AuthContext', () => {
       await waitFor(() => {
         expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
       });
+    });
+  });
+
+  describe('Biometric Login', () => {
+    it('logs in with biometric successfully', async () => {
+      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
+      mockBiometricService.getStoredCredentials.mockResolvedValue({
+        refreshToken: 'stored-refresh',
+        email: 'biometric@example.com',
+      });
+      mockAuthService.refreshTokens.mockResolvedValue({
+        accessToken: 'new-access',
+        refreshToken: 'new-refresh',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestID('user-email')).toHaveTextContent('biometric@example.com');
+      });
+    });
+
+    it('throws error when biometric fails', async () => {
+      mockBiometricService.promptBiometric.mockResolvedValue({
+        success: false,
+        error: 'User cancelled',
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      });
+    });
+
+    it('throws error when no stored credentials', async () => {
+      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
+      mockBiometricService.getStoredCredentials.mockResolvedValue(null);
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      });
+    });
+
+    it('clears credentials and throws on refresh failure', async () => {
+      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
+      mockBiometricService.getStoredCredentials.mockResolvedValue({
+        refreshToken: 'expired-refresh',
+        email: 'biometric@example.com',
+      });
+      mockAuthService.refreshTokens.mockRejectedValue(new Error('Token expired'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+
+      await waitFor(() => {
+        expect(mockBiometricService.clearStoredCredentials).toHaveBeenCalled();
+        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('disabled');
+      });
+    });
+  });
+
+  describe('Enable Biometric', () => {
+    it('enables biometric successfully when authenticated', async () => {
+      mockAuthService.login.mockResolvedValue({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+      mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('enabled');
+      });
+      expect(mockBiometricService.enableBiometric).toHaveBeenCalledWith('refresh-456', 'test@example.com');
+    });
+
+    it('throws error when not authenticated', async () => {
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+
+      await waitFor(() => {
+        expect(mockBiometricService.enableBiometric).not.toHaveBeenCalled();
+      });
+    });
+
+    it('throws error when biometric confirmation fails', async () => {
+      mockAuthService.login.mockResolvedValue({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+      mockBiometricService.promptBiometric.mockResolvedValue({
+        success: false,
+        error: 'User cancelled',
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+
+      await waitFor(() => {
+        expect(mockBiometricService.enableBiometric).not.toHaveBeenCalled();
+        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('disabled');
+      });
+    });
+  });
+
+  describe('Disable Biometric', () => {
+    it('disables biometric successfully', async () => {
+      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('disable-biometric-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('disabled');
+      });
+      expect(mockBiometricService.disableBiometric).toHaveBeenCalled();
     });
   });
 });

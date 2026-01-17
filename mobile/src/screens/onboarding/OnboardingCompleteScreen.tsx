@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
-export function OnboardingCompleteScreen(_props: OnboardingScreenProps<'OnboardingComplete'>) {
+export function OnboardingCompleteScreen({
+  navigation,
+}: OnboardingScreenProps<'OnboardingComplete'>) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -31,8 +33,12 @@ export function OnboardingCompleteScreen(_props: OnboardingScreenProps<'Onboardi
           </View>
         </View>
 
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Start Tracking</Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => navigation.navigate('OnboardingBiometric')}
+          testID="continue-button"
+        >
+          <Text style={styles.buttonText}>Continue</Text>
         </Pressable>
       </View>
     </SafeAreaView>

@@ -20,6 +20,8 @@
     "@react-navigation/native": "^6.1.0",
     "@react-navigation/native-stack": "^6.10.0",
     "expo": "~54.0.31",
+    "expo-local-authentication": "~15.0.2",
+    "expo-secure-store": "~14.2.3",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-native": "0.81.5",
