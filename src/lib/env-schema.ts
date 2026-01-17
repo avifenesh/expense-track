@@ -35,7 +35,7 @@ const envSchema = z.object({
 
   // Email (optional - graceful degradation when not configured)
   SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.string().transform(Number).default('587'),
+  SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('noreply@balancebeacon.app'),
@@ -43,19 +43,19 @@ const envSchema = z.object({
 
   // Stock API (optional)
   ALPHA_VANTAGE_API_KEY: z.string().default(''),
-  STOCK_PRICE_MAX_AGE_HOURS: z.string().transform(Number).default('24'),
+  STOCK_PRICE_MAX_AGE_HOURS: z.coerce.number().default(24),
 
   // Sentry monitoring (optional)
   SENTRY_DSN: z.string().optional(),
   SENTRY_ENVIRONMENT: z.string().optional(),
-  SENTRY_ENABLED: z.string().transform((v) => v === 'true').default('false'),
+  SENTRY_ENABLED: z.string().optional().transform((v) => v === 'true'),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
   NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().default('development'),
-  NEXT_PUBLIC_SENTRY_ENABLED: z.string().transform((v) => v === 'true').default('false'),
+  NEXT_PUBLIC_SENTRY_ENABLED: z.string().optional().transform((v) => v === 'true'),
 
   // Performance monitoring (optional)
-  SLOW_QUERY_THRESHOLD_MS: z.string().transform(Number).default('1000'),
-  QUERY_MONITORING_ENABLED: z.string().transform((v) => v !== 'false').default('true'),
+  SLOW_QUERY_THRESHOLD_MS: z.coerce.number().default(1000),
+  QUERY_MONITORING_ENABLED: z.string().optional().transform((v) => v !== 'false'),
 })
 
 export type Env = z.infer<typeof envSchema>
