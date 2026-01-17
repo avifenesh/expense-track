@@ -102,7 +102,7 @@ export const categorySchema = z.object({
     .string()
     .min(2, 'Category name must be at least 2 characters')
     .max(100, 'Category name must be at most 100 characters')
-    .regex(/^[\p{L}\p{N}].*[\p{L}\p{N}]$|^[\p{L}\p{N}]{2}$/u, 'Category name must start and end with alphanumeric characters'),
+    .regex(/^[\p{L}\p{N}](?:.*\S.*)?[\p{L}\p{N}]$|^[\p{L}\p{N}]{2}$/u, 'Category name must start and end with alphanumeric characters and contain non-whitespace'),
   type: z.nativeEnum(TransactionType),
   color: z.string().optional().nullable(),
   csrfToken: z.string().min(1, 'Security token required'),

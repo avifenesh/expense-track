@@ -244,41 +244,48 @@ export async function createTransactionAction(input: TransactionInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // Pre-flight authorization check (outside transaction to avoid holding locks)
   const access = await ensureAccountAccessWithSubscription(data.accountId)
   if ('error' in access) {
     return access
   }
 
   try {
-    let recurringTemplateId: string | null = data.recurringTemplateId ?? null
+    // Use atomic transaction to ensure recurring template and transaction are created together
+    await prisma.$transaction(async (tx) => {
+      let recurringTemplateId: string | null = data.recurringTemplateId ?? null
 
-    // Auto-create RecurringTemplate if isRecurring is checked and no existing template
-    if (data.isRecurring && !data.recurringTemplateId) {
-      recurringTemplateId = await createRecurringTemplateForTransaction({
-        accountId: data.accountId,
-        categoryId: data.categoryId,
-        type: data.type,
-        amount: data.amount,
-        currency: data.currency,
-        date: data.date,
-        description: data.description,
-        monthStart,
+      // Auto-create RecurringTemplate if isRecurring is checked and no existing template
+      if (data.isRecurring && !data.recurringTemplateId) {
+        recurringTemplateId = await createRecurringTemplateForTransaction(
+          {
+            accountId: data.accountId,
+            categoryId: data.categoryId,
+            type: data.type,
+            amount: data.amount,
+            currency: data.currency,
+            date: data.date,
+            description: data.description,
+            monthStart,
+          },
+          tx,
+        )
+      }
+
+      await tx.transaction.create({
+        data: {
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          type: data.type,
+          amount: new Prisma.Decimal(toDecimalString(data.amount)),
+          currency: data.currency,
+          date: data.date,
+          month: monthStart,
+          description: data.description,
+          isRecurring: data.isRecurring ?? false,
+          recurringTemplateId,
+        },
       })
-    }
-
-    await prisma.transaction.create({
-      data: {
-        accountId: data.accountId,
-        categoryId: data.categoryId,
-        type: data.type,
-        amount: new Prisma.Decimal(toDecimalString(data.amount)),
-        currency: data.currency,
-        date: data.date,
-        month: monthStart,
-        description: data.description,
-        isRecurring: data.isRecurring ?? false,
-        recurringTemplateId,
-      },
     })
 
     // Invalidate dashboard cache for affected month/account

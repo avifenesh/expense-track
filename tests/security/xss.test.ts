@@ -74,41 +74,53 @@ vi.mock('@prisma/client', async (importOriginal) => {
 })
 
 // Mock Prisma client
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    account: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
+vi.mock('@/lib/prisma', () => {
+  const mockTransaction = {
+    create: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+  }
+  const mockRecurringTemplate = {
+    upsert: vi.fn(),
+    create: vi.fn(),
+    findFirst: vi.fn(),
+  }
+  return {
+    prisma: {
+      account: {
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+      },
+      category: {
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+        create: vi.fn(),
+      },
+      transaction: mockTransaction,
+      budget: {
+        upsert: vi.fn(),
+        findUnique: vi.fn(),
+      },
+      holding: {
+        create: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      recurringTemplate: mockRecurringTemplate,
+      user: {
+        findUnique: vi.fn(),
+        create: vi.fn(),
+      },
+      // Mock $transaction to execute callback with transaction client
+      $transaction: vi.fn().mockImplementation(async (callback: any) => {
+        const txClient = {
+          transaction: mockTransaction,
+          recurringTemplate: mockRecurringTemplate,
+        }
+        return callback(txClient)
+      }),
     },
-    category: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-    },
-    transaction: {
-      create: vi.fn(),
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-    },
-    budget: {
-      upsert: vi.fn(),
-      findUnique: vi.fn(),
-    },
-    holding: {
-      create: vi.fn(),
-      findFirst: vi.fn(),
-    },
-    recurringTemplate: {
-      upsert: vi.fn(),
-      create: vi.fn(),
-      findFirst: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-  },
-}))
+  }
+})
 
 // Mock email service
 vi.mock('@/lib/email', () => ({

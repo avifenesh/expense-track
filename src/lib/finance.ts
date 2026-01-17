@@ -225,24 +225,6 @@ function convertTransactionAmountSync(
   return convertAmountWithCache(originalAmount, fromCurrency, toCurrency, rateCache)
 }
 
-async function convertTransactionAmount(
-  amount: Prisma.Decimal | number,
-  fromCurrency: Currency,
-  toCurrency: Currency | undefined,
-  date: Date,
-  _context: string,
-): Promise<number> {
-  const originalAmount = decimalToNumber(amount)
-  if (!toCurrency || fromCurrency === toCurrency) {
-    return originalAmount
-  }
-  try {
-    return await convertAmount(originalAmount, fromCurrency, toCurrency, date)
-  } catch {
-    return originalAmount
-  }
-}
-
 function buildAccountScopedWhere(base: Prisma.TransactionWhereInput, accountId?: string): Prisma.TransactionWhereInput {
   if (!accountId) {
     return base
