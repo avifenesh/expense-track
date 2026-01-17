@@ -184,7 +184,8 @@ describe('Category API Routes', () => {
       })
 
       const response = await CreateCategory(duplicateRequest)
-      expect(response.status).toBe(500)
+      // Duplicate category returns 400 validation error, not 500 server error
+      expect(response.status).toBe(400)
     })
   })
 

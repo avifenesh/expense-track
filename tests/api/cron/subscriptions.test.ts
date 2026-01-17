@@ -16,6 +16,11 @@ vi.mock('@/lib/server-logger', () => ({
   },
 }))
 
+// Mock rate limiting to always allow requests in tests
+vi.mock('@/lib/rate-limit', () => ({
+  checkCronRateLimit: vi.fn().mockReturnValue(true),
+}))
+
 import { processExpiredSubscriptions } from '@/lib/subscription'
 import { serverLogger } from '@/lib/server-logger'
 
