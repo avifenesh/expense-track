@@ -1,4 +1,4 @@
-import { useAuthStore, type AuthStore } from '../../src/stores/authStore';
+import { useAuthStore } from '../../src/stores/authStore';
 import { ApiError } from '../../src/services/api';
 import * as authService from '../../src/services/auth';
 import * as biometricService from '../../src/services/biometric';

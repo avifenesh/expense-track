@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { apiGet, apiPost, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import type { Currency } from '../types';
-import type { Category, TransactionType } from './transactionsStore';
+import type { Category } from './transactionsStore';
 
 export interface Budget {
   id: string;
@@ -195,6 +195,6 @@ export const useBudgetsStore = create<BudgetsStore>((set, get) => ({
   },
 
   reset: () => {
-    set(initialState);
+    set({ ...initialState });
   },
 }));

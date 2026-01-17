@@ -5,11 +5,10 @@ import { NavigationContainer } from './src/navigation';
 import { useAuthStore } from './src/stores';
 
 export default function App() {
-  const initialize = useAuthStore((state) => state.initialize);
-
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    // Initialize auth store on app startup
+    useAuthStore.getState().initialize();
+  }, []);
 
   return (
     <SafeAreaProvider>

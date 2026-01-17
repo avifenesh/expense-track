@@ -253,6 +253,6 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
   },
 
   reset: () => {
-    set(initialState);
+    set({ ...initialState });
   },
 }));
