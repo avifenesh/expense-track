@@ -6,6 +6,7 @@ import { validationError, authError, serverError, successResponse, rateLimitErro
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import { TransactionType } from '@prisma/client'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function GET(request: NextRequest) {
   // 1. Authenticate with JWT
@@ -23,9 +24,7 @@ export async function GET(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+  // Note: No subscription check for GET - users can always view their data
 
   // 2. Parse query parameters
   const { searchParams } = new URL(request.url)
@@ -71,7 +70,7 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (error) {
-    console.error('Failed to fetch categories:', error)
+    serverLogger.error('Failed to fetch categories', { action: 'GET /api/v1/categories' }, error)
     return serverError('Unable to fetch categories')
   }
 }

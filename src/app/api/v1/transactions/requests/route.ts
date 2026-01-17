@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
-import { createTransactionRequest, getUserPrimaryAccount } from '@/lib/services/transaction-service'
+import { requireJwtAuth } from '@/lib/api-auth'
+import { createTransactionRequest } from '@/lib/services/transaction-service'
 import { transactionRequestSchema } from '@/schemas'
 import { validationError, authError, serverError, successResponse, rateLimitError } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { prisma } from '@/lib/prisma'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -38,9 +40,10 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Get user's primary account (the 'from' account)
-  const authUser = await getUserAuthInfo(user.userId)
-  const fromAccount = await getUserPrimaryAccount(authUser.accountNames)
+  // 3. Get user's primary account by userId (the 'from' account)
+  const fromAccount = await prisma.account.findFirst({
+    where: { userId: user.userId, type: 'SELF' },
+  })
 
   if (!fromAccount) {
     return serverError('Unable to identify your primary account')
@@ -58,7 +61,8 @@ export async function POST(request: NextRequest) {
       description: data.description,
     })
     return successResponse({ id: transactionRequest.id }, 201)
-  } catch {
+  } catch (error) {
+    serverLogger.error('Failed to create transaction request', { action: 'POST /api/v1/transactions/requests' }, error)
     return serverError('Unable to create transaction request')
   }
 }

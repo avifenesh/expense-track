@@ -27,7 +27,7 @@ Every PR receives automatic reviews from 4 agents: **Copilot**, **Claude**, **Ge
 2. Read **ALL** comments from all 4 reviewers
 3. Address **EVERY** comment - no exceptions
 4. Wait for the next review round and iterate
-5. Repeat for at least **4 iterations** OR until approved by all reviewers
+5. Iterate until all comments are addressed (typically 2-4 rounds)
 
 **Rules:**
 

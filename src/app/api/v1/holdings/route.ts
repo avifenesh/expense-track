@@ -14,6 +14,7 @@ import {
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
   try {
     const holding = await createHolding(data)
     return successResponse({ id: holding.id }, 201)
-  } catch {
+  } catch (error) {
+    serverLogger.error('Failed to create holding', { action: 'POST /api/v1/holdings' }, error)
     return serverError('Unable to create holding. It may already exist.')
   }
 }

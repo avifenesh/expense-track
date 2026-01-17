@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { createTransaction } from '@/lib/services/transaction-service'
 import { transactionSchema } from '@/schemas'
 import {
@@ -13,8 +13,9 @@ import {
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
-import { getMonthStartFromKey } from '@/utils/date'
+import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { TransactionType } from '@prisma/client'
+import { serverLogger } from '@/lib/server-logger'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
@@ -35,9 +36,7 @@ export async function GET(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+  // Note: No subscription check for GET - users can always view their data
 
   // 2. Parse query parameters
   const { searchParams } = new URL(request.url)
@@ -140,8 +139,8 @@ export async function GET(request: NextRequest) {
         type: t.type,
         amount: t.amount.toString(),
         currency: t.currency,
-        date: t.date.toISOString().split('T')[0],
-        month: t.month.toISOString().split('T')[0],
+        date: formatDateForApi(t.date),
+        month: formatDateForApi(t.month),
         description: t.description,
         isRecurring: t.isRecurring,
         category: t.category,
@@ -150,7 +149,7 @@ export async function GET(request: NextRequest) {
       hasMore,
     })
   } catch (error) {
-    console.error('Failed to fetch transactions:', error)
+    serverLogger.error('Failed to fetch transactions', { action: 'GET /api/v1/transactions' }, error)
     return serverError('Unable to fetch transactions')
   }
 }
@@ -204,7 +203,7 @@ export async function POST(request: NextRequest) {
     const transaction = await createTransaction(data)
     return successResponse({ id: transaction.id }, 201)
   } catch (error) {
-    console.error('Failed to create transaction:', error)
+    serverLogger.error('Failed to create transaction', { action: 'POST /api/v1/transactions' }, error)
     return serverError('Unable to create transaction')
   }
 }

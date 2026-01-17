@@ -13,8 +13,9 @@ import {
   checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
-import { getMonthStartFromKey } from '@/utils/date'
+import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function GET(request: NextRequest) {
   // 1. Authenticate with JWT
@@ -32,9 +33,7 @@ export async function GET(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+  // Note: No subscription check for GET - users can always view their data
 
   // 2. Parse query parameters
   const { searchParams } = new URL(request.url)
@@ -88,14 +87,15 @@ export async function GET(request: NextRequest) {
         id: b.id,
         accountId: b.accountId,
         categoryId: b.categoryId,
-        month: b.month.toISOString().split('T')[0],
+        month: formatDateForApi(b.month),
         planned: b.planned.toString(),
         currency: b.currency,
         notes: b.notes,
         category: b.category,
       })),
     })
-  } catch {
+  } catch (error) {
+    serverLogger.error('Failed to fetch budgets', { action: 'GET /api/v1/budgets' }, error)
     return serverError('Unable to fetch budgets')
   }
 }
