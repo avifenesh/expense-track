@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { formatCurrency } from '@/utils/format'
-import { cn } from '@/utils/cn'
 import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 
@@ -158,10 +157,7 @@ export function ShareExpenseForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop - disable interactions while submitting */}
       <div
-        className={cn(
-          'absolute inset-0 bg-black/50',
-          isPending && 'pointer-events-none',
-        )}
+        className="absolute inset-0 bg-black/50"
         onClick={!isPending ? onClose : undefined}
         aria-hidden="true"
       />

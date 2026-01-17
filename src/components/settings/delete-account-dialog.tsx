@@ -28,12 +28,9 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
 
     const focusableSelector =
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    const focusableElements = dialog.querySelectorAll(focusableSelector)
-    const firstElement = focusableElements[0] as HTMLElement | undefined
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement | undefined
 
-    // Focus the input field when dialog opens
-    const inputElement = dialog.querySelector('input') as HTMLElement | null
+    // Focus the confirm email input field when dialog opens (using specific id)
+    const inputElement = dialog.querySelector<HTMLInputElement>('#confirm-email')
     inputElement?.focus()
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,6 +41,13 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
       }
 
       if (e.key !== 'Tab') return
+
+      // Recompute focusable elements each time to account for disabled state changes
+      const focusableElements = dialog.querySelectorAll(focusableSelector)
+      if (focusableElements.length === 0) return
+
+      const firstElement = focusableElements[0] as HTMLElement
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
 
       // Trap focus within the dialog
       if (e.shiftKey) {

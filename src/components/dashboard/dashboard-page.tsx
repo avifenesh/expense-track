@@ -189,7 +189,6 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
-  const [menuFocusedIndex, setMenuFocusedIndex] = useState(0)
   const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number }>({})
 
   // Refs for settings menu keyboard navigation and positioning
@@ -216,19 +215,32 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   // Settings menu keyboard navigation with arrow keys and focus trap
   const handleMenuKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      const menuItems = settingsMenuRef.current?.querySelectorAll('[role="menuitem"]')
+      // Get only enabled menu items (skip disabled ones)
+      const menuItems = settingsMenuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])')
       if (!menuItems || menuItems.length === 0) return
 
       const itemCount = menuItems.length
 
+      // Find current index among enabled items
+      const currentEnabledIndex = Array.from(menuItems).findIndex(
+        (item) => item === document.activeElement,
+      )
+
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault()
-          setMenuFocusedIndex((prev) => (prev + 1) % itemCount)
+          {
+            const nextIndex = currentEnabledIndex < 0 ? 0 : (currentEnabledIndex + 1) % itemCount
+            ;(menuItems[nextIndex] as HTMLElement)?.focus()
+          }
           break
         case 'ArrowUp':
           event.preventDefault()
-          setMenuFocusedIndex((prev) => (prev - 1 + itemCount) % itemCount)
+          {
+            const prevIndex =
+              currentEnabledIndex < 0 ? itemCount - 1 : (currentEnabledIndex - 1 + itemCount) % itemCount
+            ;(menuItems[prevIndex] as HTMLElement)?.focus()
+          }
           break
         case 'Escape':
           event.preventDefault()
@@ -236,16 +248,18 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           settingsButtonRef.current?.focus()
           break
         case 'Tab':
-          // Close menu on Tab to allow natural focus flow
+          // Close menu on Tab to prevent double focus movement
+          event.preventDefault()
           setShowSettingsMenu(false)
+          settingsButtonRef.current?.focus()
           break
         case 'Home':
           event.preventDefault()
-          setMenuFocusedIndex(0)
+          ;(menuItems[0] as HTMLElement)?.focus()
           break
         case 'End':
           event.preventDefault()
-          setMenuFocusedIndex(itemCount - 1)
+          ;(menuItems[itemCount - 1] as HTMLElement)?.focus()
           break
       }
     },
@@ -254,10 +268,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
 
   // Focus management and position calculation when menu opens
   useEffect(() => {
-    if (!showSettingsMenu) {
-      setMenuFocusedIndex(0)
-      return
-    }
+    if (!showSettingsMenu) return
 
     // Use requestAnimationFrame to ensure the menu is rendered before measuring
     const rafId = requestAnimationFrame(() => {
@@ -274,15 +285,6 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
       document.removeEventListener('keydown', handleMenuKeyDown)
     }
   }, [showSettingsMenu, calculateMenuPosition, handleMenuKeyDown])
-
-  // Update focused menu item
-  useEffect(() => {
-    if (!showSettingsMenu) return
-    const menuItems = settingsMenuRef.current?.querySelectorAll('[role="menuitem"]')
-    if (menuItems && menuItems[menuFocusedIndex]) {
-      ;(menuItems[menuFocusedIndex] as HTMLElement).focus()
-    }
-  }, [menuFocusedIndex, showSettingsMenu])
 
   const accountsOptions = useMemo(
     () => data.accounts.map((account) => ({ label: account.name, value: account.id })),
