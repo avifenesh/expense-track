@@ -17,6 +17,27 @@ Stack: Next.js 16 App Router + Prisma + PostgreSQL + TypeScript.
 - **Be concise** - no filler phrases, focus on what's relevant
 - **NEVER kill all node processes** - only kill specific PIDs if necessary
 
+## IMPORTANT: PR Auto-Review Process
+
+Every PR receives automatic reviews from 4 agents: **Copilot**, **Claude**, **Gemini**, and **Codex**.
+
+**Mandatory workflow:**
+
+1. After creating/updating a PR, wait at least **3 minutes** for the first round of reviews
+2. Read **ALL** comments from all 4 reviewers
+3. Address **EVERY** comment - no exceptions
+4. Wait for the next review round and iterate
+5. Repeat for at least **4 iterations** OR until approved by all reviewers
+
+**Rules:**
+
+- **ALWAYS** address all comments, including "minor" or "out of scope" suggestions
+- **NEVER** skip a comment unless:
+  - The comment is factually wrong, OR
+  - You have explicit user approval to skip it
+- Treat all reviewer feedback as required changes, not suggestions
+- If a comment seems incorrect, explain why in your response before dismissing
+
 ## Transformation Roadmap
 
 5-sprint plan to transform from personal app to multi-tenant SaaS with mobile:
