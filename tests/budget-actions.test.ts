@@ -109,7 +109,7 @@ describe('upsertBudgetAction', () => {
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(
-        result.error.general?.some((msg: string) => msg.toLowerCase().includes('csrf')) ||
+        result.error.general?.some((msg: string) => msg.toLowerCase().includes('security')) ||
           result.error.csrfToken !== undefined,
       ).toBe(true)
     }
@@ -307,7 +307,7 @@ describe('deleteBudgetAction', () => {
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(
-        result.error.general?.some((msg: string) => msg.toLowerCase().includes('csrf')) ||
+        result.error.general?.some((msg: string) => msg.toLowerCase().includes('security')) ||
           result.error.csrfToken !== undefined,
       ).toBe(true)
     }
