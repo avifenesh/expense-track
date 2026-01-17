@@ -665,6 +665,7 @@ Create a new category.
     "type": "EXPENSE",
     "color": "#9C27B0",
     "isArchived": false,
+    "isHolding": false,
     "userId": "clx..."
   }
 }

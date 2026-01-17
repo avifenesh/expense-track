@@ -12,10 +12,29 @@ import {
   rateLimitError,
   checkSubscription,
 } from '@/lib/api-helpers'
-import { prisma } from '@/lib/prisma'
+import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { serverLogger } from '@/lib/server-logger'
 
+/**
+ * POST /api/v1/holdings
+ *
+ * Creates a new stock/investment holding.
+ *
+ * @body accountId - Required. The account to create the holding in.
+ * @body categoryId - Required. The holding category (must have isHolding=true).
+ * @body symbol - Required. Stock ticker symbol (validated against API).
+ * @body quantity - Required. Number of shares/units.
+ * @body averageCost - Required. Average cost per share.
+ * @body currency - Required. Currency code (USD, EUR, or ILS).
+ *
+ * @returns {Holding} The created holding with all fields
+ * @throws {400} Validation error - Invalid input, symbol, or category
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User doesn't own the account or subscription expired
+ * @throws {429} Rate limited - Too many requests
+ * @throws {500} Server error - Holding may already exist
+ */
 export async function POST(request: NextRequest) {
   // 1. Authenticate
   let user
@@ -57,8 +76,8 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
 
   // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account || account.userId !== user.userId) {
+  const accountOwnership = await ensureApiAccountOwnership(data.accountId, user.userId)
+  if (!accountOwnership.allowed) {
     return forbiddenError('Access denied')
   }
 
@@ -81,7 +100,19 @@ export async function POST(request: NextRequest) {
   // 7. Execute create
   try {
     const holding = await createHolding(data)
-    return successResponse({ id: holding.id }, 201)
+    return successResponse(
+      {
+        id: holding.id,
+        accountId: holding.accountId,
+        categoryId: holding.categoryId,
+        symbol: holding.symbol,
+        quantity: holding.quantity.toString(),
+        averageCost: holding.averageCost.toString(),
+        currency: holding.currency,
+        notes: holding.notes,
+      },
+      201,
+    )
   } catch (error) {
     serverLogger.error('Failed to create holding', { action: 'POST /api/v1/holdings' }, error)
     return serverError('Unable to create holding. It may already exist.')
