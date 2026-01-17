@@ -10,7 +10,6 @@ import {
   parseInput,
   toDecimalString,
   requireAuthUser,
-  ensureAccountAccess,
   ensureAccountAccessWithSubscription,
   requireCsrfToken,
   requireActiveSubscription,
@@ -72,13 +71,10 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  // Check subscription before allowing transaction request creation
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   // Determine current user's account ID (the 'from' account)
   const fromAccount = await prisma.account.findFirst({
@@ -318,14 +314,15 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   if ('error' in csrfCheck) return csrfCheck
 
   // Pre-flight checks outside the transaction to avoid holding locks during auth checks
-  // 1. Check subscription status (user-level, independent of specific transaction)
+  // requireActiveSubscription returns authUser - single auth call for all checks
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
+  const { authUser } = subscriptionCheck
 
-  // 2. Check new account access if moving to a different account
-  const newAccountAccess = await ensureAccountAccess(data.accountId)
-  if ('error' in newAccountAccess) {
-    return newAccountAccess
+  // Verify new account access using authUser from subscription check (avoids duplicate auth)
+  const newAccount = await prisma.account.findUnique({ where: { id: data.accountId } })
+  if (!newAccount || newAccount.userId !== authUser.id) {
+    return { error: { accountId: ['You do not have access to this account'] } }
   }
 
   try {
@@ -351,7 +348,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
         where: { id: existing.accountId },
         select: { userId: true },
       })
-      if (!existingAccount || existingAccount.userId !== newAccountAccess.authUser.id) {
+      if (!existingAccount || existingAccount.userId !== authUser.id) {
         return { error: 'access_denied' as const }
       }
 

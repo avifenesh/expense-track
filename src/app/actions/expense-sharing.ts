@@ -7,6 +7,7 @@ import { calculateShares } from '@/lib/finance'
 import { success, successVoid, generalError } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
 import { parseInput, toDecimalString, requireAuthUser, requireCsrfToken, requireActiveSubscription } from './shared'
+// Note: requireAuthUser is still imported for read-only actions (getMySharedExpensesAction, etc.)
 import {
   shareExpenseSchema,
   markSharePaidSchema,
@@ -35,12 +36,10 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   const transaction = await prisma.transaction.findUnique({
     where: { id: data.transactionId },
@@ -183,12 +182,10 @@ export async function markSharePaidAction(input: MarkSharePaidInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   const participant = await prisma.expenseParticipant.findUnique({
     where: { id: data.participantId },
@@ -243,12 +240,10 @@ export async function cancelSharedExpenseAction(input: CancelSharedExpenseInput)
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   const sharedExpense = await prisma.sharedExpense.findUnique({
     where: { id: data.sharedExpenseId },
@@ -287,12 +282,10 @@ export async function declineShareAction(input: DeclineShareInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   const participant = await prisma.expenseParticipant.findUnique({
     where: { id: data.participantId },
@@ -462,12 +455,10 @@ export async function sendPaymentReminderAction(input: SendPaymentReminderInput)
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   const participant = await prisma.expenseParticipant.findUnique({
     where: { id: data.participantId },

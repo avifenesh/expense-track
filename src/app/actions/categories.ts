@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { successVoid, failure } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
-import { parseInput, requireCsrfToken, requireAuthUser, requireActiveSubscription } from './shared'
+import { parseInput, requireCsrfToken, requireActiveSubscription } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
 import { createOrReactivateCategory } from '@/lib/services/category-service'
 
@@ -16,13 +16,10 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  // Check subscription before allowing category creation
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   // Use service function that handles archived category reactivation
   const result = await createOrReactivateCategory({
@@ -47,13 +44,10 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
   const csrfCheck = await requireCsrfToken(parsed.data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  // Check subscription before allowing category archive
+  // requireActiveSubscription returns authUser - no need for separate requireAuthUser call
   const subscriptionCheck = await requireActiveSubscription()
   if ('error' in subscriptionCheck) return subscriptionCheck
-
-  const auth = await requireAuthUser()
-  if ('error' in auth) return auth
-  const { authUser } = auth
+  const { authUser } = subscriptionCheck
 
   try {
     await prisma.category.update({
