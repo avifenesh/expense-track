@@ -4,6 +4,7 @@ import { resetAllRateLimits, incrementRateLimitTyped, checkRateLimitTyped } from
 // Mock external dependencies
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
+  getDbUserAsAuthUser: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -49,10 +50,11 @@ vi.mock('@/lib/dashboard-cache', () => ({
 
 // Import after mocks
 import { POST } from '@/app/api/chat/route'
-import { requireSession } from '@/lib/auth-server'
+import { requireSession, getDbUserAsAuthUser } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 
 const mockRequireSession = vi.mocked(requireSession)
+const mockGetDbUserAsAuthUser = vi.mocked(getDbUserAsAuthUser)
 const mockAccountFindUnique = vi.mocked(prisma.account.findUnique)
 
 describe('POST /api/chat', () => {
@@ -63,13 +65,24 @@ describe('POST /api/chat', () => {
     preferredCurrency: 'USD',
   }
 
-  const mockSession = { userId: 'user-123', userEmail: 'test@example.com' }
+  const mockSession = { userEmail: 'test@example.com' }
+  const mockAuthUser = {
+    id: 'user-123',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    passwordHash: 'hash',
+    accountNames: ['Test Account'],
+    defaultAccountName: 'Test Account',
+    preferredCurrency: null,
+    hasCompletedOnboarding: true,
+  }
   const mockAccount = { id: 'account-123', name: 'Test Account', userId: 'user-123' }
 
   beforeEach(() => {
     vi.clearAllMocks()
     resetAllRateLimits()
     mockRequireSession.mockResolvedValue(mockSession)
+    mockGetDbUserAsAuthUser.mockResolvedValue(mockAuthUser)
     mockAccountFindUnique.mockResolvedValue(mockAccount)
   })
 
@@ -87,13 +100,23 @@ describe('POST /api/chat', () => {
 
   describe('Authentication', () => {
     it('returns 401 when not authenticated', async () => {
-      mockRequireSession.mockResolvedValueOnce(null)
+      mockRequireSession.mockRejectedValueOnce(new Error('Unauthenticated'))
 
       const response = await POST(createRequest(validRequest))
       const data = await response.json()
 
       expect(response.status).toBe(401)
       expect(data.error).toBe('Unauthorized')
+    })
+
+    it('returns 401 when user not found in database', async () => {
+      mockGetDbUserAsAuthUser.mockResolvedValueOnce(undefined)
+
+      const response = await POST(createRequest(validRequest))
+      const data = await response.json()
+
+      expect(response.status).toBe(401)
+      expect(data.error).toBe('User not found')
     })
 
     it('returns 200 when authenticated', async () => {
@@ -111,8 +134,8 @@ describe('POST /api/chat', () => {
     it('blocks requests over limit (20/min)', async () => {
       // Hit the rate limit (20 requests)
       for (let i = 0; i < 20; i++) {
-        checkRateLimitTyped(mockSession.userId, 'ai_chat')
-        incrementRateLimitTyped(mockSession.userId, 'ai_chat')
+        checkRateLimitTyped(mockAuthUser.id, 'ai_chat')
+        incrementRateLimitTyped(mockAuthUser.id, 'ai_chat')
       }
 
       const response = await POST(createRequest(validRequest))
@@ -126,14 +149,14 @@ describe('POST /api/chat', () => {
 
     it('rate limit is decremented after successful request', async () => {
       // Check initial state
-      const initialCheck = checkRateLimitTyped(mockSession.userId, 'ai_chat')
+      const initialCheck = checkRateLimitTyped(mockAuthUser.id, 'ai_chat')
       const initialRemaining = initialCheck.remaining
 
       // Make a request
       await POST(createRequest(validRequest))
 
       // Check that rate limit was decremented
-      const afterCheck = checkRateLimitTyped(mockSession.userId, 'ai_chat')
+      const afterCheck = checkRateLimitTyped(mockAuthUser.id, 'ai_chat')
       expect(afterCheck.remaining).toBe(initialRemaining - 1)
     })
   })

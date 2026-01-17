@@ -1,6 +1,6 @@
 import { streamText } from 'ai'
 import { google } from '@ai-sdk/google'
-import { requireSession } from '@/lib/auth-server'
+import { requireSession, getDbUserAsAuthUser } from '@/lib/auth-server'
 import { chatRequestSchema } from '@/schemas'
 import { checkRateLimitTyped, incrementRateLimitTyped, getRateLimitHeaders } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
@@ -15,15 +15,26 @@ export const maxDuration = 60
 
 export async function POST(request: Request) {
   // 1. Authenticate session
-  const session = await requireSession()
-  if (!session) {
+  let session
+  try {
+    session = await requireSession()
+  } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     })
   }
 
-  const userId = session.userId
+  // Get user details from database
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
+  if (!authUser) {
+    return new Response(JSON.stringify({ error: 'User not found' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const userId = authUser.id
 
   // 2. Rate limit check (before any expensive operations)
   const rateLimit = checkRateLimitTyped(userId, 'ai_chat')
@@ -102,11 +113,11 @@ export async function POST(request: Request) {
   // 5. Increment rate limit (after validation passes)
   incrementRateLimitTyped(userId, 'ai_chat')
 
-  // 6. Build tools with verified context (userId from session, not client)
+  // 6. Build tools with verified context (userId from database, not client)
   const currency = preferredCurrency ?? Currency.USD
   const tools = buildTools({
     accountId,
-    userId, // From server session, not client input
+    userId,
     monthKey,
     preferredCurrency: currency,
   })
@@ -116,6 +127,7 @@ export async function POST(request: Request) {
     monthLabel: formatMonthLabel(monthKey),
     accountName: account.name,
     preferredCurrency: currency,
+    userName: authUser.displayName,
   })
 
   try {
@@ -128,14 +140,11 @@ export async function POST(request: Request) {
         content: m.content,
       })),
       tools,
-      maxSteps: 5, // Allow multi-step tool calling
       maxTokens: 1024,
       temperature: 0.7,
     })
 
-    return result.toDataStreamResponse({
-      headers: getRateLimitHeaders(userId, 'ai_chat'),
-    })
+    return result.toDataStreamResponse()
   } catch (error) {
     serverLogger.error('AI chat stream error', { error, userId, accountId })
     return new Response(
