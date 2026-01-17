@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { createTransactionAction, updateTransactionAction, deleteTransactionAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { Currency, TransactionType } from '@prisma/client'
+
+// Fixed test date to avoid flaky tests around month boundaries
+// Using mid-month to avoid edge cases with month transitions
+const FIXED_TEST_DATE = new Date('2026-01-15T12:00:00.000Z')
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -91,6 +95,12 @@ vi.mock('@/lib/prisma', () => {
 describe('createTransactionAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set fixed system time to ensure consistent date behavior in tests
+    vi.setSystemTime(FIXED_TEST_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should fail when session is missing', async () => {
@@ -220,7 +230,7 @@ describe('createTransactionAction', () => {
     }
   })
 
-  it('should accept null description', async () => {
+  it('should accept null description and preserve it in database call', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
@@ -257,6 +267,16 @@ describe('createTransactionAction', () => {
     })
 
     expect(result).toEqual({ success: true })
+
+    // Verify null description is explicitly preserved (not converted to empty string or omitted)
+    expect(prisma.transaction.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: null,
+        accountId: 'acc-1',
+        categoryId: 'cat-1',
+        type: TransactionType.EXPENSE,
+      }),
+    })
   })
 
   it('should create recurring transaction', async () => {
@@ -344,6 +364,11 @@ describe('createTransactionAction', () => {
 describe('updateTransactionAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should fail when transaction not found', async () => {
@@ -699,6 +724,11 @@ describe('updateTransactionAction', () => {
 describe('deleteTransactionAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should fail when transaction not found', async () => {
@@ -908,6 +938,7 @@ describe('deleteTransactionAction', () => {
 describe('subscription state edge cases', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
@@ -1115,11 +1146,16 @@ describe('subscription state edge cases', () => {
     expect('error' in result).toBe(true)
     expect(prisma.transaction.delete).not.toHaveBeenCalled()
   })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 })
 
 describe('auto-create RecurringTemplate', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.setSystemTime(FIXED_TEST_DATE)
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
     vi.mocked(requireSession).mockResolvedValue({} as any)
@@ -1312,5 +1348,9 @@ describe('auto-create RecurringTemplate', () => {
         dayOfMonth: 31,
       }),
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 })
