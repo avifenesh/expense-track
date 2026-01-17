@@ -50,7 +50,7 @@ interface BudgetsState {
 interface BudgetsActions {
   fetchBudgets: () => Promise<void>;
   createOrUpdateBudget: (data: CreateBudgetInput) => Promise<Budget>;
-  deleteBudget: (accountId: string, categoryId: string, month: string) => Promise<void>;
+  deleteBudget: (accountId: string, categoryId: string, monthKey: string) => Promise<void>;
   setFilters: (filters: Partial<BudgetFilters>) => void;
   setSelectedMonth: (month: string) => void;
   clearError: () => void;
@@ -144,19 +144,23 @@ export const useBudgetsStore = create<BudgetsStore>((set, get) => ({
     }
   },
 
-  deleteBudget: async (accountId: string, categoryId: string, month: string) => {
+  deleteBudget: async (accountId: string, categoryId: string, monthKey: string) => {
     const accessToken = useAuthStore.getState().accessToken;
 
     try {
       const params = new URLSearchParams();
       params.set('accountId', accountId);
       params.set('categoryId', categoryId);
-      params.set('month', month);
+      params.set('monthKey', monthKey);
 
       await apiDelete<{ message: string }>(
         `/budgets?${params.toString()}`,
         accessToken
       );
+
+      // API stores month as first day of month (YYYY-MM-01), but we pass monthKey as YYYY-MM
+      // Normalize both to YYYY-MM for comparison
+      const normalizeMonth = (m: string) => m.slice(0, 7);
 
       set((state) => ({
         budgets: state.budgets.filter(
@@ -164,7 +168,7 @@ export const useBudgetsStore = create<BudgetsStore>((set, get) => ({
             !(
               b.accountId === accountId &&
               b.categoryId === categoryId &&
-              b.month === month
+              normalizeMonth(b.month) === normalizeMonth(monthKey)
             )
         ),
       }));

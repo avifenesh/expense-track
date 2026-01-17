@@ -66,7 +66,7 @@ interface TransactionsState {
 }
 
 interface TransactionsActions {
-  fetchTransactions: (resetPagination?: boolean) => Promise<void>;
+  fetchTransactions: (resetPagination?: boolean) => Promise<boolean>;
   fetchMoreTransactions: () => Promise<void>;
   createTransaction: (data: CreateTransactionInput) => Promise<Transaction>;
   updateTransaction: (data: UpdateTransactionInput) => Promise<Transaction>;
@@ -100,7 +100,7 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
 
     if (!filters.accountId) {
       set({ error: 'Account ID is required', isLoading: false });
-      return;
+      return false;
     }
 
     set({ isLoading: true, error: null });
@@ -140,10 +140,12 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
         hasMore: response.hasMore,
         isLoading: false,
       });
+      return true;
     } catch (error) {
       const message =
         error instanceof ApiError ? error.message : 'Failed to fetch transactions';
       set({ error: message, isLoading: false });
+      return false;
     }
   },
 
@@ -154,17 +156,26 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
       return;
     }
 
-    set({ offset: offset + limit });
-    await get().fetchTransactions(false);
+    const newOffset = offset + limit;
+    const success = await get().fetchTransactions(false);
+
+    if (success) {
+      set({ offset: newOffset });
+    }
   },
 
   createTransaction: async (data: CreateTransactionInput) => {
     const accessToken = useAuthStore.getState().accessToken;
 
     try {
-      const transaction = await apiPost<Transaction>(
+      const { id } = await apiPost<{ id: string }>(
         '/transactions',
         data,
+        accessToken
+      );
+
+      const transaction = await apiGet<Transaction>(
+        `/transactions/${id}`,
         accessToken
       );
 
@@ -187,9 +198,14 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
     const { id, ...updates } = data;
 
     try {
-      const transaction = await apiPut<Transaction>(
+      await apiPut<{ id: string }>(
         `/transactions/${id}`,
         updates,
+        accessToken
+      );
+
+      const transaction = await apiGet<Transaction>(
+        `/transactions/${id}`,
         accessToken
       );
 

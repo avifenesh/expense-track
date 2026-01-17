@@ -192,7 +192,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
     } catch {
       await biometricService.clearStoredCredentials();
-      set({ isBiometricEnabled: false });
+      set({
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        isBiometricEnabled: false,
+      });
       throw new ApiError(
         'Session expired. Please sign in with your password.',
         'SESSION_EXPIRED',

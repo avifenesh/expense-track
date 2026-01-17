@@ -165,16 +165,17 @@ describe('budgetsStore', () => {
       useBudgetsStore.setState({ budgets: [mockBudget] });
     });
 
-    it('removes budget from list', async () => {
+    it('removes budget from list with YYYY-MM-01 month format', async () => {
       mockApiDelete.mockResolvedValue({ message: 'Deleted' });
 
-      await useBudgetsStore.getState().deleteBudget('acc-1', 'cat-1', '2026-01-01');
+      // Budget has month '2026-01-01', pass monthKey '2026-01'
+      await useBudgetsStore.getState().deleteBudget('acc-1', 'cat-1', '2026-01');
 
       const state = useBudgetsStore.getState();
       expect(state.budgets).toHaveLength(0);
     });
 
-    it('constructs correct API URL with query params', async () => {
+    it('constructs correct API URL with monthKey param', async () => {
       mockApiDelete.mockResolvedValue({ message: 'Deleted' });
 
       await useBudgetsStore.getState().deleteBudget('acc-1', 'cat-1', '2026-01');
@@ -188,7 +189,7 @@ describe('budgetsStore', () => {
         'test-token'
       );
       expect(mockApiDelete).toHaveBeenCalledWith(
-        expect.stringContaining('month=2026-01'),
+        expect.stringContaining('monthKey=2026-01'),
         'test-token'
       );
     });

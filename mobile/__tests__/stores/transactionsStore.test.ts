@@ -48,7 +48,7 @@ describe('transactionsStore', () => {
   });
 
   describe('fetchTransactions', () => {
-    it('fetches transactions successfully', async () => {
+    it('fetches transactions successfully and returns true', async () => {
       mockApiGet.mockResolvedValue({
         transactions: [mockTransaction],
         total: 1,
@@ -56,8 +56,9 @@ describe('transactionsStore', () => {
       });
 
       useTransactionsStore.getState().setFilters({ accountId: 'acc-1' });
-      await useTransactionsStore.getState().fetchTransactions();
+      const result = await useTransactionsStore.getState().fetchTransactions();
 
+      expect(result).toBe(true);
       const state = useTransactionsStore.getState();
       expect(state.transactions).toHaveLength(1);
       expect(state.transactions[0]).toEqual(mockTransaction);
@@ -94,20 +95,22 @@ describe('transactionsStore', () => {
       );
     });
 
-    it('sets error when accountId is missing', async () => {
-      await useTransactionsStore.getState().fetchTransactions();
+    it('sets error and returns false when accountId is missing', async () => {
+      const result = await useTransactionsStore.getState().fetchTransactions();
 
+      expect(result).toBe(false);
       const state = useTransactionsStore.getState();
       expect(state.error).toBe('Account ID is required');
       expect(mockApiGet).not.toHaveBeenCalled();
     });
 
-    it('handles API errors', async () => {
+    it('handles API errors and returns false', async () => {
       mockApiGet.mockRejectedValue(new ApiError('Server error', 'SERVER_ERROR', 500));
 
       useTransactionsStore.getState().setFilters({ accountId: 'acc-1' });
-      await useTransactionsStore.getState().fetchTransactions();
+      const result = await useTransactionsStore.getState().fetchTransactions();
 
+      expect(result).toBe(false);
       const state = useTransactionsStore.getState();
       expect(state.error).toBe('Server error');
       expect(state.isLoading).toBe(false);
@@ -176,8 +179,10 @@ describe('transactionsStore', () => {
   });
 
   describe('createTransaction', () => {
-    it('creates transaction and adds to list', async () => {
-      mockApiPost.mockResolvedValue(mockTransaction);
+    it('creates transaction, fetches full data, and adds to list', async () => {
+      // API returns only { id } on create, then we fetch full transaction
+      mockApiPost.mockResolvedValue({ id: 'tx-1' });
+      mockApiGet.mockResolvedValue(mockTransaction);
 
       useTransactionsStore.getState().setFilters({ accountId: 'acc-1' });
       const result = await useTransactionsStore.getState().createTransaction({
@@ -189,6 +194,8 @@ describe('transactionsStore', () => {
         date: '2026-01-15',
       });
 
+      expect(mockApiPost).toHaveBeenCalledWith('/transactions', expect.any(Object), 'test-token');
+      expect(mockApiGet).toHaveBeenCalledWith('/transactions/tx-1', 'test-token');
       expect(result).toEqual(mockTransaction);
       const state = useTransactionsStore.getState();
       expect(state.transactions[0]).toEqual(mockTransaction);
@@ -216,15 +223,19 @@ describe('transactionsStore', () => {
       useTransactionsStore.setState({ transactions: [mockTransaction] });
     });
 
-    it('updates transaction in list', async () => {
+    it('updates transaction, fetches full data, and updates in list', async () => {
       const updated = { ...mockTransaction, description: 'Updated' };
-      mockApiPut.mockResolvedValue(updated);
+      // API returns only { id } on update, then we fetch full transaction
+      mockApiPut.mockResolvedValue({ id: 'tx-1' });
+      mockApiGet.mockResolvedValue(updated);
 
       const result = await useTransactionsStore.getState().updateTransaction({
         id: 'tx-1',
         description: 'Updated',
       });
 
+      expect(mockApiPut).toHaveBeenCalledWith('/transactions/tx-1', { description: 'Updated' }, 'test-token');
+      expect(mockApiGet).toHaveBeenCalledWith('/transactions/tx-1', 'test-token');
       expect(result).toEqual(updated);
       const state = useTransactionsStore.getState();
       expect(state.transactions[0].description).toBe('Updated');
