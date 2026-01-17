@@ -79,7 +79,7 @@ export async function deleteAccountAction(input: z.infer<typeof deleteAccountSch
     // Build deletion operations, skipping empty array conditions to avoid SQL issues
     const deleteOps = []
 
-    // 1. TransactionRequest - depends on Account, Category
+    // 1. TransactionRequest - depends on Account, Category (special case: fromId/toId)
     if (accountIds.length > 0 || categoryIds.length > 0) {
       const orConditions = []
       if (accountIds.length > 0) {
@@ -91,36 +91,24 @@ export async function deleteAccountAction(input: z.infer<typeof deleteAccountSch
       deleteOps.push(prisma.transactionRequest.deleteMany({ where: { OR: orConditions } }))
     }
 
-    // 2. Transaction - depends on Account, Category (includes cross-account refs)
+    // 2-5. Delete related records that depend on Account or Category
+    // These models all share the same accountId/categoryId pattern
     if (accountIds.length > 0 || categoryIds.length > 0) {
-      const orConditions = []
-      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
-      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
-      deleteOps.push(prisma.transaction.deleteMany({ where: { OR: orConditions } }))
-    }
+      const orConditions: ({ accountId: { in: string[] } } | { categoryId: { in: string[] } })[] = []
+      if (accountIds.length > 0) {
+        orConditions.push({ accountId: { in: accountIds } })
+      }
+      if (categoryIds.length > 0) {
+        orConditions.push({ categoryId: { in: categoryIds } })
+      }
+      const whereClause = { where: { OR: orConditions } }
 
-    // 3. Holding - depends on Account, Category
-    if (accountIds.length > 0 || categoryIds.length > 0) {
-      const orConditions = []
-      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
-      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
-      deleteOps.push(prisma.holding.deleteMany({ where: { OR: orConditions } }))
-    }
-
-    // 4. Budget - depends on Account, Category
-    if (accountIds.length > 0 || categoryIds.length > 0) {
-      const orConditions = []
-      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
-      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
-      deleteOps.push(prisma.budget.deleteMany({ where: { OR: orConditions } }))
-    }
-
-    // 5. RecurringTemplate - depends on Account, Category
-    if (accountIds.length > 0 || categoryIds.length > 0) {
-      const orConditions = []
-      if (accountIds.length > 0) orConditions.push({ accountId: { in: accountIds } })
-      if (categoryIds.length > 0) orConditions.push({ categoryId: { in: categoryIds } })
-      deleteOps.push(prisma.recurringTemplate.deleteMany({ where: { OR: orConditions } }))
+      deleteOps.push(
+        prisma.transaction.deleteMany(whereClause),
+        prisma.holding.deleteMany(whereClause),
+        prisma.budget.deleteMany(whereClause),
+        prisma.recurringTemplate.deleteMany(whereClause),
+      )
     }
 
     // 6. DashboardCache - cleanup cached data for user's accounts

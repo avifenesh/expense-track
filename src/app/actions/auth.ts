@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { clearSession, establishSession, verifyCredentials } from '@/lib/auth-server'
 import { success, successVoid, failure, generalError } from '@/lib/action-result'
-import { parseInput, requireCsrfToken } from './shared'
+import { parseInput } from './shared'
 import { rotateCsrfToken } from '@/lib/csrf'
 import {
   loginSchema,

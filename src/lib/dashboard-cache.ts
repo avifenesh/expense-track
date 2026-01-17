@@ -6,7 +6,8 @@ import { prisma } from '@/lib/prisma'
 const CACHE_TTL_SECONDS = 5 * 60
 
 // In-memory request deduplication (per-process)
-// Using 'unknown' for generic deduplication across different data types
+// Map is keyed by cache key, stores Promise of any type
+// Type safety is maintained through the generic getCachedData<T> function
 const inFlightRequests = new Map<string, Promise<unknown>>()
 
 // Cache metrics (per-process)
@@ -36,16 +37,21 @@ function generateCacheKey(params: {
  * Generic cache function that accepts a compute function.
  * Decouples caching logic from specific data computation.
  *
+ * Note: Type safety for inFlightRequests is maintained by:
+ * 1. Using the same cacheKey for storing and retrieving
+ * 2. The caller providing consistent generic type T
+ * This is a deliberate trade-off for supporting multiple data types in a single cache.
+ *
  * @param cacheKey - Unique key for this cached data
  * @param computeFn - Function that computes the data if cache miss
- * @param metadata - Optional metadata for cache storage (monthKey, accountId, preferredCurrency)
+ * @param metadata - Required metadata for cache storage (monthKey is required)
  * @returns The cached or freshly computed data
  */
 export async function getCachedData<T>(
   cacheKey: string,
   computeFn: () => Promise<T>,
-  metadata?: {
-    monthKey?: string
+  metadata: {
+    monthKey: string
     accountId?: string | null
     preferredCurrency?: Currency | null
   },
@@ -53,6 +59,7 @@ export async function getCachedData<T>(
   // 1. Check in-flight request deduplication
   const existing = inFlightRequests.get(cacheKey)
   if (existing) {
+    // Type safety: The same cacheKey guarantees the same type T
     return existing as Promise<T>
   }
 
@@ -91,9 +98,9 @@ export async function getCachedData<T>(
           create: {
             cacheKey,
             data: dataJson,
-            monthKey: metadata?.monthKey || '',
-            accountId: metadata?.accountId || null,
-            preferredCurrency: metadata?.preferredCurrency || null,
+            monthKey: metadata.monthKey,
+            accountId: metadata.accountId || null,
+            preferredCurrency: metadata.preferredCurrency || null,
             fetchedAt: new Date(),
           },
         })
@@ -114,17 +121,16 @@ export async function getCachedData<T>(
   return computePromise
 }
 
-// Lazy import to break circular dependency
-let getDashboardDataFn: typeof import('@/lib/finance').getDashboardData | null = null
-let getAccountsFn: typeof import('@/lib/finance').getAccounts | null = null
+// Lazy import to break circular dependency, using a promise-based singleton
+// This avoids race conditions when multiple requests trigger imports simultaneously
+type FinanceModule = typeof import('@/lib/finance')
+let financeModulePromise: Promise<FinanceModule> | null = null
 
-async function ensureFinanceImports() {
-  if (!getDashboardDataFn || !getAccountsFn) {
-    const finance = await import('@/lib/finance')
-    getDashboardDataFn = finance.getDashboardData
-    getAccountsFn = finance.getAccounts
+async function ensureFinanceImports(): Promise<FinanceModule> {
+  if (!financeModulePromise) {
+    financeModulePromise = import('@/lib/finance')
   }
-  return { getDashboardData: getDashboardDataFn, getAccounts: getAccountsFn }
+  return financeModulePromise
 }
 
 // Import the DashboardData type for backward compatibility
@@ -145,18 +151,18 @@ export async function getCachedDashboardData(params: {
   accounts?: AccountsResult
   userId?: string
 }): Promise<DashboardData> {
-  const { getDashboardData } = await ensureFinanceImports()
+  const finance = await ensureFinanceImports()
 
   // If accounts are explicitly provided, bypass cache (used for pre-fetched data optimization)
   if (params.accounts) {
-    return getDashboardData(params)
+    return finance.getDashboardData(params)
   }
 
   const cacheKey = generateCacheKey(params)
 
   return getCachedData<DashboardData>(
     cacheKey,
-    () => getDashboardData(params),
+    () => finance.getDashboardData(params),
     {
       monthKey: params.monthKey,
       accountId: params.accountId || null,
