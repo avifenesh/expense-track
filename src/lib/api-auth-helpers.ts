@@ -58,7 +58,7 @@ export async function ensureApiCategoryOwnership(categoryId: string, userId: str
  */
 export async function ensureApiHoldingOwnership(holdingId: string, userId: string): Promise<OwnershipResult> {
   const holding = await prisma.holding.findFirst({
-    where: { id: holdingId, account: { userId } },
+    where: { id: holdingId, account: { userId }, deletedAt: null },
   })
 
   if (!holding) {

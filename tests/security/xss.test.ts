@@ -89,6 +89,7 @@ vi.mock('@/lib/prisma', () => {
     prisma: {
       account: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         findMany: vi.fn(),
       },
       category: {
@@ -148,7 +149,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
     vi.clearAllMocks()
 
     // Default mock implementations
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'test-account-id',
       userId: 'test-user',
       name: 'Test Account',
@@ -195,7 +196,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
         } as any)
 
         // Mock account and category lookups
-        vi.mocked(prisma.account.findUnique).mockResolvedValueOnce({
+        vi.mocked(prisma.account.findFirst).mockResolvedValueOnce({
           id: 'test-account-id',
           userId: 'test-user',
           name: 'Test Account',
@@ -357,7 +358,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
       for (const payload of CRITICAL_XSS_PAYLOADS) {
         vi.clearAllMocks()
 
-        vi.mocked(prisma.account.findUnique).mockResolvedValueOnce({
+        vi.mocked(prisma.account.findFirst).mockResolvedValueOnce({
           id: 'test-account-id',
           userId: 'test-user',
           name: 'Test Account',
@@ -535,7 +536,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
       for (const payload of CRITICAL_XSS_PAYLOADS.slice(0, 3)) {
         vi.clearAllMocks()
 
-        vi.mocked(prisma.account.findUnique).mockResolvedValueOnce({
+        vi.mocked(prisma.account.findFirst).mockResolvedValueOnce({
           id: 'test-account-id',
           userId: 'test-user',
           name: 'Test Account',

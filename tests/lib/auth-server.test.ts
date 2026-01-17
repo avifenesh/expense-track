@@ -9,6 +9,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     user: {
       findUnique: vi.fn().mockResolvedValue(null), // By default, no DB user found (legacy users only)
@@ -636,7 +637,7 @@ describe('auth-server.ts', () => {
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
         // Mock account exists
-        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
           id: 'acc-shared',
           userId: 'test-user',
           name: 'Shared',
@@ -658,7 +659,7 @@ describe('auth-server.ts', () => {
         const result = await updateSessionAccount('acc-shared')
 
         expect(result).toEqual({ success: true })
-        expect(prisma.account.findUnique).toHaveBeenCalledWith({ where: { id: 'acc-shared' } })
+        expect(prisma.account.findFirst).toHaveBeenCalledWith({ where: { id: 'acc-shared', deletedAt: null } })
         expect(mockCookies.set).toHaveBeenCalledWith('balance_account', 'acc-shared', expect.any(Object))
       })
 
@@ -680,7 +681,7 @@ describe('auth-server.ts', () => {
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
         // Mock account not found
-        vi.mocked(prisma.account.findUnique).mockResolvedValue(null)
+        vi.mocked(prisma.account.findFirst).mockResolvedValue(null)
 
         const result = await updateSessionAccount('acc-nonexistent')
 
@@ -704,7 +705,7 @@ describe('auth-server.ts', () => {
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
         // Mock Account2 which exists but user1 doesn't have access to
-        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
           id: 'acc-account2',
           userId: 'test-user',
           name: 'Account2',
@@ -737,7 +738,7 @@ describe('auth-server.ts', () => {
         // Test with user1
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
-        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
           id: 'acc-shared',
           userId: 'test-user',
           name: 'Shared',
@@ -768,7 +769,7 @@ describe('auth-server.ts', () => {
 
         await establishSession({ userEmail: 'user2@test.com', accountId: 'acc-account2' })
 
-        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
           id: 'acc-shared',
           userId: 'test-user',
           name: 'Shared',
@@ -800,7 +801,7 @@ describe('auth-server.ts', () => {
         await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
 
         // Mock account with lowercase name
-        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
           id: 'acc-wrong-case',
           userId: 'test-user',
           name: 'account1', // lowercase
@@ -888,7 +889,7 @@ describe('auth-server.ts', () => {
       expect(session1?.accountId).toBe('acc-account1')
 
       // 2. Switch to Shared account
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'acc-shared',
         userId: 'test-user',
         name: 'Shared',

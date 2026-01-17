@@ -72,7 +72,7 @@ describe('api-auth-helpers', () => {
 
       expect(result).toEqual({ allowed: true })
       expect(prisma.holding.findFirst).toHaveBeenCalledWith({
-        where: { id: 'holding-1', account: { userId: 'user-1' } },
+        where: { id: 'holding-1', account: { userId: 'user-1' }, deletedAt: null },
       })
     })
 
@@ -105,7 +105,7 @@ describe('api-auth-helpers', () => {
 
       expect(result).toEqual({ allowed: true })
       expect(prisma.recurringTemplate.findFirst).toHaveBeenCalledWith({
-        where: { id: 'rec-1', account: { userId: 'user-1' } },
+        where: { id: 'rec-1', account: { userId: 'user-1' }, deletedAt: null },
       })
     })
 
@@ -138,7 +138,7 @@ describe('api-auth-helpers', () => {
 
       expect(result).toEqual({ allowed: true })
       expect(prisma.transaction.findFirst).toHaveBeenCalledWith({
-        where: { id: 'tx-1', account: { userId: 'user-1' } },
+        where: { id: 'tx-1', deletedAt: null, account: { userId: 'user-1' } },
       })
     })
 
@@ -171,7 +171,7 @@ describe('api-auth-helpers', () => {
 
       expect(result).toEqual({ allowed: true })
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: { id: 'acc-1', userId: 'user-1' },
+        where: { id: 'acc-1', userId: 'user-1', deletedAt: null },
       })
     })
 

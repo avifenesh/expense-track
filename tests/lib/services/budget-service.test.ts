@@ -32,8 +32,8 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     budget: {
       upsert: vi.fn(),
-      delete: vi.fn(),
-      findUnique: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -55,6 +55,7 @@ import {
   getBudgetByKey,
   type UpsertBudgetInput,
   type DeleteBudgetInput,
+  type GetBudgetByKeyInput,
 } from '@/lib/services/budget-service'
 
 // Prisma error type
@@ -492,11 +493,12 @@ describe('budget-service.ts', () => {
   })
 
   describe('Phase 3: deleteBudget()', () => {
-    it('should delete budget by composite key', async () => {
+    it('should soft delete budget by composite key', async () => {
       const input: DeleteBudgetInput = {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         month: new Date('2024-01-01'),
+        userId: 'user-1',
       }
 
       const mockBudget = {
@@ -507,21 +509,28 @@ describe('budget-service.ts', () => {
         planned: mockDecimal('1000.00'),
         currency: Currency.USD,
         notes: null,
+        deletedAt: new Date('2024-01-15T12:00:00Z'),
+        deletedBy: 'user-1',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.budget.delete).mockResolvedValue(mockBudget as never)
+      vi.mocked(prisma.budget.update).mockResolvedValue(mockBudget as never)
 
       const result = await deleteBudget(input)
 
-      expect(prisma.budget.delete).toHaveBeenCalledWith({
+      expect(prisma.budget.update).toHaveBeenCalledWith({
         where: {
           accountId_categoryId_month: {
             accountId: 'acc-1',
             categoryId: 'cat-1',
             month: new Date('2024-01-01'),
           },
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: expect.any(Date),
+          deletedBy: 'user-1',
         },
       })
       expect(result).toEqual(mockBudget)
@@ -532,6 +541,7 @@ describe('budget-service.ts', () => {
         accountId: 'acc-2',
         categoryId: 'cat-5',
         month: new Date('2024-03-01'),
+        userId: 'user-2',
       }
 
       const mockBudget = {
@@ -542,15 +552,17 @@ describe('budget-service.ts', () => {
         planned: mockDecimal('500.00'),
         currency: Currency.EUR,
         notes: null,
+        deletedAt: new Date(),
+        deletedBy: 'user-2',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.budget.delete).mockResolvedValue(mockBudget as never)
+      vi.mocked(prisma.budget.update).mockResolvedValue(mockBudget as never)
 
       await deleteBudget(input)
 
-      const call = vi.mocked(prisma.budget.delete).mock.calls[0][0]
+      const call = vi.mocked(prisma.budget.update).mock.calls[0][0]
       expect(call.where.accountId_categoryId_month).toEqual({
         accountId: 'acc-2',
         categoryId: 'cat-5',
@@ -563,12 +575,13 @@ describe('budget-service.ts', () => {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         month: new Date('2024-01-01'),
+        userId: 'user-1',
       }
 
       const error = new Error('Record not found')
       ;(error as PrismaError).code = 'P2025'
 
-      vi.mocked(prisma.budget.delete).mockRejectedValue(error)
+      vi.mocked(prisma.budget.update).mockRejectedValue(error)
 
       await expect(deleteBudget(input)).rejects.toThrow('Record not found')
     })
@@ -578,10 +591,11 @@ describe('budget-service.ts', () => {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         month: new Date('2024-01-01'),
+        userId: 'user-1',
       }
 
       const error = new Error('Connection timeout')
-      vi.mocked(prisma.budget.delete).mockRejectedValue(error)
+      vi.mocked(prisma.budget.update).mockRejectedValue(error)
 
       await expect(deleteBudget(input)).rejects.toThrow('Connection timeout')
     })
@@ -589,7 +603,7 @@ describe('budget-service.ts', () => {
 
   describe('Phase 4: getBudgetByKey()', () => {
     it('should find existing budget', async () => {
-      const input: DeleteBudgetInput = {
+      const input: GetBudgetByKeyInput = {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         month: new Date('2024-01-01'),
@@ -603,68 +617,70 @@ describe('budget-service.ts', () => {
         planned: mockDecimal('1000.00'),
         currency: Currency.USD,
         notes: 'Test budget',
+        deletedAt: null,
+        deletedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      vi.mocked(prisma.budget.findUnique).mockResolvedValue(mockBudget as never)
+      vi.mocked(prisma.budget.findFirst).mockResolvedValue(mockBudget as never)
 
       const result = await getBudgetByKey(input)
 
-      expect(prisma.budget.findUnique).toHaveBeenCalledWith({
+      expect(prisma.budget.findFirst).toHaveBeenCalledWith({
         where: {
-          accountId_categoryId_month: {
-            accountId: 'acc-1',
-            categoryId: 'cat-1',
-            month: new Date('2024-01-01'),
-          },
+          accountId: 'acc-1',
+          categoryId: 'cat-1',
+          month: new Date('2024-01-01'),
+          deletedAt: null,
         },
       })
       expect(result).toEqual(mockBudget)
     })
 
     it('should return null when budget not found', async () => {
-      const input: DeleteBudgetInput = {
+      const input: GetBudgetByKeyInput = {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         month: new Date('2024-01-01'),
       }
 
-      vi.mocked(prisma.budget.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.budget.findFirst).mockResolvedValue(null)
 
       const result = await getBudgetByKey(input)
 
       expect(result).toBeNull()
     })
 
-    it('should verify composite key query structure', async () => {
-      const input: DeleteBudgetInput = {
+    it('should verify query filters out deleted budgets', async () => {
+      const input: GetBudgetByKeyInput = {
         accountId: 'acc-3',
         categoryId: 'cat-7',
         month: new Date('2024-06-01'),
       }
 
-      vi.mocked(prisma.budget.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.budget.findFirst).mockResolvedValue(null)
 
       await getBudgetByKey(input)
 
-      const call = vi.mocked(prisma.budget.findUnique).mock.calls[0][0]
-      expect(call.where.accountId_categoryId_month).toEqual({
+      const call = vi.mocked(prisma.budget.findFirst).mock.calls[0][0]
+      expect(call.where).toEqual({
         accountId: 'acc-3',
         categoryId: 'cat-7',
         month: new Date('2024-06-01'),
+        deletedAt: null,
       })
     })
 
     it('should handle Prisma query error', async () => {
-      const input: DeleteBudgetInput = {
+      const input: GetBudgetByKeyInput = {
         accountId: 'acc-1',
         categoryId: 'cat-1',
         month: new Date('2024-01-01'),
       }
 
       const error = new Error('Query failed')
-      vi.mocked(prisma.budget.findUnique).mockRejectedValue(error)
+      vi.mocked(prisma.budget.findFirst).mockRejectedValue(error)
 
       await expect(getBudgetByKey(input)).rejects.toThrow('Query failed')
     })
