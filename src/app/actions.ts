@@ -31,13 +31,17 @@ export {
   logoutAction,
   requestPasswordResetAction,
   resetPasswordAction,
-  persistActiveAccountAction,
   registerAction,
   verifyEmailAction,
   resendVerificationEmailAction,
+} from './actions/auth'
+
+// Account actions
+export {
+  persistActiveAccountAction,
   deleteAccountAction,
   exportUserDataAction,
-} from './actions/auth'
+} from './actions/account'
 
 // Holdings actions
 export {

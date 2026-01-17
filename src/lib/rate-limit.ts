@@ -157,30 +157,17 @@ export function resetRateLimitTyped(identifier: string, type: RateLimitType): vo
   rateLimitStore.delete(key)
 }
 
-// ============================================================================
-// Legacy API - backwards compatible with existing code using 'default' type
-// ============================================================================
-
-/**
- * Check if user is within rate limit (legacy API - uses 'default' type)
- * @deprecated Use checkRateLimitTyped for new code
- */
+/** Check if user is within rate limit (uses 'default' type) */
 export function checkRateLimit(userId: string): RateLimitResult {
   return checkRateLimitTyped(userId, 'default')
 }
 
-/**
- * Increment rate limit counter for user (legacy API - uses 'default' type)
- * @deprecated Use incrementRateLimitTyped for new code
- */
+/** Increment rate limit counter for user (uses 'default' type) */
 export function incrementRateLimit(userId: string): void {
   incrementRateLimitTyped(userId, 'default')
 }
 
-/**
- * Get rate limit headers for response
- * Should be included on all API responses for client visibility
- */
+/** Get rate limit headers for response */
 export function getRateLimitHeaders(userId: string, type: RateLimitType = 'default'): Record<string, string> {
   const rateLimit = checkRateLimitTyped(userId, type)
 
@@ -191,10 +178,7 @@ export function getRateLimitHeaders(userId: string, type: RateLimitType = 'defau
   }
 }
 
-/**
- * Reset rate limit for a specific user (legacy API - uses 'default' type)
- * @deprecated Use resetRateLimitTyped for new code
- */
+/** Reset rate limit for a specific user (uses 'default' type) */
 export function resetRateLimit(userId: string): void {
   resetRateLimitTyped(userId, 'default')
 }

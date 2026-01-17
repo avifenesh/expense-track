@@ -175,12 +175,3 @@ export async function rejectTransactionRequest(requestId: string) {
     data: { status: RequestStatus.REJECTED },
   })
 }
-
-/**
- * Get user's primary SELF account
- */
-export async function getUserPrimaryAccount(accountNames: string[]) {
-  return await prisma.account.findFirst({
-    where: { name: { in: accountNames }, type: 'SELF' },
-  })
-}
