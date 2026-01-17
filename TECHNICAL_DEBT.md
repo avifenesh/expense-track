@@ -5,24 +5,21 @@ Last updated: 2026-01-17
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed This Session**: 32 issues (6 critical, 14 high, 11 medium, 1 low)
-**Remaining**: 57 issues (4 critical, 10 high, 29 medium, 14 low)
+**Fixed This Session**: 35 issues (9 critical, 14 high, 11 medium, 1 low)
+**Remaining**: 54 issues (1 critical, 10 high, 29 medium, 14 low)
 
-## Critical Issues (4 remaining)
-
-### API Design
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Missing GET endpoints documented in API_CONTRACTS | API_CONTRACTS.md vs implementation | Implement GET /transactions, /budgets, /categories | large |
-| REST API doesn't enforce subscription status | All v1 endpoints | Add requireActiveSubscriptionApi() middleware | large |
-| Missing pagination despite documentation | All list endpoints | Implement limit/offset pagination | large |
+## Critical Issues (1 remaining)
 
 ### Security
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Hard-coded CI database credentials | .github/workflows/ci.yml:39-41 | Use GitHub Secrets | small |
+
+### Blocked (not counted)
+
+| Issue | File | Fix | Effort |
+|-------|------|-----|--------|
 | Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
 ## High Issues (10 remaining)
@@ -204,13 +201,16 @@ Last updated: 2026-01-17
 
 ---
 
-## Fixed This Session (32 issues)
+## Fixed This Session (35 issues)
 
-### Critical (6 fixed)
+### Critical (9 fixed)
 - [x] Require CRON_SECRET always (security)
 - [x] Remove committed .env.docker/.env.e2e (security)
 - [x] Add subscription checks to API endpoints (categories, holdings, recurring)
 - [x] Add cascade deletes to all 5 models (database)
+- [x] Implement GET endpoints for /transactions, /budgets, /categories (PR #169)
+- [x] Add subscription enforcement to all mutating API routes (PR #169)
+- [x] Implement limit/offset pagination on list endpoints (PR #169)
 
 ### High (14 fixed)
 - [x] Make security audit blocking (CI)
