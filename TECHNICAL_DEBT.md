@@ -5,8 +5,8 @@ Last updated: 2026-01-17
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed Total**: 53 issues (10 critical, 16 high, 24 medium, 3 low)
-**Remaining**: 28 medium issues (see sections below for full counts)
+**Fixed Total**: 67 issues (10 critical, 17 high, 32 medium, 8 low)
+**Remaining**: 22 issues (see sections below for full counts)
 
 ## Critical Issues (0 remaining)
 
@@ -18,7 +18,7 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
-## High Issues (8 remaining)
+## High Issues (7 remaining)
 
 ### Performance
 
@@ -43,13 +43,7 @@ All critical issues resolved.
 | Missing CSRF validation tests in budget actions | tests/budget-actions.test.ts | Add invalid CSRF token test | small |
 | Missing subscription state edge case tests | tests/transaction-crud-actions.test.ts | Add trial/expired/cancelled tests | medium |
 
-### Frontend
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Keyboard navigation missing on settings menu | src/components/dashboard/dashboard-page.tsx:341-400 | Add focus trap and arrow key navigation | medium |
-
-## Medium Issues (28 remaining)
+## Medium Issues (20 remaining)
 
 ### Performance
 
@@ -59,8 +53,6 @@ All critical issues resolved.
 | Missing pagination on shared expenses | src/lib/finance.ts:768-790, 840-862 | Add take: 50 with cursor pagination | small |
 | FX rates use today's date for historical conversions | src/lib/finance.ts:548-552 | Load per-month rates for historical accuracy | medium |
 | Repeated account lookups in API routes | Multiple API files | Create checkAccountAccess() utility | medium |
-| React settings menu re-adds event listener | src/components/dashboard/dashboard-page.tsx:193-203 | Use useCallback for stable handler | small |
-| Holdings tab refetches on currency change | src/components/dashboard/holdings-tab.tsx:54-97 | Remove preferredCurrency from loadHoldings deps | small |
 
 ### Architecture
 
@@ -91,17 +83,6 @@ All critical issues resolved.
 | Inconsistent response data format | Multiple endpoints | Return full resource on mutations | medium |
 | Missing GET parameter validation | src/app/api/v1/budgets/route.ts:96-106 | Add explicit null checks | small |
 
-### Frontend
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Modal backdrop clickable during submission | src/components/dashboard/share-expense-form.tsx:156-313 | Add pointer-events-none when pending | small |
-| CSRF token fetch failure not handled | src/hooks/useCsrfToken.ts | Track loading/error state, show toast | medium |
-| PropDrilling in dashboard tabs | src/components/dashboard/dashboard-page.tsx:561-631 | Create DashboardContext | large |
-| Optimistic updates use router.refresh | src/components/dashboard/tabs/transactions-tab.tsx:360-377 | Use rollback() instead | small |
-| Modal focus not trapped | src/components/settings/delete-account-dialog.tsx | Add focus trap useEffect | medium |
-| Settings menu can overflow viewport | src/components/dashboard/dashboard-page.tsx:341-402 | Add position management | medium |
-
 ### DevOps
 
 | Issue | File | Fix | Effort |
@@ -109,7 +90,7 @@ All critical issues resolved.
 | No deployment health check | CI/CD pipeline | Add health endpoint polling after deploy | small |
 | Missing centralized env validation | Multiple lib files | Create src/lib/env-schema.ts | medium |
 
-## Low Issues (12 remaining)
+## Low Issues (7 remaining)
 
 ### Performance
 
@@ -148,19 +129,9 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Missing documentation comments | All route.ts files | Add JSDoc to all handlers | small |
 
-### Frontend
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| Holdings delete button no loading state | src/components/dashboard/holdings-tab.tsx:138-155 | Pass disabled={isPendingAction} | small |
-| No loading skeleton for transaction form | src/components/dashboard/tabs/transactions-tab.tsx:407-609 | Add isLoading placeholder | small |
-| useOptimisticList no unmount cleanup | src/hooks/useOptimisticList.ts | Track mounted ref | small |
-| Tab panel missing aria-controls | src/components/dashboard/tabs/transactions-tab.tsx:402 | Add aria-controls to tab buttons | small |
-| Refresh button icon doesn't animate | src/components/dashboard/dashboard-page.tsx:526-547 | Add animate-spin when pending | small |
-
 ---
 
-## Fixed This Session (53 issues)
+## Fixed This Session (67 issues)
 
 ### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
@@ -172,7 +143,8 @@ All critical issues resolved.
 - [x] Implement limit/offset pagination on list endpoints (PR #169)
 - [x] Hard-coded CI database credentials → GitHub Secrets (PR #170)
 
-### High (16 fixed)
+### High (17 fixed)
+- [x] Keyboard navigation on settings menu → focus trap + arrow keys (PR #171)
 - [x] Make security audit blocking (CI)
 - [x] Make njsscan blocking (CI)
 - [x] Validate secrets at startup - JWT_SECRET at module load
@@ -189,7 +161,15 @@ All critical issues resolved.
 - [x] In-memory rate limiting documented with limitations (PR #170)
 - [x] Missing secrets rotation documentation → docs/SECRET_ROTATION.md (PR #170)
 
-### Medium (24 fixed)
+### Medium (32 fixed)
+- [x] Modal backdrop clickable during submission → pointer-events-none (PR #171)
+- [x] CSRF token fetch failure → loading/error state with toast (PR #171)
+- [x] PropDrilling in dashboard tabs → DashboardContext (PR #171)
+- [x] Modal focus not trapped → focus trap useEffect (PR #171)
+- [x] Settings menu viewport overflow → position management (PR #171)
+- [x] Settings menu re-adds event listener → useCallback stable handler (PR #171)
+- [x] Holdings tab refetches on currency change → remove preferredCurrency dep (PR #176)
+- [x] Optimistic updates use router.refresh → rollback() instead (PR #176)
 - [x] Token expiry loose time comparison (>= instead of >)
 - [x] Add new database indexes (4 indexes)
 - [x] Category name validation (max length + alphanumeric boundaries)
@@ -211,7 +191,12 @@ All critical issues resolved.
 - [x] No error response TypeScript types → ApiResponse, ApiErrorResponse exports (PR #175)
 - [x] Inconsistent authorization patterns → standardized withApiAuth middleware (PR #175)
 
-### Low (3 fixed)
+### Low (8 fixed)
+- [x] Holdings delete button loading state → deletingId tracking (PR #176)
+- [x] Transaction form empty state → message instead of skeleton (PR #176)
+- [x] useOptimisticList unmount cleanup → mounted ref (PR #176)
+- [x] Tab panel aria-controls → ARIA attributes on all panels (PR #176)
+- [x] Refresh button animate-spin → cn() with conditional class (PR #176)
 - [x] Token expiry comparison boundary
 - [x] Display name regex allows "- - -" → require alphanumeric start/end (PR #174)
 - [x] Test secrets committed in workflow → moved to GitHub Secrets (PR #170)
