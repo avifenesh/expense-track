@@ -9,9 +9,23 @@ import {
   successResponse,
   rateLimitError,
 } from '@/lib/api-helpers'
-import { prisma } from '@/lib/prisma'
+import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
+/**
+ * POST /api/v1/transactions/requests/[id]/approve
+ *
+ * Approves a pending transaction request. Only the recipient can approve.
+ *
+ * @param id - The transaction request ID (path parameter)
+ *
+ * @returns {Object} { id: string, status: 'APPROVED' }
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - User not authorized or request already processed
+ * @throws {404} Not found - Transaction request does not exist
+ * @throws {429} Rate limited - Too many requests
+ * @throws {500} Server error - Unable to approve request
+ */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -37,10 +51,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // 3. Authorize access to 'to' account by userId
-  const toAccount = await prisma.account.findUnique({
-    where: { id: transactionRequest.toId },
-  })
-  if (!toAccount || toAccount.userId !== user.userId) {
+  const accountOwnership = await ensureApiAccountOwnership(transactionRequest.toId, user.userId)
+  if (!accountOwnership.allowed) {
     return forbiddenError('Access denied')
   }
 

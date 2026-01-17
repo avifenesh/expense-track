@@ -13,6 +13,21 @@ import {
 } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 
+/**
+ * PATCH /api/v1/categories/[id]/archive
+ *
+ * Archives or unarchives a category.
+ *
+ * @param id - The category ID (path parameter)
+ * @body isArchived - Required. Whether to archive (true) or unarchive (false).
+ *
+ * @returns {Object} { id: string, isArchived: boolean }
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {403} Forbidden - Subscription expired
+ * @throws {404} Not found - Category does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 

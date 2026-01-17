@@ -7,6 +7,24 @@ import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import { serverLogger } from '@/lib/server-logger'
 
+/**
+ * POST /api/v1/transactions/requests
+ *
+ * Creates a new transaction request (money transfer between users).
+ *
+ * @body toId - Required. The recipient account ID.
+ * @body categoryId - Required. The category for the transaction.
+ * @body amount - Required. Transaction amount (positive number).
+ * @body currency - Required. Currency code (USD, EUR, or ILS).
+ * @body date - Required. Transaction date (YYYY-MM-DD or ISO format).
+ * @body description - Optional. Transaction description.
+ *
+ * @returns {Object} { id: string } - The created request ID
+ * @throws {400} Validation error - Invalid input data
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {429} Rate limited - Too many requests
+ * @throws {500} Server error - Unable to create request or identify primary account
+ */
 export async function POST(request: NextRequest) {
   // 1. Authenticate
   let user
