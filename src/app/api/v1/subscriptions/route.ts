@@ -12,14 +12,16 @@ import { prisma } from '@/lib/prisma'
  * Used by mobile app and frontend to display subscription status and enable upgrades
  */
 export async function GET(request: NextRequest) {
+  let auth
   try {
-    // Authenticate user via JWT
-    const auth = await requireJwtAuth(request)
-    if ('error' in auth) {
-      return authError(auth.error)
-    }
+    auth = requireJwtAuth(request)
+  } catch (error) {
+    return authError(error instanceof Error ? error.message : 'Unauthorized')
+  }
 
-    const { userId, email } = auth
+  const { userId, email } = auth
+
+  try {
 
     // Get subscription state
     const subscriptionState = await getSubscriptionState(userId)

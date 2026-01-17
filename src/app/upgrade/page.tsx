@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
+import { getDbUserAsAuthUser, getSession } from '@/lib/auth-server'
 import { getSubscriptionState } from '@/lib/subscription'
 import { UpgradeClient } from './upgrade-client'
 
@@ -10,12 +10,12 @@ export const metadata = {
 
 export default async function UpgradePage() {
   // Check authentication
-  const session = await requireSession()
+  const session = await getSession()
   if (!session) {
     redirect('/login?redirect=/upgrade')
   }
 
-  const authUser = await getDbUserAsAuthUser()
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
   if (!authUser) {
     redirect('/login?redirect=/upgrade')
   }

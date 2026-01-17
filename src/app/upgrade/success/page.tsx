@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getDbUserAsAuthUser, requireSession } from '@/lib/auth-server'
+import { getDbUserAsAuthUser, getSession } from '@/lib/auth-server'
 import { getSubscriptionState } from '@/lib/subscription'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata = {
@@ -12,12 +11,12 @@ export const metadata = {
 
 export default async function UpgradeSuccessPage() {
   // Check authentication
-  const session = await requireSession()
+  const session = await getSession()
   if (!session) {
     redirect('/login')
   }
 
-  const authUser = await getDbUserAsAuthUser()
+  const authUser = await getDbUserAsAuthUser(session.userEmail)
   if (!authUser) {
     redirect('/login')
   }
@@ -70,9 +69,12 @@ export default async function UpgradeSuccessPage() {
             </p>
           )}
 
-          <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-500">
-            <Link href="/">Go to Dashboard</Link>
-          </Button>
+          <Link
+            href="/"
+            className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition bg-emerald-600 hover:bg-emerald-500 text-white"
+          >
+            Go to Dashboard
+          </Link>
         </CardContent>
       </Card>
     </div>
