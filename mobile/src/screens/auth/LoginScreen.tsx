@@ -12,18 +12,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AuthScreenProps } from '../../navigation/types';
-import { useAuth } from '../../contexts';
+import { useAuthStore } from '../../stores';
 import { validateEmail } from '../../lib/validation';
 import { ApiError } from '../../services/api';
 import { getBiometricTypeLabel } from '../../services/biometric';
 
 export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
-  const {
-    login,
-    loginWithBiometric,
-    biometricCapability,
-    isBiometricEnabled,
-  } = useAuth();
+  const login = useAuthStore((state) => state.login);
+  const loginWithBiometric = useAuthStore((state) => state.loginWithBiometric);
+  const biometricCapability = useAuthStore((state) => state.biometricCapability);
+  const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);

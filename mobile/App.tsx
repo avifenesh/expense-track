@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from './src/navigation';
-import { AuthProvider } from './src/contexts';
+import { useAuthStore } from './src/stores';
 
 export default function App() {
+  useEffect(() => {
+    // Initialize auth store on app startup
+    useAuthStore.getState().initialize();
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer />
-        <StatusBar style="light" />
-      </AuthProvider>
+      <NavigationContainer />
+      <StatusBar style="light" />
     </SafeAreaProvider>
   );
 }

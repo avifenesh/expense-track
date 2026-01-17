@@ -3,17 +3,15 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicato
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
 import { APP_NAME, APP_VERSION } from '../../constants';
-import { useAuth } from '../../contexts';
+import { useAuthStore } from '../../stores';
 import { getBiometricTypeLabel } from '../../services/biometric';
 
 export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
-  const {
-    logout,
-    biometricCapability,
-    isBiometricEnabled,
-    enableBiometric,
-    disableBiometric,
-  } = useAuth();
+  const logout = useAuthStore((state) => state.logout);
+  const biometricCapability = useAuthStore((state) => state.biometricCapability);
+  const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled);
+  const enableBiometric = useAuthStore((state) => state.enableBiometric);
+  const disableBiometric = useAuthStore((state) => state.disableBiometric);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
