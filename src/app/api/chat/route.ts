@@ -1,91 +1,146 @@
 import { streamText } from 'ai'
 import { google } from '@ai-sdk/google'
-import { buildFinancialContext } from '@/lib/ai/context'
 import { requireSession } from '@/lib/auth-server'
+import { chatRequestSchema } from '@/schemas'
+import { checkRateLimitTyped, incrementRateLimitTyped, getRateLimitHeaders } from '@/lib/rate-limit'
+import { prisma } from '@/lib/prisma'
+import { buildSystemPrompt } from '@/lib/ai/system-prompt'
+import { buildTools } from '@/lib/ai/tools'
+import { formatMonthLabel } from '@/utils/date'
 import { Currency } from '@prisma/client'
+import { serverLogger } from '@/lib/server-logger'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-const SYSTEM_PROMPT = `You are Balance AI, a helpful financial assistant for the Balance Beacon personal finance app.
-
-You have access to the user's financial data including:
-- Current month summary (income, expenses, net flow)
-- Budget tracking (planned vs actual spending)
-- Recent transactions
-- Recurring templates
-- 6-month spending trends
-- Investment holdings
-
-Your role is to:
-1. Answer questions about their finances clearly and concisely
-2. Identify spending patterns and trends
-3. Provide actionable insights and suggestions
-4. Help them understand their budget performance
-5. Be supportive but honest about financial habits
-
-Guidelines:
-- Be concise - users want quick answers
-- Use specific numbers from their data when relevant
-- Don't lecture - give practical advice
-- If you don't have enough data, say so
-- Never make up numbers or transactions
-- Format currency amounts consistently
-- Use bullet points for lists`
-
 export async function POST(request: Request) {
-  try {
-    // Require authentication
-    const session = await requireSession()
-    if (!session) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
+  // 1. Authenticate session
+  const session = await requireSession()
+  if (!session) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 
-    const body = await request.json()
-    const { messages, accountId, monthKey, preferredCurrency } = body
+  const userId = session.userId
 
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: 'Messages array required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-
-    if (!accountId || !monthKey) {
-      return new Response(JSON.stringify({ error: 'accountId and monthKey required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Build financial context from user's data
-    const financialContext = await buildFinancialContext(
-      accountId,
-      monthKey,
-      (preferredCurrency as Currency) || Currency.USD,
+  // 2. Rate limit check (before any expensive operations)
+  const rateLimit = checkRateLimitTyped(userId, 'ai_chat')
+  if (!rateLimit.allowed) {
+    const retryAfter = Math.ceil((rateLimit.resetAt.getTime() - Date.now()) / 1000)
+    return new Response(
+      JSON.stringify({
+        error: 'Rate limit exceeded',
+        retryAfter,
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': retryAfter.toString(),
+          ...getRateLimitHeaders(userId, 'ai_chat'),
+        },
+      },
     )
+  }
 
-    // Stream response using Gemini Flash
+  // 3. Parse & validate input
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'Invalid JSON body' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  const parsed = chatRequestSchema.safeParse(body)
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors
+    return new Response(
+      JSON.stringify({
+        error: 'Validation failed',
+        fields: fieldErrors,
+      }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  const { messages, accountId, monthKey, preferredCurrency } = parsed.data
+
+  // 4. Verify account ownership (server-side authorization)
+  let account
+  try {
+    account = await prisma.account.findUnique({
+      where: { id: accountId },
+      select: { id: true, name: true, userId: true },
+    })
+  } catch (error) {
+    serverLogger.error('Failed to verify account access', { error, accountId, userId })
+    return new Response(
+      JSON.stringify({ error: 'Failed to verify account access' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  if (!account) {
+    return new Response(
+      JSON.stringify({ error: 'Account not found' }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  if (account.userId !== userId) {
+    return new Response(
+      JSON.stringify({ error: 'You do not have access to this account' }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  // 5. Increment rate limit (after validation passes)
+  incrementRateLimitTyped(userId, 'ai_chat')
+
+  // 6. Build tools with verified context (userId from session, not client)
+  const currency = preferredCurrency ?? Currency.USD
+  const tools = buildTools({
+    accountId,
+    userId, // From server session, not client input
+    monthKey,
+    preferredCurrency: currency,
+  })
+
+  // 7. Build system prompt
+  const systemPrompt = buildSystemPrompt({
+    monthLabel: formatMonthLabel(monthKey),
+    accountName: account.name,
+    preferredCurrency: currency,
+  })
+
+  try {
+    // 8. Stream with Gemini 3 Flash
     const result = streamText({
-      model: google('gemini-2.0-flash'),
-      system: `${SYSTEM_PROMPT}\n\n=== USER'S FINANCIAL DATA ===\n${financialContext}`,
-      messages: messages.map((m: { role: string; content: string }) => ({
+      model: google('gemini-3-flash-preview'),
+      system: systemPrompt,
+      messages: messages.map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
+      tools,
+      maxSteps: 5, // Allow multi-step tool calling
       maxTokens: 1024,
       temperature: 0.7,
     })
 
-    return result.toDataStreamResponse()
-  } catch (error) {
-    console.error('Chat API error:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+    return result.toDataStreamResponse({
+      headers: getRateLimitHeaders(userId, 'ai_chat'),
     })
+  } catch (error) {
+    serverLogger.error('AI chat stream error', { error, userId, accountId })
+    return new Response(
+      JSON.stringify({ error: 'Failed to generate response' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    )
   }
 }
