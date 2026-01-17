@@ -73,11 +73,11 @@ export async function toggleRecurringTemplate(input: ToggleRecurringTemplateInpu
 export async function getRecurringTemplateById(id: string, userId?: string) {
   if (userId) {
     return await prisma.recurringTemplate.findFirst({
-      where: { id, account: { userId } },
+      where: { id, account: { userId }, deletedAt: null },
       include: { account: true },
     })
   }
-  return await prisma.recurringTemplate.findUnique({ where: { id } })
+  return await prisma.recurringTemplate.findFirst({ where: { id, deletedAt: null } })
 }
 
 /**
@@ -89,6 +89,7 @@ export async function applyRecurringTemplates(input: ApplyRecurringTemplatesInpu
 
   const where: Prisma.RecurringTemplateWhereInput = {
     isActive: true,
+    deletedAt: null,
     startMonth: { lte: monthStart },
     OR: [{ endMonth: null }, { endMonth: { gte: monthStart } }],
     accountId: input.accountId,
@@ -109,6 +110,7 @@ export async function applyRecurringTemplates(input: ApplyRecurringTemplatesInpu
     where: {
       month: monthStart,
       recurringTemplateId: { in: templates.map((t) => t.id) },
+      deletedAt: null,
     },
     select: {
       recurringTemplateId: true,

@@ -6,7 +6,7 @@ import type { RecurringTemplateSummary } from './types'
 
 export async function getRecurringTemplates({ accountId }: { accountId: string }) {
   const templates = await prisma.recurringTemplate.findMany({
-    where: { accountId },
+    where: { accountId, deletedAt: null },
     include: {
       category: true,
       account: true,

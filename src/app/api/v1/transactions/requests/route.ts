@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
   // 3. Get user's primary account by userId (the 'from' account)
   const fromAccount = await prisma.account.findFirst({
-    where: { userId: user.userId, type: 'SELF' },
+    where: { userId: user.userId, type: 'SELF', deletedAt: null },
   })
 
   if (!fromAccount) {

@@ -73,7 +73,7 @@ export async function ensureApiHoldingOwnership(holdingId: string, userId: strin
  */
 export async function ensureApiRecurringOwnership(templateId: string, userId: string): Promise<OwnershipResult> {
   const template = await prisma.recurringTemplate.findFirst({
-    where: { id: templateId, account: { userId } },
+    where: { id: templateId, account: { userId }, deletedAt: null },
   })
 
   if (!template) {
@@ -88,7 +88,7 @@ export async function ensureApiRecurringOwnership(templateId: string, userId: st
  */
 export async function ensureApiTransactionOwnership(transactionId: string, userId: string): Promise<OwnershipResult> {
   const transaction = await prisma.transaction.findFirst({
-    where: { id: transactionId, account: { userId } },
+    where: { id: transactionId, account: { userId }, deletedAt: null },
   })
 
   if (!transaction) {
@@ -103,7 +103,7 @@ export async function ensureApiTransactionOwnership(transactionId: string, userI
  */
 export async function ensureApiAccountOwnership(accountId: string, userId: string): Promise<OwnershipResult> {
   const account = await prisma.account.findFirst({
-    where: { id: accountId, userId },
+    where: { id: accountId, userId, deletedAt: null },
   })
 
   if (!account) {

@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
     const where: {
       accountId: string
       month?: Date
-    } = { accountId }
+      deletedAt: null
+    } = { accountId, deletedAt: null }
 
     // Validate month format if provided (explicit null check)
     if (monthKey !== null && monthKey !== '') {
@@ -210,9 +211,9 @@ export async function DELETE(request: NextRequest) {
         return notFoundError('Budget entry not found')
       }
 
-      // Execute delete
+      // Execute soft delete
       try {
-        await deleteBudget({ accountId: data.accountId, categoryId: data.categoryId, month })
+        await deleteBudget({ accountId: data.accountId, categoryId: data.categoryId, month, userId: user.userId })
         return successResponse({ deleted: true })
       } catch (error) {
         serverLogger.error('Failed to delete budget', { action: 'DELETE /api/v1/budgets', userId: user.userId }, error)

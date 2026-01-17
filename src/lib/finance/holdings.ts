@@ -12,7 +12,7 @@ export async function getHoldingsWithPrices({
   accountId?: string
   preferredCurrency?: Currency
 }): Promise<HoldingWithPrice[]> {
-  const where: Prisma.HoldingWhereInput = {}
+  const where: Prisma.HoldingWhereInput = { deletedAt: null }
   if (accountId) {
     where.accountId = accountId
   }

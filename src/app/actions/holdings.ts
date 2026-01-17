@@ -105,12 +105,12 @@ export async function updateHoldingAction(input: z.infer<typeof updateHoldingSch
 
   let holding
   try {
-    holding = await prisma.holding.findUnique({
-      where: { id: parsed.data.id },
+    holding = await prisma.holding.findFirst({
+      where: { id: parsed.data.id, deletedAt: null },
     })
   } catch (error) {
     return handlePrismaError(error, {
-      action: 'updateHolding.findUnique',
+      action: 'updateHolding.findFirst',
       input: { id: parsed.data.id },
       fallbackMessage: 'Unable to update holding',
     })
@@ -162,12 +162,12 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
 
   let holding
   try {
-    holding = await prisma.holding.findUnique({
-      where: { id: parsed.data.id },
+    holding = await prisma.holding.findFirst({
+      where: { id: parsed.data.id, deletedAt: null },
     })
   } catch (error) {
     return handlePrismaError(error, {
-      action: 'deleteHolding.findUnique',
+      action: 'deleteHolding.findFirst',
       input: { id: parsed.data.id },
       fallbackMessage: 'Unable to delete holding',
     })
@@ -183,8 +183,12 @@ export async function deleteHoldingAction(input: z.infer<typeof deleteHoldingSch
   }
 
   try {
-    await prisma.holding.delete({
+    await prisma.holding.update({
       where: { id: parsed.data.id },
+      data: {
+        deletedAt: new Date(),
+        deletedBy: access.authUser.id,
+      },
     })
 
     // Invalidate dashboard cache for this account (holdings affect portfolio value across all months)
@@ -220,7 +224,7 @@ export async function refreshHoldingPricesAction(input: z.infer<typeof refreshHo
   try {
     // Get all unique symbols for this account's holdings
     const holdings = await prisma.holding.findMany({
-      where: { accountId: parsed.data.accountId },
+      where: { accountId: parsed.data.accountId, deletedAt: null },
       select: { symbol: true },
     })
 

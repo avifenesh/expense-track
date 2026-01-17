@@ -340,6 +340,8 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
               planned: true,
               currency: true,
               notes: true,
+              deletedAt: true,
+              deletedBy: true,
               createdAt: true,
             },
             orderBy: { month: 'desc' },
@@ -364,7 +366,7 @@ export async function exportUserDataAction(input: z.infer<typeof exportUserDataS
         : Promise.resolve([]),
       accountIds.length > 0
         ? prisma.recurringTemplate.findMany({
-            where: { accountId: { in: accountIds } },
+            where: { accountId: { in: accountIds }, deletedAt: null },
             select: {
               id: true,
               accountId: true,

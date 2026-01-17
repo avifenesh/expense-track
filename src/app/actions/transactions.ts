@@ -78,7 +78,7 @@ export async function createTransactionRequestAction(input: TransactionRequestIn
 
   // Determine current user's account ID (the 'from' account)
   const fromAccount = await prisma.account.findFirst({
-    where: { userId: authUser.id, type: 'SELF' },
+    where: { userId: authUser.id, type: 'SELF', deletedAt: null },
   })
 
   if (!fromAccount) {
@@ -133,8 +133,8 @@ export async function approveTransactionRequestAction(input: z.infer<typeof idSc
   }
 
   // Ensure the user has access to the 'to' account
-  const toAccount = await prisma.account.findUnique({
-    where: { id: request.toId },
+  const toAccount = await prisma.account.findFirst({
+    where: { id: request.toId, deletedAt: null },
   })
 
   if (!toAccount || toAccount.userId !== authUser.id) {
@@ -204,8 +204,8 @@ export async function rejectTransactionRequestAction(input: z.infer<typeof idSch
     return generalError('Transaction request not found')
   }
 
-  const toAccount = await prisma.account.findUnique({
-    where: { id: request.toId },
+  const toAccount = await prisma.account.findFirst({
+    where: { id: request.toId, deletedAt: null },
   })
 
   if (!toAccount || toAccount.userId !== authUser.id) {
@@ -322,7 +322,7 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   // Verify new account access using authUser from subscription check (avoids duplicate auth)
   let newAccount
   try {
-    newAccount = await prisma.account.findUnique({ where: { id: data.accountId } })
+    newAccount = await prisma.account.findFirst({ where: { id: data.accountId, deletedAt: null } })
   } catch {
     return { error: { general: ['Unable to verify the target account. Try again shortly.'] } }
   }
@@ -334,8 +334,8 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
     // Use atomic transaction to prevent race conditions between find and update
     const result = await prisma.$transaction(async (tx) => {
       // Find and lock the transaction within the same database transaction
-      const existing = await tx.transaction.findUnique({
-        where: { id: data.id },
+      const existing = await tx.transaction.findFirst({
+        where: { id: data.id, deletedAt: null },
         select: {
           accountId: true,
           month: true,
@@ -450,12 +450,12 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
 
   let transaction
   try {
-    transaction = await prisma.transaction.findUnique({
-      where: { id: parsed.data.id },
+    transaction = await prisma.transaction.findFirst({
+      where: { id: parsed.data.id, deletedAt: null },
     })
   } catch (error) {
     return handlePrismaError(error, {
-      action: 'deleteTransaction.findUnique',
+      action: 'deleteTransaction.findFirst',
       input: { id: parsed.data.id },
       fallbackMessage: 'Unable to delete transaction',
     })
@@ -469,9 +469,13 @@ export async function deleteTransactionAction(input: z.infer<typeof deleteTransa
   if ('error' in access) {
     return access
   }
+  const { authUser } = access
 
   try {
-    await prisma.transaction.delete({ where: { id: parsed.data.id } })
+    await prisma.transaction.update({
+      where: { id: parsed.data.id },
+      data: { deletedAt: new Date(), deletedBy: authUser.id },
+    })
 
     // Invalidate dashboard cache for affected month/account
     const monthKey = getMonthKey(transaction.month)

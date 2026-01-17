@@ -99,7 +99,7 @@ export async function ensureAccountAccess(accountId: string): Promise<AccountAcc
 
   let account
   try {
-    account = await prisma.account.findUnique({ where: { id: accountId } })
+    account = await prisma.account.findFirst({ where: { id: accountId, deletedAt: null } })
   } catch {
     return { error: { general: ['Unable to verify the selected account. Try again shortly.'] } }
   }
@@ -158,7 +158,7 @@ export async function ensureAccountAccessWithSubscription(
   // Verify account ownership
   let account
   try {
-    account = await prisma.account.findUnique({ where: { id: accountId } })
+    account = await prisma.account.findFirst({ where: { id: accountId, deletedAt: null } })
   } catch {
     return { error: { general: ['Unable to verify the selected account. Try again shortly.'] } }
   }

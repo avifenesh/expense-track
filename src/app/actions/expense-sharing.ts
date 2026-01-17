@@ -41,8 +41,8 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
   if ('error' in subscriptionCheck) return subscriptionCheck
   const { authUser } = subscriptionCheck
 
-  const transaction = await prisma.transaction.findUnique({
-    where: { id: data.transactionId },
+  const transaction = await prisma.transaction.findFirst({
+    where: { id: data.transactionId, deletedAt: null },
     include: {
       account: true,
       sharedExpense: true,

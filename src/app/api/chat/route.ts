@@ -84,8 +84,8 @@ export async function POST(request: Request) {
   // 4. Verify account ownership (server-side authorization)
   let account
   try {
-    account = await prisma.account.findUnique({
-      where: { id: accountId },
+    account = await prisma.account.findFirst({
+      where: { id: accountId, deletedAt: null },
       select: { id: true, name: true, userId: true },
     })
   } catch (error) {

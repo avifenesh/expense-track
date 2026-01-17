@@ -86,6 +86,8 @@ model Account {
   description        String?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
+  deletedAt          DateTime?
+  deletedBy          String?
 
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   budgets            Budget[]
@@ -97,24 +99,28 @@ model Account {
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model Budget {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   accountId  String
   categoryId String
   month      DateTime
-  planned    Decimal  @db.Decimal(12, 2)
-  currency   Currency @default(USD)
+  planned    Decimal   @db.Decimal(12, 2)
+  currency   Currency  @default(USD)
   notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  deletedAt  DateTime?
+  deletedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  account    Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, categoryId, month])
   @@index([month])
   @@index([accountId, month])
+  @@index([deletedAt])
 }
 
 model Category {
@@ -171,22 +177,25 @@ model ExchangeRate {
 }
 
 model Holding {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   accountId   String
   categoryId  String
   symbol      String
-  quantity    Decimal  @db.Decimal(18, 6)
-  averageCost Decimal  @db.Decimal(12, 2)
-  currency    Currency @default(USD)
+  quantity    Decimal   @db.Decimal(18, 6)
+  averageCost Decimal   @db.Decimal(12, 2)
+  currency    Currency  @default(USD)
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  deletedAt   DateTime?
+  deletedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, categoryId, symbol])
   @@index([accountId])
   @@index([categoryId])
+  @@index([deletedAt])
 }
 
 model RecurringTemplate {
@@ -201,6 +210,8 @@ model RecurringTemplate {
   isActive     Boolean         @default(true)
   startMonth   DateTime
   endMonth     DateTime?
+  deletedAt    DateTime?
+  deletedBy    String?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   account      Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
@@ -210,6 +221,7 @@ model RecurringTemplate {
   @@index([isActive])
   @@index([accountId])
   @@index([accountId, isActive])
+  @@index([deletedAt])
 }
 
 model StockPrice {
@@ -241,6 +253,8 @@ model Transaction {
   isMutual            Boolean            @default(false)
   recurringTemplateId String?
   currency            Currency           @default(USD)
+  deletedAt           DateTime?
+  deletedBy           String?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   account             Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
@@ -251,6 +265,7 @@ model Transaction {
   @@index([accountId, month])
   @@index([month])
   @@index([date])
+  @@index([deletedAt])
 }
 
 model SharedExpense {

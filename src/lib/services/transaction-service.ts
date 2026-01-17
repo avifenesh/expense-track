@@ -75,10 +75,13 @@ export async function updateTransaction(input: UpdateTransactionInput) {
 }
 
 /**
- * Delete a transaction by ID
+ * Soft delete a transaction by ID
  */
-export async function deleteTransaction(id: string) {
-  return await prisma.transaction.delete({ where: { id } })
+export async function deleteTransaction(id: string, deletedBy: string) {
+  return await prisma.transaction.update({
+    where: { id },
+    data: { deletedAt: new Date(), deletedBy },
+  })
 }
 
 /**
@@ -88,11 +91,11 @@ export async function deleteTransaction(id: string) {
 export async function getTransactionById(id: string, userId?: string) {
   if (userId) {
     return await prisma.transaction.findFirst({
-      where: { id, account: { userId } },
+      where: { id, account: { userId }, deletedAt: null },
       include: { account: true },
     })
   }
-  return await prisma.transaction.findUnique({ where: { id } })
+  return await prisma.transaction.findFirst({ where: { id, deletedAt: null } })
 }
 
 /**
