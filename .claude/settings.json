@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "ONLY validate if CODE WAS WRITTEN (Edit or Write tools were used to modify src/ or tests/ files).\n\nIf this was exploration, research, Q&A, planning, or config changes only → return {\"ok\": true}\n\nIf code was written, verify Definition of Done:\n1. DB schema supports changes (if applicable)\n2. Actions return { success, data } or { success, error }\n3. UI shows loading states, toasts, errors\n4. Tests cover new functionality\n5. Types/lint/tests pass\n\nReturn {\"ok\": true} if all pass or no code was written.\nReturn {\"ok\": false, \"reason\": \"specific failing checkpoint\"} if implementation is incomplete."
+            "prompt": "You MUST respond with ONLY a JSON object, no other text.\n\nCheck if code was written (Edit/Write tools modified src/ or tests/ files).\n\nIf NO code was written (exploration, Q&A, planning, docs, config):\n{\"ok\": true}\n\nIf code WAS written, check Definition of Done:\n- DB schema supports changes (if needed)\n- Server actions return {success, data} or {success, error}\n- UI has loading/error states\n- Tests exist for new code\n- Types/lint pass\n\nAll criteria met or N/A:\n{\"ok\": true}\n\nCriteria failed:\n{\"ok\": false, \"reason\": \"<which criterion failed>\"}\n\nRespond with ONLY the JSON object, nothing else."
           }
         ]
       }
