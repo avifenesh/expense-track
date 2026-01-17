@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Currency } from '@prisma/client'
+import { NotFoundError, ValidationError } from '@/lib/services/errors'
 
 // Mock Prisma.Decimal
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -415,7 +416,7 @@ describe('holding-service.ts', () => {
     it('should throw if category not found', async () => {
       vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
 
-      await expect(validateHoldingCategory('nonexistent')).rejects.toThrow('Category not found')
+      await expect(validateHoldingCategory('nonexistent')).rejects.toThrow(NotFoundError)
     })
 
     it('should throw if category isHolding=false', async () => {
@@ -432,7 +433,7 @@ describe('holding-service.ts', () => {
 
       vi.mocked(prisma.category.findFirst).mockResolvedValue(mockCategory as never)
 
-      await expect(validateHoldingCategory('cat-1')).rejects.toThrow('Category must be marked as a holding category')
+      await expect(validateHoldingCategory('cat-1')).rejects.toThrow(ValidationError)
     })
   })
 

@@ -8,9 +8,11 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  validationError,
 } from '@/lib/api-helpers'
 import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { NotFoundError, ValidationError, isServiceError } from '@/lib/services/errors'
 
 /**
  * POST /api/v1/transactions/requests/[id]/reject
@@ -61,8 +63,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await rejectTransactionRequest(id)
     return successResponse({ id, status: 'REJECTED' })
   } catch (error) {
-    if (error instanceof Error && error.message.includes('already')) {
-      return forbiddenError(error.message)
+    if (error instanceof NotFoundError) {
+      return notFoundError(error.message)
+    }
+    if (error instanceof ValidationError) {
+      return validationError(error.fieldErrors)
+    }
+    if (isServiceError(error)) {
+      return serverError(error.message)
     }
     return serverError('Unable to reject transaction request')
   }

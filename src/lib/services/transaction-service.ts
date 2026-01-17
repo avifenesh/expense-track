@@ -2,6 +2,7 @@ import { Prisma, TransactionType, RequestStatus, Currency } from '@prisma/client
 import { prisma } from '@/lib/prisma'
 import { getMonthStart } from '@/utils/date'
 import { toDecimalString } from '@/utils/decimal'
+import { NotFoundError, ValidationError } from './errors'
 
 export interface CreateTransactionInput {
   accountId: string
@@ -126,11 +127,11 @@ export async function approveTransactionRequest(requestId: string) {
   const request = await getTransactionRequestById(requestId)
 
   if (!request) {
-    throw new Error('Transaction request not found')
+    throw new NotFoundError('TransactionRequest', requestId)
   }
 
   if (request.status !== RequestStatus.PENDING) {
-    throw new Error(`Request is already ${request.status.toLowerCase()}`)
+    throw ValidationError.field('status', `Request is already ${request.status.toLowerCase()}`)
   }
 
   await prisma.$transaction([
@@ -162,11 +163,11 @@ export async function rejectTransactionRequest(requestId: string) {
   const request = await getTransactionRequestById(requestId)
 
   if (!request) {
-    throw new Error('Transaction request not found')
+    throw new NotFoundError('TransactionRequest', requestId)
   }
 
   if (request.status !== RequestStatus.PENDING) {
-    throw new Error(`Request is already ${request.status.toLowerCase()}`)
+    throw ValidationError.field('status', `Request is already ${request.status.toLowerCase()}`)
   }
 
   return await prisma.transactionRequest.update({

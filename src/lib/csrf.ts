@@ -1,16 +1,13 @@
 import crypto from 'node:crypto'
 import { cookies } from 'next/headers'
+import { env } from './env-schema'
 
 export const CSRF_COOKIE = 'balance_csrf'
 export const CSRF_HEADER = 'X-CSRF-Token'
 const CSRF_TOKEN_LENGTH = 32
 
 function getSessionSecret(): string {
-  const secret = process.env.AUTH_SESSION_SECRET
-  if (!secret) {
-    throw new Error('AUTH_SESSION_SECRET required for CSRF token generation')
-  }
-  return secret
+  return env.authSessionSecret
 }
 
 function generateCsrfToken(): string {
@@ -58,7 +55,7 @@ export async function getCsrfToken(): Promise<string> {
   cookieStore.set(CSRF_COOKIE, signed, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.isProduction,
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
   })
@@ -68,8 +65,7 @@ export async function getCsrfToken(): Promise<string> {
 
 export async function validateCsrfToken(submittedToken: string | undefined | null): Promise<boolean> {
   // Skip CSRF validation in Vitest test environment only
-  // Use VITEST env var which is set by Vitest, not NODE_ENV which could be manipulated
-  if (process.env.VITEST === 'true') {
+  if (env.isTest) {
     return true
   }
 

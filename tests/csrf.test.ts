@@ -10,9 +10,12 @@ vi.mock('next/headers', () => ({
   cookies: () => Promise.resolve(mockCookies),
 }))
 
-process.env.AUTH_SESSION_SECRET = 'test-secret-key-for-csrf-testing-only'
+process.env.AUTH_SESSION_SECRET = 'test-secret-key-for-csrf-testing-at-least-32chars'
+process.env.JWT_SECRET = 'test-jwt-secret-key-for-csrf-testing-at-least-32chars'
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
 
 import { getCsrfToken, validateCsrfToken, rotateCsrfToken, CSRF_COOKIE } from '@/lib/csrf'
+import { resetEnvCache } from '@/lib/env-schema'
 
 describe('CSRF Token Library', () => {
   const originalNodeEnv = process.env.NODE_ENV
@@ -236,6 +239,7 @@ describe('CSRF Token Library', () => {
     })
 
     it('sets secure flag in production', async () => {
+      resetEnvCache()
       vi.stubEnv('NODE_ENV', 'production')
 
       await getCsrfToken()
@@ -244,9 +248,11 @@ describe('CSRF Token Library', () => {
       expect(setCall[2].secure).toBe(true)
 
       vi.unstubAllEnvs()
+      resetEnvCache()
     })
 
     it('does not set secure flag in development', async () => {
+      resetEnvCache()
       vi.stubEnv('NODE_ENV', 'development')
 
       await getCsrfToken()
@@ -255,6 +261,7 @@ describe('CSRF Token Library', () => {
       expect(setCall[2].secure).toBe(false)
 
       vi.unstubAllEnvs()
+      resetEnvCache()
     })
   })
 })
