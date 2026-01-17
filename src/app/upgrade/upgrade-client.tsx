@@ -219,7 +219,6 @@ export function UpgradeClient({ userId, userEmail, priceId, subscriptionState }:
               onClick={handleUpgrade}
               disabled={!isPaddleReady || isLoading}
               className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3"
-              size="lg"
             >
               {isLoading ? 'Opening checkout...' : isPaddleReady ? 'Subscribe Now' : 'Loading...'}
             </Button>
