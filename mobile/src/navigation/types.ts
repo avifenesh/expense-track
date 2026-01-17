@@ -21,6 +21,7 @@ export type OnboardingStackParamList = {
   OnboardingBudget: undefined;
   OnboardingSampleData: undefined;
   OnboardingComplete: undefined;
+  OnboardingBiometric: undefined;
 };
 
 // Main Tab Navigator

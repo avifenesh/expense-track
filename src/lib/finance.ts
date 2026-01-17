@@ -497,16 +497,44 @@ export async function getDashboardData({
   const actualIncome = sumByType(totals, TransactionType.INCOME)
   const actualExpense = sumByType(totals, TransactionType.EXPENSE)
 
-  const plannedIncome = budgets
+  // Group transactions by category for per-budget calculations
+  const expensesByCategory = new Map<string, number>()
+  const incomeByCategory = new Map<string, number>()
+
+  transactionsWithNumbers.forEach((transaction) => {
+    const map = transaction.type === TransactionType.EXPENSE ? expensesByCategory : incomeByCategory
+    const current = map.get(transaction.categoryId) ?? 0
+    map.set(transaction.categoryId, current + transaction.convertedAmount)
+  })
+
+  // Calculate planned and remaining amounts per-budget (only counting transactions in budgeted categories)
+  const { plannedIncome, remainingIncome } = budgets
     .filter((budget) => budget.category.type === TransactionType.INCOME)
-    .reduce((acc, curr) => acc + decimalToNumber(curr.planned), 0)
+    .reduce(
+      (acc, budget) => {
+        const planned = decimalToNumber(budget.planned)
+        const actual = incomeByCategory.get(budget.categoryId) ?? 0
+        return {
+          plannedIncome: acc.plannedIncome + planned,
+          remainingIncome: acc.remainingIncome + (planned - actual),
+        }
+      },
+      { plannedIncome: 0, remainingIncome: 0 },
+    )
 
-  const plannedExpense = budgets
+  const { plannedExpense, remainingExpense } = budgets
     .filter((budget) => budget.category.type === TransactionType.EXPENSE)
-    .reduce((acc, curr) => acc + decimalToNumber(curr.planned), 0)
-
-  const remainingIncome = plannedIncome - actualIncome
-  const remainingExpense = plannedExpense - actualExpense
+    .reduce(
+      (acc, budget) => {
+        const planned = decimalToNumber(budget.planned)
+        const actual = expensesByCategory.get(budget.categoryId) ?? 0
+        return {
+          plannedExpense: acc.plannedExpense + planned,
+          remainingExpense: acc.remainingExpense + (planned - actual),
+        }
+      },
+      { plannedExpense: 0, remainingExpense: 0 },
+    )
 
   const projectedNet = actualIncome + Math.max(remainingIncome, 0) - (actualExpense + Math.max(remainingExpense, 0))
   const actualNet = actualIncome - actualExpense
@@ -531,15 +559,6 @@ export async function getDashboardData({
 
   const previousNet = previousIncome - previousExpense
   const change = actualNet - previousNet
-
-  const expensesByCategory = new Map<string, number>()
-  const incomeByCategory = new Map<string, number>()
-
-  transactionsWithNumbers.forEach((transaction) => {
-    const map = transaction.type === TransactionType.EXPENSE ? expensesByCategory : incomeByCategory
-    const current = map.get(transaction.categoryId) ?? 0
-    map.set(transaction.categoryId, current + transaction.convertedAmount)
-  })
 
   const budgetsSummary: CategoryBudgetSummary[] = budgets.map((budget) => {
     const planned = decimalToNumber(budget.planned)
