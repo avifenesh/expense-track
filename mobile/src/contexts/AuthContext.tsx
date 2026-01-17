@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import * as authService from '../services/auth';
 import * as biometricService from '../services/biometric';
 import { ApiError } from '../services/api';
+import { tokenStorage } from '../lib/tokenStorage';
 import type { BiometricCapability } from '../services/biometric';
 
 export interface User {
@@ -53,10 +54,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const enabled = await biometricService.isBiometricEnabled();
         setIsBiometricEnabled(enabled);
 
-        // Don't auto-prompt on app start - let user initiate biometric login
-        // This follows platform guidelines (iOS/Android) and provides better UX
-      } catch {
-        // Biometric initialization failed, continue without it
+        // Try to restore session from secure storage
+        const storedCredentials = await tokenStorage.getStoredCredentials();
+
+        if (storedCredentials.refreshToken && storedCredentials.email) {
+          try {
+            const response = await authService.refreshTokens(storedCredentials.refreshToken);
+            await tokenStorage.setStoredCredentials(
+              response.accessToken,
+              response.refreshToken,
+              storedCredentials.email,
+              storedCredentials.hasCompletedOnboarding
+            );
+            setAccessToken(response.accessToken);
+            setRefreshTokenValue(response.refreshToken);
+            setUser({
+              id: null,
+              email: storedCredentials.email,
+              hasCompletedOnboarding: storedCredentials.hasCompletedOnboarding,
+            });
+          } catch (error) {
+            if (__DEV__) {
+              // eslint-disable-next-line no-console
+              console.error('Failed to restore session on app start:', error);
+            }
+            await tokenStorage.clearTokens();
+          }
+        }
+      } catch (error) {
+        // Initialization failed - continue without auth
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('Auth initialization failed:', error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -69,11 +99,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await authService.login(email, password);
 
+      try {
+        await tokenStorage.setStoredCredentials(
+          response.accessToken,
+          response.refreshToken,
+          email.toLowerCase(),
+          false
+        );
+      } catch (storageError) {
+        // If we cannot securely store tokens, do not proceed with login
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to store tokens securely:', storageError);
+        }
+        // Try to clear any partial state
+        try {
+          await tokenStorage.clearTokens();
+        } catch {
+          // Ignore cleanup errors
+        }
+        throw new ApiError(
+          'Unable to securely store your login session. Please try again.',
+          'LOGIN_PERSIST_FAILED',
+          0
+        );
+      }
+
       setAccessToken(response.accessToken);
       setRefreshTokenValue(response.refreshToken);
 
-      // Note: User ID is null until we fetch user profile from /me endpoint
-      // For now, we set it to null and rely on the accessToken for auth
       setUser({
         id: null,
         email: email.toLowerCase(),
@@ -104,14 +158,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // eslint-disable-next-line no-console
         console.warn('Logout request failed:', error);
       }
-    } finally {
-      // Clear biometric credentials on logout
-      await biometricService.clearStoredCredentials();
-      setIsBiometricEnabled(false);
-      setUser(null);
-      setAccessToken(null);
-      setRefreshTokenValue(null);
     }
+
+    // Clear tokens from secure storage - don't let errors block state reset
+    try {
+      await tokenStorage.clearTokens();
+    } catch (storageError) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to clear tokens from secure storage:', storageError);
+      }
+    }
+
+    // Clear biometric credentials on logout
+    try {
+      await biometricService.clearStoredCredentials();
+    } catch (biometricError) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to clear biometric credentials:', biometricError);
+      }
+    }
+
+    // Always clear in-memory state, even if storage clear failed
+    setIsBiometricEnabled(false);
+    setUser(null);
+    setAccessToken(null);
+    setRefreshTokenValue(null);
   }, [refreshTokenValue]);
 
   const register = useCallback(async (
@@ -140,6 +213,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const response = await authService.refreshTokens(refreshTokenValue);
+
+      try {
+        // Update tokens in storage
+        await tokenStorage.setTokens(response.accessToken, response.refreshToken);
+      } catch (storageError) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to update tokens in storage:', storageError);
+        }
+        // Continue with in-memory tokens even if storage fails
+        // On next app restart, user will need to re-login
+      }
+
       setAccessToken(response.accessToken);
       setRefreshTokenValue(response.refreshToken);
       // Update stored refresh token if biometric is enabled
@@ -147,6 +233,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await biometricService.enableBiometric(response.refreshToken, user.email);
       }
     } catch (error) {
+      // Clear tokens on refresh failure
+      try {
+        await tokenStorage.clearTokens();
+      } catch {
+        // Ignore storage errors during cleanup
+      }
       setUser(null);
       setAccessToken(null);
       setRefreshTokenValue(null);
@@ -157,7 +249,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const updateUser = useCallback((updates: Partial<User>) => {
     setUser((currentUser) => {
       if (!currentUser) return null;
-      return { ...currentUser, ...updates };
+      const newUser = { ...currentUser, ...updates };
+
+      // Persist onboarding state if it changed
+      if ('hasCompletedOnboarding' in updates && updates.hasCompletedOnboarding !== undefined) {
+        tokenStorage.setOnboardingComplete(updates.hasCompletedOnboarding).catch((error) => {
+          if (__DEV__) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to persist onboarding state:', error);
+          }
+        });
+      }
+
+      return newUser;
     });
   }, []);
 
@@ -182,6 +286,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const tokens = await authService.refreshTokens(credentials.refreshToken);
+
+      // Store tokens in secure storage
+      try {
+        await tokenStorage.setStoredCredentials(
+          tokens.accessToken,
+          tokens.refreshToken,
+          credentials.email,
+          true // Biometric login implies completed onboarding
+        );
+      } catch (storageError) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to store tokens after biometric login:', storageError);
+        }
+        // Continue - at least in-memory auth works
+      }
+
       setAccessToken(tokens.accessToken);
       setRefreshTokenValue(tokens.refreshToken);
       // Update stored refresh token since the old one was rotated

@@ -5,11 +5,14 @@ import { RegisterScreen } from '../../../src/screens/auth/RegisterScreen';
 import { AuthProvider } from '../../../src/contexts';
 import { ApiError } from '../../../src/services/api';
 import * as authService from '../../../src/services/auth';
+import { tokenStorage } from '../../../src/lib/tokenStorage';
 import type { AuthScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/auth');
+jest.mock('../../../src/lib/tokenStorage');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
+const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 
 const mockNavigate = jest.fn();
 const mockNavigation = {
@@ -39,6 +42,16 @@ const renderRegisterScreen = () => {
 describe('RegisterScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTokenStorage.getStoredCredentials.mockResolvedValue({
+      accessToken: null,
+      refreshToken: null,
+      email: null,
+      hasCompletedOnboarding: false,
+    });
+    mockTokenStorage.setStoredCredentials.mockResolvedValue(undefined);
+    mockTokenStorage.setTokens.mockResolvedValue(undefined);
+    mockTokenStorage.clearTokens.mockResolvedValue(undefined);
+    mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
   });
 
   describe('Rendering', () => {

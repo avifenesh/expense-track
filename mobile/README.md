@@ -44,7 +44,7 @@ npm test -- LoginScreen     # Run specific test file
 __tests__/
   contexts/        # Context tests (AuthContext)
   hooks/           # Hook tests (useAuthState)
-  lib/             # Utility tests (validation)
+  lib/             # Utility tests (validation, tokenStorage)
   navigation/      # Navigation component tests (AuthStack, RootNavigator, TabIcon)
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
@@ -70,7 +70,7 @@ src/
     MainTabNavigator.tsx
     AppStack.tsx
     RootNavigator.tsx
-  lib/          # Utilities (validation)
+  lib/          # Utilities (validation, tokenStorage)
   services/     # API services (api, auth)
   types/        # TypeScript definitions
   constants/    # App constants
@@ -92,6 +92,7 @@ The app implements JWT-based authentication with the following features:
 - `services/auth.ts` - Authentication API client (login, register, password reset, email verification)
 - `services/api.ts` - Base API client with JWT token management and request interceptors
 - `contexts/AuthContext.tsx` - Authentication state management with React Context
+- `lib/tokenStorage.ts` - Secure token storage using expo-secure-store
 
 ### Auth State
 
@@ -99,7 +100,20 @@ The `AuthContext` provides:
 - User authentication state
 - Login/logout functionality
 - Token refresh handling
-- Persistent session storage
+- Persistent session storage via secure platform-native storage
+
+### Secure Token Storage
+
+Tokens are stored securely using `expo-secure-store`, which provides:
+- **iOS**: Keychain Services encryption
+- **Android**: EncryptedSharedPreferences
+- **Web**: LocalStorage fallback (dev only)
+
+Features:
+- Automatic token persistence across app restarts
+- Secure storage with platform-native encryption
+- Automatic session restoration on app launch
+- Token refresh on cold start if needed
 
 ### API Integration
 
