@@ -24,7 +24,7 @@ export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse
 
 /** Type guard to check if response is an error */
 export function isApiError(response: ApiResponse<unknown>): response is ApiErrorResponse {
-  return 'error' in response
+  return 'error' in response && typeof (response as ApiErrorResponse).error === 'string'
 }
 
 /** Type guard to check if response is successful */

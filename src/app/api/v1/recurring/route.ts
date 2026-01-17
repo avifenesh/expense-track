@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
   const startMonth = getMonthStartFromKey(data.startMonthKey)
   const endMonth = data.endMonthKey ? getMonthStartFromKey(data.endMonthKey) : null
-  // Note: Schema already validates endMonth >= startMonth via .refine()
+  // Schema's .refine() ensures endMonth >= startMonth, replacing the previous manual validation
 
   // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })

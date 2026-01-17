@@ -43,22 +43,34 @@ export async function createOrReactivateCategory(input: CreateCategoryInput): Pr
 
   if (existing && existing.isArchived) {
     // Reactivate archived category with new properties
-    try {
-      const category = await prisma.category.update({
-        where: { id: existing.id },
-        data: {
-          isArchived: false,
-          color: input.color ?? null,
-        },
-      })
-      return { success: true, category, reactivated: true }
-    } catch (error) {
-      // Handle race condition: another request might have already reactivated it
-      if (isPrismaUniqueConstraintError(error)) {
-        return { success: false, error: 'DUPLICATE' }
-      }
-      throw error
+    // Use updateMany with isArchived check to handle race condition atomically
+    const updateResult = await prisma.category.updateMany({
+      where: {
+        id: existing.id,
+        isArchived: true, // Only update if still archived
+      },
+      data: {
+        isArchived: false,
+        color: input.color ?? null,
+      },
+    })
+
+    // If no rows were updated, another request already reactivated it
+    if (updateResult.count === 0) {
+      return { success: false, error: 'DUPLICATE' }
     }
+
+    // Fetch the updated category
+    const category = await prisma.category.findUnique({
+      where: { id: existing.id },
+    })
+
+    if (!category) {
+      // Should not happen if updateMany succeeded
+      throw new Error('Category not found after reactivation')
+    }
+
+    return { success: true, category, reactivated: true }
   }
 
   // Create new category (with race condition handling)

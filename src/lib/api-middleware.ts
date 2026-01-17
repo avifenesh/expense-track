@@ -52,6 +52,11 @@ export async function withApiAuth(
   try {
     user = requireJwtAuth(request)
   } catch (error) {
+    serverLogger.warn(
+      'API authentication failed',
+      { path: request.nextUrl.pathname, method: request.method },
+      error,
+    )
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 

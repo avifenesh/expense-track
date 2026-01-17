@@ -54,8 +54,10 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     category: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }))

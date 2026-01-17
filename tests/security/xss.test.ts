@@ -96,6 +96,7 @@ vi.mock('@/lib/prisma', () => {
         findFirst: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
+        updateMany: vi.fn(),
       },
       transaction: mockTransaction,
       budget: {
