@@ -20,7 +20,11 @@ const registerSchema = z.object({
     .string()
     .min(2, 'Display name must be at least 2 characters')
     .max(100, 'Display name must be at most 100 characters')
-    .regex(/^[a-zA-Z0-9\s\-']+$/, 'Display name contains invalid characters'),
+    // Must start and end with alphanumeric, can contain spaces, hyphens, apostrophes in middle
+    .regex(
+      /^[a-zA-Z0-9]([a-zA-Z0-9\s\-']*[a-zA-Z0-9])?$/,
+      'Display name must start and end with a letter or number',
+    ),
 })
 
 export async function POST(request: NextRequest) {
