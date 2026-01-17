@@ -11,6 +11,7 @@ vi.mock('next/cache', () => ({
 vi.mock('@/lib/auth-server', () => ({
   requireSession: vi.fn(),
   getDbUserAsAuthUser: vi.fn(),
+  updateSessionAccount: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 vi.mock('@prisma/client', async (importOriginal) => {
@@ -507,6 +508,168 @@ describe('User Isolation: Finance Module Data Access', () => {
         orderBy: { name: 'asc' },
       })
       expect(result).toHaveLength(2)
+    })
+  })
+})
+
+describe('User Isolation: Account Switching Security', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('updateSessionAccount attacks', () => {
+    it('should prevent switching to account owned by another user', async () => {
+      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+
+      // User A is logged in
+      vi.mocked(requireSession).mockResolvedValue({
+        userEmail: 'user-a@example.com',
+        accountId: 'user-a-account-id',
+      } as any)
+      vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+        email: 'user-a@example.com',
+        id: 'user-a-id',
+        displayName: 'User A',
+        passwordHash: 'mock-hash',
+        preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
+        accountNames: ['User A Account'],
+        defaultAccountName: 'User A Account',
+      })
+
+      // User A tries to switch to User B's account
+      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        id: 'user-b-account-id',
+        name: 'User B Account',
+        type: 'SELF',
+        userId: 'user-b-id', // Different from user-a-id
+      } as any)
+
+      const result = await persistActiveAccountAction({
+        accountId: 'user-b-account-id',
+        csrfToken: 'test-token',
+      })
+
+      expect('error' in result).toBe(true)
+      if ('error' in result) {
+        expect(
+          result.error.accountId?.some((msg: string) => msg.includes('do not have access')) ||
+            result.error.general?.some((msg: string) => msg.includes('not available')),
+        ).toBe(true)
+      }
+    })
+
+    it('should prevent session hijacking via account ID manipulation', async () => {
+      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+
+      // Attacker has valid session
+      vi.mocked(requireSession).mockResolvedValue({
+        userEmail: 'attacker@example.com',
+        accountId: 'attacker-account-id',
+      } as any)
+      vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+        email: 'attacker@example.com',
+        id: 'attacker-id',
+        displayName: 'Attacker',
+        passwordHash: 'mock-hash',
+        preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
+        accountNames: ['Attacker Account'],
+        defaultAccountName: 'Attacker Account',
+      })
+
+      // Attacker tries various attack vectors for session hijacking
+      const attackVectors = [
+        'victim-account-uuid', // Direct account ID guess
+        '00000000-0000-0000-0000-000000000001', // Sequential UUID guess
+        '../../../victim-account', // Path traversal attempt
+      ]
+
+      for (const maliciousAccountId of attackVectors) {
+        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+          id: maliciousAccountId,
+          name: 'Victim Account',
+          type: 'SELF',
+          userId: 'victim-id', // Different from attacker-id
+        } as any)
+
+        const result = await persistActiveAccountAction({
+          accountId: maliciousAccountId,
+          csrfToken: 'test-token',
+        })
+
+        expect('error' in result).toBe(true)
+      }
+    })
+
+    it('should allow switching to account owned by same user', async () => {
+      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+      const { updateSessionAccount } = await import('@/lib/auth-server')
+
+      vi.mocked(requireSession).mockResolvedValue({
+        userEmail: 'owner@example.com',
+        accountId: 'account-1',
+      } as any)
+      vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+        email: 'owner@example.com',
+        id: 'owner-id',
+        displayName: 'Owner',
+        passwordHash: 'mock-hash',
+        preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
+        accountNames: ['Account 1', 'Account 2'],
+        defaultAccountName: 'Account 1',
+      })
+
+      // User owns this account
+      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        id: 'account-2',
+        name: 'Account 2',
+        type: 'SELF',
+        userId: 'owner-id', // Same as logged-in user
+      } as any)
+
+      vi.mocked(updateSessionAccount).mockResolvedValue({ success: true })
+
+      const result = await persistActiveAccountAction({
+        accountId: 'account-2',
+        csrfToken: 'test-token',
+      })
+
+      expect(result).toEqual({ success: true })
+    })
+
+    it('should reject non-existent account IDs', async () => {
+      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+
+      vi.mocked(requireSession).mockResolvedValue({
+        userEmail: 'user@example.com',
+        accountId: 'user-account-id',
+      } as any)
+      vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+        email: 'user@example.com',
+        id: 'user-id',
+        displayName: 'User',
+        passwordHash: 'mock-hash',
+        preferredCurrency: Currency.USD,
+        hasCompletedOnboarding: true,
+        accountNames: ['User Account'],
+        defaultAccountName: 'User Account',
+      })
+
+      // Account doesn't exist
+      vi.mocked(prisma.account.findUnique).mockResolvedValue(null)
+
+      const result = await persistActiveAccountAction({
+        accountId: 'non-existent-account',
+        csrfToken: 'test-token',
+      })
+
+      expect('error' in result).toBe(true)
     })
   })
 })

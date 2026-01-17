@@ -788,6 +788,218 @@ describe('deleteTransactionAction', () => {
   })
 })
 
+describe('subscription state edge cases', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+  })
+
+  it('should allow write when subscription is active', async () => {
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
+    vi.mocked(hasActiveSubscription).mockResolvedValue(true)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'ACTIVE',
+      isActive: true,
+      trialEndsAt: null,
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      daysRemaining: 30,
+      canAccessApp: true,
+    })
+    vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
+
+    const result = await createTransactionAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 50,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Active subscription test',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect(result).toEqual({ success: true })
+  })
+
+  it('should allow write during active trial period', async () => {
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
+    vi.mocked(hasActiveSubscription).mockResolvedValue(true)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'TRIALING',
+      isActive: true,
+      trialEndsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days left
+      currentPeriodEnd: null,
+      daysRemaining: 10,
+      canAccessApp: true,
+    })
+    vi.mocked(prisma.transaction.create).mockResolvedValue({} as any)
+
+    const result = await createTransactionAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 50,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Trial period test',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect(result).toEqual({ success: true })
+  })
+
+  it('should block write when trial expired', async () => {
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
+    vi.mocked(hasActiveSubscription).mockResolvedValue(false)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'TRIAL_EXPIRED',
+      isActive: false,
+      trialEndsAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // Expired 1 day ago
+      currentPeriodEnd: null,
+      daysRemaining: 0,
+      canAccessApp: false,
+    })
+
+    const result = await createTransactionAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 50,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Trial expired test',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(
+        result.error.subscription !== undefined ||
+          result.error.general?.some((msg: string) => msg.toLowerCase().includes('subscription')),
+      ).toBe(true)
+    }
+    expect(prisma.transaction.create).not.toHaveBeenCalled()
+  })
+
+  it('should block write when subscription cancelled', async () => {
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
+    vi.mocked(hasActiveSubscription).mockResolvedValue(false)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'CANCELLED',
+      isActive: false,
+      trialEndsAt: null,
+      currentPeriodEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // Ended 5 days ago
+      daysRemaining: 0,
+      canAccessApp: false,
+    })
+
+    const result = await createTransactionAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 50,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Cancelled subscription test',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(
+        result.error.subscription !== undefined ||
+          result.error.general?.some((msg: string) => msg.toLowerCase().includes('subscription')),
+      ).toBe(true)
+    }
+    expect(prisma.transaction.create).not.toHaveBeenCalled()
+  })
+
+  it('should block update when subscription inactive', async () => {
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
+    vi.mocked(hasActiveSubscription).mockResolvedValue(false)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'CANCELLED',
+      isActive: false,
+      trialEndsAt: null,
+      currentPeriodEnd: null,
+      daysRemaining: 0,
+      canAccessApp: false,
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      month: new Date('2024-01-01'),
+    } as any)
+
+    const result = await updateTransactionAction({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 75,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Update blocked test',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    expect(prisma.transaction.update).not.toHaveBeenCalled()
+  })
+
+  it('should block delete when subscription inactive', async () => {
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
+    vi.mocked(hasActiveSubscription).mockResolvedValue(false)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'CANCELLED',
+      isActive: false,
+      trialEndsAt: null,
+      currentPeriodEnd: null,
+      daysRemaining: 0,
+      canAccessApp: false,
+    })
+
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      month: new Date('2024-01-01'),
+    } as any)
+
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    expect(prisma.transaction.delete).not.toHaveBeenCalled()
+  })
+})
+
 describe('auto-create RecurringTemplate', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
