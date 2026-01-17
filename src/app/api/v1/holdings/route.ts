@@ -7,6 +7,7 @@ import {
   validationError,
   authError,
   forbiddenError,
+  notFoundError,
   serverError,
   successResponse,
   rateLimitError,
@@ -15,6 +16,7 @@ import {
 import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { serverLogger } from '@/lib/server-logger'
+import { NotFoundError, ValidationError, isServiceError } from '@/lib/services/errors'
 
 /**
  * POST /api/v1/holdings
@@ -85,8 +87,16 @@ export async function POST(request: NextRequest) {
   try {
     await validateHoldingCategory(data.categoryId)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Invalid category'
-    return validationError({ categoryId: [message] })
+    if (error instanceof NotFoundError) {
+      return notFoundError(error.message)
+    }
+    if (error instanceof ValidationError) {
+      return validationError(error.fieldErrors)
+    }
+    if (isServiceError(error)) {
+      return serverError(error.message)
+    }
+    return validationError({ categoryId: ['Invalid category'] })
   }
 
   // 6. Validate stock symbol with API
