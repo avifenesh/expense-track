@@ -5,7 +5,7 @@ Last updated: 2026-01-17
 ## Summary
 
 **Total Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed This Session**: 19 issues (6 critical, 6 high, 6 medium, 1 low)
+**Fixed This Session**: 24 issues (6 critical, 10 high, 7 medium, 1 low)
 
 ## Critical Issues
 
@@ -272,10 +272,12 @@ Last updated: 2026-01-17
 - [ ] Split finance.ts (architecture)
 - [ ] Add authorization boundary tests (tests)
 - [x] Add soft delete filter to category queries (database) - FIXED
-- [ ] Fix HTTP status codes (API)
+- [x] Fix HTTP status codes (API) - FIXED (201 for create, 200 for update; 404 for not found)
+- [x] Add query limit to unbounded queries (performance) - FIXED
 - [ ] Add keyboard navigation to settings (frontend)
 
 ### Medium Priority (Backlog)
 - [x] Token expiry loose time comparison (security) - FIXED
 - [x] Add new database indexes (database) - FIXED
+- [x] Category name validation too loose (security) - FIXED (added max length and alphanumeric boundaries)
 - [ ] All other medium issues above

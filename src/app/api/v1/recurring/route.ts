@@ -6,6 +6,7 @@ import {
   validationError,
   authError,
   forbiddenError,
+  notFoundError,
   serverError,
   successResponse,
   rateLimitError,
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   // 4. Authorize account access
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) return forbiddenError('Account not found')
+  if (!account) return notFoundError('Account not found')
 
   const authUser = await getUserAuthInfo(user.userId)
   if (!authUser.accountNames.includes(account.name)) {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
   if (data.id) {
     const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
     if (!existing) {
-      return forbiddenError('Template not found')
+      return notFoundError('Template not found')
     }
     if (existing.accountId !== data.accountId) {
       return forbiddenError('Cannot change template account')

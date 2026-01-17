@@ -483,6 +483,7 @@ export async function getDashboardData({
       orderBy: {
         month: 'asc',
       },
+      take: 1000, // Limit results to prevent unbounded queries
     }),
     getLastUpdateTime(),
     userId ? getSharedExpenses(userId) : Promise.resolve([]),
