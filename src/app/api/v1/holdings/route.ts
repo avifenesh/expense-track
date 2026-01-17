@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { createHolding } from '@/lib/services/holding-service'
 import { validateHoldingCategory, validateStockSymbol } from '@/lib/services/holding-service'
 import { holdingSchema } from '@/schemas'
@@ -55,10 +55,9 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -82,7 +81,8 @@ export async function POST(request: NextRequest) {
   try {
     const holding = await createHolding(data)
     return successResponse({ id: holding.id }, 201)
-  } catch {
+  } catch (error) {
+    console.error('Failed to create holding:', error)
     return serverError('Unable to create holding. It may already exist.')
   }
 }

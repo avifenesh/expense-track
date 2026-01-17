@@ -23,9 +23,7 @@ export async function GET(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+  // Note: No subscription check for GET - users can always view their data
 
   // 2. Parse query parameters
   const { searchParams } = new URL(request.url)
@@ -70,7 +68,8 @@ export async function GET(request: NextRequest) {
         userId: c.userId,
       })),
     })
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch categories:', error)
     return serverError('Unable to fetch categories')
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { upsertBudget, deleteBudget, getBudgetByKey } from '@/lib/services/budget-service'
 import { budgetSchema, deleteBudgetSchema } from '@/schemas'
 import {
@@ -32,9 +32,7 @@ export async function GET(request: NextRequest) {
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+  // Note: No subscription check for GET - users can always view their data
 
   // 2. Parse query parameters
   const { searchParams } = new URL(request.url)
@@ -46,10 +44,9 @@ export async function GET(request: NextRequest) {
     return validationError({ accountId: ['accountId is required'] })
   }
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -96,7 +93,8 @@ export async function GET(request: NextRequest) {
         category: b.category,
       })),
     })
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch budgets:', error)
     return serverError('Unable to fetch budgets')
   }
 }
@@ -139,10 +137,9 @@ export async function POST(request: NextRequest) {
   const data = parsed.data
   const month = getMonthStartFromKey(data.monthKey)
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -198,10 +195,9 @@ export async function DELETE(request: NextRequest) {
   const data = parsed.data
   const month = getMonthStartFromKey(data.monthKey)
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 

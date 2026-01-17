@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { applyRecurringTemplates } from '@/lib/services/recurring-service'
 import { applyRecurringSchema } from '@/schemas'
 import {
@@ -51,10 +51,9 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -66,7 +65,8 @@ export async function POST(request: NextRequest) {
       templateIds: data.templateIds,
     })
     return successResponse(result)
-  } catch {
+  } catch (error) {
+    console.error('Failed to apply recurring templates:', error)
     return serverError('Unable to create recurring transactions')
   }
 }

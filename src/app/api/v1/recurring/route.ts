@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth, getUserAuthInfo } from '@/lib/api-auth'
+import { requireJwtAuth } from '@/lib/api-auth'
 import { upsertRecurringTemplate } from '@/lib/services/recurring-service'
 import { recurringTemplateSchema } from '@/schemas'
 import {
@@ -59,10 +59,9 @@ export async function POST(request: NextRequest) {
     return validationError({ endMonthKey: ['End month must be after the start month'] })
   }
 
-  // 3. Authorize account access (single check to prevent enumeration)
+  // 3. Authorize account access by userId (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  const authUser = await getUserAuthInfo(user.userId)
-  if (!account || !authUser.accountNames.includes(account.name)) {
+  if (!account || account.userId !== user.userId) {
     return forbiddenError('Access denied')
   }
 
@@ -90,7 +89,8 @@ export async function POST(request: NextRequest) {
       isActive: data.isActive,
     })
     return successResponse({ id: template.id }, data.id ? 200 : 201)
-  } catch {
+  } catch (error) {
+    console.error('Failed to save recurring template:', error)
     return serverError('Unable to save recurring template')
   }
 }
