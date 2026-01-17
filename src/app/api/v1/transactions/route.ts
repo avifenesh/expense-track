@@ -9,9 +9,155 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { getMonthStartFromKey } from '@/utils/date'
+import { TransactionType } from '@prisma/client'
+
+const DEFAULT_LIMIT = 50
+const MAX_LIMIT = 100
+
+export async function GET(request: NextRequest) {
+  // 1. Authenticate with JWT
+  let user
+  try {
+    user = requireJwtAuth(request)
+  } catch (error) {
+    return authError(error instanceof Error ? error.message : 'Unauthorized')
+  }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
+
+  // 2. Parse query parameters
+  const { searchParams } = new URL(request.url)
+  const accountId = searchParams.get('accountId')
+  const monthKey = searchParams.get('month')
+  const categoryId = searchParams.get('categoryId')
+  const type = searchParams.get('type')
+  const limitParam = searchParams.get('limit')
+  const offsetParam = searchParams.get('offset')
+
+  // Validate required accountId
+  if (!accountId) {
+    return validationError({ accountId: ['accountId is required'] })
+  }
+
+  // Validate type if provided
+  if (type && !['INCOME', 'EXPENSE'].includes(type)) {
+    return validationError({ type: ['type must be INCOME or EXPENSE'] })
+  }
+
+  // Parse pagination
+  let limit = DEFAULT_LIMIT
+  let offset = 0
+
+  if (limitParam) {
+    const parsed = parseInt(limitParam, 10)
+    if (isNaN(parsed) || parsed < 1) {
+      return validationError({ limit: ['limit must be a positive integer'] })
+    }
+    limit = Math.min(parsed, MAX_LIMIT)
+  }
+
+  if (offsetParam) {
+    const parsed = parseInt(offsetParam, 10)
+    if (isNaN(parsed) || parsed < 0) {
+      return validationError({ offset: ['offset must be a non-negative integer'] })
+    }
+    offset = parsed
+  }
+
+  // 3. Authorize account access
+  const account = await prisma.account.findUnique({ where: { id: accountId } })
+  if (!account) {
+    return forbiddenError('Account not found')
+  }
+
+  const authUser = await getUserAuthInfo(user.userId)
+  if (!authUser.accountNames.includes(account.name)) {
+    return forbiddenError('You do not have access to this account')
+  }
+
+  // 4. Build query filters
+  const where: {
+    accountId: string
+    month?: Date
+    categoryId?: string
+    type?: TransactionType
+  } = { accountId }
+
+  if (monthKey) {
+    try {
+      where.month = getMonthStartFromKey(monthKey)
+    } catch {
+      return validationError({ month: ['month must be in YYYY-MM format'] })
+    }
+  }
+
+  if (categoryId) {
+    where.categoryId = categoryId
+  }
+
+  if (type) {
+    where.type = type as TransactionType
+  }
+
+  // 5. Execute query with pagination
+  try {
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              color: true,
+            },
+          },
+        },
+        orderBy: { date: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.transaction.count({ where }),
+    ])
+
+    const hasMore = offset + transactions.length < total
+
+    return successResponse({
+      transactions: transactions.map((t) => ({
+        id: t.id,
+        accountId: t.accountId,
+        categoryId: t.categoryId,
+        type: t.type,
+        amount: t.amount.toString(),
+        currency: t.currency,
+        date: t.date.toISOString().split('T')[0],
+        month: t.month.toISOString().split('T')[0],
+        description: t.description,
+        isRecurring: t.isRecurring,
+        category: t.category,
+      })),
+      total,
+      hasMore,
+    })
+  } catch {
+    return serverError('Unable to fetch transactions')
+  }
+}
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate with JWT
@@ -28,6 +174,10 @@ export async function POST(request: NextRequest) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate input
   let body

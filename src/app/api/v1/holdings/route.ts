@@ -10,6 +10,7 @@ import {
   serverError,
   successResponse,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate input
   let body
