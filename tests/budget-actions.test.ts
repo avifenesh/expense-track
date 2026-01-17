@@ -127,6 +127,9 @@ describe('upsertBudgetAction', () => {
     })
 
     expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.csrfToken).toBeDefined()
+    }
   })
 
   it('should fail when user does not have access to account', async () => {
@@ -307,6 +310,20 @@ describe('deleteBudgetAction', () => {
         result.error.general?.some((msg: string) => msg.toLowerCase().includes('csrf')) ||
           result.error.csrfToken !== undefined,
       ).toBe(true)
+    }
+  })
+
+  it('should reject request with missing CSRF token', async () => {
+    const result = await deleteBudgetAction({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      monthKey: '2026-01',
+      csrfToken: '',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.csrfToken).toBeDefined()
     }
   })
 

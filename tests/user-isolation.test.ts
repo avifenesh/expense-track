@@ -601,6 +601,12 @@ describe('User Isolation: Account Switching Security', () => {
         })
 
         expect('error' in result).toBe(true)
+        if ('error' in result) {
+          expect(
+            result.error.accountId?.some((msg: string) => msg.includes('do not have access')) ||
+              result.error.general?.some((msg: string) => msg.includes('not available')),
+          ).toBe(true)
+        }
       }
     })
 
