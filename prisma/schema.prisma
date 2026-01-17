@@ -1,3 +1,26 @@
+// ==============================================================================
+// DECIMAL PRECISION STANDARDS
+// ==============================================================================
+// Monetary amounts (Transaction.amount, Budget.planned, SharedExpense.totalAmount):
+//   Decimal(12, 2) - 12 total digits, 2 decimal places
+//   Range: -9,999,999,999.99 to 9,999,999,999.99
+//   Use case: Standard currency amounts
+//
+// Asset quantities (Holding.quantity):
+//   Decimal(18, 6) - 18 total digits, 6 decimal places
+//   Range: supports fractional shares and cryptocurrency
+//   Use case: Stock shares, crypto holdings with high precision
+//
+// Asset prices (Holding.averageCost):
+//   Decimal(12, 2) - 12 total digits, 2 decimal places
+//   Use case: Cost basis per share/unit in standard currency
+//
+// Percentages (ExpenseParticipant.sharePercentage):
+//   Decimal(5, 2) - 5 total digits, 2 decimal places
+//   Range: 0.00 to 999.99 (allows >100% for edge cases)
+//   Use case: Percentage splits in expense sharing
+// ==============================================================================
+
 generator client {
   provider = "prisma-client-js"
 }
