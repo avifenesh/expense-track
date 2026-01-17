@@ -24,7 +24,6 @@ import { serverLogger } from '@/lib/server-logger'
  * @body accountId - Required. The account to create the holding in.
  * @body categoryId - Required. The holding category (must have isHolding=true).
  * @body symbol - Required. Stock ticker symbol (validated against API).
- * @body name - Required. Holding display name.
  * @body quantity - Required. Number of shares/units.
  * @body averageCost - Required. Average cost per share.
  * @body currency - Required. Currency code (USD, EUR, or ILS).
@@ -107,10 +106,10 @@ export async function POST(request: NextRequest) {
         accountId: holding.accountId,
         categoryId: holding.categoryId,
         symbol: holding.symbol,
-        name: holding.name,
         quantity: holding.quantity.toString(),
         averageCost: holding.averageCost.toString(),
         currency: holding.currency,
+        notes: holding.notes,
       },
       201,
     )

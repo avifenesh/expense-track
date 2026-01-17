@@ -83,10 +83,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       accountId: updated.accountId,
       categoryId: updated.categoryId,
       symbol: updated.symbol,
-      name: updated.name,
       quantity: updated.quantity.toString(),
       averageCost: updated.averageCost.toString(),
       currency: updated.currency,
+      notes: updated.notes,
     })
   } catch {
     return serverError('Unable to update holding')
