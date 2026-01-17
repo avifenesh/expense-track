@@ -1,6 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod'
-import { Currency, TransactionType } from '@prisma/client'
+import { Currency } from '@prisma/client'
 import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import {
   getTransactionsForMonth,
@@ -116,7 +116,7 @@ export function buildTools(ctx: ToolContext) {
     }),
 
     getRecentTransactions: tool({
-      description: 'Get recent transactions with optional filtering',
+      description: 'Get recent transactions with optional filtering by type and category name',
       parameters: z.object({
         limit: z.number().min(1).max(50).optional().describe('Max transactions to return (default 10)'),
         type: z.enum(['INCOME', 'EXPENSE']).optional().describe('Filter by transaction type'),
@@ -145,7 +145,7 @@ export function buildTools(ctx: ToolContext) {
         }
 
         const formatted = limited.map((t) => ({
-          date: t.date instanceof Date ? t.date.toISOString().split('T')[0] : String(t.date).split('T')[0],
+          date: t.date.toISOString().split('T')[0],
           category: t.category?.name ?? 'Uncategorized',
           type: t.type,
           amount: formatCurrency(t.convertedAmount, ctx.preferredCurrency),

@@ -249,7 +249,8 @@ describe('POST /api/chat', () => {
     })
 
     it('accepts request without preferredCurrency (defaults to USD)', async () => {
-      const { preferredCurrency, ...requestWithoutCurrency } = validRequest
+      const { preferredCurrency: _, ...requestWithoutCurrency } = validRequest
+      void _ // Suppress unused variable warning
       const response = await POST(createRequest(requestWithoutCurrency))
       expect(response.status).toBe(200)
     })
@@ -409,10 +410,9 @@ describe('Chat Schema Validation', () => {
     })
 
     it('validates monthKey format strictly', () => {
-      // Schema validates YYYY-MM format (4 digits, dash, 2 digits)
-      // It does NOT validate month range (01-12) - that's downstream validation
-      const validFormats = ['2025-01', '2025-12', '1999-06', '2025-00', '2025-13']
-      const invalidFormats = ['2025-1', '25-01', '2025/01', 'January 2025']
+      // Schema validates YYYY-MM format and enforces month range (01-12)
+      const validFormats = ['2025-01', '2025-12', '1999-06']
+      const invalidFormats = ['2025-1', '25-01', '2025/01', 'January 2025', '2025-00', '2025-13']
 
       validFormats.forEach((monthKey) => {
         const result = chatRequestSchema.safeParse({

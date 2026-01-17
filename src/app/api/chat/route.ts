@@ -133,7 +133,7 @@ export async function POST(request: Request) {
   try {
     // 8. Stream with Gemini 3 Flash
     const result = streamText({
-      model: google('gemini-3-flash-preview'),
+      model: google('gemini-1.5-flash-latest'),
       system: systemPrompt,
       messages: messages.map((m) => ({
         role: m.role as 'user' | 'assistant',

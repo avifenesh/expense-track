@@ -14,7 +14,7 @@ export const chatRequestSchema = z.object({
     .min(1, 'At least one message required')
     .max(50, 'Conversation too long'),
   accountId: z.string().min(1, 'Account ID required'),
-  monthKey: z.string().regex(/^\d{4}-\d{2}$/, 'Invalid month format (expected YYYY-MM)'),
+  monthKey: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Invalid month format (expected YYYY-MM with month 01-12)'),
   preferredCurrency: z.nativeEnum(Currency).optional(),
 })
 

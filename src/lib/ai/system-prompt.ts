@@ -31,7 +31,7 @@ ${context.userName ? `- User: ${context.userName}` : ''}
 You have access to these read-only tools to fetch user data:
 - getMonthSummary: Income/expense totals and net flow
 - getBudgetStatus: Budget vs actual per category
-- getRecentTransactions: Transaction list (filterable by category, date range)
+- getRecentTransactions: Transaction list (filterable by type and category name)
 - getSpendingTrends: 6-month history
 - getHoldings: Investment portfolio with current prices
 - getSharedExpenses: Expense splits and settlement balances
