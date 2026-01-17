@@ -2,9 +2,34 @@ import 'server-only'
 
 /**
  * Rate limiting for API endpoints
- * In-memory sliding window implementation (resets on serverless cold start)
  *
- * For production multi-tenant deployment, consider Redis-backed rate limiting
+ * ## Implementation Details
+ * - Uses in-memory sliding window algorithm
+ * - Each request type has its own window and max requests configuration
+ * - Automatic cleanup of expired entries to prevent memory leaks
+ *
+ * ## Known Limitations
+ *
+ * ### Cold Start Reset (IMPORTANT)
+ * In serverless environments (Vercel, AWS Lambda), rate limit counters reset
+ * when the function cold starts. This means:
+ * - Rate limits are NOT persistent across deployments
+ * - High-traffic periods may trigger more frequent cold starts
+ * - An attacker could theoretically bypass limits by waiting for cold starts
+ *
+ * ### Single-Instance Only
+ * This implementation does NOT work correctly with multiple server instances:
+ * - Each instance maintains its own in-memory store
+ * - Total allowed requests = maxRequests × number of instances
+ *
+ * ### Mitigation Strategies
+ * For production deployments requiring strict rate limiting:
+ * 1. Use Redis-backed rate limiting (recommended for multi-instance)
+ * 2. Use Vercel Edge Middleware with KV storage
+ * 3. Use Cloudflare Rate Limiting at the edge
+ * 4. Implement database-backed rate limiting for critical endpoints
+ *
+ * @see docs/RATE_LIMITING.md for full documentation
  */
 
 /**
