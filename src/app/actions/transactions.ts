@@ -303,64 +303,87 @@ export async function updateTransactionAction(input: TransactionUpdateInput) {
   const csrfCheck = await requireCsrfToken(data.csrfToken)
   if ('error' in csrfCheck) return csrfCheck
 
-  const existing = await prisma.transaction.findUnique({
-    where: { id: data.id },
-    select: {
-      accountId: true,
-      month: true,
-      recurringTemplateId: true,
-    },
-  })
-
-  if (!existing) {
-    return generalError('Transaction not found')
-  }
-
-  const existingAccess = await ensureAccountAccessWithSubscription(existing.accountId)
-  if ('error' in existingAccess) {
-    return existingAccess
-  }
-
-  if (existing.accountId !== data.accountId) {
-    const newAccountAccess = await ensureAccountAccess(data.accountId)
-    if ('error' in newAccountAccess) {
-      return newAccountAccess
-    }
+  // Pre-flight: Check new account access if moving to a different account
+  // This is done outside the transaction to avoid holding locks during auth checks
+  const newAccountAccess = await ensureAccountAccess(data.accountId)
+  if ('error' in newAccountAccess) {
+    return newAccountAccess
   }
 
   try {
-    // Use provided template ID, fall back to existing, or auto-create if marking as recurring
-    let recurringTemplateId: string | null = data.recurringTemplateId ?? existing.recurringTemplateId
-
-    // Auto-create RecurringTemplate if transaction is being marked as recurring and has no template
-    if (data.isRecurring && !recurringTemplateId) {
-      recurringTemplateId = await createRecurringTemplateForTransaction({
-        accountId: data.accountId,
-        categoryId: data.categoryId,
-        type: data.type,
-        amount: data.amount,
-        currency: data.currency,
-        date: data.date,
-        description: data.description,
-        monthStart,
+    // Use atomic transaction to prevent race conditions between find and update
+    const result = await prisma.$transaction(async (tx) => {
+      // Find and lock the transaction within the same database transaction
+      const existing = await tx.transaction.findUnique({
+        where: { id: data.id },
+        select: {
+          accountId: true,
+          month: true,
+          recurringTemplateId: true,
+        },
       })
+
+      if (!existing) {
+        return { error: 'not_found' as const }
+      }
+
+      // Check access to the existing account
+      const existingAccess = await ensureAccountAccessWithSubscription(existing.accountId)
+      if ('error' in existingAccess) {
+        return { error: 'access_denied' as const, details: existingAccess }
+      }
+
+      // Use provided template ID, fall back to existing, or auto-create if marking as recurring
+      let recurringTemplateId: string | null = data.recurringTemplateId ?? existing.recurringTemplateId
+
+      // Auto-create RecurringTemplate if transaction is being marked as recurring and has no template
+      if (data.isRecurring && !recurringTemplateId) {
+        recurringTemplateId = await createRecurringTemplateForTransaction({
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          type: data.type,
+          amount: data.amount,
+          currency: data.currency,
+          date: data.date,
+          description: data.description,
+          monthStart,
+        })
+      }
+
+      await tx.transaction.update({
+        where: { id: data.id },
+        data: {
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          type: data.type,
+          amount: new Prisma.Decimal(toDecimalString(data.amount)),
+          currency: data.currency,
+          date: data.date,
+          month: monthStart,
+          description: data.description,
+          isRecurring: data.isRecurring ?? false,
+          recurringTemplateId,
+        },
+      })
+
+      return { success: true as const, existing }
+    })
+
+    // Handle transaction result
+    if ('error' in result) {
+      if (result.error === 'not_found') {
+        return generalError('Transaction not found')
+      }
+      if (result.error === 'access_denied' && result.details) {
+        return result.details
+      }
     }
 
-    await prisma.transaction.update({
-      where: { id: data.id },
-      data: {
-        accountId: data.accountId,
-        categoryId: data.categoryId,
-        type: data.type,
-        amount: new Prisma.Decimal(toDecimalString(data.amount)),
-        currency: data.currency,
-        date: data.date,
-        month: monthStart,
-        description: data.description,
-        isRecurring: data.isRecurring ?? false,
-        recurringTemplateId,
-      },
-    })
+    if (!('success' in result)) {
+      return generalError('Unable to update transaction')
+    }
+
+    const { existing } = result
 
     // Invalidate dashboard cache for affected months/accounts
     const newMonthKey = getMonthKey(data.date)

@@ -5,7 +5,7 @@ Last updated: 2026-01-17
 ## Summary
 
 **Total Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed This Session**: 24 issues (6 critical, 10 high, 7 medium, 1 low)
+**Fixed This Session**: 28 issues (6 critical, 14 high, 7 medium, 1 low)
 
 ## Critical Issues
 
@@ -265,7 +265,7 @@ Last updated: 2026-01-17
 - [x] Make security audit blocking (CI) - FIXED
 - [x] Make njsscan blocking (CI) - FIXED
 - [ ] Move CI credentials to GitHub Secrets (CI)
-- [ ] Validate secrets at startup (security)
+- [x] Validate secrets at startup (security) - FIXED (JWT_SECRET now validated at module load)
 - [x] Fix email config silent failure (config) - FIXED
 - [x] Fix sequential currency conversions (performance) - FIXED
 - [x] Move toDecimalString to utils (architecture) - FIXED
@@ -274,6 +274,9 @@ Last updated: 2026-01-17
 - [x] Add soft delete filter to category queries (database) - FIXED
 - [x] Fix HTTP status codes (API) - FIXED (201 for create, 200 for update; 404 for not found)
 - [x] Add query limit to unbounded queries (performance) - FIXED
+- [x] Fix race condition in transaction update (security) - FIXED (atomic Prisma transaction)
+- [x] Add rate limit headers helper (API) - FIXED (successResponseWithRateLimit)
+- [x] Standardize validation error format (API) - FIXED (login uses validationError())
 - [ ] Add keyboard navigation to settings (frontend)
 
 ### Medium Priority (Backlog)
