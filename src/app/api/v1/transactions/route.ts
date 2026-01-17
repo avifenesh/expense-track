@@ -13,7 +13,7 @@ import {
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
-import { getMonthStartFromKey } from '@/utils/date'
+import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { TransactionType } from '@prisma/client'
 import { serverLogger } from '@/lib/server-logger'
 
@@ -139,8 +139,8 @@ export async function GET(request: NextRequest) {
         type: t.type,
         amount: t.amount.toString(),
         currency: t.currency,
-        date: t.date.toISOString().split('T')[0],
-        month: t.month.toISOString().split('T')[0],
+        date: formatDateForApi(t.date),
+        month: formatDateForApi(t.month),
         description: t.description,
         isRecurring: t.isRecurring,
         category: t.category,

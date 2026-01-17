@@ -1,4 +1,4 @@
-import { format, startOfMonth } from 'date-fns'
+import { format, startOfMonth, formatISO } from 'date-fns'
 
 export function getMonthStart(date: Date) {
   return startOfMonth(date)
@@ -63,4 +63,12 @@ export function normalizeDateInput(value: FormDataEntryValue | null): Date | nul
   }
 
   return utcDate
+}
+
+/**
+ * Format a Date object to YYYY-MM-DD string for API responses.
+ * Uses date-fns formatISO for reliable formatting.
+ */
+export function formatDateForApi(date: Date): string {
+  return formatISO(date, { representation: 'date' })
 }
