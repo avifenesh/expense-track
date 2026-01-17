@@ -19,6 +19,7 @@ export type RateLimitType =
   | 'resend_verification'
   | 'account_deletion'
   | 'data_export'
+  | 'ai_chat'
 
 interface RateLimitConfig {
   windowMs: number
@@ -33,6 +34,7 @@ const RATE_LIMIT_CONFIGS: Record<RateLimitType, RateLimitConfig> = {
   resend_verification: { windowMs: 15 * 60 * 1000, maxRequests: 3 }, // 3/15min - spam prevention
   account_deletion: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - abuse prevention
   data_export: { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3/hour - GDPR export rate limit
+  ai_chat: { windowMs: 60 * 1000, maxRequests: 20 }, // 20/min - AI chat API
 }
 
 interface RateLimitEntry {

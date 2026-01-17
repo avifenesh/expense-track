@@ -571,29 +571,29 @@ describe('finance.ts', () => {
 
       expect(result.stats).toHaveLength(4)
 
-      // Actual net = 3000 - 150 = 2850
+      // Saved so far (actual net) = 3000 - 150 = 2850
       expect(result.stats[0]).toMatchObject({
-        label: 'Actual net',
+        label: 'Saved so far',
         amount: 2850,
         variant: 'positive',
       })
 
-      // Projected net = 3000 + 0 - (150 + max(500-150, 0)) = 3000 - 500 = 2500
+      // On track for (projected net) = 3000 + 0 - (150 + max(500-150, 0)) = 3000 - 500 = 2500
       expect(result.stats[1]).toMatchObject({
-        label: 'Projected end of month',
+        label: 'On track for',
         amount: 2500,
         variant: 'positive',
       })
 
-      // Remaining expense = max(500 - 150, 0) = 350
+      // Left to spend (remaining expense) = max(500 - 150, 0) = 350
       expect(result.stats[2]).toMatchObject({
-        label: 'Remaining budgets',
+        label: 'Left to spend',
         amount: 350,
       })
 
-      // Planned net = 3000 - 500 = 2500
+      // Monthly goal (planned net) = 3000 - 500 = 2500
       expect(result.stats[3]).toMatchObject({
-        label: 'Planned net',
+        label: 'Monthly goal',
         amount: 2500,
         variant: 'positive',
       })

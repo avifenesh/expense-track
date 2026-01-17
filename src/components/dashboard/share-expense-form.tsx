@@ -143,7 +143,7 @@ export function ShareExpenseForm({
       if ('error' in result) {
         const serverErrors = result.error as FormErrors
         setFormErrors(serverErrors)
-        toast.error('Could not share expense')
+        toast.error('Unable to share expense.')
         return
       }
 

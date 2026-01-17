@@ -27,7 +27,7 @@ export function SharedExpensesList({ sharedExpenses }: SharedExpensesListProps) 
     startTransition(async () => {
       const result = await markSharePaidAction({ participantId, csrfToken })
       if ('error' in result) {
-        toast.error(result.error.general?.[0] || 'Could not mark as paid')
+        toast.error(result.error.general?.[0] || 'Unable to mark as paid.')
         return
       }
       toast.success('Payment recorded')
@@ -39,7 +39,7 @@ export function SharedExpensesList({ sharedExpenses }: SharedExpensesListProps) 
     startTransition(async () => {
       const result = await sendPaymentReminderAction({ participantId, csrfToken })
       if ('error' in result) {
-        toast.error(result.error.general?.[0] || 'Could not send reminder')
+        toast.error(result.error.general?.[0] || 'Unable to send reminder.')
         return
       }
       toast.success('Reminder sent')
@@ -51,7 +51,7 @@ export function SharedExpensesList({ sharedExpenses }: SharedExpensesListProps) 
     startTransition(async () => {
       const result = await cancelSharedExpenseAction({ sharedExpenseId, csrfToken })
       if ('error' in result) {
-        toast.error(result.error.general?.[0] || 'Could not cancel sharing')
+        toast.error(result.error.general?.[0] || 'Unable to cancel sharing.')
         return
       }
       toast.success('Sharing canceled')

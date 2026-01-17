@@ -135,34 +135,34 @@ const STAT_VARIANT_STYLES: Record<
 }
 
 const STAT_TOOLTIPS: Record<string, string> = {
-  'Actual net': `Formula: Income received − Expenses paid
+  'Saved so far': `Income received minus expenses paid.
 
-Your real position this month based on actual transactions. Higher than Planned net when you earn more than budgeted or spend less.`,
+This is your real position this month based on actual transactions.`,
 
-  'Projected end of month': `Formula: Actual net + Remaining income budget − Remaining expense budget
+  'On track for': `Where you'll be at month end if you follow your budgets.
 
-Estimates month-end position if you fulfill remaining budgets. Only counts positive remaining amounts (not overspent categories).`,
+Calculated from what you've saved plus remaining planned income, minus remaining planned expenses.`,
 
-  'Remaining budgets': `Formula: Planned expenses − Actual expenses
+  'Left to spend': `How much of your expense budget you haven't used yet.
 
-Expense budget you haven't spent yet. Zero means you've hit your spending plan exactly.`,
+Zero means you've hit your spending plan exactly. Negative if you've overspent.`,
 
-  'Planned net': `Formula: Budgeted income − Budgeted expenses
+  'Monthly goal': `Your target for the month based on budgets.
 
-Your target if all budgets hit exactly. Negative means planned expenses exceed planned income. Differs from Actual when real income/expenses don't match budget.`,
+Budgeted income minus budgeted expenses. Negative means planned expenses exceed planned income.`,
 }
 
 const DEFAULT_STAT_TOOLTIP = 'Monitors this monthly metric based on your recorded data and budgets.'
 
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
-  if (normalized.includes('expense') || normalized.includes('outflow')) {
-    return PiggyBank
-  }
-  if (normalized.includes('income') || normalized.includes('inflow')) {
+  if (normalized.includes('saved') || normalized.includes('income') || normalized.includes('inflow')) {
     return Wallet
   }
-  if (normalized.includes('budget')) {
+  if (normalized.includes('spend') || normalized.includes('expense') || normalized.includes('outflow')) {
+    return PiggyBank
+  }
+  if (normalized.includes('goal') || normalized.includes('budget') || normalized.includes('track')) {
     return Layers
   }
   return TrendingUp
@@ -553,7 +553,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           activeAccount={activeAccount}
           monthKey={monthKey}
           preferredCurrency={preferredCurrency}
-          currentNet={data.stats.find((s) => s.label === 'Actual net')?.amount ?? 0}
+          currentNet={data.stats.find((s) => s.label === 'Saved so far')?.amount ?? 0}
           onClose={() => setShowBalanceForm(false)}
         />
       )}

@@ -210,7 +210,7 @@ describe('shareExpenseAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('You cannot share an expense with yourself')
+      expect(result.error.general).toContain('Expenses can only be shared with others.')
     }
   })
 
@@ -468,7 +468,7 @@ describe('lookupUserForSharingAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general?.some((msg: string) => msg.includes('cannot share expenses with yourself'))).toBe(
+      expect(result.error.general?.some((msg: string) => msg.includes('Expenses can only be shared with others.'))).toBe(
         true,
       )
     }
