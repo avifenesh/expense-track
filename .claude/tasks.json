@@ -67,6 +67,23 @@
   "lastUpdated": "2026-01-17T00:50:00Z",
   "tasks": [
     {
+      "id": "72",
+      "source": "GitHub issue",
+      "title": "Set up state management with Zustand",
+      "description": "Configure state management for mobile app.\n- Install Zustand\n- Create auth store\n- Create transactions store\n- Create budgets store\n- Test state persistence",
+      "labels": [
+        "mobile"
+      ],
+      "milestone": "Sprint 3: Mobile App",
+      "branch": "feature/zustand-state-72",
+      "status": "shipped",
+      "claimedAt": "2026-01-17T00:00:00Z",
+      "completedAt": "2026-01-17T01:15:00Z",
+      "pr": "https://github.com/avifenesh/balance-beacon/pull/167",
+      "mergeCommit": "a180bf5",
+      "url": "https://github.com/avifenesh/balance-beacon/issues/72"
+    },
+    {
       "id": "80",
       "source": "github",
       "title": "Implement biometric authentication on mobile",

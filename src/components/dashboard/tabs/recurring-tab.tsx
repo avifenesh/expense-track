@@ -132,7 +132,7 @@ export function RecurringTab({
       if ('error' in result) {
         const serverErrors = result.error as FormErrors
         setFormErrors(serverErrors)
-        toast.error('Could not save recurring template.')
+        toast.error('Unable to save template.')
         return
       }
       toast.success('Recurring template saved.')
@@ -146,7 +146,7 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await toggleRecurringTemplateAction({ id: template.id, isActive, csrfToken })
       if ('error' in result) {
-        toast.error('Could not update recurring template.')
+        toast.error('Unable to update template.')
         return
       }
       toast.success(isActive ? 'Template re-activated.' : 'Template paused.')
@@ -158,7 +158,7 @@ export function RecurringTab({
     startRecurring(async () => {
       const result = await applyRecurringTemplatesAction({ monthKey, accountId: activeAccount, csrfToken })
       if ('error' in result) {
-        toast.error('Could not apply recurring items.')
+        toast.error('Unable to apply templates.')
         return
       }
       const created = result.data?.created ?? 0

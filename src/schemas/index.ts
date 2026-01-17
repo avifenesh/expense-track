@@ -323,3 +323,7 @@ export type {
   CreateQuickBudgetInput,
   SeedSampleDataInput,
 } from './onboarding'
+
+// Chat schemas
+export { chatMessageSchema, chatRequestSchema } from './chat'
+export type { ChatMessage, ChatRequest } from './chat'

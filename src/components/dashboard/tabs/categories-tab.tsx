@@ -74,7 +74,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
       if ('error' in result) {
         const serverErrors = result.error as FormErrors
         setFormErrors(serverErrors)
-        toast.error('Could not create category.')
+        toast.error('Unable to create category.')
         return
       }
       toast.success('Category added.')

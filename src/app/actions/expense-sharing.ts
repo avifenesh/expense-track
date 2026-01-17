@@ -66,7 +66,7 @@ export async function shareExpenseAction(input: ShareExpenseInput) {
 
   // Prevent sharing with yourself
   if (participantEmails.includes(authUser.email.toLowerCase())) {
-    return generalError('You cannot share an expense with yourself')
+    return generalError('Expenses can only be shared with others.')
   }
 
   const participantUsers = await prisma.user.findMany({
@@ -426,7 +426,7 @@ export async function lookupUserForSharingAction(input: UserLookupInput) {
   const email = data.email.toLowerCase()
 
   if (email === authUser.email.toLowerCase()) {
-    return generalError('You cannot share expenses with yourself')
+    return generalError('Expenses can only be shared with others.')
   }
 
   try {

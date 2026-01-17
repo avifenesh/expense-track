@@ -2,7 +2,7 @@
 import { Prisma, TransactionType, Currency, PaymentStatus, SplitType } from '@prisma/client'
 import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
-import { formatMonthLabel, getMonthKey, getMonthStartFromKey } from '@/utils/date'
+import { getMonthKey, getMonthStartFromKey } from '@/utils/date'
 import {
   convertAmount,
   getLastUpdateTime,
@@ -626,28 +626,28 @@ export async function getDashboardData({
 
   const stats: MonetaryStat[] = [
     {
-      label: 'Actual net',
+      label: 'Saved so far',
       amount: actualNet,
       variant: actualNet >= 0 ? 'positive' : 'negative',
-      helper: `${formatMonthLabel(monthKey)} performance`,
+      helper: 'Income minus expenses this month',
     },
     {
-      label: 'Projected end of month',
+      label: 'On track for',
       amount: projectedNet,
       variant: projectedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Includes planned budgets',
+      helper: 'Where you\'ll be at month end',
     },
     {
-      label: 'Remaining budgets',
+      label: 'Left to spend',
       amount: Math.max(remainingExpense, 0),
       variant: remainingExpense <= 0 ? 'neutral' : 'negative',
-      helper: 'Expense budgets left to spend',
+      helper: 'Budget not yet used',
     },
     {
-      label: 'Planned net',
+      label: 'Monthly goal',
       amount: plannedNet,
       variant: plannedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Based on monthly budgets',
+      helper: 'Your target for the month',
     },
   ]
 
