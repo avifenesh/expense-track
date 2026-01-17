@@ -11,37 +11,53 @@ export type OptimisticListResult<T> = {
 export function useOptimisticList<T extends { id: string }>(serverItems: T[]): OptimisticListResult<T> {
   const [optimisticItems, setOptimisticItems] = useState<T[]>(serverItems)
   const previousItemsRef = useRef<T[]>(serverItems)
+  const mountedRef = useRef(true)
+
+  // Track mounted state to prevent updates after unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  // Safe setState that checks mounted state
+  const safeSetItems = useCallback((updater: T[] | ((current: T[]) => T[])) => {
+    if (mountedRef.current) {
+      setOptimisticItems(updater)
+    }
+  }, [])
 
   // Sync with server items when they change
   useEffect(() => {
-    setOptimisticItems(serverItems)
+    safeSetItems(serverItems)
     previousItemsRef.current = serverItems
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- safeSetItems is stable (empty deps)
   }, [serverItems])
 
   const optimisticAdd = useCallback((item: T) => {
-    setOptimisticItems((current) => {
+    safeSetItems((current) => {
       previousItemsRef.current = current
       return [...current, item]
     })
-  }, [])
+  }, [safeSetItems])
 
   const optimisticUpdate = useCallback((id: string, updates: Partial<T>) => {
-    setOptimisticItems((current) => {
+    safeSetItems((current) => {
       previousItemsRef.current = current
       return current.map((item) => (item.id === id ? { ...item, ...updates } : item))
     })
-  }, [])
+  }, [safeSetItems])
 
   const optimisticDelete = useCallback((id: string) => {
-    setOptimisticItems((current) => {
+    safeSetItems((current) => {
       previousItemsRef.current = current
       return current.filter((item) => item.id !== id)
     })
-  }, [])
+  }, [safeSetItems])
 
   const rollback = useCallback(() => {
-    setOptimisticItems(previousItemsRef.current)
-  }, [])
+    safeSetItems(previousItemsRef.current)
+  }, [safeSetItems])
 
   return {
     items: optimisticItems,
