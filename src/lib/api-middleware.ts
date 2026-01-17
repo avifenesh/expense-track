@@ -32,6 +32,9 @@ export interface ApiMiddlewareOptions {
  * export async function POST(request: NextRequest) {
  *   return withApiAuth(request, async (user) => {
  *     const body = await parseJsonBody(request)
+ *     if (body === null) {
+ *       return validationError({ body: ['Invalid JSON'] })
+ *     }
  *     const result = await createResource(user.userId, body)
  *     return successResponse(result, 201)
  *   }, { requireSubscription: true })

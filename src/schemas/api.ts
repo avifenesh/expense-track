@@ -63,19 +63,30 @@ export const deleteBudgetApiSchema = z.object({
 // Recurring Template Schemas (API)
 // ============================================
 
-export const recurringTemplateApiSchema = z.object({
-  id: z.string().optional(),
-  accountId: z.string().min(1),
-  categoryId: z.string().min(1),
-  type: z.nativeEnum(TransactionType),
-  amount: z.coerce.number().min(0.01),
-  currency: z.nativeEnum(Currency).default(Currency.USD),
-  dayOfMonth: z.coerce.number().min(1).max(31),
-  description: z.string().max(240).optional().nullable(),
-  startMonthKey: z.string().min(7, 'Start month is required'),
-  endMonthKey: z.string().min(7).optional().nullable(),
-  isActive: z.boolean().optional().default(true),
-})
+export const recurringTemplateApiSchema = z
+  .object({
+    id: z.string().optional(),
+    accountId: z.string().min(1),
+    categoryId: z.string().min(1),
+    type: z.nativeEnum(TransactionType),
+    amount: z.coerce.number().min(0.01),
+    currency: z.nativeEnum(Currency).default(Currency.USD),
+    dayOfMonth: z.coerce.number().min(1).max(31),
+    description: z.string().max(240).optional().nullable(),
+    startMonthKey: z.string().min(7, 'Start month is required'),
+    endMonthKey: z.string().min(7).optional().nullable(),
+    isActive: z.boolean().optional().default(true),
+  })
+  .refine(
+    (data) => {
+      // If endMonthKey is provided, it must be >= startMonthKey
+      if (data.endMonthKey) {
+        return data.endMonthKey >= data.startMonthKey
+      }
+      return true
+    },
+    { message: 'End month must be on or after start month', path: ['endMonthKey'] },
+  )
 
 export type RecurringTemplateApiInput = z.infer<typeof recurringTemplateApiSchema>
 
