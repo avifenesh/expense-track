@@ -9,6 +9,9 @@ const PADDLE_API_URL = {
   production: 'https://api.paddle.com',
 }
 
+// Maximum age for webhook timestamps (5 minutes in seconds)
+const MAX_WEBHOOK_AGE_SECONDS = 5 * 60
+
 export type PaddleEnvironment = 'sandbox' | 'production'
 
 /**
@@ -73,6 +76,19 @@ export function verifyWebhookSignature(
 
     const timestamp = tsMatch.replace('ts=', '')
     const providedHash = h1Match.replace('h1=', '')
+
+    // Validate timestamp to prevent replay attacks
+    const webhookTime = parseInt(timestamp, 10)
+    const currentTime = Math.floor(Date.now() / 1000)
+    if (isNaN(webhookTime) || currentTime - webhookTime > MAX_WEBHOOK_AGE_SECONDS) {
+      serverLogger.warn('PADDLE_WEBHOOK_TIMESTAMP_EXPIRED', {
+        message: 'Webhook timestamp is too old or invalid',
+        webhookTime,
+        currentTime,
+        ageSeconds: currentTime - webhookTime,
+      })
+      return false
+    }
 
     // Build signed payload: timestamp:rawBody
     const signedPayload = `${timestamp}:${rawBody}`

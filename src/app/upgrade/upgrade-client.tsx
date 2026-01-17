@@ -41,6 +41,7 @@ interface PaddleCheckoutOptions {
 interface UpgradeClientProps {
   userId: string
   userEmail: string
+  priceId: string | null
   subscriptionState: {
     status: string
     isActive: boolean
@@ -49,7 +50,7 @@ interface UpgradeClientProps {
   }
 }
 
-export function UpgradeClient({ userId, userEmail, subscriptionState }: UpgradeClientProps) {
+export function UpgradeClient({ userId, userEmail, priceId, subscriptionState }: UpgradeClientProps) {
   const router = useRouter()
   const [isPaddleReady, setIsPaddleReady] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -60,7 +61,7 @@ export function UpgradeClient({ userId, userEmail, subscriptionState }: UpgradeC
     const environment = (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT || 'sandbox') as 'sandbox' | 'production'
 
     if (!clientToken) {
-      console.warn('NEXT_PUBLIC_PADDLE_CLIENT_TOKEN not configured')
+      // Paddle not configured - checkout not available
       return
     }
 
@@ -84,7 +85,6 @@ export function UpgradeClient({ userId, userEmail, subscriptionState }: UpgradeC
       }
     }
     script.onerror = () => {
-      console.error('Failed to load Paddle.js')
       toast.error('Failed to load payment system')
     }
     document.body.appendChild(script)
@@ -99,8 +99,6 @@ export function UpgradeClient({ userId, userEmail, subscriptionState }: UpgradeC
   }, [])
 
   const handleUpgrade = () => {
-    const priceId = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID
-
     if (!isPaddleReady || !window.Paddle) {
       toast.error('Payment system not ready. Please try again.')
       return
@@ -129,8 +127,7 @@ export function UpgradeClient({ userId, userEmail, subscriptionState }: UpgradeC
           locale: 'en',
         },
       })
-    } catch (error) {
-      console.error('Paddle checkout error:', error)
+    } catch {
       toast.error('Failed to open checkout. Please try again.')
     } finally {
       setIsLoading(false)
@@ -233,13 +230,15 @@ export function UpgradeClient({ userId, userEmail, subscriptionState }: UpgradeC
           </CardContent>
         </Card>
 
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/')}
-          className="w-full text-slate-400 hover:text-white"
-        >
-          Continue with trial
-        </Button>
+        {subscriptionState.status !== 'EXPIRED' && (
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/')}
+            className="w-full text-slate-400 hover:text-white"
+          >
+            Continue with trial
+          </Button>
+        )}
       </div>
     </div>
   )

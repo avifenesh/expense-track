@@ -50,7 +50,6 @@ model Subscription {
   @@index([status])
   @@index([trialEndsAt])
   @@index([currentPeriodEnd])
-  @@index([paddleSubscriptionId])
 }
 
 model Account {

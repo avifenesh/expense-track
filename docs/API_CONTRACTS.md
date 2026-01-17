@@ -1173,7 +1173,7 @@ Get current user's subscription state and Paddle checkout settings.
 ```
 
 **Subscription Status Values:**
-- `TRIAL` - Active trial period
+- `TRIALING` - Active trial period
 - `ACTIVE` - Paid and active
 - `PAST_DUE` - Payment failed, grace period
 - `CANCELED` - Canceled, access until period end

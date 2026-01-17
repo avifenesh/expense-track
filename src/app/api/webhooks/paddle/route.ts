@@ -70,8 +70,21 @@ export async function POST(request: NextRequest) {
       message: 'Error processing webhook',
       error: error instanceof Error ? error.message : String(error),
     })
-    // Return 200 to prevent Paddle from retrying on application errors
-    // Log the error for investigation
+
+    // Check if this is a transient error that Paddle should retry
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const isTransientError =
+      errorMessage.includes('ECONNREFUSED') ||
+      errorMessage.includes('ETIMEDOUT') ||
+      errorMessage.includes('database') ||
+      errorMessage.includes('connection')
+
+    if (isTransientError) {
+      // Return 5xx so Paddle can retry on transient failures
+      return NextResponse.json({ error: 'Processing error' }, { status: 500 })
+    }
+
+    // Return 200 for permanent errors to prevent infinite retries
     return NextResponse.json({ received: true, error: 'Processing error' })
   }
 }

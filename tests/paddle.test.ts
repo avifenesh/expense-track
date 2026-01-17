@@ -109,6 +109,23 @@ describe('paddle.ts', () => {
 
       expect(result).toBe(false)
     })
+
+    it('should return false for expired timestamp (replay attack prevention)', () => {
+      const rawBody = JSON.stringify({ event_type: 'subscription.created' })
+      // Create signature with timestamp from 10 minutes ago (exceeds 5 minute limit)
+      const expiredTimestamp = Math.floor(Date.now() / 1000) - 600
+      const signedPayload = `${expiredTimestamp}:${rawBody}`
+      const hash = crypto.createHmac('sha256', webhookSecret).update(signedPayload).digest('hex')
+      const signature = `ts=${expiredTimestamp};h1=${hash}`
+
+      const result = verifyWebhookSignature(rawBody, signature, webhookSecret)
+
+      expect(result).toBe(false)
+      expect(serverLogger.warn).toHaveBeenCalledWith(
+        'PADDLE_WEBHOOK_TIMESTAMP_EXPIRED',
+        expect.any(Object),
+      )
+    })
   })
 
   describe('parsePaddleEvent()', () => {

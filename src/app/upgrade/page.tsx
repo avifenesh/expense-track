@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getDbUserAsAuthUser, getSession } from '@/lib/auth-server'
 import { getSubscriptionState } from '@/lib/subscription'
+import { getPaddleCheckoutSettings } from '@/lib/paddle'
 import { UpgradeClient } from './upgrade-client'
 
 export const metadata = {
@@ -28,10 +29,20 @@ export default async function UpgradePage() {
     redirect('/')
   }
 
+  // Get Paddle checkout settings (server-side)
+  let priceId: string | null = null
+  try {
+    const checkoutSettings = getPaddleCheckoutSettings(authUser.id, authUser.email)
+    priceId = checkoutSettings.priceId
+  } catch {
+    // Paddle not configured - checkout will show error
+  }
+
   return (
     <UpgradeClient
       userId={authUser.id}
       userEmail={authUser.email}
+      priceId={priceId}
       subscriptionState={{
         status: subscriptionState.status,
         isActive: subscriptionState.isActive,

@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { successResponse, authError, serverError } from '@/lib/api-helpers'
-import { getSubscriptionState } from '@/lib/subscription'
+import { getSubscriptionState, SUBSCRIPTION_PRICE_CENTS, TRIAL_DURATION_DAYS } from '@/lib/subscription'
 import { getPaddleCheckoutSettings } from '@/lib/paddle'
 import { prisma } from '@/lib/prisma'
+import { serverLogger } from '@/lib/server-logger'
 
 /**
  * GET /api/v1/subscriptions
@@ -65,13 +66,15 @@ export async function GET(request: NextRequest) {
           }
         : null,
       pricing: {
-        monthlyPriceCents: 500,
-        trialDays: 14,
+        monthlyPriceCents: SUBSCRIPTION_PRICE_CENTS,
+        trialDays: TRIAL_DURATION_DAYS,
         currency: 'USD',
       },
     })
   } catch (error) {
-    console.error('GET /api/v1/subscriptions error:', error)
+    serverLogger.error('SUBSCRIPTIONS_API_ERROR', {
+      error: error instanceof Error ? error.message : String(error),
+    })
     return serverError('Failed to fetch subscription')
   }
 }
