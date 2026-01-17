@@ -14,7 +14,11 @@ export type {
   SettlementBalance,
   TransactionWithDisplay,
   DashboardData,
+  PaginationOptions,
+  PaginatedResult,
 } from './types'
+
+export { DEFAULT_PAGINATION_LIMIT } from './types'
 
 // Account operations
 export { getAccounts, getCategories, getTransactionRequests } from './accounts'

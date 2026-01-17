@@ -7,6 +7,7 @@ import {
   getCacheMetrics,
   resetCacheMetrics,
   clearInFlightRequests,
+  getMaxCacheSizeBytes,
 } from '@/lib/dashboard-cache'
 import type { DashboardData, getAccounts } from '@/lib/finance'
 
@@ -18,6 +19,16 @@ vi.mock('@/lib/prisma', () => ({
       upsert: vi.fn(),
       deleteMany: vi.fn(),
     },
+  },
+}))
+
+// Mock server logger
+vi.mock('@/lib/server-logger', () => ({
+  serverLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
   },
 }))
 
@@ -302,6 +313,53 @@ describe('dashboard-cache.ts', () => {
         accounts: mockAccounts,
         userId: undefined,
       })
+    })
+
+    it('should skip caching for oversized payloads and return data directly', async () => {
+      vi.mocked(prisma.dashboardCache.findUnique).mockResolvedValue(null)
+
+      // Create a large mock data payload that exceeds MAX_CACHE_SIZE_BYTES
+      const maxSize = getMaxCacheSizeBytes()
+      const largeTransactions = Array.from({ length: 5000 }, (_, i) => ({
+        id: `tx-${i}`,
+        accountId: 'acc1',
+        categoryId: 'cat1',
+        type: 'EXPENSE',
+        amount: 100,
+        currency: Currency.USD,
+        date: new Date('2024-01-15T12:00:00.000Z'), // Fixed date for deterministic tests
+        description: 'A'.repeat(200), // Long descriptions to inflate size
+        category: { id: 'cat1', name: 'Category' },
+        account: { id: 'acc1', name: 'Account' },
+        convertedAmount: 100,
+      }))
+
+      const oversizedData: DashboardData = {
+        ...mockDashboardData,
+        // Cast through unknown for test mock data that doesn't have all fields
+        transactions: largeTransactions as unknown as DashboardData['transactions'],
+      }
+
+      // Verify the data is actually over the limit
+      const payloadSize = JSON.stringify(oversizedData).length
+      expect(payloadSize).toBeGreaterThan(maxSize)
+
+      vi.mocked(getDashboardData).mockResolvedValue(oversizedData)
+
+      const result = await getCachedDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+      })
+
+      // Should still return the data
+      expect(result).toEqual(oversizedData)
+
+      // Should NOT attempt to store in cache
+      expect(prisma.dashboardCache.upsert).not.toHaveBeenCalled()
+
+      // Should count as cache miss (data was computed, just not cached)
+      const metrics = getCacheMetrics()
+      expect(metrics.cacheMiss).toBe(1)
     })
   })
 
