@@ -24,14 +24,49 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
   const { authUser } = auth
 
   try {
-    await prisma.category.create({
-      data: {
+    // Use upsert to handle race condition and archived category reactivation:
+    // - If category exists and is archived, unarchive it with updated properties
+    // - If category doesn't exist, create it
+    // - If category exists and is not archived, the unique constraint prevents duplicates
+    const existing = await prisma.category.findFirst({
+      where: {
         userId: authUser.id,
         name: parsed.data.name,
         type: parsed.data.type,
-        color: parsed.data.color ?? null,
       },
     })
+
+    if (existing && !existing.isArchived) {
+      // Category exists and is active - reject duplicate
+      return handlePrismaError(new Error('P2002'), {
+        action: 'createCategory',
+        userId: authUser.id,
+        input: parsed.data,
+        uniqueMessage: 'A category with this name already exists',
+        fallbackMessage: 'Unable to create category',
+      })
+    }
+
+    if (existing && existing.isArchived) {
+      // Reactivate archived category with new properties
+      await prisma.category.update({
+        where: { id: existing.id },
+        data: {
+          isArchived: false,
+          color: parsed.data.color ?? null,
+        },
+      })
+    } else {
+      // Create new category
+      await prisma.category.create({
+        data: {
+          userId: authUser.id,
+          name: parsed.data.name,
+          type: parsed.data.type,
+          color: parsed.data.color ?? null,
+        },
+      })
+    }
   } catch (error) {
     return handlePrismaError(error, {
       action: 'createCategory',

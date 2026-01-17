@@ -1,72 +1,46 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth } from '@/lib/api-auth'
+import { withApiAuth, parseJsonBody } from '@/lib/api-middleware'
 import { upsertBudget, deleteBudget, getBudgetByKey } from '@/lib/services/budget-service'
-import { budgetSchema, deleteBudgetSchema } from '@/schemas'
-import {
-  validationError,
-  authError,
-  forbiddenError,
-  notFoundError,
-  serverError,
-  successResponse,
-  rateLimitError,
-  checkSubscription,
-} from '@/lib/api-helpers'
+import { budgetApiSchema, deleteBudgetApiSchema } from '@/schemas/api'
+import { validationError, forbiddenError, notFoundError, serverError, successResponse } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey, formatDateForApi } from '@/utils/date'
-import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { serverLogger } from '@/lib/server-logger'
 
 export async function GET(request: NextRequest) {
-  // 1. Authenticate with JWT
-  let user
-  try {
-    user = requireJwtAuth(request)
-  } catch (error) {
-    return authError(error instanceof Error ? error.message : 'Unauthorized')
-  }
+  return withApiAuth(request, async (user) => {
+    // Parse query parameters with explicit validation
+    const { searchParams } = new URL(request.url)
+    const accountId = searchParams.get('accountId')
+    const monthKey = searchParams.get('month')
 
-  // 1.5 Rate limit check
-  const rateLimit = checkRateLimit(user.userId)
-  if (!rateLimit.allowed) {
-    return rateLimitError(rateLimit.resetAt)
-  }
-  incrementRateLimit(user.userId)
-
-  // Note: No subscription check for GET - users can always view their data
-
-  // 2. Parse query parameters
-  const { searchParams } = new URL(request.url)
-  const accountId = searchParams.get('accountId')
-  const monthKey = searchParams.get('month')
-
-  // Validate required accountId
-  if (!accountId) {
-    return validationError({ accountId: ['accountId is required'] })
-  }
-
-  // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: accountId } })
-  if (!account || account.userId !== user.userId) {
-    return forbiddenError('Access denied')
-  }
-
-  // 4. Build query filters
-  const where: {
-    accountId: string
-    month?: Date
-  } = { accountId }
-
-  if (monthKey) {
-    try {
-      where.month = getMonthStartFromKey(monthKey)
-    } catch {
-      return validationError({ month: ['month must be in YYYY-MM format'] })
+    // Validate required accountId (explicit null check)
+    if (accountId === null || accountId === '') {
+      return validationError({ accountId: ['accountId is required'] })
     }
-  }
 
-  // 5. Execute query
-  try {
+    // Authorize account access by userId (single check to prevent enumeration)
+    const account = await prisma.account.findUnique({ where: { id: accountId } })
+    if (!account || account.userId !== user.userId) {
+      return forbiddenError('Access denied')
+    }
+
+    // Build query filters
+    const where: {
+      accountId: string
+      month?: Date
+    } = { accountId }
+
+    // Validate month format if provided (explicit null check)
+    if (monthKey !== null && monthKey !== '') {
+      try {
+        where.month = getMonthStartFromKey(monthKey)
+      } catch {
+        return validationError({ month: ['month must be in YYYY-MM format'] })
+      }
+    }
+
+    // Execute query
     const budgets = await prisma.budget.findMany({
       where,
       include: {
@@ -94,129 +68,97 @@ export async function GET(request: NextRequest) {
         category: b.category,
       })),
     })
-  } catch (error) {
-    serverLogger.error('Failed to fetch budgets', { action: 'GET /api/v1/budgets' }, error)
-    return serverError('Unable to fetch budgets')
-  }
+  })
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Authenticate
-  let user
-  try {
-    user = requireJwtAuth(request)
-  } catch (error) {
-    return authError(error instanceof Error ? error.message : 'Unauthorized')
-  }
+  return withApiAuth(
+    request,
+    async (user) => {
+      // Parse and validate input
+      const body = await parseJsonBody(request)
+      if (body === null) {
+        return validationError({ body: ['Invalid JSON'] })
+      }
 
-  // 1.5 Rate limit check
-  const rateLimit = checkRateLimit(user.userId)
-  if (!rateLimit.allowed) {
-    return rateLimitError(rateLimit.resetAt)
-  }
-  incrementRateLimit(user.userId)
+      const parsed = budgetApiSchema.safeParse(body)
+      if (!parsed.success) {
+        return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
+      }
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+      const data = parsed.data
+      const month = getMonthStartFromKey(data.monthKey)
 
-  // 2. Parse and validate input
-  let body
-  try {
-    body = await request.json()
-  } catch {
-    return validationError({ body: ['Invalid JSON'] })
-  }
+      // Authorize account access by userId (single check to prevent enumeration)
+      const account = await prisma.account.findUnique({ where: { id: data.accountId } })
+      if (!account || account.userId !== user.userId) {
+        return forbiddenError('Access denied')
+      }
 
-  const apiSchema = budgetSchema.omit({ csrfToken: true })
-  const parsed = apiSchema.safeParse(body)
+      // Check if budget exists (to determine 201 vs 200 status)
+      const existing = await getBudgetByKey({ accountId: data.accountId, categoryId: data.categoryId, month })
 
-  if (!parsed.success) {
-    return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
-  }
-
-  const data = parsed.data
-  const month = getMonthStartFromKey(data.monthKey)
-
-  // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account || account.userId !== user.userId) {
-    return forbiddenError('Access denied')
-  }
-
-  // 4. Check if budget exists (to determine 201 vs 200 status)
-  const existing = await getBudgetByKey({ accountId: data.accountId, categoryId: data.categoryId, month })
-
-  // 5. Execute upsert
-  try {
-    const budget = await upsertBudget({
-      accountId: data.accountId,
-      categoryId: data.categoryId,
-      month,
-      planned: data.planned,
-      currency: data.currency,
-      notes: data.notes,
-    })
-    // Return 201 for create, 200 for update
-    return successResponse({ id: budget.id }, existing ? 200 : 201)
-  } catch {
-    return serverError('Unable to save budget')
-  }
+      // Execute upsert
+      try {
+        const budget = await upsertBudget({
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          month,
+          planned: data.planned,
+          currency: data.currency,
+          notes: data.notes,
+        })
+        // Return 201 for create, 200 for update
+        return successResponse({ id: budget.id }, existing ? 200 : 201)
+      } catch (error) {
+        serverLogger.error('Failed to save budget', { action: 'POST /api/v1/budgets', userId: user.userId }, error)
+        return serverError('Unable to save budget')
+      }
+    },
+    { requireSubscription: true },
+  )
 }
 
 export async function DELETE(request: NextRequest) {
-  // 1. Authenticate
-  let user
-  try {
-    user = requireJwtAuth(request)
-  } catch (error) {
-    return authError(error instanceof Error ? error.message : 'Unauthorized')
-  }
+  return withApiAuth(
+    request,
+    async (user) => {
+      // Parse and validate query params with explicit null checks
+      const url = new URL(request.url)
+      const accountId = url.searchParams.get('accountId')
+      const categoryId = url.searchParams.get('categoryId')
+      const monthKey = url.searchParams.get('monthKey')
 
-  // 1.5 Rate limit check
-  const rateLimitCheck = checkRateLimit(user.userId)
-  if (!rateLimitCheck.allowed) {
-    return rateLimitError(rateLimitCheck.resetAt)
-  }
-  incrementRateLimit(user.userId)
+      // Validate all required params are present (explicit null checks)
+      const parsed = deleteBudgetApiSchema.safeParse({ accountId, categoryId, monthKey })
+      if (!parsed.success) {
+        return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
+      }
 
-  // 1.6 Subscription check
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
+      const data = parsed.data
+      const month = getMonthStartFromKey(data.monthKey)
 
-  // 2. Parse and validate query params
-  const url = new URL(request.url)
-  const accountId = url.searchParams.get('accountId')
-  const categoryId = url.searchParams.get('categoryId')
-  const monthKey = url.searchParams.get('monthKey')
+      // Authorize account access by userId (single check to prevent enumeration)
+      const account = await prisma.account.findUnique({ where: { id: data.accountId } })
+      if (!account || account.userId !== user.userId) {
+        return forbiddenError('Access denied')
+      }
 
-  const apiSchema = deleteBudgetSchema.omit({ csrfToken: true })
-  const parsed = apiSchema.safeParse({ accountId, categoryId, monthKey })
+      // Check budget exists
+      const existing = await getBudgetByKey({ accountId: data.accountId, categoryId: data.categoryId, month })
+      if (!existing) {
+        return notFoundError('Budget entry not found')
+      }
 
-  if (!parsed.success) {
-    return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
-  }
-
-  const data = parsed.data
-  const month = getMonthStartFromKey(data.monthKey)
-
-  // 3. Authorize account access by userId (single check to prevent enumeration)
-  const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account || account.userId !== user.userId) {
-    return forbiddenError('Access denied')
-  }
-
-  // 4. Check budget exists
-  const existing = await getBudgetByKey({ accountId: data.accountId, categoryId: data.categoryId, month })
-  if (!existing) {
-    return notFoundError('Budget entry not found')
-  }
-
-  // 5. Execute delete
-  try {
-    await deleteBudget({ accountId: data.accountId, categoryId: data.categoryId, month })
-    return successResponse({ deleted: true })
-  } catch {
-    return serverError('Unable to delete budget')
-  }
+      // Execute delete
+      try {
+        await deleteBudget({ accountId: data.accountId, categoryId: data.categoryId, month })
+        return successResponse({ deleted: true })
+      } catch (error) {
+        serverLogger.error('Failed to delete budget', { action: 'DELETE /api/v1/budgets', userId: user.userId }, error)
+        return serverError('Unable to delete budget')
+      }
+    },
+    { requireSubscription: true },
+  )
 }

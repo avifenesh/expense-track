@@ -2,6 +2,40 @@ import { NextResponse } from 'next/server'
 import { getRateLimitHeaders, type RateLimitType } from '@/lib/rate-limit'
 import { getSubscriptionState } from './subscription'
 
+// ============================================
+// API Response Types
+// ============================================
+
+/** Success response wrapper */
+export interface ApiSuccessResponse<T> {
+  success: true
+  data: T
+}
+
+/** Error response wrapper */
+export interface ApiErrorResponse {
+  error: string
+  code?: string
+  fields?: Record<string, string[]>
+}
+
+/** Union type for all API responses */
+export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse
+
+/** Type guard to check if response is an error */
+export function isApiError(response: ApiResponse<unknown>): response is ApiErrorResponse {
+  return 'error' in response
+}
+
+/** Type guard to check if response is successful */
+export function isApiSuccess<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> {
+  return 'success' in response && response.success === true
+}
+
+// ============================================
+// Response Helpers
+// ============================================
+
 /**
  * Standard error response with optional field-level errors
  */
