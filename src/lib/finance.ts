@@ -4,7 +4,6 @@ import { addMonths, subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { getMonthKey, getMonthStartFromKey } from '@/utils/date'
 import {
-  convertAmount,
   getLastUpdateTime,
   batchLoadExchangeRates,
   convertAmountWithCache,
