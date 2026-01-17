@@ -1,18 +1,48 @@
 import { TransactionType } from '@prisma/client'
 import { CategoryBudgetSummary, DashboardData, RecurringTemplateSummary } from '@/lib/finance'
 
+// Generic predicate filter configuration
+// Maps filter keys to predicate functions that check if an item matches the filter value
+type PredicateConfig<TItem, TFilter> = {
+  [K in keyof TFilter]?: (item: TItem, value: NonNullable<TFilter[K]>) => boolean
+}
+
+/**
+ * Creates a typed filter function from predicate configuration.
+ * Reduces boilerplate for filter functions with common patterns.
+ *
+ * @param config - Object mapping filter keys to predicate functions
+ * @returns A filter function that applies all predicates
+ */
+function createFilter<TItem, TFilter extends Record<string, unknown>>(
+  config: PredicateConfig<TItem, TFilter>,
+): (items: TItem[], filter: Partial<TFilter>) => TItem[] {
+  return (items, filter) => {
+    return items.filter((item) =>
+      Object.entries(filter).every(([key, value]) => {
+        // Skip undefined/null filter values (treat as "match all")
+        if (value === undefined || value === null) return true
+        // Skip 'all' special value for type filters
+        if (value === 'all') return true
+
+        const predicate = config[key as keyof TFilter]
+        if (!predicate) return true
+
+        return predicate(item, value as NonNullable<TFilter[keyof TFilter]>)
+      }),
+    )
+  }
+}
+
 export type BudgetFilter = {
   accountId?: string
   type?: 'all' | TransactionType
 }
 
-export function filterBudgets(budgets: CategoryBudgetSummary[], filter: BudgetFilter) {
-  return budgets.filter((budget) => {
-    const matchAccount = !filter.accountId || budget.accountId === filter.accountId
-    const matchType = !filter.type || filter.type === 'all' || budget.categoryType === filter.type
-    return matchAccount && matchType
-  })
-}
+export const filterBudgets = createFilter<CategoryBudgetSummary, BudgetFilter>({
+  accountId: (item, value) => item.accountId === value,
+  type: (item, value) => item.categoryType === value,
+})
 
 export function getBudgetProgress(budget: CategoryBudgetSummary) {
   if (budget.planned <= 0) return budget.actual > 0 ? 1 : 0
@@ -34,20 +64,28 @@ export type TransactionFilter = {
 
 type Transaction = DashboardData['transactions'][number]
 
+// Transaction filter uses createFilter for simple predicates, with custom search logic
+const baseTransactionFilter = createFilter<Transaction, Pick<TransactionFilter, 'type' | 'accountId'>>({
+  type: (item, value) => item.type === value,
+  accountId: (item, value) => item.accountId === value,
+})
+
 export function filterTransactions(transactions: Transaction[], filter: TransactionFilter) {
+  // Apply base predicates first
+  let result = baseTransactionFilter(transactions, filter)
+
+  // Then apply search filter (spans multiple fields, so handled separately)
   const searchTerm = filter.search?.trim().toLowerCase() ?? ''
+  if (searchTerm !== '') {
+    result = result.filter(
+      (t) =>
+        t.category.name.toLowerCase().includes(searchTerm) ||
+        t.account.name.toLowerCase().includes(searchTerm) ||
+        (t.description ?? '').toLowerCase().includes(searchTerm),
+    )
+  }
 
-  return transactions.filter((transaction) => {
-    const matchType = !filter.type || filter.type === 'all' || transaction.type === filter.type
-    const matchAccount = !filter.accountId || transaction.accountId === filter.accountId
-    const matchSearch =
-      searchTerm === '' ||
-      transaction.category.name.toLowerCase().includes(searchTerm) ||
-      transaction.account.name.toLowerCase().includes(searchTerm) ||
-      (transaction.description ?? '').toLowerCase().includes(searchTerm)
-
-    return matchType && matchAccount && matchSearch
-  })
+  return result
 }
 
 export type RecurringFilter = {
@@ -56,14 +94,12 @@ export type RecurringFilter = {
   accountId?: string
 }
 
-export function filterRecurringTemplates(templates: RecurringTemplateSummary[], filter: RecurringFilter) {
-  return templates.filter((template) => {
-    const matchType = !filter.type || filter.type === 'all' || template.type === filter.type
-    const matchAccount = !filter.accountId || template.accountId === filter.accountId
-    const matchActive = filter.includeInactive ? true : template.isActive
-    return matchType && matchAccount && matchActive
-  })
-}
+export const filterRecurringTemplates = createFilter<RecurringTemplateSummary, RecurringFilter>({
+  type: (item, value) => item.type === value,
+  accountId: (item, value) => item.accountId === value,
+  // includeInactive: when true, include all; when false, only include active items
+  includeInactive: (item, value) => (value ? true : item.isActive),
+})
 
 export type CategoryFilter = {
   search?: string
@@ -73,15 +109,24 @@ export type CategoryFilter = {
 
 type Category = DashboardData['categories'][number]
 
-export function filterCategories(categories: Category[], filter: CategoryFilter) {
-  const searchTerm = filter.search?.trim().toLowerCase() ?? ''
+// Category filter uses createFilter for simple predicates, with custom search logic
+const baseCategoryFilter = createFilter<Category, Pick<CategoryFilter, 'type' | 'includeArchived'>>({
+  type: (item, value) => item.type === value,
+  // includeArchived: when true, include all; when false/undefined, exclude archived
+  includeArchived: (item, value) => (value ? true : !item.isArchived),
+})
 
-  return categories.filter((category) => {
-    const matchType = !filter.type || filter.type === 'all' || category.type === filter.type
-    const matchArchived = filter.includeArchived ? true : !category.isArchived
-    const matchSearch = searchTerm === '' || category.name.toLowerCase().includes(searchTerm)
-    return matchType && matchArchived && matchSearch
-  })
+export function filterCategories(categories: Category[], filter: CategoryFilter) {
+  // Apply base predicates first
+  let result = baseCategoryFilter(categories, filter)
+
+  // Then apply search filter
+  const searchTerm = filter.search?.trim().toLowerCase() ?? ''
+  if (searchTerm !== '') {
+    result = result.filter((c) => c.name.toLowerCase().includes(searchTerm))
+  }
+
+  return result
 }
 
 export function getBudgetTotals(budgets: CategoryBudgetSummary[]) {
