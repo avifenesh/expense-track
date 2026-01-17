@@ -85,12 +85,13 @@ export async function withApiAuth(
 
 /**
  * Safely parse JSON body from request.
- * Returns null if parsing fails.
+ * Returns null if parsing fails, logging the error for debugging.
  */
 export async function parseJsonBody<T = unknown>(request: NextRequest): Promise<T | null> {
   try {
     return (await request.json()) as T
-  } catch {
+  } catch (error) {
+    serverLogger.warn('Failed to parse JSON body', { path: request.nextUrl.pathname, method: request.method }, error)
     return null
   }
 }
