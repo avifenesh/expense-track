@@ -45,7 +45,8 @@ export async function getSharedExpenses(
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    // Order by createdAt then id for stable cursor pagination across tied timestamps
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1, // Fetch one extra to check if more exist
     ...(options?.cursor && {
       cursor: { id: options.cursor },
@@ -141,7 +142,8 @@ export async function getExpensesSharedWithMe(
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    // Order by createdAt then id for stable cursor pagination across tied timestamps
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1, // Fetch one extra to check if more exist
     ...(options?.cursor && {
       cursor: { id: options.cursor },

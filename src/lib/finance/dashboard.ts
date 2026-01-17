@@ -91,6 +91,8 @@ export async function getDashboardData({
       take: 1000, // Limit results to prevent unbounded queries
     }),
     getLastUpdateTime(),
+    // Note: Dashboard uses first page of shared expenses (default 50 items).
+    // For users with many shared expenses, the full list is available via dedicated UI.
     userId ? getSharedExpenses(userId).then((r) => r.items) : Promise.resolve([]),
     userId ? getExpensesSharedWithMe(userId).then((r) => r.items) : Promise.resolve([]),
     userId ? getSettlementBalance(userId) : Promise.resolve([]),
@@ -170,9 +172,13 @@ export async function getDashboardData({
   )
 
   // Helper to get rates for a specific month, with fallback to current month rates
+  // If no rates are available at all (unlikely but possible), returns empty Map which
+  // convertTransactionAmountSync handles gracefully by returning original amount
+  const currentMonthKey = getMonthKey(monthStart)
+  const currentMonthRates = monthRates.get(currentMonthKey)
   const getRatesForMonth = (month: Date) => {
     const key = getMonthKey(month)
-    return monthRates.get(key) ?? monthRates.get(getMonthKey(monthStart))!
+    return monthRates.get(key) ?? currentMonthRates ?? new Map()
   }
 
   // Convert previous month's transactions using that month's exchange rates
