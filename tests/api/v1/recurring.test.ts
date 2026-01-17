@@ -4,6 +4,7 @@ import { POST as UpsertRecurringTemplate } from '@/app/api/v1/recurring/route'
 import { PATCH as ToggleRecurringTemplate } from '@/app/api/v1/recurring/[id]/toggle/route'
 import { POST as ApplyRecurringTemplates } from '@/app/api/v1/recurring/apply/route'
 import { generateAccessToken } from '@/lib/jwt'
+import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, getOtherTestUser, TEST_USER_ID } from './helpers'
 
@@ -15,7 +16,8 @@ describe('Recurring Template API Routes', () => {
   const testMonthKey = '2024-01'
 
   beforeEach(async () => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
+    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
+    resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys

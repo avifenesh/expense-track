@@ -10,7 +10,7 @@ vi.mock('@/lib/auth-server', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -55,7 +55,7 @@ import { prisma } from '@/lib/prisma'
 
 const mockRequireSession = vi.mocked(requireSession)
 const mockGetDbUserAsAuthUser = vi.mocked(getDbUserAsAuthUser)
-const mockAccountFindUnique = vi.mocked(prisma.account.findUnique)
+const mockAccountFindFirst = vi.mocked(prisma.account.findFirst)
 
 describe('POST /api/chat', () => {
   const validRequest = {
@@ -94,7 +94,7 @@ describe('POST /api/chat', () => {
     resetAllRateLimits()
     mockRequireSession.mockResolvedValue(mockSession)
     mockGetDbUserAsAuthUser.mockResolvedValue(mockAuthUser)
-    mockAccountFindUnique.mockResolvedValue(mockAccount)
+    mockAccountFindFirst.mockResolvedValue(mockAccount)
   })
 
   afterEach(() => {
@@ -287,7 +287,7 @@ describe('POST /api/chat', () => {
 
   describe('Account Authorization', () => {
     it('returns 404 for non-existent account', async () => {
-      mockAccountFindUnique.mockResolvedValueOnce(null)
+      mockAccountFindFirst.mockResolvedValueOnce(null)
 
       const response = await POST(createRequest(validRequest))
       const data = await response.json()
@@ -297,7 +297,7 @@ describe('POST /api/chat', () => {
     })
 
     it('returns 403 when user does not own account', async () => {
-      mockAccountFindUnique.mockResolvedValueOnce({
+      mockAccountFindFirst.mockResolvedValueOnce({
         ...mockAccount,
         userId: 'different-user',
       })
@@ -372,7 +372,7 @@ describe('POST /api/chat', () => {
 
   describe('Error Handling', () => {
     it('handles database errors gracefully', async () => {
-      mockAccountFindUnique.mockRejectedValueOnce(new Error('Database connection failed'))
+      mockAccountFindFirst.mockRejectedValueOnce(new Error('Database connection failed'))
 
       const response = await POST(createRequest(validRequest))
       const data = await response.json()

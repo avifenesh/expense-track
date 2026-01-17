@@ -5,6 +5,7 @@ import { POST as CreateHolding } from '@/app/api/v1/holdings/route'
 import { PUT as UpdateHolding, DELETE as DeleteHolding } from '@/app/api/v1/holdings/[id]/route'
 import { POST as RefreshPrices } from '@/app/api/v1/holdings/refresh/route'
 import { generateAccessToken } from '@/lib/jwt'
+import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, getOtherTestUser, TEST_USER_ID } from './helpers'
 
@@ -21,7 +22,8 @@ describe('Holdings API Routes', () => {
   let holdingCategoryId: string
 
   beforeEach(async () => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
+    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
+    resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys
@@ -379,9 +381,10 @@ describe('Holdings API Routes', () => {
       expect(data.success).toBe(true)
       expect(data.data.id).toBe(holdingId)
 
-      // Verify holding was deleted
+      // Verify holding was soft deleted
       const holding = await (prisma as any).holding.findUnique({ where: { id: holdingId } })
-      expect(holding).toBeNull()
+      expect(holding).not.toBeNull()
+      expect(holding?.deletedAt).not.toBeNull()
     })
 
     it('returns 404 for non-existent holding', async () => {

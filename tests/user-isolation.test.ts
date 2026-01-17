@@ -139,7 +139,7 @@ describe('User Isolation: Transaction Requests', () => {
 
       // The target account belongs to User B (victim), NOT the attacker
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'victim-account-id',
         name: 'Victim Account',
         type: 'SELF',
@@ -186,7 +186,7 @@ describe('User Isolation: Transaction Requests', () => {
 
       // Account belongs to the same user
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'owner-account-id',
         name: 'Owner Account',
         type: 'SELF',
@@ -229,7 +229,7 @@ describe('User Isolation: Transaction Requests', () => {
 
       // The target account belongs to User B (victim)
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'victim-account-id',
         name: 'Victim Account',
         type: 'SELF',
@@ -269,7 +269,7 @@ describe('User Isolation: Transaction Requests', () => {
       }
 
       vi.mocked(prisma.transactionRequest.findUnique).mockResolvedValue(mockRequest as any)
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'owner-account-id',
         name: 'Owner Account',
         type: 'SELF',
@@ -310,7 +310,7 @@ describe('User Isolation: Holdings Category Validation', () => {
     })
 
     // User A's account
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'user-a-account-id',
       name: 'User A Account',
       type: 'SELF',
@@ -354,7 +354,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       defaultAccountName: 'Owner Account',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'owner-account-id',
       name: 'Owner Account',
       type: 'SELF',
@@ -400,7 +400,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       defaultAccountName: 'Owner Account',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'owner-account-id',
       name: 'Owner Account',
       type: 'SELF',
@@ -451,7 +451,7 @@ describe('User Isolation: Finance Module Data Access', () => {
       const result = await getAccounts('user-a')
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-a' },
+        where: { userId: 'user-a', deletedAt: null },
         orderBy: { name: 'asc' },
       })
       expect(result).toHaveLength(2)
@@ -468,7 +468,7 @@ describe('User Isolation: Finance Module Data Access', () => {
       const result = await getAccounts()
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { deletedAt: null },
         orderBy: { name: 'asc' },
       })
       expect(result).toHaveLength(2)
@@ -519,7 +519,7 @@ describe('User Isolation: Account Switching Security', () => {
 
   describe('updateSessionAccount attacks', () => {
     it('should prevent switching to account owned by another user', async () => {
-      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { persistActiveAccountAction } = await import('@/app/actions/account')
       const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
       // User A is logged in
@@ -539,7 +539,7 @@ describe('User Isolation: Account Switching Security', () => {
       })
 
       // User A tries to switch to User B's account
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'user-b-account-id',
         name: 'User B Account',
         type: 'SELF',
@@ -562,7 +562,7 @@ describe('User Isolation: Account Switching Security', () => {
     })
 
     it('should prevent session hijacking via account ID manipulation', async () => {
-      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { persistActiveAccountAction } = await import('@/app/actions/account')
       const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
       // Attacker has valid session
@@ -589,7 +589,7 @@ describe('User Isolation: Account Switching Security', () => {
       ]
 
       for (const maliciousAccountId of attackVectors) {
-        vi.mocked(prisma.account.findUnique).mockResolvedValue({
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
           id: maliciousAccountId,
           name: 'Victim Account',
           type: 'SELF',
@@ -613,7 +613,7 @@ describe('User Isolation: Account Switching Security', () => {
     })
 
     it('should allow switching to account owned by same user', async () => {
-      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { persistActiveAccountAction } = await import('@/app/actions/account')
       const { requireSession, getDbUserAsAuthUser, updateSessionAccount } = await import('@/lib/auth-server')
 
       vi.mocked(requireSession).mockResolvedValue({
@@ -632,7 +632,7 @@ describe('User Isolation: Account Switching Security', () => {
       })
 
       // User owns this account
-      vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      vi.mocked(prisma.account.findFirst).mockResolvedValue({
         id: 'account-2',
         name: 'Account 2',
         type: 'SELF',
@@ -650,7 +650,7 @@ describe('User Isolation: Account Switching Security', () => {
     })
 
     it('should reject non-existent account IDs', async () => {
-      const { persistActiveAccountAction } = await import('@/app/actions/auth')
+      const { persistActiveAccountAction } = await import('@/app/actions/account')
       const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
 
       vi.mocked(requireSession).mockResolvedValue({
@@ -669,7 +669,7 @@ describe('User Isolation: Account Switching Security', () => {
       })
 
       // Account doesn't exist
-      vi.mocked(prisma.account.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.account.findFirst).mockResolvedValue(null)
 
       const result = await persistActiveAccountAction({
         accountId: 'non-existent-account',

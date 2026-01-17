@@ -170,7 +170,9 @@ describe('Budget Flow Integration', () => {
       },
     })
 
-    expect(deletedBudget).toBeNull()
+    // Soft delete - record exists but has deletedAt set
+    expect(deletedBudget).not.toBeNull()
+    expect(deletedBudget?.deletedAt).not.toBeNull()
 
     // Transactions should still exist after budget deletion
     const remainingTransactions = await prisma.transaction.findMany({

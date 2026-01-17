@@ -66,12 +66,12 @@ vi.mock('@/lib/subscription', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     recurringTemplate: {
       create: vi.fn(),
       update: vi.fn(),
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
     transaction: {
@@ -100,7 +100,7 @@ describe('upsertRecurringTemplateAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -141,7 +141,7 @@ describe('upsertRecurringTemplateAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -246,7 +246,7 @@ describe('upsertRecurringTemplateAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -292,13 +292,13 @@ describe('toggleRecurringTemplateAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.recurringTemplate.findUnique).mockResolvedValue({
+    vi.mocked(prisma.recurringTemplate.findFirst).mockResolvedValue({
       id: 'template-1',
       accountId: 'acc-1',
       isActive: true,
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -334,7 +334,7 @@ describe('toggleRecurringTemplateAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.recurringTemplate.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.recurringTemplate.findFirst).mockResolvedValue(null)
 
     const result = await toggleRecurringTemplateAction({
       id: 'nonexistent',
@@ -368,7 +368,7 @@ describe('applyRecurringTemplatesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -418,7 +418,7 @@ describe('applyRecurringTemplatesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -472,7 +472,7 @@ describe('applyRecurringTemplatesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -520,7 +520,7 @@ describe('applyRecurringTemplatesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -555,7 +555,7 @@ describe('applyRecurringTemplatesAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',

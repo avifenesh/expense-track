@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { GET as GetCategories, POST as CreateCategory } from '@/app/api/v1/categories/route'
 import { PATCH as ArchiveCategory } from '@/app/api/v1/categories/[id]/archive/route'
 import { generateAccessToken } from '@/lib/jwt'
+import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, TEST_USER_ID } from './helpers'
 
@@ -11,7 +12,8 @@ describe('Category API Routes', () => {
   let testUserId: string
 
   beforeEach(async () => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing'
+    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
+    resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
     // Get test user for userId foreign keys

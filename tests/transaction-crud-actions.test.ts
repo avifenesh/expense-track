@@ -69,10 +69,11 @@ vi.mock('@prisma/client', async (importOriginal) => {
 })
 
 vi.mock('@/lib/prisma', () => {
-  const mockAccount = { findUnique: vi.fn() }
+  const mockAccount = { findUnique: vi.fn(), findFirst: vi.fn() }
   const mockTransaction = {
     create: vi.fn(),
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   }
@@ -144,7 +145,7 @@ describe('createTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -189,7 +190,7 @@ describe('createTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -248,7 +249,7 @@ describe('createTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -297,7 +298,7 @@ describe('createTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -336,7 +337,7 @@ describe('createTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -389,7 +390,7 @@ describe('updateTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue(null)
 
     const result = await updateTransactionAction({
       id: 'tx-1',
@@ -425,16 +426,23 @@ describe('updateTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    // Mock for the new account check (prisma.account.findFirst outside transaction)
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    // Mock for the existing account check (tx.account.findUnique inside transaction)
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
       userId: 'test-user',
     } as any)
 
@@ -482,25 +490,25 @@ describe('updateTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique)
-      .mockResolvedValueOnce({
-        id: 'acc-1',
-        name: 'Account1',
-        type: 'SELF',
-        userId: 'test-user',
-      } as any)
-      .mockResolvedValueOnce({
-        id: 'acc-2',
-        name: 'Account2',
-        type: 'SELF',
-        userId: 'test-user',
-      } as any)
+    // Mock for the new account check (prisma.account.findFirst outside transaction)
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
+      id: 'acc-2',
+      name: 'Account2',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    // Mock for the existing account check (tx.account.findUnique inside transaction)
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      userId: 'test-user',
+    } as any)
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
 
@@ -535,12 +543,12 @@ describe('updateTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-unauthorized',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-unauthorized',
       name: 'UnauthorizedAccount',
       type: 'SELF',
@@ -581,25 +589,20 @@ describe('updateTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique)
-      .mockResolvedValueOnce({
-        id: 'acc-1',
-        name: 'Account1',
-        type: 'SELF',
-        userId: 'test-user',
-      } as any)
-      .mockResolvedValueOnce({
-        id: 'acc-unauthorized',
-        name: 'UnauthorizedAccount',
-        type: 'SELF',
-        userId: 'other-user',
-      } as any)
+    // Mock for the NEW account check (prisma.account.findFirst outside transaction)
+    // The new account belongs to a different user, so access should be denied
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
+      id: 'acc-unauthorized',
+      name: 'UnauthorizedAccount',
+      type: 'SELF',
+      userId: 'other-user', // Different user - should trigger access denied
+    } as any)
 
     const result = await updateTransactionAction({
       id: 'tx-1',
@@ -635,16 +638,22 @@ describe('updateTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    // Mock for the existing account check (tx.account.findUnique inside transaction)
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
       userId: 'test-user',
     } as any)
 
@@ -685,16 +694,22 @@ describe('updateTransactionAction', () => {
     })
 
     // Transaction exists at the time of findUnique
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    // Mock for the existing account check (tx.account.findUnique inside transaction)
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
       userId: 'test-user',
     } as any)
 
@@ -749,7 +764,7 @@ describe('deleteTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue(null)
 
     const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
@@ -773,26 +788,27 @@ describe('deleteTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
 
-    vi.mocked(prisma.transaction.delete).mockResolvedValue({} as any)
+    vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
 
     const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
     expect(result).toEqual({ success: true })
-    expect(prisma.transaction.delete).toHaveBeenCalledWith({
+    expect(prisma.transaction.update).toHaveBeenCalledWith({
       where: { id: 'tx-1' },
+      data: { deletedAt: expect.any(Date), deletedBy: 'test-user' },
     })
     // Verify cache invalidation is called with correct parameters
     expect(invalidateDashboardCache).toHaveBeenCalledWith({
@@ -815,12 +831,12 @@ describe('deleteTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-2',
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-2',
       name: 'DifferentAccount',
       type: 'SELF',
@@ -849,20 +865,20 @@ describe('deleteTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
 
-    vi.mocked(prisma.transaction.delete).mockRejectedValue(new Error('DB error'))
+    vi.mocked(prisma.transaction.update).mockRejectedValue(new Error('DB error'))
 
     const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
@@ -886,14 +902,14 @@ describe('deleteTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    // Transaction exists at the time of findUnique
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    // Transaction exists at the time of findFirst
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
     } as any)
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -901,9 +917,9 @@ describe('deleteTransactionAction', () => {
     } as any)
 
     // Simulate concurrent deletion by another request - P2025 error
-    const p2025Error = new Error('Record to delete does not exist') as Error & { code: string }
+    const p2025Error = new Error('Record to update does not exist') as Error & { code: string }
     p2025Error.code = 'P2025'
-    vi.mocked(prisma.transaction.delete).mockRejectedValue(p2025Error)
+    vi.mocked(prisma.transaction.update).mockRejectedValue(p2025Error)
 
     const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
@@ -914,7 +930,7 @@ describe('deleteTransactionAction', () => {
     }
   })
 
-  it('should fail when database findUnique throws error', async () => {
+  it('should fail when database findFirst throws error', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as Awaited<ReturnType<typeof requireSession>>)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
@@ -928,7 +944,7 @@ describe('deleteTransactionAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockRejectedValue(new Error('DB connection lost'))
+    vi.mocked(prisma.transaction.findFirst).mockRejectedValue(new Error('DB connection lost'))
 
     const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
 
@@ -955,7 +971,7 @@ describe('subscription state edge cases', () => {
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -1103,7 +1119,7 @@ describe('subscription state edge cases', () => {
       canAccessApp: false,
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
@@ -1139,7 +1155,7 @@ describe('subscription state edge cases', () => {
       canAccessApp: false,
     })
 
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2024-01-01'),
@@ -1173,10 +1189,15 @@ describe('auto-create RecurringTemplate', () => {
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
+      userId: 'test-user',
+    } as any)
+    // Mock for the existing account check (tx.account.findUnique inside transaction)
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
       userId: 'test-user',
     } as any)
     // Reset subscription mocks to active state
@@ -1255,7 +1276,7 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should create template when updating transaction to recurring', async () => {
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2026-01-01'),
@@ -1298,7 +1319,7 @@ describe('auto-create RecurringTemplate', () => {
   })
 
   it('should NOT create template when updating already recurring transaction', async () => {
-    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+    vi.mocked(prisma.transaction.findFirst).mockResolvedValue({
       id: 'tx-1',
       accountId: 'acc-1',
       month: new Date('2026-01-01'),

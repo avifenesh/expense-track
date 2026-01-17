@@ -12,7 +12,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     account: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -330,7 +330,7 @@ describe('Subscription Enforcement', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       })
-      vi.mocked(prisma.account.findUnique).mockResolvedValue(createMockAccount())
+      vi.mocked(prisma.account.findFirst).mockResolvedValue(createMockAccount())
       const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
         createMockSubscription({ status: SubscriptionStatus.ACTIVE, currentPeriodEnd: futureDate }),
@@ -366,7 +366,7 @@ describe('Subscription Enforcement', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       })
-      vi.mocked(prisma.account.findUnique).mockResolvedValue(createMockAccount())
+      vi.mocked(prisma.account.findFirst).mockResolvedValue(createMockAccount())
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(
         createMockSubscription({ status: SubscriptionStatus.EXPIRED }),
       )
@@ -402,7 +402,7 @@ describe('Subscription Enforcement', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       })
-      vi.mocked(prisma.account.findUnique).mockResolvedValue(createMockAccount('user-1')) // Account belongs to user-1
+      vi.mocked(prisma.account.findFirst).mockResolvedValue(createMockAccount('user-1')) // Account belongs to user-1
 
       const { ensureAccountAccessWithSubscription } = await import('@/app/actions/shared')
       const result = await ensureAccountAccessWithSubscription('account-1')

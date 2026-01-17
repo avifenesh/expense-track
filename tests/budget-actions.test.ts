@@ -59,11 +59,12 @@ vi.mock('@prisma/client', async (importOriginal) => {
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     budget: {
       upsert: vi.fn(),
-      delete: vi.fn(),
+      findFirst: vi.fn(),
+      update: vi.fn(),
     },
   },
 }))
@@ -147,7 +148,7 @@ describe('upsertBudgetAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -184,7 +185,7 @@ describe('upsertBudgetAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -253,7 +254,7 @@ describe('upsertBudgetAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
@@ -347,14 +348,14 @@ describe('deleteBudgetAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
 
-    vi.mocked(prisma.budget.delete).mockResolvedValue({} as any)
+    vi.mocked(prisma.budget.update).mockResolvedValue({} as any)
 
     const result = await deleteBudgetAction({
       accountId: 'acc-1',
@@ -364,13 +365,18 @@ describe('deleteBudgetAction', () => {
     })
 
     expect(result).toEqual({ success: true })
-    expect(prisma.budget.delete).toHaveBeenCalledWith({
+    expect(prisma.budget.update).toHaveBeenCalledWith({
       where: {
         accountId_categoryId_month: {
           accountId: 'acc-1',
           categoryId: 'cat-1',
           month: expect.any(Date),
         },
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: expect.any(Date),
+        deletedBy: 'test-user',
       },
     })
     // Verify cache invalidation is called with correct parameters
@@ -394,14 +400,14 @@ describe('deleteBudgetAction', () => {
       defaultAccountName: 'Account1',
     })
 
-    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
       id: 'acc-1',
       name: 'Account1',
       type: 'SELF',
       userId: 'test-user',
     } as any)
 
-    vi.mocked(prisma.budget.delete).mockRejectedValue(new Error('Not found'))
+    vi.mocked(prisma.budget.update).mockRejectedValue(new Error('Not found'))
 
     const result = await deleteBudgetAction({
       accountId: 'acc-1',

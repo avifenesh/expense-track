@@ -149,7 +149,9 @@ describe('Holdings Flow Integration', () => {
       where: { id: holdingId },
     })
 
-    expect(deletedHolding).toBeNull()
+    // Soft delete - record exists but has deletedAt set
+    expect(deletedHolding).not.toBeNull()
+    expect(deletedHolding?.deletedAt).not.toBeNull()
   })
 
   it('creates multiple holdings for same account', async () => {
