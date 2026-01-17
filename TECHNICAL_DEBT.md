@@ -5,8 +5,8 @@ Last updated: 2026-01-17
 ## Summary
 
 **Original Issues**: 89 | Critical: 10 | High: 24 | Medium: 40 | Low: 15
-**Fixed Total**: 73 issues (10 critical, 18 high, 36 medium, 9 low)
-**Remaining**: 16 issues (see sections below for full counts)
+**Fixed Total**: 76 issues (10 critical, 20 high, 37 medium, 9 low)
+**Remaining**: 13 issues (see sections below for full counts)
 
 ## Critical Issues (0 remaining)
 
@@ -18,20 +18,13 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
-## High Issues (6 remaining)
-
-### Performance
-
-| Issue | File | Fix | Effort |
-|-------|------|-----|--------|
-| N+1 query in getUserAuthInfo per request | src/lib/api-auth.ts:45 | Cache account names in JWT or optimize | medium |
+## High Issues (4 remaining)
 
 ### Architecture
 
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | God object: finance.ts (1032 lines) | src/lib/finance.ts | Split into domain modules | large |
-| Inconsistent auth patterns across actions | src/app/actions/*.ts | Standardize on requireAuthUser() | medium |
 | God object: auth.ts (994 lines) | src/app/actions/auth.ts | Split into auth + account actions | medium |
 
 ### Test Quality
@@ -42,7 +35,7 @@ All critical issues resolved.
 | Missing account switching security tests | tests/user-isolation.test.ts | Add updateSessionAccount attack tests | medium |
 | Missing subscription state edge case tests | tests/transaction-crud-actions.test.ts | Add trial/expired/cancelled tests | medium |
 
-## Medium Issues (16 remaining)
+## Medium Issues (15 remaining)
 
 ### Performance
 
@@ -59,7 +52,6 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Tight coupling: cache imports finance | src/lib/dashboard-cache.ts:4-5 | Generify cache to accept compute function | medium |
 | Inconsistent data validation strategy | Services vs Actions vs API | Add validation at service layer boundary | medium |
-| Auth module handles session AND user | src/lib/auth-server.ts | Consider separating session vs user lookup | medium |
 | Inconsistent error handling between layers | Services vs Actions | Standardize error handling at service layer | medium |
 
 ### Test Quality
@@ -125,7 +117,7 @@ All critical issues resolved.
 
 ---
 
-## Fixed This Session (67 issues)
+## Fixed This Session (70 issues)
 
 ### Critical (10 fixed)
 - [x] Require CRON_SECRET always (security)
@@ -137,7 +129,7 @@ All critical issues resolved.
 - [x] Implement limit/offset pagination on list endpoints (PR #169)
 - [x] Hard-coded CI database credentials → GitHub Secrets (PR #170)
 
-### High (17 fixed)
+### High (19 fixed)
 - [x] Keyboard navigation on settings menu → focus trap + arrow keys (PR #171)
 - [x] Make security audit blocking (CI)
 - [x] Make njsscan blocking (CI)
@@ -154,8 +146,10 @@ All critical issues resolved.
 - [x] Standardize validation error format (login uses validationError())
 - [x] In-memory rate limiting documented with limitations (PR #170)
 - [x] Missing secrets rotation documentation → docs/SECRET_ROTATION.md (PR #170)
+- [x] N+1 query in getUserAuthInfo → consolidated auth checks (PR #178)
+- [x] Inconsistent auth patterns across actions → standardized on ensureAccountAccessWithSubscription (PR #178)
 
-### Medium (32 fixed)
+### Medium (33 fixed)
 - [x] Modal backdrop clickable during submission → pointer-events-none (PR #171)
 - [x] CSRF token fetch failure → loading/error state with toast (PR #171)
 - [x] PropDrilling in dashboard tabs → DashboardContext (PR #171)
@@ -184,6 +178,7 @@ All critical issues resolved.
 - [x] CSRF token in all schemas → separate API schemas without CSRF (PR #175)
 - [x] No error response TypeScript types → ApiResponse, ApiErrorResponse exports (PR #175)
 - [x] Inconsistent authorization patterns → standardized withApiAuth middleware (PR #175)
+- [x] Auth module session/user separation → validateSessionToken() + getDbUserBasic() (PR #178)
 
 ### Low (9 fixed)
 - [x] Holdings delete button loading state → deletingId tracking (PR #176)
