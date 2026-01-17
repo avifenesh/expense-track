@@ -5,12 +5,15 @@ import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
 import { ApiError } from '../../src/services/api';
 import * as authService from '../../src/services/auth';
 import * as biometricService from '../../src/services/biometric';
+import { tokenStorage } from '../../src/lib/tokenStorage';
 
 jest.mock('../../src/services/auth');
 jest.mock('../../src/services/biometric');
+jest.mock('../../src/lib/tokenStorage');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 const mockBiometricService = biometricService as jest.Mocked<typeof biometricService>;
+const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 
 // Test component that uses the hook
 function TestComponent() {
@@ -42,7 +45,7 @@ function TestComponent() {
 
       <Pressable
         testID="login-btn"
-        onPress={() => login('test@example.com', 'password123')}
+        onPress={() => login('test@example.com', 'password123').catch(() => {})}
       >
         <Text>Login</Text>
       </Pressable>
@@ -53,12 +56,12 @@ function TestComponent() {
 
       <Pressable
         testID="register-btn"
-        onPress={() => register('test@example.com', 'password123', 'Test User')}
+        onPress={() => register('test@example.com', 'password123', 'Test User').catch(() => {})}
       >
         <Text>Register</Text>
       </Pressable>
 
-      <Pressable testID="refresh-token-btn" onPress={() => refreshToken()}>
+      <Pressable testID="refresh-token-btn" onPress={() => refreshToken().catch(() => {})}>
         <Text>Refresh</Text>
       </Pressable>
 
@@ -69,11 +72,11 @@ function TestComponent() {
         <Text>Update User</Text>
       </Pressable>
 
-      <Pressable testID="biometric-login-btn" onPress={() => loginWithBiometric()}>
+      <Pressable testID="biometric-login-btn" onPress={() => loginWithBiometric().catch(() => {})}>
         <Text>Biometric Login</Text>
       </Pressable>
 
-      <Pressable testID="enable-biometric-btn" onPress={() => enableBiometric()}>
+      <Pressable testID="enable-biometric-btn" onPress={() => enableBiometric().catch(() => {})}>
         <Text>Enable Biometric</Text>
       </Pressable>
 
@@ -94,6 +97,17 @@ describe('AuthContext', () => {
       isEnrolled: false,
     });
     mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
+    // Default mocks for token storage
+    mockTokenStorage.getStoredCredentials.mockResolvedValue({
+      accessToken: null,
+      refreshToken: null,
+      email: null,
+      hasCompletedOnboarding: false,
+    });
+    mockTokenStorage.setStoredCredentials.mockResolvedValue(undefined);
+    mockTokenStorage.setTokens.mockResolvedValue(undefined);
+    mockTokenStorage.clearTokens.mockResolvedValue(undefined);
+    mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
   });
 
   describe('Provider Initialization', () => {
@@ -660,6 +674,297 @@ describe('AuthContext', () => {
 
       await waitFor(() => {
         expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+    });
+  });
+
+  describe('Token Persistence', () => {
+    it('saves tokens to secure storage on login', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(mockTokenStorage.setStoredCredentials).toHaveBeenCalledWith(
+          'access-123',
+          'refresh-456',
+          'test@example.com',
+          false
+        );
+      });
+    });
+
+    it('clears tokens from secure storage on logout', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      fireEvent.press(screen.getByTestID('logout-btn'));
+
+      await waitFor(() => {
+        expect(mockTokenStorage.clearTokens).toHaveBeenCalled();
+      });
+    });
+
+    it('restores tokens from secure storage on app start', async () => {
+      mockTokenStorage.getStoredCredentials.mockResolvedValueOnce({
+        accessToken: 'stored-access-123',
+        refreshToken: 'stored-refresh-456',
+        email: 'stored@example.com',
+        hasCompletedOnboarding: true,
+      });
+
+      mockAuthService.refreshTokens.mockResolvedValueOnce({
+        accessToken: 'new-access-789',
+        refreshToken: 'new-refresh-012',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestID('access-token')).toHaveTextContent('new-access-789');
+        expect(screen.getByTestID('user-email')).toHaveTextContent('stored@example.com');
+      });
+
+      expect(mockAuthService.refreshTokens).toHaveBeenCalledWith('stored-refresh-456');
+      expect(mockTokenStorage.setStoredCredentials).toHaveBeenCalledWith(
+        'new-access-789',
+        'new-refresh-012',
+        'stored@example.com',
+        true
+      );
+    });
+
+    it('shows login screen when token restore fails', async () => {
+      mockTokenStorage.getStoredCredentials.mockResolvedValueOnce({
+        accessToken: 'stored-access-123',
+        refreshToken: 'stored-refresh-456',
+        email: 'stored@example.com',
+        hasCompletedOnboarding: false,
+      });
+
+      mockAuthService.refreshTokens.mockRejectedValueOnce(
+        new ApiError('Token expired', 'TOKEN_EXPIRED', 401)
+      );
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      });
+
+      expect(mockTokenStorage.clearTokens).toHaveBeenCalled();
+    });
+
+    it('shows login screen when no tokens exist', async () => {
+      mockTokenStorage.getStoredCredentials.mockResolvedValueOnce({
+        accessToken: null,
+        refreshToken: null,
+        email: null,
+        hasCompletedOnboarding: false,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      });
+
+      expect(mockAuthService.refreshTokens).not.toHaveBeenCalled();
+    });
+
+    it('updates secure storage on token refresh', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+
+      mockAuthService.refreshTokens.mockResolvedValueOnce({
+        accessToken: 'new-access-789',
+        refreshToken: 'new-refresh-012',
+        expiresIn: 900,
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      mockTokenStorage.setTokens.mockClear();
+
+      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+
+      await waitFor(() => {
+        expect(mockTokenStorage.setTokens).toHaveBeenCalledWith('new-access-789', 'new-refresh-012');
+      });
+    });
+
+    it('clears secure storage on token refresh failure', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+
+      mockAuthService.refreshTokens.mockRejectedValueOnce(
+        new ApiError('Token expired', 'TOKEN_EXPIRED', 401)
+      );
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      mockTokenStorage.clearTokens.mockClear();
+
+      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+
+      await waitFor(() => {
+        expect(mockTokenStorage.clearTokens).toHaveBeenCalled();
+      });
+    });
+
+    it('handles secure store access errors gracefully', async () => {
+      mockTokenStorage.getStoredCredentials.mockRejectedValueOnce(new Error('SecureStore unavailable'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      });
+    });
+
+    it('handles storage failure gracefully on login', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+      mockTokenStorage.setStoredCredentials.mockRejectedValueOnce(new Error('Storage failed'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      // Should remain not authenticated because storage failed
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      });
+    });
+
+    it('does not block logout when clearTokens fails', async () => {
+      mockAuthService.login.mockResolvedValueOnce({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+        expiresIn: 900,
+      });
+      mockTokenStorage.clearTokens.mockRejectedValueOnce(new Error('Storage failed'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+      });
+
+      fireEvent.press(screen.getByTestID('login-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+      });
+
+      fireEvent.press(screen.getByTestID('logout-btn'));
+
+      // Should still log out even if clearTokens fails
+      await waitFor(() => {
+        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
   });
