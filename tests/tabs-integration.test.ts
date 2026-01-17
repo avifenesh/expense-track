@@ -136,6 +136,8 @@ const mockTransactions = [
     createdAt: new Date(),
     updatedAt: new Date(),
     month: '2025-01',
+    deletedAt: null,
+    deletedBy: null,
   },
   {
     id: 'tx-2',
@@ -156,6 +158,8 @@ const mockTransactions = [
     createdAt: new Date(),
     updatedAt: new Date(),
     month: '2025-01',
+    deletedAt: null,
+    deletedBy: null,
   },
 ]
 

@@ -910,6 +910,8 @@ describe('auth-server.ts', () => {
         description: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null,
+        deletedBy: null,
       })
 
       // Mock user with access to the shared account

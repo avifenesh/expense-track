@@ -92,6 +92,8 @@ const sampleTransactions = [
     createdAt: new Date(),
     updatedAt: new Date(),
     month: '2025-10',
+    deletedAt: null,
+    deletedBy: null,
   },
   {
     id: 't2',
@@ -135,6 +137,8 @@ const sampleTransactions = [
     createdAt: new Date(),
     updatedAt: new Date(),
     month: '2025-10',
+    deletedAt: null,
+    deletedBy: null,
   },
 ]
 
