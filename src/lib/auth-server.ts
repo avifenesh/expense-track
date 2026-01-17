@@ -170,7 +170,15 @@ export async function clearSession() {
   cookieStore.delete(ACCOUNT_COOKIE)
 }
 
-export async function getSession(): Promise<AuthSession | null> {
+/**
+ * Validate session token from cookies without database lookup.
+ * Use this for fast validation when you don't need user data.
+ * Returns session data if token is cryptographically valid.
+ *
+ * Note: This does NOT verify the user still exists or has verified email.
+ * For full security checks, use getSession() instead.
+ */
+export async function validateSessionToken(): Promise<AuthSession | null> {
   const cookieStore = await getCookieStore()
   const userEmail = cookieStore.get(USER_COOKIE)?.value
   const token = cookieStore.get(SESSION_COOKIE)?.value
@@ -181,18 +189,45 @@ export async function getSession(): Promise<AuthSession | null> {
     return null
   }
 
-  // Check if user exists in database and has verified email
-  const dbUser = await prisma.user.findUnique({
-    where: { email: userEmail!.toLowerCase() },
-    select: { id: true, emailVerified: true },
-  })
-  if (dbUser && dbUser.emailVerified) {
-    return { userEmail: userEmail!, accountId }
-  }
-
-  return null
+  return { userEmail: userEmail!, accountId }
 }
 
+/**
+ * Get and validate session with database verification.
+ * This is the recommended function for authenticated routes.
+ *
+ * Performs two checks:
+ * 1. Token validation (cryptographic) - via validateSessionToken()
+ * 2. User verification (database) - ensures user exists and email is verified
+ *
+ * Use validateSessionToken() instead if you only need token validation
+ * and will separately verify the user via getDbUserAsAuthUser().
+ */
+export async function getSession(): Promise<AuthSession | null> {
+  // Step 1: Validate token (no DB)
+  const tokenSession = await validateSessionToken()
+  if (!tokenSession) {
+    return null
+  }
+
+  // Step 2: Verify user exists in database with verified email
+  const dbUser = await prisma.user.findUnique({
+    where: { email: tokenSession.userEmail.toLowerCase() },
+    select: { id: true, emailVerified: true },
+  })
+
+  if (!dbUser || !dbUser.emailVerified) {
+    return null
+  }
+
+  return tokenSession
+}
+
+/**
+ * Require a valid session or throw.
+ * Use this in server actions and API routes that require authentication.
+ * @throws Error if no valid session
+ */
 export async function requireSession(): Promise<AuthSession> {
   const session = await getSession()
   if (!session) {
@@ -204,6 +239,13 @@ export async function requireSession(): Promise<AuthSession> {
 /**
  * Get database user with their accounts as an AuthUser-compatible object.
  * Returns undefined if user not found or has no accounts.
+ *
+ * Typical usage pattern:
+ * 1. Call requireSession() to validate session
+ * 2. Call getDbUserAsAuthUser(session.userEmail) to get full user data
+ *
+ * Note: This function fetches accounts which may not always be needed.
+ * Consider getDbUserBasic() for lightweight user data without accounts.
  */
 export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | undefined> {
   const normalizedEmail = email.toLowerCase()
@@ -226,4 +268,25 @@ export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | und
     preferredCurrency: dbUser.preferredCurrency,
     hasCompletedOnboarding: dbUser.hasCompletedOnboarding,
   }
+}
+
+/**
+ * Get basic user info without accounts.
+ * Use this when you only need user identity (id, email, displayName)
+ * and don't need account names. More efficient than getDbUserAsAuthUser().
+ */
+export async function getDbUserBasic(
+  email: string,
+): Promise<{ id: string; email: string; displayName: string } | undefined> {
+  const normalizedEmail = email.toLowerCase()
+  const dbUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, email: true, displayName: true },
+  })
+
+  if (!dbUser) {
+    return undefined
+  }
+
+  return dbUser
 }
