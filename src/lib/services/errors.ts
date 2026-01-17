@@ -140,15 +140,61 @@ export function isServiceError(error: unknown): error is ServiceError {
  */
 export function serviceErrorToActionResult(
   error: ServiceError,
-): { error: Record<string, string[]> } {
+): { success: false; error: Record<string, string[]> } {
   if (error instanceof ValidationError) {
-    return { error: error.fieldErrors }
+    return { success: false, error: error.fieldErrors }
   }
 
   // Map other errors to general field
   return {
+    success: false,
     error: {
       general: [error.message],
     },
   }
+}
+
+/**
+ * Options for unified error handling
+ */
+export interface ErrorHandlingOptions {
+  /** Action name for logging context */
+  action: string
+  /** Generic fallback message for unexpected errors */
+  fallbackMessage?: string
+}
+
+/**
+ * Unified error handler for service layer.
+ * Handles ServiceError instances and returns appropriate action results.
+ * For Prisma errors, use handlePrismaError from prisma-errors.ts.
+ *
+ * Usage:
+ * ```typescript
+ * try {
+ *   const result = await someServiceFunction()
+ *   return { success: true, data: result }
+ * } catch (error) {
+ *   if (isServiceError(error)) {
+ *     return serviceErrorToActionResult(error)
+ *   }
+ *   // Fall back to prisma error handling
+ *   return handlePrismaError(error, { ... })
+ * }
+ * ```
+ */
+export function handleServiceLayerError(
+  error: unknown,
+  options: ErrorHandlingOptions,
+): { success: false; error: Record<string, string[]> } | null {
+  const { fallbackMessage = 'An unexpected error occurred' } = options
+
+  // Handle ServiceError instances
+  if (isServiceError(error)) {
+    return serviceErrorToActionResult(error)
+  }
+
+  // Return null to indicate this handler didn't process the error
+  // Caller should fall back to Prisma error handling or generic error
+  return null
 }
