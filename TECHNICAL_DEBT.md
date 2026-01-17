@@ -18,7 +18,7 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Prisma hono dependency has JWT vulnerabilities | package-lock.json (transitive) | Wait for Prisma fix or downgrade | blocked |
 
-## High Issues (7 remaining)
+## High Issues (6 remaining)
 
 ### Performance
 
@@ -40,10 +40,9 @@ All critical issues resolved.
 |-------|------|-----|--------|
 | Missing authorization boundary tests | tests/api/v1/transactions.test.ts | Add cross-account access tests | medium |
 | Missing account switching security tests | tests/user-isolation.test.ts | Add updateSessionAccount attack tests | medium |
-| Missing CSRF validation tests in budget actions | tests/budget-actions.test.ts | Add invalid CSRF token test | small |
 | Missing subscription state edge case tests | tests/transaction-crud-actions.test.ts | Add trial/expired/cancelled tests | medium |
 
-## Medium Issues (20 remaining)
+## Medium Issues (16 remaining)
 
 ### Performance
 
@@ -68,10 +67,6 @@ All critical issues resolved.
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Rate limit isolation not verified | tests/api/v1/auth-login-rate-limit.test.ts:70-90 | Assert rate limit counter per email | small |
-| Expense sharing calculations not validated | tests/expense-sharing-actions.test.ts:113-144 | Add math verification tests | medium |
-| Budget service Decimal mock inconsistent | tests/lib/services/budget-service.test.ts:65-71 | Unify MockDecimal implementation | small |
-| Dashboard cache invalidation not asserted | tests/transaction-crud-actions.test.ts:130-145 | Add invalidateDashboardCache assertions | small |
-| Concurrent transaction modification untested | tests/transaction-crud-actions.test.ts | Add findUnique success + update fail test | medium |
 | API response format not validated | tests/api/v1/transactions.test.ts:92-98 | Verify against API_CONTRACTS schema | medium |
 | Flaky date-dependent tests | tests/transaction-crud-actions.test.ts:136 | Use vi.setSystemTime() | small |
 
@@ -90,7 +85,7 @@ All critical issues resolved.
 | No deployment health check | CI/CD pipeline | Add health endpoint polling after deploy | small |
 | Missing centralized env validation | Multiple lib files | Create src/lib/env-schema.ts | medium |
 
-## Low Issues (7 remaining)
+## Low Issues (6 remaining)
 
 ### Performance
 
@@ -112,7 +107,6 @@ All critical issues resolved.
 | Issue | File | Fix | Effort |
 |-------|------|-----|--------|
 | Null field handling not fully asserted | tests/transaction-crud-actions.test.ts:206-243 | Add objectContaining assertions | small |
-| Decimal precision not tested | tests/finance.test.ts | Add 0.1 + 0.2 precision test | small |
 | SQL injection test missing for user lookup | tests/expense-sharing-actions.test.ts | Add email injection payload test | small |
 
 ### Database
@@ -191,7 +185,7 @@ All critical issues resolved.
 - [x] No error response TypeScript types → ApiResponse, ApiErrorResponse exports (PR #175)
 - [x] Inconsistent authorization patterns → standardized withApiAuth middleware (PR #175)
 
-### Low (8 fixed)
+### Low (9 fixed)
 - [x] Holdings delete button loading state → deletingId tracking (PR #176)
 - [x] Transaction form empty state → message instead of skeleton (PR #176)
 - [x] useOptimisticList unmount cleanup → mounted ref (PR #176)
@@ -200,3 +194,11 @@ All critical issues resolved.
 - [x] Token expiry comparison boundary
 - [x] Display name regex allows "- - -" → require alphanumeric start/end (PR #174)
 - [x] Test secrets committed in workflow → moved to GitHub Secrets (PR #170)
+- [x] Decimal precision not tested → added 0.1+0.2 precision tests (PR #177)
+
+### Test Quality - Agent 2 (6 fixed in PRs #172, #177)
+- [x] Missing CSRF validation tests in budget actions → added CSRF token tests (PR #172)
+- [x] Expense sharing calculations not validated → added math verification tests (PR #177)
+- [x] Budget service Decimal mock inconsistent → unified MockDecimal with toFixed (PR #177)
+- [x] Dashboard cache invalidation not asserted → added invalidateDashboardCache assertions (PR #177)
+- [x] Concurrent transaction modification untested → added P2025 race condition tests (PR #177)
