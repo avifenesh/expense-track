@@ -198,10 +198,10 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
 
   // Calculate menu position to keep it in viewport
   const calculateMenuPosition = useCallback(() => {
-    if (!settingsButtonRef.current) return
+    if (!settingsButtonRef.current || !settingsMenuRef.current) return
 
     const buttonRect = settingsButtonRef.current.getBoundingClientRect()
-    const menuHeight = 160 // Approximate menu height
+    const menuHeight = settingsMenuRef.current.offsetHeight
     const viewportHeight = window.innerHeight
     const padding = 8
 
@@ -259,18 +259,18 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
       return
     }
 
-    calculateMenuPosition()
-
-    // Focus first menu item when menu opens
-    const timer = setTimeout(() => {
+    // Use requestAnimationFrame to ensure the menu is rendered before measuring
+    const rafId = requestAnimationFrame(() => {
+      calculateMenuPosition()
+      // Focus first menu item when menu opens
       const firstItem = settingsMenuRef.current?.querySelector('[role="menuitem"]') as HTMLElement | null
       firstItem?.focus()
-    }, 0)
+    })
 
     document.addEventListener('keydown', handleMenuKeyDown)
 
     return () => {
-      clearTimeout(timer)
+      cancelAnimationFrame(rafId)
       document.removeEventListener('keydown', handleMenuKeyDown)
     }
   }, [showSettingsMenu, calculateMenuPosition, handleMenuKeyDown])
