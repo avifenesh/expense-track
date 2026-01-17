@@ -1004,6 +1004,7 @@ describe('auto-create RecurringTemplate', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    const { hasActiveSubscription, getSubscriptionState } = await import('@/lib/subscription')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
       email: 'test@example.com',
@@ -1021,6 +1022,16 @@ describe('auto-create RecurringTemplate', () => {
       type: 'SELF',
       userId: 'test-user',
     } as any)
+    // Reset subscription mocks to active state
+    vi.mocked(hasActiveSubscription).mockResolvedValue(true)
+    vi.mocked(getSubscriptionState).mockResolvedValue({
+      status: 'ACTIVE',
+      isActive: true,
+      trialEndsAt: null,
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      daysRemaining: 30,
+      canAccessApp: true,
+    })
   })
 
   it('should create RecurringTemplate when isRecurring is true on new transaction', async () => {
