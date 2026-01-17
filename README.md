@@ -52,6 +52,12 @@ The script installs dependencies (if needed), writes `.env` with local defaults,
    - Replace `DATABASE_URL` with your Postgres connection string (Neon will give you one that already includes `sslmode=require`).
    - Set a long, random `AUTH_SESSION_SECRET` (use `openssl rand -hex 32`).
    - Optionally set `NEXT_PUBLIC_APP_URL` for absolute URLs in emails/links.
+   - **Paddle Payment Provider (Optional):** For subscription payments, configure Paddle:
+     - `PADDLE_API_KEY` - API key from Paddle Dashboard > Developer Tools > Authentication
+     - `PADDLE_WEBHOOK_SECRET` - Webhook secret from Paddle Dashboard > Developer Tools > Notifications
+     - `PADDLE_PRICE_ID` - Price ID for $5/month subscription from Paddle Dashboard > Catalog > Prices
+     - `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` - Client-side token for Paddle.js
+     - `NEXT_PUBLIC_PADDLE_ENVIRONMENT` - Set to `sandbox` for testing or `production` for live
 
 3. **Start a local Postgres instance (optional)**
    If you don’t already have Postgres running, the repo ships with a Docker compose file:
