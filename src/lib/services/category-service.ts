@@ -109,21 +109,6 @@ function isPrismaUniqueConstraintError(error: unknown): boolean {
 }
 
 /**
- * Create a new category (legacy - throws on duplicate)
- * @deprecated Use createOrReactivateCategory instead for better handling
- */
-export async function createCategory(input: CreateCategoryInput) {
-  return await prisma.category.create({
-    data: {
-      userId: input.userId,
-      name: input.name,
-      type: input.type,
-      color: input.color ?? null,
-    },
-  })
-}
-
-/**
  * Archive or unarchive a category (soft delete)
  * Requires userId to ensure user can only archive their own categories
  */

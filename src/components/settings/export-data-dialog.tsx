@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Download, X, FileJson, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { exportUserDataAction } from '@/app/actions/auth'
+import { exportUserDataAction } from '@/app/actions/account'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 
 type ExportFormat = 'json' | 'csv'

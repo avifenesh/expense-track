@@ -375,6 +375,3 @@ export async function resendVerificationEmailAction(input: z.infer<typeof resend
     message: 'If an unverified account exists with this email, a verification link will be sent.',
   })
 }
-
-// Re-export account actions for backward compatibility
-export { persistActiveAccountAction, deleteAccountAction, exportUserDataAction } from './account'
