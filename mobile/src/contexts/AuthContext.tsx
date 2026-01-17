@@ -191,8 +191,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email: credentials.email,
         hasCompletedOnboarding: true,
       });
-    } catch {
+    } catch (error) {
       // Clear invalid credentials
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.error('Biometric login failed during token refresh:', error);
+      }
       await biometricService.clearStoredCredentials();
       setIsBiometricEnabled(false);
       throw new ApiError(

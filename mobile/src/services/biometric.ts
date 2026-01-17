@@ -116,18 +116,22 @@ export async function enableBiometric(
   refreshToken: string,
   userEmail: string
 ): Promise<void> {
-  await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-  await SecureStore.setItemAsync(STORAGE_KEYS.USER_EMAIL, userEmail);
-  await SecureStore.setItemAsync(STORAGE_KEYS.BIOMETRIC_ENABLED, 'true');
+  await Promise.all([
+    SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, refreshToken),
+    SecureStore.setItemAsync(STORAGE_KEYS.USER_EMAIL, userEmail),
+    SecureStore.setItemAsync(STORAGE_KEYS.BIOMETRIC_ENABLED, 'true'),
+  ]);
 }
 
 /**
  * Disable biometric authentication and clear stored credentials
  */
 export async function disableBiometric(): Promise<void> {
-  await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
-  await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_EMAIL);
-  await SecureStore.setItemAsync(STORAGE_KEYS.BIOMETRIC_ENABLED, 'false');
+  await Promise.all([
+    SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN),
+    SecureStore.deleteItemAsync(STORAGE_KEYS.USER_EMAIL),
+    SecureStore.setItemAsync(STORAGE_KEYS.BIOMETRIC_ENABLED, 'false'),
+  ]);
 }
 
 /**
@@ -156,9 +160,11 @@ export async function getStoredCredentials(): Promise<StoredCredentials | null> 
  * Clear all stored credentials (used on logout or token expiry)
  */
 export async function clearStoredCredentials(): Promise<void> {
-  await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
-  await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_EMAIL);
-  await SecureStore.deleteItemAsync(STORAGE_KEYS.BIOMETRIC_ENABLED);
+  await Promise.all([
+    SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN),
+    SecureStore.deleteItemAsync(STORAGE_KEYS.USER_EMAIL),
+    SecureStore.deleteItemAsync(STORAGE_KEYS.BIOMETRIC_ENABLED),
+  ]);
 }
 
 /**
