@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processExpiredSubscriptions } from '@/lib/subscription'
 import { serverLogger } from '@/lib/server-logger'
+import { checkCronRateLimit } from '@/lib/rate-limit'
 
 /**
  * Cron endpoint to expire subscriptions.
@@ -8,12 +9,16 @@ import { serverLogger } from '@/lib/server-logger'
  *
  * Alternative: Run `npx tsx scripts/expire-subscriptions.ts` directly.
  *
- * Security: Requires CRON_SECRET authorization header to prevent unauthorized access.
+ * Security:
+ * - Requires CRON_SECRET authorization header to prevent unauthorized access
+ * - Rate limited to 1 request per minute per IP to prevent abuse
+ *
  * Set CRON_SECRET env var and pass as Bearer token.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 
   // Verify cron secret - always required for security
   if (!cronSecret) {
@@ -26,8 +31,25 @@ export async function GET(request: NextRequest) {
   if (authHeader !== `Bearer ${cronSecret}`) {
     serverLogger.warn('Cron subscription expiration: unauthorized access attempt', {
       action: 'cron.subscriptions',
+      clientIp,
     })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Rate limit by IP to prevent abuse (even with valid secret)
+  const rateLimitKey = `cron:${clientIp}`
+  if (!checkCronRateLimit(rateLimitKey)) {
+    serverLogger.warn('Cron subscription expiration: rate limited', {
+      action: 'cron.subscriptions',
+      clientIp,
+    })
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait before retrying.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': '60' },
+      },
+    )
   }
 
   try {

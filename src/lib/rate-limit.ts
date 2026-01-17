@@ -205,3 +205,52 @@ export function resetRateLimit(userId: string): void {
 export function resetAllRateLimits(): void {
   rateLimitStore.clear()
 }
+
+// ============================================================================
+// Cron endpoint rate limiting
+// ============================================================================
+
+/**
+ * In-memory rate limiter for cron endpoints.
+ * Separate from the main rate limiter as cron has different requirements:
+ * - Simpler time-window based limiting (1 request per window)
+ * - Keyed by IP address, not user ID
+ * - Shorter cleanup cycle
+ */
+const cronRateLimitStore = new Map<string, number>()
+const CRON_RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1 minute
+const CRON_RATE_LIMIT_MAX_ENTRIES = 1000
+
+/**
+ * Check if a cron request is allowed based on IP-based rate limiting.
+ * Allows 1 request per minute per identifier (typically IP address).
+ *
+ * @param identifier - Unique identifier for rate limiting (e.g., IP address)
+ * @returns true if request is allowed, false if rate limited
+ */
+export function checkCronRateLimit(identifier: string): boolean {
+  const now = Date.now()
+  const lastRequest = cronRateLimitStore.get(identifier)
+
+  // Cleanup old entries if store is getting large
+  if (cronRateLimitStore.size > CRON_RATE_LIMIT_MAX_ENTRIES) {
+    const cutoff = now - 5 * 60 * 1000 // 5 minutes
+    for (const [key, timestamp] of cronRateLimitStore) {
+      if (timestamp < cutoff) cronRateLimitStore.delete(key)
+    }
+  }
+
+  if (lastRequest && now - lastRequest < CRON_RATE_LIMIT_WINDOW_MS) {
+    return false // Rate limited
+  }
+
+  cronRateLimitStore.set(identifier, now)
+  return true // Allowed
+}
+
+/**
+ * Reset cron rate limits (useful for testing)
+ */
+export function resetCronRateLimits(): void {
+  cronRateLimitStore.clear()
+}
