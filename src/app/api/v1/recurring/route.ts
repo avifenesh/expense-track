@@ -59,23 +59,18 @@ export async function POST(request: NextRequest) {
     return validationError({ endMonthKey: ['End month must be after the start month'] })
   }
 
-  // 3. Authorize account access
+  // 3. Authorize account access (single check to prevent enumeration)
   const account = await prisma.account.findUnique({ where: { id: data.accountId } })
-  if (!account) return forbiddenError('Account not found')
-
   const authUser = await getUserAuthInfo(user.userId)
-  if (!authUser.accountNames.includes(account.name)) {
-    return forbiddenError('You do not have access to this account')
+  if (!account || !authUser.accountNames.includes(account.name)) {
+    return forbiddenError('Access denied')
   }
 
   // 3b. If updating, verify existing template belongs to the requested account
   if (data.id) {
     const existing = await prisma.recurringTemplate.findUnique({ where: { id: data.id } })
-    if (!existing) {
-      return forbiddenError('Template not found')
-    }
-    if (existing.accountId !== data.accountId) {
-      return forbiddenError('Cannot change template account')
+    if (!existing || existing.accountId !== data.accountId) {
+      return forbiddenError('Access denied')
     }
   }
 
