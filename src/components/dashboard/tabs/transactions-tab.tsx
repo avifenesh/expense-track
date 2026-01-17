@@ -21,7 +21,6 @@ import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { useOptimisticList, generateTempId } from '@/hooks/useOptimisticList'
 import { useFormValidation, validators } from '@/hooks/useFormValidation'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   DashboardCategory,
   DashboardAccount,
@@ -31,44 +30,6 @@ import {
   typeFilterOptions,
   currencyOptions,
 } from './types'
-
-function TransactionFormSkeleton() {
-  return (
-    <div className="grid gap-4">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-12" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-12" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-20 w-full" />
-      </div>
-      <Skeleton className="h-10 w-full" />
-    </div>
-  )
-}
 
 type FormErrors = Partial<Record<string, string[]>>
 
