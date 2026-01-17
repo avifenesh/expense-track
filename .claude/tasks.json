@@ -58,9 +58,45 @@
       "claimedAt": "2026-01-16T23:30:00Z",
       "branch": "feature/legal-pages-155",
       "worktreePath": "C:/Users/avife/expense-track-legal-pages-155",
-      "labels": ["infrastructure"],
+      "labels": [
+        "infrastructure"
+      ],
       "url": "https://github.com/avifenesh/expense-track/issues/155"
     }
   ],
-  "lastUpdated": "2026-01-17T00:15:00Z"
+  "lastUpdated": "2026-01-17T00:30:00Z",
+  "tasks": [
+    {
+      "id": "71",
+      "source": "github",
+      "title": "Implement secure token storage on mobile",
+      "description": "Use SecureStore/Keychain for storing access tokens, refresh tokens, and handling token expiry",
+      "labels": [
+        "mobile",
+        "security"
+      ],
+      "milestone": "Sprint 3: Mobile App",
+      "branch": "feature/secure-token-storage-71",
+      "worktreePath": "C:\\Users\\avife\\worktrees\\expense-track-secure-token-71",
+      "claimedAt": "2026-01-17T00:00:34.610Z",
+      "status": "claimed",
+      "lastActivityAt": "2026-01-17T00:00:34.611Z"
+    },
+    {
+      "id": "137",
+      "source": "github-issue",
+      "title": "Integrate payment provider for subscriptions",
+      "description": "Set up payment provider integration for handling subscription billing and payments",
+      "labels": [
+        "subscription",
+        "infrastructure"
+      ],
+      "branch": "feature/payment-provider-137",
+      "worktreePath": "C:/Users/avife/worktrees/payment-provider-137",
+      "claimedAt": "2026-01-17T00:30:00Z",
+      "status": "claimed",
+      "lastActivityAt": "2026-01-17T00:30:00Z",
+      "url": "https://github.com/avifenesh/expense-track/issues/137"
+    }
+  ]
 }
