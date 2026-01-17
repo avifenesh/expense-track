@@ -663,8 +663,8 @@ describe('budget-service.ts', () => {
 
       await getBudgetByKey(input)
 
-      const call = vi.mocked(prisma.budget.findFirst).mock.calls[0][0]
-      expect(call.where).toEqual({
+      const call = vi.mocked(prisma.budget.findFirst).mock.calls[0]?.[0]
+      expect(call?.where).toEqual({
         accountId: 'acc-3',
         categoryId: 'cat-7',
         month: new Date('2024-06-01'),
