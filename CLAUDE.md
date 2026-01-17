@@ -58,6 +58,8 @@ npm test                 # Run mobile tests
 ## Structure
 
 - `src/app/actions/` - Server actions by domain (transactions, budgets, recurring, holdings, categories, auth, misc)
+- `src/app/api/v1/subscriptions/` - Subscription state API for mobile/web
+- `src/app/api/webhooks/paddle/` - Paddle webhook endpoint for subscription events
 - `src/app/api/v1/` - REST API endpoints (auth, transactions, budgets, holdings, categories, recurring)
   - See `docs/API_AUDIT.md` for mobile compatibility audit
   - See `docs/API_CONTRACTS.md` for endpoint contracts
@@ -65,6 +67,8 @@ npm test                 # Run mobile tests
 - `src/components/` - React components (dashboard, forms, UI primitives)
 - `src/schemas/` - Zod validation schemas
 - `src/lib/finance.ts` - Financial logic, budget tracking
+- `src/lib/paddle.ts` - Paddle payment provider integration utilities
+- `src/lib/subscription.ts` - Subscription state management and helpers
 - `src/lib/dashboard-ux.ts` - Dashboard data aggregation
 - `src/lib/server-logger.ts` - Logging utility (use instead of console.\*)
 - `src/utils/date.ts` - Use `getMonthStart()` for month normalization

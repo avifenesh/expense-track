@@ -1133,6 +1133,60 @@ Bulk create categories.
 
 ---
 
+## Subscription & Payment Endpoints
+
+### GET /api/v1/subscriptions
+
+Get current user's subscription state and Paddle checkout settings.
+
+**Auth:** Bearer token required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "subscription": {
+      "status": "ACTIVE",
+      "isActive": true,
+      "canAccessApp": true,
+      "trialEndsAt": "2024-01-29T00:00:00Z",
+      "currentPeriodEnd": "2024-02-15T00:00:00Z",
+      "daysRemaining": 15,
+      "paddleCustomerId": "ctm_...",
+      "paddleSubscriptionId": "sub_..."
+    },
+    "checkout": {
+      "priceId": "pri_...",
+      "customData": {
+        "user_id": "clx..."
+      },
+      "customerEmail": "user@example.com"
+    },
+    "pricing": {
+      "monthlyPriceCents": 500,
+      "trialDays": 14,
+      "currency": "USD"
+    }
+  }
+}
+```
+
+**Subscription Status Values:**
+- `TRIAL` - Active trial period
+- `ACTIVE` - Paid and active
+- `PAST_DUE` - Payment failed, grace period
+- `CANCELED` - Canceled, access until period end
+- `EXPIRED` - No longer has access
+
+**Notes:**
+- `checkout` will be `null` if Paddle is not configured
+- `canAccessApp` determines if user can access features
+- Mobile apps should check this endpoint on launch
+
+---
+
+
 ## Rate Limiting
 
 Endpoints are rate-limited per user/identifier with sliding window:
