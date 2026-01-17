@@ -2,6 +2,13 @@
 // Import gesture handler test setup
 import 'react-native-gesture-handler/jestSetup';
 
+// Mock expo-secure-store
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+}));
+
 // Mock @react-navigation/native-stack
 jest.mock('@react-navigation/native-stack', () => {
   const React = require('react');

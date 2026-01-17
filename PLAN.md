@@ -81,8 +81,8 @@ Transform personal finance app into commercial multi-tenant service with mobile 
 
 - [x] #68 - Initialize React Native project with Expo
 - [ ] #69 - Set up React Navigation for mobile app
-- [ ] #70 - Create mobile authentication screens
-- [ ] #71 - Implement secure token storage on mobile
+- [x] #70 - Create mobile authentication screens
+- [x] #71 - Implement secure token storage on mobile
 - [ ] #72 - Set up state management with Zustand
 - [ ] #73 - Create mobile API client with axios
 
