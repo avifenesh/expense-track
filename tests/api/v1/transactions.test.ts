@@ -666,4 +666,122 @@ describe('Transaction API Routes', () => {
       expect(response.status).toBe(401)
     })
   })
+
+  describe('authorization boundaries', () => {
+    let userATransactionId: string
+    let userBToken: string
+
+    beforeEach(async () => {
+      // Create User B (attacker)
+      const userB = await prisma.user.upsert({
+        where: { id: 'user-b-attacker' },
+        update: {},
+        create: {
+          id: 'user-b-attacker',
+          email: 'attacker@example.com',
+          displayName: 'Attacker User',
+          passwordHash: '$2b$10$placeholder',
+          preferredCurrency: 'USD',
+        },
+      })
+
+      // Create User B's account
+      await prisma.account.upsert({
+        where: { userId_name: { userId: userB.id, name: 'AttackerAccount' } },
+        update: {},
+        create: { userId: userB.id, name: 'AttackerAccount', type: 'SELF' },
+      })
+
+      userBToken = generateAccessToken('user-b-attacker', 'attacker@example.com')
+
+      // Create a transaction for User A (test user - the victim)
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      const transaction = await prisma.transaction.create({
+        data: {
+          accountId,
+          categoryId,
+          type: 'EXPENSE',
+          amount: 100,
+          currency: 'USD',
+          date: now,
+          month: monthStart,
+          description: 'TEST_UserATransaction',
+        },
+      })
+      userATransactionId = transaction.id
+    })
+
+    it('should reject GET access to transactions from another user account', async () => {
+      // User B tries to access User A's transactions via accountId
+      const request = new NextRequest(`http://localhost/api/v1/transactions?accountId=${accountId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${userBToken}` },
+      })
+
+      const response = await GetTransactions(request)
+      expect(response.status).toBe(403)
+    })
+
+    it('should reject modification of transactions from another user account', async () => {
+      // User B tries to update User A's transaction
+      const request = new NextRequest(`http://localhost/api/v1/transactions/${userATransactionId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${userBToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accountId,
+          categoryId,
+          type: 'EXPENSE',
+          amount: 999,
+          currency: 'USD',
+          date: new Date().toISOString(),
+          description: 'TEST_Hijacked',
+        }),
+      })
+
+      const response = await UpdateTransaction(request, { params: Promise.resolve({ id: userATransactionId }) })
+      expect(response.status).toBe(403)
+    })
+
+    it('should reject deletion of transactions from another user account', async () => {
+      // User B tries to delete User A's transaction
+      const request = new NextRequest(`http://localhost/api/v1/transactions/${userATransactionId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${userBToken}` },
+      })
+
+      const response = await DeleteTransaction(request, { params: Promise.resolve({ id: userATransactionId }) })
+      expect(response.status).toBe(403)
+
+      // Verify transaction still exists
+      const stillExists = await prisma.transaction.findUnique({ where: { id: userATransactionId } })
+      expect(stillExists).not.toBeNull()
+    })
+
+    it('should reject creation of transactions in another user account', async () => {
+      // User B tries to create a transaction in User A's account
+      const request = new NextRequest('http://localhost/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${userBToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accountId, // User A's account
+          categoryId,
+          type: 'EXPENSE',
+          amount: 50,
+          currency: 'USD',
+          date: new Date().toISOString(),
+          description: 'TEST_MaliciousTransaction',
+        }),
+      })
+
+      const response = await CreateTransaction(request)
+      expect(response.status).toBe(403)
+    })
+  })
 })

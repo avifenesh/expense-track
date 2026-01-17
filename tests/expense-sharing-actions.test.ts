@@ -685,3 +685,97 @@ describe('declineShareAction - success path', () => {
     })
   })
 })
+
+describe('SQL injection protection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should safely handle SQL injection payloads in email lookup', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+
+    // Classic SQL injection payloads
+    const maliciousEmails = [
+      "'; DROP TABLE users; --",
+      "admin'--",
+      "' OR '1'='1",
+      "'; DELETE FROM users WHERE '1'='1",
+      "test@example.com'; UPDATE users SET password='hacked' WHERE email='",
+      "' UNION SELECT * FROM users --",
+      "1; SELECT * FROM users",
+      "test@test.com' AND 1=1--",
+    ]
+
+    for (const maliciousEmail of maliciousEmails) {
+      // User not found for malicious payload - Prisma handles parameterized queries
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+      const result = await lookupUserForSharingAction({
+        email: maliciousEmail,
+        csrfToken: 'test-token',
+      })
+
+      // Should not throw - should return a validation error or not found
+      expect('error' in result).toBe(true)
+      // Database operations should be called safely with parameterized query
+      // The malicious string is treated as literal data, not SQL code
+    }
+  })
+
+  it('should validate email format before database lookup', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+
+    // Invalid email formats that could be injection attempts
+    const invalidEmails = ['not-an-email', '@@@', 'SELECT * FROM users', '<script>alert(1)</script>']
+
+    for (const invalidEmail of invalidEmails) {
+      const result = await lookupUserForSharingAction({
+        email: invalidEmail,
+        csrfToken: 'test-token',
+      })
+
+      // Should return error for invalid email format
+      expect('error' in result).toBe(true)
+    }
+  })
+
+  it('should handle special characters in email safely during share expense', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      account: { userId: 'user-owner' },
+      sharedExpense: null,
+      amount: { toNumber: () => 100 },
+      currency: Currency.USD,
+    } as any)
+
+    // Test with syntactically valid emails containing SQL-like content
+    // These pass email validation but test how special characters are handled in DB queries
+    const sqlLikeEmails = [
+      "test'--@example.com", // SQL comment injection in valid email
+      "user'+OR+'1'='1@test.com", // SQL OR injection in valid email
+      'select*from@users.com', // SQL keywords as email parts
+    ]
+
+    for (const email of sqlLikeEmails) {
+      // User lookup returns null - Prisma uses parameterized queries
+      vi.mocked(prisma.user.findMany).mockResolvedValue([])
+
+      const result = await shareExpenseAction({
+        transactionId: 'tx-1',
+        splitType: SplitType.EQUAL,
+        participants: [{ email }],
+        csrfToken: 'test-token',
+      })
+
+      // Should handle safely - either validation error or not found
+      expect('error' in result).toBe(true)
+    }
+  })
+})
