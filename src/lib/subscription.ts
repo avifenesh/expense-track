@@ -186,3 +186,52 @@ export async function processExpiredSubscriptions(): Promise<number> {
 
   return expiredUserIds.length
 }
+
+/**
+ * Link a Paddle subscription to a user
+ * Called when we receive subscription.created webhook
+ */
+export async function linkPaddleSubscription(
+  userId: string,
+  paddleCustomerId: string,
+  paddleSubscriptionId: string,
+  paddlePriceId: string,
+): Promise<void> {
+  await prisma.subscription.update({
+    where: { userId },
+    data: {
+      paddleCustomerId,
+      paddleSubscriptionId,
+      paddlePriceId,
+    },
+  })
+}
+
+/**
+ * Find subscription by Paddle subscription ID
+ * Used for webhook processing when we don't have userId in custom_data
+ */
+export async function findSubscriptionByPaddleId(paddleSubscriptionId: string) {
+  return prisma.subscription.findUnique({
+    where: { paddleSubscriptionId },
+    include: { user: { select: { id: true, email: true } } },
+  })
+}
+
+/**
+ * Update subscription period dates
+ * Called when we receive transaction.completed webhook
+ */
+export async function updateSubscriptionPeriod(
+  userId: string,
+  periodStart: Date,
+  periodEnd: Date,
+): Promise<void> {
+  await prisma.subscription.update({
+    where: { userId },
+    data: {
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+    },
+  })
+}
