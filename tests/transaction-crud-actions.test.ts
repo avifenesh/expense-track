@@ -2,6 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { createTransactionAction, updateTransactionAction, deleteTransactionAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { Currency, TransactionType } from '@prisma/client'
 
 vi.mock('next/cache', () => ({
@@ -153,6 +154,11 @@ describe('createTransactionAction', () => {
 
     expect(result).toEqual({ success: true })
     expect(prisma.transaction.create).toHaveBeenCalled()
+    // Verify cache invalidation is called with correct parameters
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2026-01',
+      accountId: 'acc-1',
+    })
   })
 
   it('should successfully create an income transaction', async () => {
@@ -405,6 +411,7 @@ describe('updateTransactionAction', () => {
 
     vi.mocked(prisma.transaction.update).mockResolvedValue({} as any)
 
+    const testDate = new Date('2024-03-15')
     const result = await updateTransactionAction({
       id: 'tx-1',
       accountId: 'acc-1',
@@ -412,7 +419,7 @@ describe('updateTransactionAction', () => {
       type: TransactionType.EXPENSE,
       amount: 75,
       currency: Currency.USD,
-      date: new Date(),
+      date: testDate,
       csrfToken: 'test-token',
       description: 'Updated',
       isRecurring: false,
@@ -421,6 +428,15 @@ describe('updateTransactionAction', () => {
 
     expect(result).toEqual({ success: true })
     expect(prisma.transaction.update).toHaveBeenCalled()
+    // Verify cache invalidation is called for both old month and new month
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2024-01',
+      accountId: 'acc-1',
+    })
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2024-03',
+      accountId: 'acc-1',
+    })
   })
 
   it('should handle account change', async () => {
@@ -624,6 +640,60 @@ describe('updateTransactionAction', () => {
       expect(result.error.general?.some((msg: string) => msg.includes('Unable to update transaction'))).toBe(true)
     }
   })
+
+  it('should handle concurrent modification (P2025 - record deleted between find and update)', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    // Transaction exists at the time of findUnique
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      month: new Date('2024-01-01'),
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    // Simulate concurrent deletion - P2025 error
+    const p2025Error = new Error('Record to update not found') as Error & { code: string }
+    p2025Error.code = 'P2025'
+    vi.mocked(prisma.transaction.update).mockRejectedValue(p2025Error)
+
+    const result = await updateTransactionAction({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: TransactionType.EXPENSE,
+      amount: 75,
+      currency: Currency.USD,
+      date: new Date(),
+      csrfToken: 'test-token',
+      description: 'Updated',
+      isRecurring: false,
+      recurringTemplateId: null,
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      // Should handle the concurrent modification gracefully
+      expect(result.error.general).toBeDefined()
+    }
+  })
 })
 
 describe('deleteTransactionAction', () => {
@@ -689,6 +759,11 @@ describe('deleteTransactionAction', () => {
     expect(result).toEqual({ success: true })
     expect(prisma.transaction.delete).toHaveBeenCalledWith({
       where: { id: 'tx-1' },
+    })
+    // Verify cache invalidation is called with correct parameters
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2024-01',
+      accountId: 'acc-1',
     })
   })
 
@@ -760,6 +835,48 @@ describe('deleteTransactionAction', () => {
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error.general?.some((msg: string) => msg.includes('Unable to delete transaction'))).toBe(true)
+    }
+  })
+
+  it('should handle concurrent deletion (P2025 - record deleted between find and delete)', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    // Transaction exists at the time of findUnique
+    vi.mocked(prisma.transaction.findUnique).mockResolvedValue({
+      id: 'tx-1',
+      accountId: 'acc-1',
+      month: new Date('2024-01-01'),
+    } as any)
+
+    vi.mocked(prisma.account.findUnique).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    // Simulate concurrent deletion by another request - P2025 error
+    const p2025Error = new Error('Record to delete does not exist') as Error & { code: string }
+    p2025Error.code = 'P2025'
+    vi.mocked(prisma.transaction.delete).mockRejectedValue(p2025Error)
+
+    const result = await deleteTransactionAction({ id: 'tx-1', csrfToken: 'test-token' })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      // Should handle the concurrent deletion gracefully
+      expect(result.error.general).toBeDefined()
     }
   })
 

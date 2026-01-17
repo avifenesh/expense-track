@@ -1045,4 +1045,67 @@ describe('finance.ts', () => {
       expect(result[0].gainLossPercent).toBeCloseTo(-33.33, 1)
     })
   })
+
+  describe('decimal precision edge cases', () => {
+    it('should handle 0.1 + 0.2 floating point precision correctly', () => {
+      // Classic floating point precision issue: 0.1 + 0.2 !== 0.3
+      // JavaScript: 0.1 + 0.2 = 0.30000000000000004
+      const a = 0.1
+      const b = 0.2
+      const expected = 0.3
+
+      // Direct comparison fails due to floating point
+      expect(a + b).not.toBe(expected)
+
+      // toBeCloseTo handles the precision correctly
+      expect(a + b).toBeCloseTo(expected, 10)
+
+      // Verify the actual floating point result
+      expect(a + b).toBe(0.30000000000000004)
+    })
+
+    it('should handle currency calculations with precision', () => {
+      // $19.99 * 3 should equal $59.97
+      const unitPrice = 19.99
+      const quantity = 3
+      const expected = 59.97
+
+      const result = unitPrice * quantity
+
+      // Due to floating point: 19.99 * 3 = 59.97000000000001
+      expect(result).toBeCloseTo(expected, 2)
+
+      // Round to 2 decimal places for currency
+      const roundedResult = Math.round(result * 100) / 100
+      expect(roundedResult).toBe(expected)
+    })
+
+    it('should handle expense split rounding (100/3)', () => {
+      const total = 100
+      const numPeople = 3
+
+      const share = total / numPeople
+      const rounded = Math.round(share * 100) / 100
+
+      // Each person pays $33.33
+      expect(rounded).toBe(33.33)
+
+      // Sum of 3 rounded shares doesn't equal 100
+      const totalFromShares = rounded * numPeople
+      expect(totalFromShares).toBeCloseTo(99.99, 2)
+
+      // There's a penny discrepancy
+      const discrepancy = total - totalFromShares
+      expect(discrepancy).toBeCloseTo(0.01, 2)
+    })
+
+    it('should handle large decimal sums correctly', () => {
+      // Sum of many small values
+      const values = Array(100).fill(0.01)
+      const sum = values.reduce((acc, val) => acc + val, 0)
+
+      // Due to floating point accumulation, sum may not be exactly 1.00
+      expect(sum).toBeCloseTo(1.0, 10)
+    })
+  })
 })

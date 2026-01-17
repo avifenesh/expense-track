@@ -2,6 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { upsertBudgetAction, deleteBudgetAction } from '@/app/actions'
 import { prisma } from '@/lib/prisma'
+import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { Currency } from '@prisma/client'
 
 vi.mock('next/cache', () => ({
@@ -214,6 +215,11 @@ describe('upsertBudgetAction', () => {
         }),
       }),
     )
+    // Verify cache invalidation is called with correct parameters
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2026-01',
+      accountId: 'acc-1',
+    })
   })
 
   it('should reject negative planned amount', async () => {
@@ -366,6 +372,11 @@ describe('deleteBudgetAction', () => {
           month: expect.any(Date),
         },
       },
+    })
+    // Verify cache invalidation is called with correct parameters
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2026-01',
+      accountId: 'acc-1',
     })
   })
 
