@@ -1168,6 +1168,341 @@ Get current user's subscription state and Paddle checkout settings.
 
 ---
 
+## Accounts Endpoints
+
+### GET /api/v1/accounts
+
+Retrieves all accounts for the authenticated user.
+
+**Auth:** Bearer token required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "accounts": [
+      {
+        "id": "clx...",
+        "name": "Personal",
+        "type": "PERSONAL",
+        "preferredCurrency": "USD",
+        "color": "#4CAF50",
+        "icon": "wallet",
+        "description": "My personal account"
+      }
+    ]
+  }
+}
+```
+
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to fetch accounts
+
+---
+
+## Holdings Endpoints
+
+### POST /api/v1/holdings
+
+Creates a new stock/investment holding.
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "accountId": "clx...",
+  "categoryId": "clx...",
+  "symbol": "AAPL",
+  "quantity": 10.5,
+  "averageCost": 150.25,
+  "currency": "USD",
+  "notes": "Long-term investment"
+}
+```
+
+**Validation:**
+- `accountId`: Required. User must own the account.
+- `categoryId`: Required. Category must have `isHolding=true`.
+- `symbol`: Required. 1-5 uppercase letters. Validated against external stock API.
+- `quantity`: Required. Min 0.000001, max 999999999.
+- `averageCost`: Required. Min 0.
+- `currency`: Required. One of: USD, EUR, ILS.
+- `notes`: Optional. Max 240 characters.
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "accountId": "clx...",
+    "categoryId": "clx...",
+    "symbol": "AAPL",
+    "quantity": "10.5",
+    "averageCost": "150.25",
+    "currency": "USD",
+    "notes": "Long-term investment"
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input, symbol, or category
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - User doesn't own the account or subscription expired
+- 404: Not found - Category not found
+- 429: Rate limited - Too many requests
+- 500: Server error - Holding may already exist
+
+---
+
+### PUT /api/v1/holdings/[id]
+
+Updates an existing holding.
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "quantity": 15.0,
+  "averageCost": 145.00,
+  "notes": "Updated position"
+}
+```
+
+**Validation:**
+- `quantity`: Required. Min 0.000001, max 999999999.
+- `averageCost`: Required. Min 0.
+- `notes`: Optional. Max 240 characters.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "accountId": "clx...",
+    "categoryId": "clx...",
+    "symbol": "AAPL",
+    "quantity": "15.0",
+    "averageCost": "145.00",
+    "currency": "USD",
+    "notes": "Updated position"
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input data
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired
+- 404: Not found - Holding does not exist
+- 429: Rate limited - Too many requests
+
+---
+
+### DELETE /api/v1/holdings/[id]
+
+Deletes an existing holding.
+
+**Auth:** Bearer token required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx..."
+  }
+}
+```
+
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired
+- 404: Not found - Holding does not exist
+- 429: Rate limited - Too many requests
+
+---
+
+### POST /api/v1/holdings/refresh
+
+Refreshes stock prices for all holdings in an account from external API.
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "accountId": "clx..."
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "updated": 5,
+    "errors": []
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input data
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - User doesn't own the account or subscription expired
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to refresh prices
+
+---
+
+## Recurring Template Endpoints
+
+### POST /api/v1/recurring
+
+Creates or updates a recurring transaction template.
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "id": "clx...",
+  "accountId": "clx...",
+  "categoryId": "clx...",
+  "type": "EXPENSE",
+  "amount": 50.00,
+  "currency": "USD",
+  "dayOfMonth": 15,
+  "description": "Netflix subscription",
+  "startMonthKey": "2024-01",
+  "endMonthKey": "2024-12",
+  "isActive": true
+}
+```
+
+**Validation:**
+- `id`: Optional. Template ID for updates. If omitted, creates new template.
+- `accountId`: Required. User must own the account.
+- `categoryId`: Required. Category for generated transactions.
+- `type`: Required. One of: INCOME, EXPENSE.
+- `amount`: Required. Min 0.01.
+- `currency`: Required. One of: USD, EUR, ILS.
+- `dayOfMonth`: Required. 1-31. Day of month to generate transaction.
+- `description`: Optional. Max 240 characters.
+- `startMonthKey`: Required. YYYY-MM format.
+- `endMonthKey`: Optional. YYYY-MM format. Must be >= startMonthKey.
+- `isActive`: Optional. Default true.
+
+**Response (200/201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "accountId": "clx...",
+    "categoryId": "clx...",
+    "type": "EXPENSE",
+    "amount": "50.00",
+    "currency": "USD",
+    "dayOfMonth": 15,
+    "description": "Netflix subscription",
+    "startMonth": "2024-01-01",
+    "endMonth": "2024-12-01",
+    "isActive": true
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input data
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - User doesn't own the account/template or subscription expired
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to save template
+
+---
+
+### PATCH /api/v1/recurring/[id]/toggle
+
+Toggles a recurring template's active status.
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "isActive": false
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "isActive": false
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input data
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired
+- 404: Not found - Recurring template not found
+- 429: Rate limited - Too many requests
+
+---
+
+### POST /api/v1/recurring/apply
+
+Applies recurring templates to generate transactions for a specific month.
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "accountId": "clx...",
+  "monthKey": "2024-01",
+  "templateIds": ["clx...", "clx..."]
+}
+```
+
+**Validation:**
+- `accountId`: Required. User must own the account.
+- `monthKey`: Required. YYYY-MM format. Target month for transaction generation.
+- `templateIds`: Optional. Specific template IDs to apply. If omitted, applies all active templates.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "created": 3,
+    "skipped": 1,
+    "errors": []
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input data
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - User doesn't own the account or subscription expired
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to create transactions
+
+---
 
 ## Rate Limiting
 
