@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Mobile: EditTransactionScreen for editing and deleting transactions (#214)
+  - Pre-populated form with existing transaction data
+  - Transaction type toggle with visual feedback
+  - Category selector filtered by transaction type
+  - Date selector with quick options (Today, Yesterday, Custom)
+  - Optional description field with character counter
+  - Transaction preview showing updated values
+  - Delete functionality with confirmation dialog
+  - Loading and error states
+  - Transaction not found state handling
+  - Navigation wired from Dashboard and Transactions screens
+  - Integration with PUT and DELETE transaction endpoints
 - Mobile: BudgetsScreen with store integration and category list (#215)
   - Real budget data from budgets store
   - Category-specific budget cards with color indicators

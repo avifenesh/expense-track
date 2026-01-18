@@ -15,6 +15,7 @@ import {
   useAccountsStore,
   useTransactionsStore,
   useBudgetsStore,
+  type Transaction,
 } from '../../stores';
 import {
   MonthSelector,
@@ -123,6 +124,10 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     navigation.navigate('CreateTransaction');
   }, [navigation]);
 
+  const handleTransactionPress = useCallback((transaction: Transaction) => {
+    navigation.navigate('EditTransaction', { transactionId: transaction.id });
+  }, [navigation]);
+
   const isLoading =
     accountsLoading || (selectedAccountId && (transactionsLoading || budgetsLoading));
   const error = accountsError || transactionsError || budgetsError;
@@ -228,6 +233,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
                 <TransactionListItem
                   key={transaction.id}
                   transaction={transaction}
+                  onPress={handleTransactionPress}
                 />
               ))}
             </View>
