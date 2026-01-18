@@ -121,6 +121,24 @@ describe('categoriesStore', () => {
       expect(loadingDuringFetch).toBe(true);
       expect(useCategoriesStore.getState().isLoading).toBe(false);
     });
+
+    it('clears previous error on successful fetch', async () => {
+      useCategoriesStore.setState({ error: 'Previous error' });
+      mockApiGet.mockResolvedValue({ categories: [mockCategory] });
+
+      await useCategoriesStore.getState().fetchCategories();
+
+      expect(useCategoriesStore.getState().error).toBeNull();
+    });
+
+    it('works with null access token', async () => {
+      useAuthStore.setState({ accessToken: null });
+      mockApiGet.mockResolvedValue({ categories: [mockCategory] });
+
+      await useCategoriesStore.getState().fetchCategories();
+
+      expect(mockApiGet).toHaveBeenCalledWith('/categories', null);
+    });
   });
 
   describe('createCategory', () => {
@@ -177,6 +195,22 @@ describe('categoriesStore', () => {
           color: '#4CAF50',
         })
       ).rejects.toThrow('Failed to create category');
+    });
+
+    it('appends category to existing list', async () => {
+      useCategoriesStore.setState({ categories: [mockIncomeCategory] });
+      mockApiPost.mockResolvedValue(mockCategory);
+
+      await useCategoriesStore.getState().createCategory({
+        name: 'Groceries',
+        type: 'EXPENSE',
+        color: '#4CAF50',
+      });
+
+      const state = useCategoriesStore.getState();
+      expect(state.categories).toHaveLength(2);
+      expect(state.categories[0]).toEqual(mockIncomeCategory);
+      expect(state.categories[1]).toEqual(mockCategory);
     });
   });
 
@@ -292,6 +326,14 @@ describe('categoriesStore', () => {
       const result = useCategoriesStore.getState().getCategoriesByType('EXPENSE');
 
       expect(result.some((c) => c.isArchived)).toBe(false);
+    });
+
+    it('returns empty array when no categories exist', () => {
+      useCategoriesStore.setState({ categories: [] });
+
+      const result = useCategoriesStore.getState().getCategoriesByType('EXPENSE');
+
+      expect(result).toEqual([]);
     });
   });
 
