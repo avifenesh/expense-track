@@ -91,13 +91,14 @@ describe('Proxy', () => {
     expect(csp).toContain("'strict-dynamic'")
   })
 
-  it('includes nonce in CSP style-src directive', async () => {
+  it('includes unsafe-inline in CSP style-src directive', async () => {
     const request = new NextRequest(new URL('http://localhost:3000/'))
 
     const response = await proxy(request)
     const csp = response.headers.get('Content-Security-Policy')
 
-    expect(csp).toContain("'nonce-mock-nonce-123'")
+    const styleSrcMatch = csp?.match(/style-src[^;]+/)
+    expect(styleSrcMatch?.[0]).toContain("'unsafe-inline'")
   })
 
   it('includes unsafe-eval in development mode only', async () => {
@@ -124,7 +125,7 @@ describe('Proxy', () => {
     vi.unstubAllEnvs()
   })
 
-  it('includes unsafe-inline for styles in dev, excludes in production', async () => {
+  it('includes unsafe-inline for styles in both dev and production', async () => {
     // Development mode
     vi.stubEnv('NODE_ENV', 'development')
     const devRequest = new NextRequest(new URL('http://localhost:3000/'))
@@ -134,14 +135,14 @@ describe('Proxy', () => {
     const devStyleMatch = devCsp?.match(/style-src[^;]+/)
     expect(devStyleMatch?.[0]).toContain("'unsafe-inline'")
 
-    // Production mode
+    // Production mode - also includes unsafe-inline for React inline styles
     vi.stubEnv('NODE_ENV', 'production')
     const prodRequest = new NextRequest(new URL('http://localhost:3000/'))
     const prodResponse = await proxy(prodRequest)
     const prodCsp = prodResponse.headers.get('Content-Security-Policy')
 
     const prodStyleMatch = prodCsp?.match(/style-src[^;]+/)
-    expect(prodStyleMatch?.[0]).not.toContain("'unsafe-inline'")
+    expect(prodStyleMatch?.[0]).toContain("'unsafe-inline'")
 
     vi.unstubAllEnvs()
   })
