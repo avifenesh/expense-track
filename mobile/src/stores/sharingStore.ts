@@ -223,7 +223,7 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
           ...expense,
           participants: expense.participants.map((p) =>
             p.id === participantId
-              ? { ...p, status: 'PAID' as ShareStatus, paidAt: response.paidAt }
+              ? { ...p, status: response.status, paidAt: response.paidAt }
               : p
           ),
         })),
