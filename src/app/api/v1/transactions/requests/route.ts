@@ -2,7 +2,14 @@ import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { createTransactionRequest } from '@/lib/services/transaction-service'
 import { transactionRequestSchema } from '@/schemas'
-import { validationError, authError, serverError, successResponse, rateLimitError } from '@/lib/api-helpers'
+import {
+  validationError,
+  authError,
+  serverError,
+  successResponse,
+  rateLimitError,
+  checkSubscription,
+} from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import { serverLogger } from '@/lib/server-logger'
@@ -40,6 +47,10 @@ export async function POST(request: NextRequest) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Parse and validate input
   let body

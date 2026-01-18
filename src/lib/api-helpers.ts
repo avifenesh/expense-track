@@ -117,12 +117,12 @@ export function successResponseWithRateLimit<T>(
 }
 
 /**
- * 403 Subscription Required - User needs active subscription
+ * 402 Payment Required - User needs active subscription
  */
 export function subscriptionRequiredError(message = 'Active subscription required') {
   return NextResponse.json(
     { error: message, code: 'SUBSCRIPTION_REQUIRED' },
-    { status: 403 },
+    { status: 402 },
   )
 }
 
