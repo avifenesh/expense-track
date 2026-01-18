@@ -867,19 +867,35 @@ Decline a shared expense assigned to you.
 
 **Status Requirements:** Share must be in PENDING status. Cannot decline shares that are already PAID or DECLINED.
 
+**Request (optional):**
+```json
+{
+  "reason": "I was not part of this expense"
+}
+```
+
+**Request Fields:**
+- `reason`: Optional. A string explaining why the share is being declined. If provided, will be stored and visible to the expense owner.
+
 **Response (200):**
 ```json
 {
   "success": true,
   "data": {
     "id": "clx...",
-    "status": "DECLINED"
+    "status": "DECLINED",
+    "declinedAt": "2024-01-16T14:00:00.000Z"
   }
 }
 ```
 
+**Response Fields:**
+- `id`: The participant ID
+- `status`: Always "DECLINED" on success
+- `declinedAt`: ISO 8601 timestamp of when the share was declined
+
 **Errors:**
-- 400: Validation error - Share is not in PENDING status (already paid or declined)
+- 400: Validation error - Share is not in PENDING status (already paid or declined), or reason is not a string
 - 401: Unauthorized - Invalid or missing auth token
 - 403: Forbidden - You can only decline shares assigned to you
 - 404: Not found - Participant not found
