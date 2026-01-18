@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Optional description field with 200 character limit
   - Real-time form validation
   - Transaction preview before submission
-  - FAB (Floating Action Button) on Dashboard and Transactions screens for quick access
+  - FAB on Dashboard and `+ Add` button on Transactions screen for quick access
 - Mobile: Transaction validation utilities in `validation.ts`
   - Amount validation (required, positive, max 2 decimals, max value)
   - Description validation (optional, max 200 chars, XSS prevention)
@@ -27,5 +27,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Mobile: Updated AppStack navigation to include CreateTransaction modal route
 - Mobile: Enhanced DashboardScreen with FAB for adding transactions
-- Mobile: Enhanced TransactionsScreen with FAB for adding transactions
+- Mobile: Enhanced TransactionsScreen with Add button for adding transactions
 

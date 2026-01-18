@@ -110,7 +110,7 @@ export function validateTransactionAmount(amount: string): string | null {
 }
 
 export function validateTransactionDescription(
-  description: string
+  description: string | null | undefined
 ): string | null {
   if (!description || description.trim().length === 0) {
     return null;
@@ -120,8 +120,8 @@ export function validateTransactionDescription(
     return 'Description is too long (max 200 characters)';
   }
 
-  // XSS prevention
-  const dangerousPattern = /<script|javascript:|on\w+=/i;
+  // XSS prevention (allow optional whitespace in event handlers)
+  const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
   if (dangerousPattern.test(description)) {
     return 'Description contains invalid characters';
   }

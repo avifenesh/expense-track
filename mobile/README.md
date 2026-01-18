@@ -167,7 +167,7 @@ Modal screen for creating new transactions with comprehensive form:
 
 **Access:**
 - FAB (Floating Action Button) on Dashboard screen
-- FAB on Transactions screen
+- `+ Add` button on Transactions screen
 
 **Navigation:**
 - Presented as modal with slide-from-bottom animation

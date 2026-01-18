@@ -38,6 +38,51 @@ type FormErrors = {
   general?: string;
 };
 
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  USD: '$',
+  EUR: '€',
+  ILS: '₪',
+};
+
+function getYesterday(): Date {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday;
+}
+
+function isToday(d: Date): boolean {
+  const today = new Date();
+  return (
+    d.getDate() === today.getDate() &&
+    d.getMonth() === today.getMonth() &&
+    d.getFullYear() === today.getFullYear()
+  );
+}
+
+function isYesterday(d: Date): boolean {
+  const yesterday = getYesterday();
+  return (
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear()
+  );
+}
+
+function formatDateDisplay(d: Date): string {
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function formatDateToLocalISO(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function AddTransactionScreen({
   navigation,
 }: AppStackScreenProps<'CreateTransaction'>) {
@@ -107,30 +152,6 @@ export function AddTransactionScreen({
     setErrors((prev) => ({ ...prev, date: undefined }));
   }, []);
 
-  const getYesterday = useCallback(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday;
-  }, []);
-
-  const isToday = useCallback((d: Date) => {
-    const today = new Date();
-    return (
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-    );
-  }, []);
-
-  const isYesterday = useCallback((d: Date) => {
-    const yesterday = getYesterday();
-    return (
-      d.getDate() === yesterday.getDate() &&
-      d.getMonth() === yesterday.getMonth() &&
-      d.getFullYear() === yesterday.getFullYear()
-    );
-  }, [getYesterday]);
-
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
 
@@ -164,12 +185,7 @@ export function AddTransactionScreen({
     }
 
     if (!selectedAccountId) {
-      setErrors({ general: 'No account selected' });
-      return;
-    }
-
-    if (!categoryId) {
-      setErrors({ categoryId: 'Please select a category' });
+      setErrors((prev) => ({ ...prev, general: 'No account selected' }));
       return;
     }
 
@@ -179,11 +195,11 @@ export function AddTransactionScreen({
     try {
       await createTransaction({
         accountId: selectedAccountId,
-        categoryId,
+        categoryId: categoryId!,
         type,
         amount: parseFloat(amount),
         currency,
-        date: date.toISOString().split('T')[0],
+        date: formatDateToLocalISO(date),
         description: description.trim() || undefined,
         isRecurring: false,
       });
@@ -212,14 +228,6 @@ export function AddTransactionScreen({
   const handleCancel = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
-
-  const formatDateDisplay = useCallback((d: Date) => {
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  }, []);
 
   const renderCategoryItem = useCallback(
     (category: Category) => {
@@ -331,7 +339,7 @@ export function AddTransactionScreen({
               style={[styles.inputContainer, errors.amount && styles.inputError]}
             >
               <Text style={styles.currencySymbol}>
-                {currency === 'USD' ? '$' : currency === 'EUR' ? '\u20AC' : '\u20AA'}
+                {CURRENCY_SYMBOLS[currency]}
               </Text>
               <TextInput
                 style={styles.amountInput}
@@ -448,7 +456,10 @@ export function AddTransactionScreen({
               style={styles.modalOverlay}
               onPress={() => setShowDatePicker(false)}
             >
-              <View style={styles.datePickerModal}>
+              <View
+                style={styles.datePickerModal}
+                onStartShouldSetResponder={() => true}
+              >
                 <Text style={styles.datePickerTitle}>Select Date</Text>
                 <View style={styles.datePickerContent}>
                   {Array.from({ length: 7 }, (_, i) => {
