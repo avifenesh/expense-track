@@ -60,7 +60,12 @@ export async function POST(request: NextRequest) {
       const transaction = await prisma.transaction.findFirst({
         where: { id: data.transactionId, deletedAt: null },
         include: {
-          account: { select: { userId: true } },
+          account: {
+            select: {
+              userId: true,
+              user: { select: { displayName: true } },
+            },
+          },
           sharedExpense: { select: { id: true } },
         },
       })
@@ -191,7 +196,7 @@ export async function POST(request: NextRequest) {
         sendExpenseSharedEmail({
           to: pUser.email,
           participantName: pUser.displayName,
-          ownerName: user.email, // Use email if displayName not available
+          ownerName: transaction.account.user.displayName ?? user.email,
           amount: share.amount,
           totalAmount,
           currency: transaction.currency,
