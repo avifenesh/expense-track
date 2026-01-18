@@ -53,7 +53,7 @@ __tests__/
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
     main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, Budgets)
   services/        # Service tests (api, auth)
-  stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
+  stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories, sharing)
 ```
 
 ## Project Structure
@@ -75,7 +75,7 @@ src/
     MainTabNavigator.tsx
     AppStack.tsx
     RootNavigator.tsx
-  stores/       # Zustand stores (auth, accounts, transactions, budgets, categories)
+  stores/       # Zustand stores (auth, accounts, transactions, budgets, categories, sharing)
   lib/          # Utilities (validation, tokenStorage, logger)
   services/     # API services (api, auth)
   types/        # TypeScript definitions
