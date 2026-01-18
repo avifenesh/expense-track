@@ -8,7 +8,7 @@ import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, getOtherTestUser, TEST_USER_ID, OTHER_USER_ID } from './helpers'
-import { SubscriptionStatus, TransactionRequestStatus } from '@prisma/client'
+import { SubscriptionStatus, RequestStatus } from '@prisma/client'
 
 /**
  * Subscription Enforcement Tests
@@ -411,7 +411,7 @@ describe('Subscription Enforcement on API Routes', () => {
           currency: 'USD',
           date: new Date('2024-01-15'),
           description: 'SUB_TEST_Request',
-          status: TransactionRequestStatus.PENDING,
+          status: RequestStatus.PENDING,
         },
       })
       transactionRequestId = txRequest.id
