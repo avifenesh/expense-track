@@ -1,11 +1,33 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
+import { useOnboardingStore } from '../../stores';
+import { CURRENCY_SYMBOLS } from '../../constants/categories';
 
 export function OnboardingBudgetScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingBudget'>) {
+  const { selectedCurrency, monthlyBudget, setBudget } = useOnboardingStore();
+  const [inputValue, setInputValue] = useState(
+    monthlyBudget ? monthlyBudget.toString() : ''
+  );
+
+  const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency];
+
+  const handleSetBudget = () => {
+    const amount = parseFloat(inputValue);
+    if (!isNaN(amount) && amount >= 0) {
+      setBudget(amount);
+      navigation.navigate('OnboardingSampleData');
+    }
+  };
+
+  const handleSkip = () => {
+    setBudget(null);
+    navigation.navigate('OnboardingSampleData');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -16,8 +38,15 @@ export function OnboardingBudgetScreen({
         </Text>
 
         <View style={styles.budgetInput}>
-          <Text style={styles.budgetSymbol}>$</Text>
-          <Text style={styles.budgetAmount}>2,000</Text>
+          <Text style={styles.budgetSymbol}>{currencySymbol}</Text>
+          <TextInput
+            style={styles.budgetAmountInput}
+            value={inputValue}
+            onChangeText={setInputValue}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor="#64748b"
+          />
           <Text style={styles.budgetPeriod}>/month</Text>
         </View>
 
@@ -28,16 +57,10 @@ export function OnboardingBudgetScreen({
         </View>
 
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={styles.skipButton}
-            onPress={() => navigation.navigate('OnboardingSampleData')}
-          >
+          <Pressable style={styles.skipButton} onPress={handleSkip}>
             <Text style={styles.skipButtonText}>Skip for now</Text>
           </Pressable>
-          <Pressable
-            style={styles.button}
-            onPress={() => navigation.navigate('OnboardingSampleData')}
-          >
+          <Pressable style={styles.button} onPress={handleSetBudget}>
             <Text style={styles.buttonText}>Set Budget</Text>
           </Pressable>
         </View>
@@ -87,10 +110,12 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginRight: 4,
   },
-  budgetAmount: {
+  budgetAmountInput: {
     fontSize: 48,
     fontWeight: '700',
     color: '#fff',
+    minWidth: 100,
+    textAlign: 'center',
   },
   budgetPeriod: {
     fontSize: 16,

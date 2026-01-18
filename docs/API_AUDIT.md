@@ -224,15 +224,17 @@ GET    /api/v1/users/me           - Current user profile
 
 ### Medium Priority (Onboarding)
 
+> ✅ **5 of 6 endpoints implemented in Issue #219**
+
 Support mobile onboarding flow:
 
 ```
-POST   /api/v1/onboarding/complete     - Mark onboarding complete
-POST   /api/v1/onboarding/skip         - Skip onboarding
-PATCH  /api/v1/users/me/currency       - Update preferred currency
-POST   /api/v1/categories/bulk         - Bulk create categories
-POST   /api/v1/budgets/quick           - Quick budget creation
-POST   /api/v1/seed-data               - Seed sample data
+✅ POST   /api/v1/onboarding/complete     - Mark onboarding complete
+⚠️  POST   /api/v1/onboarding/skip         - Skip onboarding (PLANNED)
+✅ PATCH  /api/v1/users/me/currency       - Update preferred currency
+✅ POST   /api/v1/categories/bulk         - Bulk create categories
+✅ POST   /api/v1/budgets/quick           - Quick budget creation
+✅ POST   /api/v1/seed-data               - Seed sample data
 ```
 
 ### Low Priority (Misc)

@@ -2,21 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
+import { useOnboardingStore } from '../../stores';
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../../constants/categories';
 
 const DEFAULT_CATEGORIES = [
-  'Food & Dining',
-  'Transportation',
-  'Shopping',
-  'Entertainment',
-  'Bills & Utilities',
-  'Healthcare',
-  'Education',
-  'Travel',
+  ...DEFAULT_EXPENSE_CATEGORIES.map(c => c.name),
+  ...DEFAULT_INCOME_CATEGORIES.map(c => c.name),
 ];
 
 export function OnboardingCategoriesScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingCategories'>) {
+  const { selectedCategories, toggleCategory } = useOnboardingStore();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -27,11 +25,21 @@ export function OnboardingCategoriesScreen({
         </Text>
 
         <View style={styles.categoriesContainer}>
-          {DEFAULT_CATEGORIES.map((category) => (
-            <Pressable key={category} style={styles.category}>
-              <Text style={styles.categoryText}>{category}</Text>
-            </Pressable>
-          ))}
+          {DEFAULT_CATEGORIES.map((category) => {
+            const isSelected = selectedCategories.includes(category);
+            return (
+              <Pressable
+                key={category}
+                style={[styles.category, isSelected && styles.categorySelected]}
+                onPress={() => toggleCategory(category)}
+              >
+                <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
+                  {isSelected && '✓ '}
+                  {category}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <Pressable
@@ -82,15 +90,22 @@ const styles = StyleSheet.create({
   category: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(56,189,248,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 24,
     borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  categorySelected: {
+    backgroundColor: 'rgba(56,189,248,0.1)',
     borderColor: '#38bdf8',
   },
   categoryText: {
     fontSize: 14,
-    color: '#38bdf8',
+    color: '#94a3b8',
     fontWeight: '500',
+  },
+  categoryTextSelected: {
+    color: '#38bdf8',
   },
   button: {
     backgroundColor: '#38bdf8',
