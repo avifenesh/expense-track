@@ -58,13 +58,14 @@ export async function getMonthlyIncomeGoal({
     select: {
       defaultIncomeGoal: true,
       defaultIncomeGoalCurrency: true,
+      preferredCurrency: true,
     },
   })
 
   if (account?.defaultIncomeGoal) {
     return {
       amount: decimalToNumber(account.defaultIncomeGoal),
-      currency: account.defaultIncomeGoalCurrency ?? 'USD',
+      currency: account.defaultIncomeGoalCurrency ?? account.preferredCurrency ?? 'USD',
       isDefault: true,
     }
   }

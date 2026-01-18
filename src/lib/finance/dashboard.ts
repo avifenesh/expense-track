@@ -151,7 +151,7 @@ export async function getDashboardData({
   const currentMonthRates = monthRates.get(currentMonthKey) ?? new Map()
   const getRatesForMonth = (month: Date) => {
     const key = getMonthKey(month)
-    return monthRates.get(key) ?? currentMonthRates ?? new Map()
+    return monthRates.get(key) ?? currentMonthRates
   }
 
   // Calculate planned and remaining amounts per-budget with currency conversion
@@ -338,6 +338,19 @@ export async function getDashboardData({
     },
   ]
 
+  // Convert monthly income goal amount to preferred currency for UI display
+  const monthlyIncomeGoalConverted = monthlyIncomeGoal
+    ? {
+        ...monthlyIncomeGoal,
+        amount: convertTransactionAmountSync(
+          monthlyIncomeGoal.amount,
+          monthlyIncomeGoal.currency as Currency,
+          preferredCurrency,
+          currentMonthRates,
+        ),
+      }
+    : null
+
   return {
     month: monthKey,
     stats,
@@ -356,7 +369,7 @@ export async function getDashboardData({
     history,
     exchangeRateLastUpdate,
     preferredCurrency,
-    monthlyIncomeGoal,
+    monthlyIncomeGoal: monthlyIncomeGoalConverted,
     actualIncome,
     sharedExpenses,
     expensesSharedWithMe,

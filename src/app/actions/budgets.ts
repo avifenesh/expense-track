@@ -143,40 +143,42 @@ export async function upsertMonthlyIncomeGoalAction(input: MonthlyIncomeGoalInpu
   }
 
   try {
-    // Upsert the monthly income goal
-    await prisma.monthlyIncomeGoal.upsert({
-      where: {
-        accountId_month: {
+    await prisma.$transaction(async (tx) => {
+      // Upsert the monthly income goal
+      await tx.monthlyIncomeGoal.upsert({
+        where: {
+          accountId_month: {
+            accountId,
+            month,
+          },
+        },
+        update: {
+          amount: new Prisma.Decimal(toDecimalString(amount)),
+          currency,
+          notes: notes ?? null,
+          deletedAt: null,
+          deletedBy: null,
+        },
+        create: {
           accountId,
           month,
-        },
-      },
-      update: {
-        amount: new Prisma.Decimal(toDecimalString(amount)),
-        currency,
-        notes: notes ?? null,
-        deletedAt: null,
-        deletedBy: null,
-      },
-      create: {
-        accountId,
-        month,
-        amount: new Prisma.Decimal(toDecimalString(amount)),
-        currency,
-        notes: notes ?? null,
-      },
-    })
-
-    // Also set as account default if requested
-    if (setAsDefault) {
-      await prisma.account.update({
-        where: { id: accountId },
-        data: {
-          defaultIncomeGoal: new Prisma.Decimal(toDecimalString(amount)),
-          defaultIncomeGoalCurrency: currency,
+          amount: new Prisma.Decimal(toDecimalString(amount)),
+          currency,
+          notes: notes ?? null,
         },
       })
-    }
+
+      // Also set as account default if requested
+      if (setAsDefault) {
+        await tx.account.update({
+          where: { id: accountId },
+          data: {
+            defaultIncomeGoal: new Prisma.Decimal(toDecimalString(amount)),
+            defaultIncomeGoalCurrency: currency,
+          },
+        })
+      }
+    })
 
     await invalidateDashboardCache({
       monthKey,

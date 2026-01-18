@@ -350,7 +350,14 @@ export function BudgetsTab({
                     Actual: {formatCurrency(actualIncome, preferredCurrency)} ({Math.round(incomeProgress)}%)
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-2 w-full overflow-hidden rounded-full bg-white/10"
+                  role="progressbar"
+                  aria-valuenow={Math.round(incomeProgress)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Income goal progress"
+                >
                   <div
                     className="h-2 rounded-full bg-emerald-400/80 transition-all duration-300 ease-out"
                     style={{ width: `${incomeProgress}%` }}
