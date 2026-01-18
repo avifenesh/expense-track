@@ -586,11 +586,6 @@ describe('FormSelect', () => {
     });
 
     it('works with object values as string keys', async () => {
-      interface MyValue {
-        id: string;
-        name: string;
-      }
-
       const objectOptions: FormSelectOption<string>[] = [
         { value: 'option-1', label: 'Option 1' },
         { value: 'option-2', label: 'Option 2' },
