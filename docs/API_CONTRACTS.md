@@ -841,13 +841,12 @@ Mark a participant's share as paid (owner only).
 
 ---
 
-### POST /api/v1/expenses/share (PLANNED)
+### POST /api/v1/expenses/share
 
-> ⚠️ **Not yet implemented.** Planned for future release.
-
-Share an expense with other users.
+Share an expense with other users. Creates a shared expense from an existing transaction, calculating participant shares based on the split type.
 
 **Auth:** Bearer token required
+**Subscription:** Active subscription required (returns 402 if expired)
 
 **Request:**
 ```json
@@ -857,31 +856,84 @@ Share an expense with other users.
   "description": "Dinner at restaurant",
   "participants": [
     {
-      "email": "friend@example.com",
-      "shareAmount": 25.00
+      "email": "friend@example.com"
     }
   ]
 }
 ```
+
+**Request Fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| transactionId | string | Yes | ID of the transaction to share |
+| splitType | string | No | `EQUAL` (default), `PERCENTAGE`, or `FIXED` |
+| description | string | No | Optional description (max 240 chars) |
+| participants | array | Yes | At least one participant |
+| participants[].email | string | Yes | Participant's email address |
+| participants[].shareAmount | number | Conditional | Required for `FIXED` splits |
+| participants[].sharePercentage | number | Conditional | Required for `PERCENTAGE` splits (0-100) |
+
+**Split Type Behavior:**
+- `EQUAL`: Amount divided equally among all participants + owner
+- `PERCENTAGE`: Each participant gets their specified percentage of the total
+- `FIXED`: Each participant gets their specified fixed amount
 
 **Response (201):**
 ```json
 {
   "success": true,
   "data": {
-    "sharedExpenseId": "clx...",
+    "id": "clx...",
+    "transactionId": "clx...",
+    "splitType": "EQUAL",
+    "totalAmount": "100.00",
+    "currency": "USD",
+    "description": "Dinner at restaurant",
+    "createdAt": "2024-01-15T12:00:00Z",
     "participants": [
       {
         "id": "clx...",
         "userId": "clx...",
         "email": "friend@example.com",
-        "shareAmount": "25.00",
+        "displayName": "Friend",
+        "shareAmount": "50.00",
+        "sharePercentage": null,
         "status": "PENDING"
       }
     ]
   }
 }
 ```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 400 | Validation error (invalid email, missing fields, self-sharing, etc.) |
+| 401 | Invalid or missing auth token |
+| 402 | Subscription required |
+| 403 | User does not own the transaction |
+| 404 | Transaction not found |
+| 409 | Transaction is already shared |
+| 429 | Rate limited |
+
+**Example Error (400 - Participant not found):**
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "participants": ["Users not found: invalid@example.com"]
+  }
+}
+```
+
+**Notes:**
+- User cannot share an expense with themselves
+- All participant emails must belong to registered users
+- For `FIXED` splits, total share amounts cannot exceed transaction amount
+- For `PERCENTAGE` splits, total percentage cannot exceed 100%
+- Email notifications are sent to participants (asynchronous)
 
 ---
 
