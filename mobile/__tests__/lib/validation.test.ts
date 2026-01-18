@@ -5,6 +5,10 @@ import {
   validatePasswordMatch,
   getPasswordRequirements,
   isPasswordValid,
+  validateTransactionAmount,
+  validateTransactionDescription,
+  validateTransactionCategory,
+  validateTransactionDate,
 } from '../../src/lib/validation';
 
 describe('validateEmail', () => {
@@ -135,5 +139,152 @@ describe('validatePasswordMatch', () => {
   it('handles empty passwords', () => {
     expect(validatePasswordMatch('', '')).toBeNull();
     expect(validatePasswordMatch('Password123', '')).toBe('Passwords do not match');
+  });
+});
+
+// Transaction validation tests
+
+describe('validateTransactionAmount', () => {
+  it('returns null for valid amount', () => {
+    expect(validateTransactionAmount('50.00')).toBeNull();
+    expect(validateTransactionAmount('100')).toBeNull();
+    expect(validateTransactionAmount('0.01')).toBeNull();
+    expect(validateTransactionAmount('999999999.99')).toBeNull();
+  });
+
+  it('returns error for empty amount', () => {
+    expect(validateTransactionAmount('')).toBe('Amount is required');
+    expect(validateTransactionAmount('   ')).toBe('Amount is required');
+  });
+
+  it('returns error for invalid amount format', () => {
+    expect(validateTransactionAmount('abc')).toBe('Please enter a valid amount');
+    expect(validateTransactionAmount('NaN')).toBe('Please enter a valid amount');
+  });
+
+  it('returns error for zero or negative amount', () => {
+    expect(validateTransactionAmount('0')).toBe('Amount must be greater than zero');
+    expect(validateTransactionAmount('-50')).toBe('Amount must be greater than zero');
+    expect(validateTransactionAmount('0.00')).toBe('Amount must be greater than zero');
+  });
+
+  it('returns error for amount too large', () => {
+    expect(validateTransactionAmount('9999999999.99')).toBe('Amount is too large');
+    expect(validateTransactionAmount('1000000000')).toBe('Amount is too large');
+  });
+
+  it('returns error for too many decimal places', () => {
+    expect(validateTransactionAmount('50.123')).toBe('Amount can have at most 2 decimal places');
+    expect(validateTransactionAmount('50.1234')).toBe('Amount can have at most 2 decimal places');
+  });
+});
+
+describe('validateTransactionDescription', () => {
+  it('returns null for valid description', () => {
+    expect(validateTransactionDescription('Groceries')).toBeNull();
+    expect(validateTransactionDescription('Monthly rent payment')).toBeNull();
+    expect(validateTransactionDescription('')).toBeNull(); // Optional field
+    expect(validateTransactionDescription('   ')).toBeNull(); // Optional field
+  });
+
+  it('returns null for empty description (optional)', () => {
+    expect(validateTransactionDescription('')).toBeNull();
+    expect(validateTransactionDescription(null as unknown as string)).toBeNull();
+    expect(validateTransactionDescription(undefined as unknown as string)).toBeNull();
+  });
+
+  it('returns error for description too long', () => {
+    const longDesc = 'a'.repeat(201);
+    expect(validateTransactionDescription(longDesc)).toBe(
+      'Description is too long (max 200 characters)'
+    );
+  });
+
+  it('returns error for potentially dangerous content', () => {
+    expect(validateTransactionDescription('<script>alert("xss")</script>')).toBe(
+      'Description contains invalid characters'
+    );
+    expect(validateTransactionDescription('javascript:alert(1)')).toBe(
+      'Description contains invalid characters'
+    );
+    expect(validateTransactionDescription('onclick=alert(1)')).toBe(
+      'Description contains invalid characters'
+    );
+  });
+
+  it('allows safe special characters', () => {
+    expect(validateTransactionDescription('Coffee & snacks')).toBeNull();
+    expect(validateTransactionDescription("John's birthday gift")).toBeNull();
+    expect(validateTransactionDescription('Payment #123')).toBeNull();
+    expect(validateTransactionDescription('50% discount')).toBeNull();
+  });
+});
+
+describe('validateTransactionCategory', () => {
+  it('returns null for valid category ID', () => {
+    expect(validateTransactionCategory('cat-123')).toBeNull();
+    expect(validateTransactionCategory('abc')).toBeNull();
+  });
+
+  it('returns error for empty category', () => {
+    expect(validateTransactionCategory('')).toBe('Please select a category');
+    expect(validateTransactionCategory('   ')).toBe('Please select a category');
+  });
+
+  it('returns error for null category', () => {
+    expect(validateTransactionCategory(null)).toBe('Please select a category');
+  });
+});
+
+describe('validateTransactionDate', () => {
+  it('returns null for valid date', () => {
+    const today = new Date();
+    expect(validateTransactionDate(today)).toBeNull();
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    expect(validateTransactionDate(yesterday)).toBeNull();
+
+    const lastYear = new Date();
+    lastYear.setFullYear(lastYear.getFullYear() - 1);
+    expect(validateTransactionDate(lastYear)).toBeNull();
+  });
+
+  it('returns error for null date', () => {
+    expect(validateTransactionDate(null)).toBe('Date is required');
+  });
+
+  it('returns error for invalid date', () => {
+    expect(validateTransactionDate(new Date('invalid'))).toBe(
+      'Please enter a valid date'
+    );
+  });
+
+  it('returns error for future date', () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    expect(validateTransactionDate(tomorrow)).toBe('Date cannot be in the future');
+
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    expect(validateTransactionDate(nextWeek)).toBe('Date cannot be in the future');
+  });
+
+  it('returns error for date too far in the past', () => {
+    const elevenYearsAgo = new Date();
+    elevenYearsAgo.setFullYear(elevenYearsAgo.getFullYear() - 11);
+    expect(validateTransactionDate(elevenYearsAgo)).toBe(
+      'Date is too far in the past'
+    );
+  });
+
+  it('allows dates within acceptable range', () => {
+    const fiveYearsAgo = new Date();
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+    expect(validateTransactionDate(fiveYearsAgo)).toBeNull();
+
+    const nineYearsAgo = new Date();
+    nineYearsAgo.setFullYear(nineYearsAgo.getFullYear() - 9);
+    expect(validateTransactionDate(nineYearsAgo)).toBeNull();
   });
 });

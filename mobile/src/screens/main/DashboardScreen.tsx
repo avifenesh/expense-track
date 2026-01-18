@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
@@ -26,7 +27,7 @@ import type { Currency } from '../../types';
 
 const RECENT_TRANSACTIONS_LIMIT = 5;
 
-export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
+export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -117,6 +118,10 @@ export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
   const handleMonthChange = useCallback((month: string) => {
     setSelectedMonth(month);
   }, []);
+
+  const handleAddTransaction = useCallback(() => {
+    navigation.navigate('CreateTransaction');
+  }, [navigation]);
 
   const isLoading =
     accountsLoading || (selectedAccountId && (transactionsLoading || budgetsLoading));
@@ -229,6 +234,16 @@ export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
           )}
         </View>
       </ScrollView>
+
+      {/* FAB for adding transactions */}
+      <Pressable
+        style={styles.fab}
+        onPress={handleAddTransaction}
+        accessibilityRole="button"
+        accessibilityLabel="Add transaction"
+      >
+        <Text style={styles.fabText}>+</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -350,5 +365,27 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontSize: 16,
     fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#38bdf8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  fabText: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#0f172a',
+    lineHeight: 36,
   },
 });

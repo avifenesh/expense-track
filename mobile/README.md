@@ -42,6 +42,8 @@ npm test -- LoginScreen     # Run specific test file
 
 ```
 __tests__/
+  components/
+    forms/       # Form component tests (FormButton, FormInput, FormSelect, FormCurrencyInput, FormDatePicker)
   contexts/        # Context tests (AuthContext)
   hooks/           # Hook tests (useAuthState)
   lib/             # Utility tests (validation, tokenStorage)
@@ -49,6 +51,7 @@ __tests__/
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
+    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction)
   services/        # Service tests (api, auth)
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
 ```
@@ -58,11 +61,12 @@ __tests__/
 ```
 src/
   components/   # Reusable UI components
+    forms/      # Form components (FormButton, FormInput, FormSelect, FormCurrencyInput, FormDatePicker)
   contexts/     # React contexts (AuthContext)
   screens/      # Screen components
     auth/       # Authentication screens (Login, Register, ResetPassword, VerifyEmail)
     onboarding/ # Onboarding flow screens
-    main/       # Main app screens (Dashboard, Transactions, etc.)
+    main/       # Main app screens (Dashboard, Transactions, AddTransaction)
   hooks/        # Custom React hooks (useAuthState)
   navigation/   # React Navigation setup
     types.ts    # Navigation type definitions
@@ -76,6 +80,243 @@ src/
   services/     # API services (api, auth)
   types/        # TypeScript definitions
   constants/    # App constants
+```
+
+## Form Components
+
+The mobile app includes a comprehensive set of reusable form components for building consistent, accessible forms. All components are fully tested with 90%+ coverage.
+
+### Available Components
+
+#### FormButton
+A customizable button component with loading states and multiple variants.
+
+```tsx
+import { FormButton } from '@/components/forms';
+
+<FormButton
+  title="Submit"
+  variant="primary" // primary | secondary | outline | danger
+  onPress={handleSubmit}
+  isLoading={isSubmitting}
+  disabled={!isValid}
+/>
+```
+
+**Props:**
+- `title` - Button text
+- `variant` - Style variant (default: 'primary')
+- `isLoading` - Shows loading spinner when true
+- `disabled` - Disables button interaction
+- All standard `PressableProps`
+
+#### FormInput
+A text input field with label, error handling, and optional icons.
+
+```tsx
+import { FormInput } from '@/components/forms';
+
+<FormInput
+  label="Email"
+  value={email}
+  onChangeText={setEmail}
+  error={emailError}
+  helperText="We'll never share your email"
+  placeholder="you@example.com"
+  keyboardType="email-address"
+  autoCapitalize="none"
+  leftIcon={<EmailIcon />}
+  showPasswordToggle={false}
+/>
+```
+
+**Props:**
+- `label` - Input label (required)
+- `error` - Error message to display
+- `helperText` - Helper text shown below input
+- `leftIcon` / `rightIcon` - Optional icon elements
+- `showPasswordToggle` - Show/hide toggle for password fields
+- All standard `TextInputProps`
+
+#### FormSelect
+A dropdown select component with modal picker for mobile.
+
+```tsx
+import { FormSelect } from '@/components/forms';
+
+<FormSelect
+  label="Category"
+  value={selectedCategory}
+  onChange={setSelectedCategory}
+  options={[
+    { value: 'food', label: 'Food & Dining' },
+    { value: 'transport', label: 'Transportation' },
+    { value: 'shopping', label: 'Shopping', disabled: true },
+  ]}
+  placeholder="Select a category"
+  error={categoryError}
+  modalTitle="Choose Category"
+/>
+```
+
+**Props:**
+- `label` - Select label (required)
+- `options` - Array of `{ value, label, disabled? }`
+- `value` - Currently selected value
+- `onChange` - Change handler receiving selected value
+- `placeholder` - Text shown when no value selected
+- `modalTitle` - Title shown in picker modal
+
+#### FormCurrencyInput
+A specialized input for currency amounts with proper decimal handling.
+
+```tsx
+import { FormCurrencyInput } from '@/components/forms';
+
+<FormCurrencyInput
+  label="Amount"
+  currency="USD"  // USD | EUR | ILS
+  value={amountInCents}
+  onChangeValue={setAmountInCents}
+  error={amountError}
+  helperText="Enter the transaction amount"
+  allowNegative={false}
+  maxValue={1000000}  // $10,000 in cents
+/>
+```
+
+**Props:**
+- `label` - Input label (required)
+- `currency` - Currency code (USD | EUR | ILS)
+- `value` - Amount in cents/minor units
+- `onChangeValue` - Change handler receiving cents value
+- `allowNegative` - Whether to allow negative values
+- `maxValue` / `minValue` - Optional validation bounds (in cents)
+
+**Important:** Values are always stored in cents (minor currency units) for precision.
+
+#### FormDatePicker
+A date/time picker using native platform pickers.
+
+```tsx
+import { FormDatePicker } from '@/components/forms';
+
+<FormDatePicker
+  label="Transaction Date"
+  value={selectedDate}
+  onChange={setSelectedDate}
+  mode="date"  // date | time | datetime
+  placeholder="Select a date"
+  error={dateError}
+  minimumDate={new Date('2020-01-01')}
+  maximumDate={new Date()}
+  formatOptions={{ dateStyle: 'medium' }}
+/>
+```
+
+**Props:**
+- `label` - Field label (required)
+- `value` - Selected date or null
+- `onChange` - Change handler receiving Date or null
+- `mode` - Picker mode (date, time, or datetime)
+- `minimumDate` / `maximumDate` - Date range constraints
+- `formatOptions` - Intl.DateTimeFormat options for display
+
+**Dependency:** Requires `@react-native-community/datetimepicker`
+
+### Design System
+
+All form components follow a consistent design system:
+
+- **Color Scheme:** Dark theme with sky blue (#38bdf8) accents
+- **Typography:** 14px labels (weight: 600), 16px inputs
+- **Spacing:** 16px padding, 12px border radius
+- **States:** Focus (blue border), error (red border), disabled (50% opacity)
+- **Accessibility:** Proper labels, roles, and states for screen readers
+
+### Testing
+
+All form components have comprehensive test coverage:
+
+```bash
+npm test -- FormButton.test.tsx      # Button component tests
+npm test -- FormInput.test.tsx       # Text input tests
+npm test -- FormSelect.test.tsx      # Select/dropdown tests
+npm test -- FormCurrencyInput.test.tsx  # Currency input tests
+npm test -- FormDatePicker.test.tsx  # Date picker tests
+```
+
+Test coverage includes:
+- Rendering with all props
+- User interactions (press, text input, selection)
+- Validation states (error, focus, disabled)
+- Accessibility attributes
+- Edge cases (null values, empty options, etc.)
+
+### Example: Complete Form
+
+```tsx
+import {
+  FormInput,
+  FormSelect,
+  FormCurrencyInput,
+  FormDatePicker,
+  FormButton,
+} from '@/components/forms';
+
+function TransactionForm() {
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState<number | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
+  const [date, setDate] = useState<Date>(new Date());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleSubmit = async () => {
+    // Validation and submission logic
+  };
+
+  return (
+    <View style={styles.form}>
+      <FormInput
+        label="Description"
+        value={description}
+        onChangeText={setDescription}
+        error={errors.description}
+        placeholder="Coffee at Starbucks"
+      />
+
+      <FormCurrencyInput
+        label="Amount"
+        currency="USD"
+        value={amount}
+        onChangeValue={setAmount}
+        error={errors.amount}
+      />
+
+      <FormSelect
+        label="Category"
+        value={category}
+        onChange={setCategory}
+        options={categoryOptions}
+        error={errors.category}
+      />
+
+      <FormDatePicker
+        label="Date"
+        value={date}
+        onChange={(d) => d && setDate(d)}
+        mode="date"
+        error={errors.date}
+      />
+
+      <FormButton
+        title="Save Transaction"
+        onPress={handleSubmit}
+        variant="primary"
+      />
+    </View>
+  );
+}
 ```
 
 ## Authentication
@@ -139,5 +380,62 @@ The app uses React Navigation with conditional routing:
   - Login, Register, ResetPassword, VerifyEmail
 - **OnboardingStack** - Shown after login if onboarding not completed
   - Welcome, Currency, Categories, Budget, SampleData, Complete
-- **AppStack** - Main app with bottom tabs
-  - Dashboard, Transactions, Budgets, Sharing, Settings
+- **AppStack** - Main app with bottom tabs and modals
+  - **Bottom Tabs**: Dashboard, Transactions, Budgets, Sharing, Settings
+  - **Modals**: CreateTransaction (AddTransactionScreen)
+
+## Main App Features
+
+### Transaction Management
+
+#### AddTransactionScreen
+
+Modal screen for creating new transactions with comprehensive form:
+
+**Features:**
+- Transaction type selector (Income/Expense) with visual feedback
+- Amount input with currency symbol display (USD: $, EUR: €, ILS: ₪)
+- Category selector with color-coded chips (filtered by transaction type)
+- Date selector with quick options:
+  - Today
+  - Yesterday
+  - Custom date picker (last 7 days)
+- Optional description field (max 200 characters)
+- Real-time form validation
+- Transaction preview before submission
+- Loading states and error handling
+
+**Access:**
+- FAB (Floating Action Button) on Dashboard screen
+- `+ Add` button on Transactions screen
+
+**Navigation:**
+- Presented as modal with slide-from-bottom animation
+- Cancel button returns to previous screen
+- Auto-dismisses on successful creation
+
+**Validation:**
+- Amount: Required, positive, max 2 decimals, max value 999,999,999.99
+- Description: Optional, max 200 chars, XSS prevention
+- Category: Required
+- Date: Required, not in future, within 10 years
+
+**Integration:**
+- Uses `POST /api/v1/transactions` endpoint
+- Syncs with transactions store on success
+- Updates dashboard and transaction list automatically
+
+### Validation Utilities
+
+The `lib/validation.ts` module provides client-side validation for all forms:
+
+**Transaction Validation:**
+- `validateTransactionAmount(amount: string)` - Amount validation
+- `validateTransactionDescription(description: string)` - Description validation with XSS prevention
+- `validateTransactionCategory(categoryId: string | null)` - Category selection validation
+- `validateTransactionDate(date: Date | null)` - Date validation
+
+**Auth Validation:**
+- `validateEmail(email: string)` - Email format validation
+- `validatePassword(password: string)` - Password strength validation
+- `validatePasswordMatch(password: string, confirmPassword: string)` - Password confirmation
