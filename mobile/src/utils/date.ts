@@ -1,3 +1,9 @@
+const MONTH_KEY_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+export function isValidMonthKey(monthKey: string): boolean {
+  return MONTH_KEY_REGEX.test(monthKey);
+}
+
 export function getMonthKey(date: Date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -5,12 +11,18 @@ export function getMonthKey(date: Date = new Date()): string {
 }
 
 export function formatMonthLabel(monthKey: string): string {
+  if (!isValidMonthKey(monthKey)) {
+    return 'Invalid Date';
+  }
   const [year, month] = monthKey.split('-').map(Number);
   const date = new Date(year, month - 1, 1);
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
 export function shiftMonth(monthKey: string, offset: number): string {
+  if (!isValidMonthKey(monthKey)) {
+    return monthKey;
+  }
   const [year, month] = monthKey.split('-').map(Number);
   const date = new Date(year, month - 1 + offset, 1);
   return getMonthKey(date);
@@ -55,6 +67,9 @@ export function formatDateHeader(dateKey: string): string {
 }
 
 export function compareMonths(a: string, b: string): number {
+  if (!isValidMonthKey(a) || !isValidMonthKey(b)) {
+    return 0;
+  }
   const [yearA, monthA] = a.split('-').map(Number);
   const [yearB, monthB] = b.split('-').map(Number);
 
@@ -87,9 +102,15 @@ export function clampMonth(month: string, min?: string, max?: string): string {
 }
 
 export function getYearFromMonthKey(monthKey: string): number {
+  if (!isValidMonthKey(monthKey)) {
+    return new Date().getFullYear();
+  }
   return parseInt(monthKey.split('-')[0], 10);
 }
 
 export function getMonthFromMonthKey(monthKey: string): number {
+  if (!isValidMonthKey(monthKey)) {
+    return new Date().getMonth() + 1;
+  }
   return parseInt(monthKey.split('-')[1], 10);
 }

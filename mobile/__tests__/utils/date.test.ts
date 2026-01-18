@@ -11,9 +11,30 @@ import {
   clampMonth,
   getYearFromMonthKey,
   getMonthFromMonthKey,
+  isValidMonthKey,
 } from '../../src/utils/date';
 
 describe('date utilities', () => {
+  describe('isValidMonthKey', () => {
+    it('returns true for valid month keys', () => {
+      expect(isValidMonthKey('2026-01')).toBe(true);
+      expect(isValidMonthKey('2026-12')).toBe(true);
+      expect(isValidMonthKey('1999-06')).toBe(true);
+      expect(isValidMonthKey('2030-09')).toBe(true);
+    });
+
+    it('returns false for invalid month keys', () => {
+      expect(isValidMonthKey('')).toBe(false);
+      expect(isValidMonthKey('invalid')).toBe(false);
+      expect(isValidMonthKey('2026')).toBe(false);
+      expect(isValidMonthKey('2026-1')).toBe(false);
+      expect(isValidMonthKey('2026-13')).toBe(false);
+      expect(isValidMonthKey('2026-00')).toBe(false);
+      expect(isValidMonthKey('26-01')).toBe(false);
+      expect(isValidMonthKey('2026-01-01')).toBe(false);
+    });
+  });
+
   describe('getMonthKey', () => {
     it('returns current month key when no date provided', () => {
       const now = new Date();
@@ -67,6 +88,13 @@ describe('date utilities', () => {
       expect(formatMonthLabel('2025-09')).toBe('September 2025');
       expect(formatMonthLabel('2024-03')).toBe('March 2024');
     });
+
+    it('returns Invalid Date for malformed input', () => {
+      expect(formatMonthLabel('')).toBe('Invalid Date');
+      expect(formatMonthLabel('invalid')).toBe('Invalid Date');
+      expect(formatMonthLabel('2026-13')).toBe('Invalid Date');
+      expect(formatMonthLabel('2026')).toBe('Invalid Date');
+    });
   });
 
   describe('shiftMonth', () => {
@@ -116,6 +144,12 @@ describe('date utilities', () => {
       const result = shiftMonth('2026-01', 24);
 
       expect(result).toBe('2028-01');
+    });
+
+    it('returns input unchanged for invalid month key', () => {
+      expect(shiftMonth('invalid', 1)).toBe('invalid');
+      expect(shiftMonth('', -1)).toBe('');
+      expect(shiftMonth('2026-13', 1)).toBe('2026-13');
     });
   });
 
@@ -232,6 +266,12 @@ describe('date utilities', () => {
       expect(compareMonths('2027-01', '2026-12')).toBe(1);
       expect(compareMonths('2026-03', '2024-06')).toBe(1);
     });
+
+    it('returns 0 for invalid inputs', () => {
+      expect(compareMonths('invalid', '2026-01')).toBe(0);
+      expect(compareMonths('2026-01', 'invalid')).toBe(0);
+      expect(compareMonths('', '')).toBe(0);
+    });
   });
 
   describe('isMonthBefore', () => {
@@ -308,6 +348,13 @@ describe('date utilities', () => {
       expect(getYearFromMonthKey('2025-12')).toBe(2025);
       expect(getYearFromMonthKey('1999-06')).toBe(1999);
     });
+
+    it('returns current year for invalid input', () => {
+      const currentYear = new Date().getFullYear();
+      expect(getYearFromMonthKey('invalid')).toBe(currentYear);
+      expect(getYearFromMonthKey('')).toBe(currentYear);
+      expect(getYearFromMonthKey('2026-13')).toBe(currentYear);
+    });
   });
 
   describe('getMonthFromMonthKey', () => {
@@ -323,6 +370,13 @@ describe('date utilities', () => {
       expect(getMonthFromMonthKey('2026-06')).toBe(6);
       expect(getMonthFromMonthKey('2025-09')).toBe(9);
       expect(getMonthFromMonthKey('2024-03')).toBe(3);
+    });
+
+    it('returns current month for invalid input', () => {
+      const currentMonth = new Date().getMonth() + 1;
+      expect(getMonthFromMonthKey('invalid')).toBe(currentMonth);
+      expect(getMonthFromMonthKey('')).toBe(currentMonth);
+      expect(getMonthFromMonthKey('2026-13')).toBe(currentMonth);
     });
   });
 });
