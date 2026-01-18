@@ -37,6 +37,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           reason = body.reason.trim() || undefined
         }
       } catch {
+        // Body is optional - empty body or missing Content-Type is expected and acceptable.
+        // No logging needed for expected behavior.
       }
 
       const participant = await prisma.expenseParticipant.findUnique({
