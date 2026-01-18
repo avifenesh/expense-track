@@ -29,9 +29,12 @@ function escapeHtml(str: string): string {
 // Check if email is configured
 const isEmailConfigured = SMTP_HOST && SMTP_USER && SMTP_PASS
 
-// In production, email MUST be configured for user flows (verification, password reset)
+// Log warning if SMTP not configured in production (but don't crash the app)
 if (process.env.NODE_ENV === 'production' && !isEmailConfigured) {
-  throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS are required in production for email functionality')
+  serverLogger.warn('SMTP not configured in production - email functionality will fail', {
+    action: 'email-init',
+    input: { hasHost: !!SMTP_HOST, hasUser: !!SMTP_USER, hasPass: !!SMTP_PASS },
+  })
 }
 
 // Create transporter only if configured
@@ -55,8 +58,17 @@ export interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; messageId?: string }> {
-  // Development mode: output to stderr if SMTP not configured
+  // SMTP not configured
   if (!transporter) {
+    if (process.env.NODE_ENV === 'production') {
+      // In production, log error and return failure
+      serverLogger.error('Cannot send email - SMTP not configured in production', {
+        action: 'sendEmail',
+        input: { to: options.to, subject: options.subject },
+      })
+      return { success: false }
+    }
+    // Development mode: output to stderr
     const output = [
       '\n========== EMAIL (dev mode - SMTP not configured) ==========',
       `To: ${options.to}`,
