@@ -92,6 +92,9 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
   const handleFilterChange = useCallback(
     async (type: FilterType) => {
       const accountId = selectedAccountId || accounts[0]?.id;
+      if (!accountId) {
+        return;
+      }
       setFilterType(type);
       setFilters({
         accountId,

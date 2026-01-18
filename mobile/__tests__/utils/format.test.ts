@@ -121,5 +121,17 @@ describe('formatSignedCurrency', () => {
     it('defaults to USD when currency not provided', () => {
       expect(formatSignedCurrency(100, 'INCOME')).toBe('+$100.00');
     });
+
+    it('handles negative amounts for expense (normalizes to absolute)', () => {
+      expect(formatSignedCurrency(-50, 'EXPENSE', 'USD')).toBe('-$50.00');
+    });
+
+    it('handles negative amounts for income (normalizes to absolute)', () => {
+      expect(formatSignedCurrency(-100, 'INCOME', 'USD')).toBe('+$100.00');
+    });
+
+    it('handles negative string amounts', () => {
+      expect(formatSignedCurrency('-75.25', 'EXPENSE', 'USD')).toBe('-$75.25');
+    });
   });
 });

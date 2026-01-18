@@ -246,7 +246,7 @@ describe('TransactionsScreen', () => {
       fireEvent.press(screen.getByText('Income'));
 
       await waitFor(() => {
-        expect(setFilters).toHaveBeenCalledWith({ type: 'INCOME' });
+        expect(setFilters).toHaveBeenCalledWith(expect.objectContaining({ type: 'INCOME' }));
         expect(fetchTransactions).toHaveBeenCalledWith(true);
       });
     });
@@ -270,7 +270,7 @@ describe('TransactionsScreen', () => {
       fireEvent.press(screen.getByText('All'));
 
       await waitFor(() => {
-        expect(setFilters).toHaveBeenCalledWith({ type: undefined });
+        expect(setFilters).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }));
       });
     });
 
@@ -293,7 +293,7 @@ describe('TransactionsScreen', () => {
       fireEvent.press(screen.getByText('Expenses'));
 
       await waitFor(() => {
-        expect(setFilters).toHaveBeenCalledWith({ type: 'EXPENSE' });
+        expect(setFilters).toHaveBeenCalledWith(expect.objectContaining({ type: 'EXPENSE' }));
       });
     });
   });
