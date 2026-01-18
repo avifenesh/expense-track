@@ -38,6 +38,15 @@ describe('Transaction API Routes', () => {
       },
     })
 
+    // Approver needs a valid subscription to approve/reject requests
+    const approverTrialEndsAt = new Date()
+    approverTrialEndsAt.setDate(approverTrialEndsAt.getDate() + 14)
+    await prisma.subscription.upsert({
+      where: { userId: approverUser.id },
+      update: { status: 'TRIALING', trialEndsAt: approverTrialEndsAt },
+      create: { userId: approverUser.id, status: 'TRIALING', trialEndsAt: approverTrialEndsAt },
+    })
+
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
       where: { userId_name: { userId: testUser.id, name: 'TestAccount' } },
@@ -756,6 +765,15 @@ describe('Transaction API Routes', () => {
         create: { userId: userB.id, name: 'AttackerAccount', type: 'SELF' },
       })
 
+      // User B needs a valid subscription to reach authorization checks
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      await prisma.subscription.upsert({
+        where: { userId: userB.id },
+        update: { status: 'TRIALING', trialEndsAt },
+        create: { userId: userB.id, status: 'TRIALING', trialEndsAt },
+      })
+
       userBToken = generateAccessToken('user-b-attacker', 'attacker@example.com')
 
       // Create a transaction for User A (test user - the victim)
@@ -789,6 +807,7 @@ describe('Transaction API Routes', () => {
 
     it('should reject modification of transactions from another user account', async () => {
       // User B tries to update User A's transaction
+      // Returns 404 (not 403) to avoid revealing resource existence
       const request = new NextRequest(`http://localhost/api/v1/transactions/${userATransactionId}`, {
         method: 'PUT',
         headers: {
@@ -807,18 +826,19 @@ describe('Transaction API Routes', () => {
       })
 
       const response = await UpdateTransaction(request, { params: Promise.resolve({ id: userATransactionId }) })
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(404)
     })
 
     it('should reject deletion of transactions from another user account', async () => {
       // User B tries to delete User A's transaction
+      // Returns 404 (not 403) to avoid revealing resource existence
       const request = new NextRequest(`http://localhost/api/v1/transactions/${userATransactionId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${userBToken}` },
       })
 
       const response = await DeleteTransaction(request, { params: Promise.resolve({ id: userATransactionId }) })
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(404)
 
       // Verify transaction still exists
       const stillExists = await prisma.transaction.findUnique({ where: { id: userATransactionId } })

@@ -9,6 +9,7 @@ import {
   successResponse,
   rateLimitError,
   validationError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
@@ -45,6 +46,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
+
+  // 1.6 Subscription check
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
 
   // 2. Check request exists
   const transactionRequest = await getTransactionRequestById(id)
