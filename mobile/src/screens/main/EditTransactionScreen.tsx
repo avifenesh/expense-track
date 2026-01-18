@@ -102,7 +102,6 @@ export function EditTransactionScreen({
     fetchCategories,
   } = useCategoriesStore();
 
-  // Find the transaction to edit
   const transaction = useMemo(
     () => transactions.find((t) => t.id === transactionId),
     [transactions, transactionId]
@@ -122,7 +121,6 @@ export function EditTransactionScreen({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Pre-populate form when transaction is found
   useEffect(() => {
     if (transaction && !isInitialized) {
       setType(transaction.type);
@@ -134,12 +132,10 @@ export function EditTransactionScreen({
     }
   }, [transaction, isInitialized]);
 
-  // Fetch categories for the current type
   useEffect(() => {
     fetchCategories(type);
   }, [fetchCategories, type]);
 
-  // Clear category when type changes (but not on initial load)
   useEffect(() => {
     if (isInitialized) {
       setCategoryId(null);
@@ -321,7 +317,6 @@ export function EditTransactionScreen({
     [categoryId, handleCategorySelect]
   );
 
-  // Loading state while finding transaction
   if (!transaction && !isInitialized) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -333,7 +328,6 @@ export function EditTransactionScreen({
     );
   }
 
-  // Error state if transaction not found
   if (!transaction) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -375,7 +369,6 @@ export function EditTransactionScreen({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Type Selector */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Type</Text>
             <View style={styles.typeRow}>
@@ -420,7 +413,6 @@ export function EditTransactionScreen({
             </View>
           </View>
 
-          {/* Amount Input */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Amount</Text>
             <View
@@ -446,7 +438,6 @@ export function EditTransactionScreen({
             )}
           </View>
 
-          {/* Category Selector */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Category</Text>
             {categoriesLoading ? (
@@ -467,7 +458,6 @@ export function EditTransactionScreen({
             )}
           </View>
 
-          {/* Date Selector */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Date</Text>
             <View style={styles.dateRow}>
@@ -533,7 +523,6 @@ export function EditTransactionScreen({
             {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
           </View>
 
-          {/* Date Picker Modal */}
           <Modal
             visible={showDatePicker}
             transparent
@@ -594,7 +583,6 @@ export function EditTransactionScreen({
             </Pressable>
           </Modal>
 
-          {/* Description Input */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Description (Optional)</Text>
             <TextInput
@@ -619,7 +607,6 @@ export function EditTransactionScreen({
             <Text style={styles.charCount}>{description.length}/200</Text>
           </View>
 
-          {/* Preview */}
           {amount && categoryId && (
             <View style={styles.previewSection}>
               <Text style={styles.sectionLabel}>Preview</Text>
@@ -656,7 +643,6 @@ export function EditTransactionScreen({
             </View>
           )}
 
-          {/* Delete Button */}
           <View style={styles.deleteSection}>
             <Pressable
               style={[
@@ -679,7 +665,6 @@ export function EditTransactionScreen({
           </View>
         </ScrollView>
 
-        {/* Submit Button */}
         <View style={styles.footer}>
           <Pressable
             style={[
