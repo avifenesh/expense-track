@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { apiGet, apiPost, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import type { Currency } from '../types';
-import type { Category } from './transactionsStore';
+import type { Category } from './categoriesStore';
 
 export interface Budget {
   id: string;

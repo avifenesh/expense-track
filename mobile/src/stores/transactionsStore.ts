@@ -2,15 +2,9 @@ import { create } from 'zustand';
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import type { Currency } from '../types';
+import type { Category, TransactionType } from './categoriesStore';
 
-export type TransactionType = 'INCOME' | 'EXPENSE';
-
-export interface Category {
-  id: string;
-  name: string;
-  type: TransactionType;
-  color: string;
-}
+export type { TransactionType } from './categoriesStore';
 
 export interface Transaction {
   id: string;
