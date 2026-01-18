@@ -194,7 +194,10 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
         accessToken
       );
 
-      await get().fetchSharedByMe();
+      // Refresh the list in background - don't block on failure
+      get().fetchSharedByMe().catch(() => {
+        // Refresh failure is non-critical; the create succeeded
+      });
 
       return response;
     } catch (error) {

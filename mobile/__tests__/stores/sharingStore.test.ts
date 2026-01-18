@@ -286,6 +286,34 @@ describe('sharingStore', () => {
         })
       ).rejects.toThrow('Failed to share expense');
     });
+
+    it('succeeds even if background refresh fails', async () => {
+      const createResponse = {
+        sharedExpenseId: 'share-new',
+        participants: [
+          {
+            id: 'part-new',
+            userId: 'user-2',
+            email: 'friend@example.com',
+            shareAmount: '50.00',
+            status: 'PENDING' as const,
+          },
+        ],
+      };
+
+      mockApiPost.mockResolvedValue(createResponse);
+      mockApiGet.mockRejectedValue(new ApiError('Server error', 'SERVER_ERROR', 500));
+
+      // Should not throw even though refresh fails
+      const result = await useSharingStore.getState().createSharedExpense({
+        transactionId: 'tx-1',
+        splitType: 'EQUAL',
+        description: 'Test expense',
+        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
+      });
+
+      expect(result).toEqual(createResponse);
+    });
   });
 
   describe('markShareAsPaid', () => {
