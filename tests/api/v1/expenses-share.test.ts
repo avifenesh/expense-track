@@ -476,6 +476,28 @@ describe('POST /api/v1/expenses/share', () => {
       expect(data.data.participants[0].sharePercentage).toBe('30.00')
     })
 
+    it('returns 400 when PERCENTAGE split participant missing sharePercentage', async () => {
+      const request = new NextRequest('http://localhost/api/v1/expenses/share', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionId,
+          splitType: 'PERCENTAGE',
+          participants: [{ email: otherUser.email }], // Missing sharePercentage
+        }),
+      })
+
+      const response = await ShareExpense(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Validation failed')
+      expect(data.fields.participants[0]).toContain('sharePercentage')
+    })
+
     it('returns 400 when total percentage exceeds 100', async () => {
       // Create a third user
       const thirdUser = await prisma.user.upsert({

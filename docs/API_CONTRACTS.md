@@ -856,9 +856,7 @@ Share an expense with other users. Creates a shared expense from an existing tra
   "description": "Dinner at restaurant",
   "participants": [
     {
-      "email": "friend@example.com",
-      "shareAmount": 25.00,
-      "sharePercentage": 25
+      "email": "friend@example.com"
     }
   ]
 }
@@ -874,7 +872,7 @@ Share an expense with other users. Creates a shared expense from an existing tra
 | participants | array | Yes | At least one participant |
 | participants[].email | string | Yes | Participant's email address |
 | participants[].shareAmount | number | Conditional | Required for `FIXED` splits |
-| participants[].sharePercentage | number | Conditional | Optional for `PERCENTAGE` splits (0-100) |
+| participants[].sharePercentage | number | Conditional | Required for `PERCENTAGE` splits (0-100) |
 
 **Split Type Behavior:**
 - `EQUAL`: Amount divided equally among all participants + owner

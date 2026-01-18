@@ -41,16 +41,20 @@ export async function POST(request: NextRequest) {
 
       const parsed = shareExpenseApiSchema.safeParse(body)
       if (!parsed.success) {
-        const fieldErrors: Record<string, string[]> = {}
-        for (const error of parsed.error.errors) {
-          const field = error.path.join('.') || 'general'
-          if (!fieldErrors[field]) fieldErrors[field] = []
-          fieldErrors[field].push(error.message)
-        }
-        return validationError(fieldErrors)
+        return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
       }
 
       const data = parsed.data
+
+      // Additional validation: PERCENTAGE splits require sharePercentage for each participant
+      if (
+        data.splitType === SplitType.PERCENTAGE &&
+        data.participants.some((p) => p.sharePercentage == null)
+      ) {
+        return validationError({
+          participants: ['Each participant must have a sharePercentage for PERCENTAGE splits'],
+        })
+      }
 
       // 2. Fetch transaction and verify ownership
       const transaction = await prisma.transaction.findFirst({
