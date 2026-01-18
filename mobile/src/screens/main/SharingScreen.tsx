@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
@@ -108,9 +109,10 @@ function SharedWithMeCard({ participation }: SharedWithMeCardProps) {
 interface SharedByMeCardProps {
   expense: SharedExpense;
   onMarkPaid: (participantId: string) => void;
+  loadingParticipantId: string | null;
 }
 
-function SharedByMeCard({ expense, onMarkPaid }: SharedByMeCardProps) {
+function SharedByMeCard({ expense, onMarkPaid, loadingParticipantId }: SharedByMeCardProps) {
   const totalOwed = formatCurrency(expense.totalOwed, expense.currency);
   const pendingParticipants = expense.participants.filter((p) => p.status === 'PENDING');
   const paidParticipants = expense.participants.filter((p) => p.status === 'PAID');
@@ -136,7 +138,13 @@ function SharedByMeCard({ expense, onMarkPaid }: SharedByMeCardProps) {
       {pendingParticipants.length > 0 && (
         <View style={styles.participantsList}>
           {pendingParticipants.map((p) => (
-            <ParticipantRow key={p.id} participant={p} currency={expense.currency} onMarkPaid={onMarkPaid} />
+            <ParticipantRow
+              key={p.id}
+              participant={p}
+              currency={expense.currency}
+              onMarkPaid={onMarkPaid}
+              isLoading={loadingParticipantId === p.id}
+            />
           ))}
         </View>
       )}
@@ -156,10 +164,11 @@ interface ParticipantRowProps {
   participant: ShareParticipant;
   currency: Currency;
   isPaid?: boolean;
+  isLoading?: boolean;
   onMarkPaid?: (participantId: string) => void;
 }
 
-function ParticipantRow({ participant, currency, isPaid, onMarkPaid }: ParticipantRowProps) {
+function ParticipantRow({ participant, currency, isPaid, isLoading, onMarkPaid }: ParticipantRowProps) {
   const name = getDisplayName(participant.participant);
   const amount = formatCurrency(participant.shareAmount, currency);
 
@@ -172,8 +181,16 @@ function ParticipantRow({ participant, currency, isPaid, onMarkPaid }: Participa
       {isPaid ? (
         <Text style={styles.paidLabel}>Paid</Text>
       ) : onMarkPaid ? (
-        <TouchableOpacity style={styles.markPaidButton} onPress={() => onMarkPaid(participant.id)}>
-          <Text style={styles.markPaidText}>Mark Paid</Text>
+        <TouchableOpacity
+          style={[styles.markPaidButton, isLoading && styles.markPaidButtonDisabled]}
+          onPress={() => onMarkPaid(participant.id)}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#38bdf8" />
+          ) : (
+            <Text style={styles.markPaidText}>Mark Paid</Text>
+          )}
         </TouchableOpacity>
       ) : null}
     </View>
@@ -182,6 +199,7 @@ function ParticipantRow({ participant, currency, isPaid, onMarkPaid }: Participa
 
 export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
 
   const {
     sharedByMe,
@@ -206,9 +224,18 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
 
   const handleMarkPaid = useCallback(
     async (participantId: string) => {
-      await markParticipantPaid(participantId);
+      if (markingPaidId) return;
+      setMarkingPaidId(participantId);
+      try {
+        await markParticipantPaid(participantId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to mark as paid';
+        Alert.alert('Error', message);
+      } finally {
+        setMarkingPaidId(null);
+      }
     },
-    [markParticipantPaid]
+    [markParticipantPaid, markingPaidId]
   );
 
   const pendingSharedWithMe = useMemo(
@@ -319,7 +346,12 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
           ) : (
             <View>
               {sortedSharedByMe.map((expense) => (
-                <SharedByMeCard key={expense.id} expense={expense} onMarkPaid={handleMarkPaid} />
+                <SharedByMeCard
+                  key={expense.id}
+                  expense={expense}
+                  onMarkPaid={handleMarkPaid}
+                  loadingParticipantId={markingPaidId}
+                />
               ))}
             </View>
           )}
@@ -546,6 +578,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  markPaidButtonDisabled: {
+    opacity: 0.6,
   },
   markPaidText: {
     fontSize: 12,

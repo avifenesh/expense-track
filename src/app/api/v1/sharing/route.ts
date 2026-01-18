@@ -99,7 +99,7 @@ function formatSettlementBalance(balance: SettlementBalance) {
  * @returns {Object} { sharedExpenses, expensesSharedWithMe, settlementBalances }
  * @throws {401} Unauthorized - Invalid or missing auth token
  * @throws {429} Rate limited - Too many requests
-
+ */
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
     const [sharedExpensesResult, sharedWithMeResult, balances] = await Promise.all([
