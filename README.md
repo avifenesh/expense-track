@@ -1,7 +1,5 @@
 # Balance Beacon
 
-Personal finance SaaS. 14-day trial, $5/month.
-
 Track income and expenses, create budgets, split costs with others, and understand your finances in 30 seconds. Web + mobile (iOS/Android).
 
 ## Features
