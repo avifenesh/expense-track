@@ -344,6 +344,31 @@ describe('Sharing API Routes', () => {
       expect(data.fields.reason).toContain('Reason must be a string')
     })
 
+    it("treats whitespace-only reason as undefined", async () => {
+      const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${otherToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason: "   " }),
+      })
+
+      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+
+      const participant = await prisma.expenseParticipant.findUnique({
+        where: { id: participantId },
+      })
+
+      expect(participant?.status).toBe(PaymentStatus.DECLINED)
+      expect(participant?.declineReason).toBeNull()
+      expect(participant?.declinedAt).toBeTruthy()
+    })
+
     it('returns 403 when non-participant tries to decline', async () => {
       const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
         method: 'POST',

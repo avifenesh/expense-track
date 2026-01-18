@@ -43,13 +43,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
       const participant = await prisma.expenseParticipant.findUnique({
         where: { id: participantId },
-        include: {
-          sharedExpense: {
-            select: {
-              ownerId: true,
-            },
-          },
-        },
       })
 
       if (!participant) {
