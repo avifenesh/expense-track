@@ -48,7 +48,7 @@ function groupTransactionsByDate(transactions: Transaction[]): DateSection[] {
     }));
 }
 
-export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
+export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transactions'>) {
   const [filterType, setFilterType] = useState<FilterType>('all');
 
   const {
@@ -120,6 +120,10 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
   const handleTransactionPress = useCallback((_transaction: Transaction) => {
     // TODO: Navigate to transaction detail or edit screen
   }, []);
+
+  const handleAddTransaction = useCallback(() => {
+    navigation.navigate('CreateTransaction');
+  }, [navigation]);
 
   const sections = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
 
@@ -199,7 +203,12 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Transactions</Text>
-        <Pressable style={styles.addButton}>
+        <Pressable
+          style={styles.addButton}
+          onPress={handleAddTransaction}
+          accessibilityRole="button"
+          accessibilityLabel="Add transaction"
+        >
           <Text style={styles.addButtonText}>+ Add</Text>
         </Pressable>
       </View>
