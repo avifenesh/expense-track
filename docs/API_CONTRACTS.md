@@ -1092,9 +1092,9 @@ Get dashboard summary data.
 
 ---
 
-## Onboarding Endpoints (PLANNED - Sprint 3)
+## Onboarding Endpoints
 
-> ⚠️ **Not yet implemented.** These endpoints are planned for Sprint 3 mobile development.
+> ✅ **Implemented in Sprint 3 (Issue #219).** Mobile onboarding flow fully supported.
 
 ### POST /api/v1/onboarding/complete
 
@@ -1107,14 +1107,21 @@ Mark onboarding as complete.
 {
   "success": true,
   "data": {
-    "message": "Onboarding completed"
+    "hasCompletedOnboarding": true
   }
 }
 ```
 
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired
+- 429: Rate limited - Too many requests
+
 ---
 
-### POST /api/v1/onboarding/skip
+### POST /api/v1/onboarding/skip (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for future release.
 
 Skip onboarding flow.
 
@@ -1145,21 +1152,30 @@ Update preferred currency.
 }
 ```
 
+**Validation:**
+- `currency`: Required. One of: USD, EUR, ILS.
+
 **Response (200):**
 ```json
 {
   "success": true,
   "data": {
-    "preferredCurrency": "EUR"
+    "currency": "EUR"
   }
 }
 ```
+
+**Errors:**
+- 400: Validation error - Invalid currency
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired
+- 429: Rate limited - Too many requests
 
 ---
 
 ### POST /api/v1/categories/bulk
 
-Bulk create categories.
+Bulk create categories (or reactivate existing archived ones).
 
 **Auth:** Bearer token required
 
@@ -1173,6 +1189,12 @@ Bulk create categories.
 }
 ```
 
+**Validation:**
+- `categories`: Required. Array of category objects (minimum 1).
+- `name`: Required. Min 2 characters.
+- `type`: Required. One of: INCOME, EXPENSE.
+- `color`: Optional. Hex color code.
+
 **Response (201):**
 ```json
 {
@@ -1180,12 +1202,106 @@ Bulk create categories.
   "data": {
     "categoriesCreated": 2,
     "categories": [
-      { "id": "clx...", "name": "Food", "type": "EXPENSE", "color": "#4CAF50" },
-      { "id": "clx...", "name": "Salary", "type": "INCOME", "color": "#2196F3" }
+      { 
+        "id": "clx...", 
+        "name": "Food", 
+        "type": "EXPENSE", 
+        "color": "#4CAF50",
+        "isArchived": false,
+        "isHolding": false,
+        "userId": "clx..."
+      },
+      { 
+        "id": "clx...", 
+        "name": "Salary", 
+        "type": "INCOME", 
+        "color": "#2196F3",
+        "isArchived": false,
+        "isHolding": false,
+        "userId": "clx..."
+      }
     ]
   }
 }
 ```
+
+**Errors:**
+- 400: Validation error - Invalid input
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired
+- 429: Rate limited - Too many requests
+
+---
+
+### POST /api/v1/budgets/quick
+
+Create a budget for specified account, category, and month (used during onboarding).
+
+**Auth:** Bearer token required
+
+**Request:**
+```json
+{
+  "accountId": "clx...",
+  "categoryId": "clx...",
+  "monthKey": "2024-01",
+  "planned": 500.00,
+  "currency": "USD"
+}
+```
+
+**Validation:**
+- `accountId`: Required. User must own the account.
+- `categoryId`: Required. User must own the category.
+- `monthKey`: Required. YYYY-MM format.
+- `planned`: Required. Min 0.
+- `currency`: Optional. Defaults to USD. One of: USD, EUR, ILS.
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "success": true
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid input
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired or access denied
+- 429: Rate limited - Too many requests
+
+---
+
+### POST /api/v1/seed-data
+
+Seed user's account with sample data (default categories, sample transactions, sample budget).
+
+**Auth:** Bearer token required
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "categoriesCreated": 14,
+    "transactionsCreated": 2,
+    "budgetsCreated": 1
+  }
+}
+```
+
+**Sample Data:**
+- **Categories**: 8 expense categories (Groceries, Transportation, etc.) + 6 income categories (Salary, etc.)
+- **Transactions**: 1 grocery expense ($85.50) + 1 salary income ($3500)
+- **Budgets**: 1 grocery budget ($400)
+
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Subscription expired or no account found
+- 429: Rate limited - Too many requests
 
 ---
 
