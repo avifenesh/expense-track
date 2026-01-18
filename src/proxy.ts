@@ -10,14 +10,12 @@ export async function proxy(request: NextRequest) {
   await getCsrfToken()
 
   const isDev = process.env.NODE_ENV === 'development'
-  const isApiDocs = request.nextUrl.pathname.startsWith('/api-docs')
 
-  // Build CSP with nonce
-  // API docs page needs relaxed CSP for Swagger UI inline styles
+  // Build CSP with nonce for scripts, unsafe-inline for styles (React inline styles)
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    `style-src 'self' 'nonce-${nonce}'${isDev || isApiDocs ? " 'unsafe-inline'" : ''}`,
+    `style-src 'self' 'unsafe-inline'`,
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https://api.frankfurter.app https://*.ingest.sentry.io",
