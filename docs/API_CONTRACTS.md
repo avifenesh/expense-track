@@ -673,11 +673,149 @@ Archive or unarchive a category.
 
 ---
 
-## Expense Sharing Endpoints (PLANNED - Sprint 3)
+## Expense Sharing Endpoints
 
-> ⚠️ **Not yet implemented.** These endpoints are planned for Sprint 3 mobile development.
+### GET /api/v1/sharing
 
-### POST /api/v1/expenses/share
+Retrieves all sharing data for the authenticated user including expenses they shared, expenses shared with them, and settlement balances.
+
+**Auth:** Bearer token required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "sharedExpenses": [
+      {
+        "id": "clx...",
+        "transactionId": "clx...",
+        "splitType": "EQUAL",
+        "totalAmount": "100.00",
+        "currency": "USD",
+        "description": "Dinner at restaurant",
+        "createdAt": "2024-01-15T12:00:00Z",
+        "transaction": {
+          "id": "clx...",
+          "date": "2024-01-15",
+          "description": "Restaurant",
+          "category": {
+            "id": "clx...",
+            "name": "Food & Dining"
+          }
+        },
+        "participants": [
+          {
+            "id": "clx...",
+            "shareAmount": "25.00",
+            "sharePercentage": null,
+            "status": "PENDING",
+            "paidAt": null,
+            "reminderSentAt": null,
+            "participant": {
+              "id": "clx...",
+              "email": "friend@example.com",
+              "displayName": "Friend"
+            }
+          }
+        ],
+        "totalOwed": "25.00",
+        "totalPaid": "0.00",
+        "allSettled": false
+      }
+    ],
+    "expensesSharedWithMe": [
+      {
+        "id": "clx...",
+        "shareAmount": "30.00",
+        "sharePercentage": null,
+        "status": "PENDING",
+        "paidAt": null,
+        "sharedExpense": {
+          "id": "clx...",
+          "splitType": "EQUAL",
+          "totalAmount": "120.00",
+          "currency": "USD",
+          "description": "Team lunch",
+          "createdAt": "2024-01-16T14:00:00Z",
+          "transaction": {
+            "id": "clx...",
+            "date": "2024-01-16",
+            "description": "Lunch",
+            "category": {
+              "id": "clx...",
+              "name": "Food & Dining"
+            }
+          },
+          "owner": {
+            "id": "clx...",
+            "email": "owner@example.com",
+            "displayName": "Owner"
+          }
+        }
+      }
+    ],
+    "settlementBalances": [
+      {
+        "userId": "clx...",
+        "userEmail": "friend@example.com",
+        "userDisplayName": "Friend",
+        "currency": "USD",
+        "youOwe": "30.00",
+        "theyOwe": "25.00",
+        "netBalance": "-5.00"
+      }
+    ]
+  }
+}
+```
+
+**Split Types:**
+- `EQUAL` - Split equally among participants
+- `PERCENTAGE` - Split by percentage
+- `FIXED` - Fixed amounts per participant
+
+**Payment Status:**
+- `PENDING` - Awaiting payment
+- `PAID` - Payment confirmed
+- `DECLINED` - Participant declined
+
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 429: Rate limited - Too many requests
+- 500: Server error
+
+---
+
+### PATCH /api/v1/sharing/[participantId]/paid
+
+Mark a participant's share as paid (owner only).
+
+**Auth:** Bearer token required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "PAID",
+    "paidAt": "2024-01-16T14:00:00Z"
+  }
+}
+```
+
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - Only the expense owner can mark payments
+- 404: Not found - Participant not found
+- 429: Rate limited - Too many requests
+
+---
+
+### POST /api/v1/expenses/share (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for future release.
 
 Share an expense with other users.
 
@@ -697,11 +835,6 @@ Share an expense with other users.
   ]
 }
 ```
-
-**Split Types:**
-- `EQUAL`: Split equally among participants
-- `PERCENTAGE`: Split by percentage
-- `FIXED`: Fixed amounts per participant
 
 **Response (201):**
 ```json
@@ -724,100 +857,9 @@ Share an expense with other users.
 
 ---
 
-### GET /api/v1/expenses/shared-by-me
+### POST /api/v1/expenses/shares/[participantId]/decline (PLANNED)
 
-Get expenses I've shared with others.
-
-**Auth:** Bearer token required
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "sharedExpenses": [
-      {
-        "id": "clx...",
-        "transactionId": "clx...",
-        "splitType": "EQUAL",
-        "description": "Dinner at restaurant",
-        "totalAmount": "100.00",
-        "currency": "USD",
-        "createdAt": "2024-01-15T12:00:00Z",
-        "participants": [
-          {
-            "id": "clx...",
-            "user": {
-              "email": "friend@example.com",
-              "displayName": "Friend"
-            },
-            "shareAmount": "25.00",
-            "status": "PENDING"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
----
-
-### GET /api/v1/expenses/shared-with-me
-
-Get expenses others have shared with me.
-
-**Auth:** Bearer token required
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "participations": [
-      {
-        "id": "clx...",
-        "shareAmount": "25.00",
-        "status": "PENDING",
-        "sharedExpense": {
-          "id": "clx...",
-          "description": "Dinner at restaurant",
-          "totalAmount": "100.00",
-          "currency": "USD",
-          "owner": {
-            "email": "owner@example.com",
-            "displayName": "Owner"
-          }
-        }
-      }
-    ]
-  }
-}
-```
-
----
-
-### PATCH /api/v1/expenses/shares/[participantId]/paid
-
-Mark a share as paid.
-
-**Auth:** Bearer token required
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "clx...",
-    "status": "PAID",
-    "paidAt": "2024-01-16T14:00:00Z"
-  }
-}
-```
-
----
-
-### POST /api/v1/expenses/shares/[participantId]/decline
+> ⚠️ **Not yet implemented.** Planned for future release.
 
 Decline a shared expense.
 
@@ -836,7 +878,9 @@ Decline a shared expense.
 
 ---
 
-### DELETE /api/v1/expenses/shares/[sharedExpenseId]
+### DELETE /api/v1/expenses/shares/[sharedExpenseId] (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for future release.
 
 Cancel a shared expense.
 
@@ -854,7 +898,9 @@ Cancel a shared expense.
 
 ---
 
-### POST /api/v1/expenses/shares/[participantId]/remind
+### POST /api/v1/expenses/shares/[participantId]/remind (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for future release.
 
 Send payment reminder to participant.
 
@@ -872,7 +918,9 @@ Send payment reminder to participant.
 
 ---
 
-### GET /api/v1/users/lookup
+### GET /api/v1/users/lookup (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for future release.
 
 Lookup user by email for sharing.
 
@@ -903,6 +951,7 @@ Lookup user by email for sharing.
 }
 ```
 
+---
 ---
 
 ## User & Account Endpoints (PLANNED - Sprint 3)
