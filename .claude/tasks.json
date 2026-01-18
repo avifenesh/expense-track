@@ -1,23 +1,29 @@
 {
   "claimedTasks": [],
-  "lastUpdated": "2026-01-18T09:30:00Z",
-  "tasks": [
+  "lastUpdated": "2026-01-18T10:56:00Z",
+  "tasks": [],
+  "completedTasks": [
+    {
+      "id": 224,
+      "source": "github",
+      "title": "mobile: Create reusable form components",
+      "labels": ["mobile", "phase:sprint-3", "priority:high"],
+      "branch": "feature/form-components-224",
+      "status": "shipped",
+      "completedAt": "2026-01-18T10:55:59Z",
+      "pr": "https://github.com/avifenesh/balance-beacon/pull/233",
+      "mergeCommit": "3d92b0e"
+    },
     {
       "id": 208,
       "source": "github",
       "title": "Create categoriesStore for category management",
-      "description": "Foundation store needed by multiple screens (transactions, budgets). Dependency of #213, #214, #215, #216.",
-      "labels": [
-        "mobile",
-        "phase:sprint-3",
-        "priority:high"
-      ],
+      "labels": ["mobile", "phase:sprint-3", "priority:high"],
       "branch": "feature/categories-store-208",
-      "worktreePath": "C:/Users/avife/worktrees/expense-track-categories-store-208",
-      "claimedAt": "2026-01-18T00:00:00Z",
-      "status": "claimed",
-      "lastActivityAt": "2026-01-18T00:00:00Z",
-      "url": "https://github.com/avifenesh/expense-track/issues/208"
+      "status": "shipped",
+      "completedAt": "2026-01-18T09:48:33Z",
+      "pr": "https://github.com/avifenesh/balance-beacon/pull/232",
+      "mergeCommit": "8ef3155"
     }
   ]
 }
