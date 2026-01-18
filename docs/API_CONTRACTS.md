@@ -841,6 +841,76 @@ Mark a participant's share as paid (owner only).
 
 ---
 
+### GET /api/v1/expenses/shared-by-me
+
+List expenses shared by the authenticated user with others. Supports filtering by status and pagination.
+
+**Auth:** Bearer token required
+
+**Query Parameters:**
+- `status`: Optional. Filter by status: `pending`, `settled`, or `all` (default: `all`)
+  - `pending`: Expenses with at least one participant still pending payment
+  - `settled`: Expenses where all participants have paid or declined
+  - `all`: All shared expenses
+- `limit`: Optional. Number of results (default: 50, max: 100)
+- `offset`: Optional. Pagination offset (default: 0)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "expenses": [
+      {
+        "id": "clx...",
+        "transactionId": "clx...",
+        "splitType": "EQUAL",
+        "totalAmount": "100.00",
+        "currency": "USD",
+        "description": "Dinner at restaurant",
+        "createdAt": "2024-01-15T12:00:00Z",
+        "transaction": {
+          "id": "clx...",
+          "date": "2024-01-15",
+          "description": "Restaurant",
+          "category": {
+            "id": "clx...",
+            "name": "Food & Dining"
+          }
+        },
+        "participants": [
+          {
+            "id": "clx...",
+            "shareAmount": "50.00",
+            "sharePercentage": null,
+            "status": "PENDING",
+            "paidAt": null,
+            "reminderSentAt": null,
+            "participant": {
+              "id": "clx...",
+              "email": "friend@example.com",
+              "displayName": "Friend"
+            }
+          }
+        ],
+        "totalOwed": "50.00",
+        "totalPaid": "0.00",
+        "allSettled": false
+      }
+    ],
+    "total": 10,
+    "hasMore": true
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid status, limit, or offset parameter
+- 401: Unauthorized - Invalid or missing auth token
+- 429: Rate limited - Too many requests
+
+---
+
 ### POST /api/v1/expenses/share
 
 Share an expense with other users. Creates a shared expense from an existing transaction, calculating participant shares based on the split type.
