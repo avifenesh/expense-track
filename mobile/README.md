@@ -650,7 +650,7 @@ function SharingScreen() {
 
 **API Integration:**
 - `GET /api/v1/sharing` - Fetch all sharing data
-- `PATCH /api/v1/sharing/[participantId]/paid` - Mark payment received
+- `PATCH /api/v1/expenses/shares/[participantId]/paid` - Mark payment received
 - `POST /api/v1/expenses/shares/[participantId]/decline` - Decline share
 - `DELETE /api/v1/expenses/shares/[sharedExpenseId]` - Cancel shared expense
 - `POST /api/v1/expenses/shares/[participantId]/remind` - Send reminder

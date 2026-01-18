@@ -18,7 +18,6 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
   let accountId: string
   let categoryId: string
   let transactionId: string
-  let sharedExpenseId: string
   let participantId: string
 
   beforeEach(async () => {
@@ -88,7 +87,6 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
       },
       include: { participants: true },
     })
-    sharedExpenseId = sharedExpense.id
     participantId = sharedExpense.participants[0].id
   })
 

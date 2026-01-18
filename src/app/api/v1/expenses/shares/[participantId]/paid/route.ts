@@ -41,14 +41,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         )
       }
 
-      if (participant.status !== PaymentStatus.PENDING) {
-        return validationError({
-          status: [
-            `Cannot mark a share as paid that is already ${participant.status.toLowerCase()}`,
-          ],
-        })
-      }
-
       const paidAt = new Date()
 
       // Use updateMany with status condition for atomic check-and-update
@@ -63,21 +55,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         },
       })
 
-      // Race condition: another request changed status between check and update
+      // If no rows updated, share was not in PENDING status
       if (updateResult.count === 0) {
-        const current = await prisma.expenseParticipant.findUnique({
-          where: { id: participantId },
-        })
         return validationError({
           status: [
-            `Cannot mark a share as paid that is already ${current?.status.toLowerCase() ?? 'unknown'}`,
+            `Cannot mark a share as paid that is already ${participant.status.toLowerCase()}`,
           ],
         })
       }
-
-      const updated = await prisma.expenseParticipant.findUniqueOrThrow({
-        where: { id: participantId },
-      })
 
       serverLogger.info('Marked participant share as paid', {
         action: 'PATCH /api/v1/expenses/shares/[participantId]/paid',
@@ -86,9 +71,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       })
 
       return successResponse({
-        id: updated.id,
-        status: updated.status,
-        paidAt: updated.paidAt?.toISOString() ?? null,
+        id: participantId,
+        status: PaymentStatus.PAID,
+        paidAt: paidAt.toISOString(),
       })
     },
     { requireSubscription: true }

@@ -509,7 +509,6 @@ describe('Subscription Enforcement on API Routes', () => {
   describe('subscription enforcement on expense share endpoints', () => {
     let participantId: string
     let transactionId: string
-    let sharedExpenseId: string
 
     beforeEach(async () => {
       const testUser = await getApiTestUser()
@@ -547,7 +546,6 @@ describe('Subscription Enforcement on API Routes', () => {
         },
         include: { participants: true },
       })
-      sharedExpenseId = sharedExpense.id
       participantId = sharedExpense.participants[0].id
     })
 

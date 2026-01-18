@@ -935,6 +935,7 @@ Mark a participant's share as paid (owner only).
 **Errors:**
 - 400: Validation error - Share is not in PENDING status (already paid or declined)
 - 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
 - 403: Forbidden - Only the expense owner can mark payments
 - 404: Not found - Participant not found
 - 429: Rate limited - Too many requests
