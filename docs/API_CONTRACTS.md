@@ -1007,13 +1007,11 @@ Lookup user by email for sharing.
 ---
 ---
 
-## User & Account Endpoints (PLANNED - Sprint 3)
-
-> ⚠️ **Not yet implemented.** These endpoints are planned for Sprint 3 mobile development.
+## User & Account Endpoints
 
 ### GET /api/v1/users/me
 
-Get current user profile.
+Get current user profile including subscription status.
 
 **Auth:** Bearer token required
 
@@ -1026,14 +1024,30 @@ Get current user profile.
     "email": "user@example.com",
     "displayName": "John Doe",
     "preferredCurrency": "USD",
+    "createdAt": "2024-01-15T00:00:00.000Z",
     "hasCompletedOnboarding": true,
     "subscription": {
-      "status": "ACTIVE",
-      "currentPeriodEnd": "2024-02-15T00:00:00Z"
+      "status": "TRIALING|ACTIVE|PAST_DUE|CANCELED|EXPIRED",
+      "isActive": true,
+      "canAccessApp": true,
+      "trialEndsAt": "2024-02-01T00:00:00.000Z",
+      "currentPeriodEnd": null,
+      "daysRemaining": 14
     }
   }
 }
 ```
+
+**Subscription Status Values:**
+- `TRIALING` - User is in trial period, `trialEndsAt` shows end date
+- `ACTIVE` - Paid subscription, `currentPeriodEnd` shows renewal date
+- `PAST_DUE` - Payment failed, user retains access temporarily
+- `CANCELED` - User canceled, retains access until `currentPeriodEnd`
+- `EXPIRED` - No access, trial/subscription ended
+
+**Error Responses:**
+- 401: Invalid or missing auth token
+- 429: Rate limited
 
 ---
 
