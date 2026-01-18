@@ -336,7 +336,7 @@ Export all user data (GDPR compliance).
 
 ## Transaction Endpoints
 
-### GET /api/v1/transactions (NEW)
+### GET /api/v1/transactions
 
 List transactions with filters.
 
@@ -424,39 +424,6 @@ Create a new transaction.
 
 ---
 
-### GET /api/v1/transactions/[id]
-
-Get a single transaction.
-
-**Auth:** Bearer token required
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "clx...",
-    "accountId": "clx...",
-    "categoryId": "clx...",
-    "type": "EXPENSE",
-    "amount": "125.50",
-    "currency": "USD",
-    "date": "2024-01-15",
-    "month": "2024-01-01",
-    "description": "Grocery shopping",
-    "isRecurring": false,
-    "category": {
-      "id": "clx...",
-      "name": "Food",
-      "type": "EXPENSE",
-      "color": "#4CAF50"
-    }
-  }
-}
-```
-
----
-
 ### PUT /api/v1/transactions/[id]
 
 Update a transaction.
@@ -501,7 +468,7 @@ Delete a transaction.
 {
   "success": true,
   "data": {
-    "message": "Transaction deleted"
+    "id": "clx..."
   }
 }
 ```
@@ -510,7 +477,7 @@ Delete a transaction.
 
 ## Budget Endpoints
 
-### GET /api/v1/budgets (NEW)
+### GET /api/v1/budgets
 
 List budgets.
 
@@ -600,7 +567,7 @@ Delete a budget.
 {
   "success": true,
   "data": {
-    "message": "Budget deleted"
+    "deleted": true
   }
 }
 ```
@@ -609,7 +576,7 @@ Delete a budget.
 
 ## Category Endpoints
 
-### GET /api/v1/categories (NEW)
+### GET /api/v1/categories
 
 List user categories.
 
@@ -960,7 +927,7 @@ Get current user profile.
 
 ---
 
-### GET /api/v1/accounts (NEW)
+### GET /api/v1/accounts
 
 List user's accounts.
 
@@ -976,8 +943,10 @@ List user's accounts.
         "id": "clx...",
         "name": "Personal",
         "type": "PERSONAL",
-        "currency": "USD",
-        "userId": "clx..."
+        "preferredCurrency": "USD",
+        "color": "#4CAF50",
+        "icon": "wallet",
+        "description": "My personal account"
       }
     ]
   }
