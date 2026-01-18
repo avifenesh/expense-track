@@ -116,9 +116,9 @@ Server actions and REST API endpoints audit for Issue #64.
 | `/api/v1/transactions/[id]` | PUT | Update transaction | JWT Bearer |
 | `/api/v1/transactions/[id]` | DELETE | Delete transaction | JWT Bearer |
 | `/api/v1/transactions/requests` | GET | Get requests | JWT Bearer |
-| `/api/v1/transactions/requests` | POST | Create request | JWT Bearer |
-| `/api/v1/transactions/requests/[id]/approve` | POST | Approve request | JWT Bearer |
-| `/api/v1/transactions/requests/[id]/reject` | POST | Reject request | JWT Bearer |
+| `/api/v1/transactions/requests` | POST | Create request | JWT Bearer + Subscription |
+| `/api/v1/transactions/requests/[id]/approve` | POST | Approve request | JWT Bearer + Subscription |
+| `/api/v1/transactions/requests/[id]/reject` | POST | Reject request | JWT Bearer + Subscription |
 
 ### Budget Endpoints (`/api/v1/budgets/`)
 
@@ -245,18 +245,41 @@ PATCH  /api/v1/accounts/[id]/activate   - Switch active account
 
 ## Critical Issue: Subscription Validation
 
-**Finding**: REST API endpoints do not currently enforce subscription status.
+**Status**: PARTIALLY RESOLVED (Issue #242)
+
+**Implemented**: Subscription validation middleware now protects transaction request endpoints:
+- `POST /api/v1/transactions/requests` - Create transaction request
+- `POST /api/v1/transactions/requests/[id]/approve` - Approve request
+- `POST /api/v1/transactions/requests/[id]/reject` - Reject request
+
+**Implementation Details**:
+- `checkSubscription(userId)` helper validates subscription status
+- Returns 402 Payment Required with `SUBSCRIPTION_REQUIRED` code
+- Comprehensive test suite added (498+ lines) with 100% coverage
+
+**Remaining Work**: Other REST endpoints still need subscription validation:
+- Transaction CRUD endpoints
+- Budget, category, holdings, recurring endpoints
+- Expense sharing endpoints
 
 Server actions use:
 - `requireActiveSubscription()` - Checks subscription is active
 - `ensureAccountAccessWithSubscription()` - Combined access + subscription check
 
-**REST API Gap**: The JWT authentication validates user identity but does not check subscription status. Before Sprint 4 mobile launch, REST endpoints need subscription validation middleware.
+**REST API Pattern**:
+```typescript
+// 1.6 Subscription check
+const subscriptionError = await checkSubscription(user.userId)
+if (subscriptionError) return subscriptionError
+```
 
-**Recommendation**: Create `requireActiveSubscriptionApi()` helper that:
-1. Checks user's subscription status from database
-2. Returns 403 with `subscription_required` error if expired/inactive
-3. Includes subscription status in error response for mobile to show upgrade prompt
+Returns 402 with error response:
+```json
+{
+  "error": "Active subscription required",
+  "code": "SUBSCRIPTION_REQUIRED"
+}
+```
 
 ---
 

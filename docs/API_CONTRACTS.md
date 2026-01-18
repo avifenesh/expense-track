@@ -59,10 +59,38 @@ All resource IDs use CUID (Collision-resistant Unique Identifier) format:
 | 201 | Created |
 | 400 | Bad Request (validation error) |
 | 401 | Unauthorized (invalid/expired token) |
+| 402 | Payment Required (subscription expired/inactive) |
 | 403 | Forbidden (insufficient permissions) |
 | 404 | Not Found |
 | 429 | Rate Limited |
 | 500 | Server Error |
+
+
+## Subscription Enforcement
+
+**All mutating endpoints require an active subscription.** Endpoints that create, update, or delete resources will return 402 if the user's subscription is expired or inactive.
+
+**402 Response Format:**
+```json
+{
+  "error": "Active subscription required",
+  "code": "SUBSCRIPTION_REQUIRED"
+}
+```
+
+**Protected Endpoints:**
+- Transaction creation and modification
+- Transaction requests (create, approve, reject)
+- Budget management
+- Category management
+- Holdings management
+- Recurring templates
+- Expense sharing
+
+Mobile apps should:
+1. Check subscription status on app launch via `GET /api/v1/subscriptions`
+2. Handle 402 responses by prompting user to upgrade
+3. Retry the request after successful subscription activation
 
 ---
 
@@ -1327,7 +1355,8 @@ Creates a new stock/investment holding.
 **Errors:**
 - 400: Validation error - Invalid input, symbol, or category
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - User doesn't own the account or subscription expired
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - User doesn't own the account
 - 404: Not found - Category not found
 - 429: Rate limited - Too many requests
 - 500: Server error - Holding may already exist
@@ -1374,7 +1403,7 @@ Updates an existing holding.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 404: Not found - Holding does not exist
 - 429: Rate limited - Too many requests
 
@@ -1398,7 +1427,7 @@ Deletes an existing holding.
 
 **Errors:**
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 404: Not found - Holding does not exist
 - 429: Rate limited - Too many requests
 
@@ -1431,7 +1460,8 @@ Refreshes stock prices for all holdings in an account from external API.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - User doesn't own the account or subscription expired
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - User doesn't own the account
 - 429: Rate limited - Too many requests
 - 500: Server error - Unable to refresh prices
 
@@ -1498,7 +1528,8 @@ Creates or updates a recurring transaction template.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - User doesn't own the account/template or subscription expired
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - User doesn't own the account/template
 - 429: Rate limited - Too many requests
 - 500: Server error - Unable to save template
 
@@ -1531,7 +1562,7 @@ Toggles a recurring template's active status.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 404: Not found - Recurring template not found
 - 429: Rate limited - Too many requests
 
@@ -1572,7 +1603,8 @@ Applies recurring templates to generate transactions for a specific month.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - User doesn't own the account or subscription expired
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - User doesn't own the account
 - 429: Rate limited - Too many requests
 - 500: Server error - Unable to create transactions
 
