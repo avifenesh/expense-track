@@ -5,6 +5,9 @@ import { ApiError } from '../services/api';
 import type { BiometricCapability } from '../services/biometric';
 import { useTransactionsStore } from './transactionsStore';
 import { useBudgetsStore } from './budgetsStore';
+// NOTE: Circular dependency with sharingStore (and other stores) is safe here
+// because imports are only accessed at runtime in logout(), not during module init.
+// This pattern is consistent across all stores that need cleanup on logout.
 import { useSharingStore } from './sharingStore';
 
 export interface User {

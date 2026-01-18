@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Create, update, and delete shared expenses
   - Mark participant shares as paid or declined
   - List expenses shared by user and shared with user
-  - Optimistic updates with automatic rollback on error
+  - Updates local cache after successful API mutations
   - Background refresh after mutations
   - Logout integration for state cleanup
   - 641-line comprehensive test suite with 90%+ coverage
