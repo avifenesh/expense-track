@@ -32,6 +32,7 @@ const MONTH_NAMES = [
   'Dec',
 ];
 
+// TODO: Move to shared theme file (e.g., src/constants/colors.ts)
 const COLORS = {
   background: '#1e293b',
   primary: '#38bdf8',
@@ -96,7 +97,7 @@ export function MonthSelector({
     let max = currentYear;
 
     if (minMonth) {
-      min = Math.max(min, getYearFromMonthKey(minMonth));
+      min = Math.min(min, getYearFromMonthKey(minMonth));
     }
     if (effectiveMaxMonth) {
       max = Math.max(max, getYearFromMonthKey(effectiveMaxMonth));
