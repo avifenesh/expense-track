@@ -29,3 +29,15 @@ export type {
   CreateBudgetInput,
   UpdateBudgetInput,
 } from './budgetsStore';
+
+export { useSharingStore } from './sharingStore';
+export type {
+  SharingStore,
+  SplitType,
+  ShareStatus,
+  ShareUser,
+  ShareParticipant,
+  SharedExpense,
+  SharedWithMeParticipation,
+  CreateSharedExpenseInput,
+} from './sharingStore';
