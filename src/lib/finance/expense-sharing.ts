@@ -125,6 +125,7 @@ export type OffsetPaginatedResult<T> = {
 /**
  * Get expenses shared by a user with others (API version).
  * Supports offset-based pagination and status filtering for REST API.
+ * Uses DB-side pagination to avoid loading entire dataset into memory.
  *
  * @param userId - The user who shared the expenses
  * @param options - Optional pagination and filtering options
@@ -141,10 +142,51 @@ export async function getSharedExpensesPaginated(
   // Build base where clause
   const baseWhere = { ownerId: userId }
 
-  // Fetch all shared expenses first, then filter by status
-  // This is necessary because status filtering depends on participant statuses
+  // For status filtering, we need to identify which expenses match the filter.
+  // "settled" = all participants are PAID or DECLINED (no PENDING)
+  // "pending" = at least one participant is PENDING
+  // We use a two-step approach: first get IDs that match the filter, then paginate.
+
+  let expenseIdsToInclude: string[] | null = null
+
+  if (statusFilter !== 'all') {
+    // Get all expense IDs for this user with their pending participant count
+    const expensesWithPendingCount = await prisma.sharedExpense.findMany({
+      where: baseWhere,
+      select: {
+        id: true,
+        participants: {
+          where: { status: PaymentStatus.PENDING },
+          select: { id: true },
+        },
+      },
+    })
+
+    // Filter by status
+    if (statusFilter === 'pending') {
+      // At least one participant is PENDING
+      expenseIdsToInclude = expensesWithPendingCount
+        .filter((e) => e.participants.length > 0)
+        .map((e) => e.id)
+    } else {
+      // status === 'settled': No PENDING participants
+      expenseIdsToInclude = expensesWithPendingCount
+        .filter((e) => e.participants.length === 0)
+        .map((e) => e.id)
+    }
+  }
+
+  // Build where clause with optional ID filter
+  const whereClause = expenseIdsToInclude !== null
+    ? { ...baseWhere, id: { in: expenseIdsToInclude } }
+    : baseWhere
+
+  // Get total count for pagination metadata
+  const total = await prisma.sharedExpense.count({ where: whereClause })
+
+  // Fetch paginated results with DB-side skip/take
   const sharedExpenses = await prisma.sharedExpense.findMany({
-    where: baseWhere,
+    where: whereClause,
     include: {
       transaction: {
         include: {
@@ -164,10 +206,12 @@ export async function getSharedExpensesPaginated(
       },
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip: offset,
+    take: limit,
   })
 
-  // Transform and filter by status
-  const allItems = sharedExpenses.map((expense) => {
+  // Transform to response format
+  const items = sharedExpenses.map((expense) => {
     const totalAmount = decimalToNumber(expense.totalAmount)
     const participants = expense.participants.map((p) => ({
       id: p.id,
@@ -211,37 +255,9 @@ export async function getSharedExpensesPaginated(
     }
   })
 
-  // Filter by status
-  const filteredItems = filterByStatus(allItems, statusFilter)
-
-  // Apply pagination
-  const total = filteredItems.length
-  const items = filteredItems.slice(offset, offset + limit)
   const hasMore = offset + items.length < total
 
   return { items, total, hasMore }
-}
-
-/**
- * Filter shared expenses by status.
- * - "pending": at least one participant is PENDING
- * - "settled": all participants are PAID or DECLINED (no PENDING)
- * - "all": no filtering
- */
-function filterByStatus(
-  items: SharedExpenseSummary[],
-  status: SharedExpenseStatusFilter,
-): SharedExpenseSummary[] {
-  if (status === 'all') {
-    return items
-  }
-
-  if (status === 'pending') {
-    return items.filter((item) => !item.allSettled)
-  }
-
-  // status === 'settled'
-  return items.filter((item) => item.allSettled)
 }
 
 /**

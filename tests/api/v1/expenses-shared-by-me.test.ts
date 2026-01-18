@@ -23,9 +23,9 @@ describe('GET /api/v1/expenses/shared-by-me', () => {
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
     otherToken = generateAccessToken(OTHER_USER_ID, 'api-other@example.com')
 
-    // Get test users
+    // Get test users (ensure they exist)
     const testUser = await getApiTestUser()
-    const otherUser = await getOtherTestUser()
+    await getOtherTestUser()
 
     // Create test account
     const account = await prisma.account.upsert({
@@ -67,8 +67,6 @@ describe('GET /api/v1/expenses/shared-by-me', () => {
     status?: PaymentStatus
     description?: string
   }) {
-    const testUser = await getApiTestUser()
-
     // Create transaction
     const transaction = await prisma.transaction.create({
       data: {
@@ -483,7 +481,7 @@ describe('GET /api/v1/expenses/shared-by-me', () => {
       })
 
       const response = await GET(request)
-      const data = await response.json()
+      await response.json() // Ensure response is valid JSON
 
       // Should not error - just cap at max
       expect(response.status).toBe(200)
