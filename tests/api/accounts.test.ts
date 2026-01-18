@@ -64,7 +64,8 @@ describe('GET /api/v1/accounts', () => {
     vi.clearAllMocks()
     resetAllRateLimits()
     mockRequireJwtAuth.mockReturnValue(mockUser)
-    mockAccountFindMany.mockResolvedValue(mockAccounts)
+    // Cast to any since we're mocking the select result, not full Account type
+    mockAccountFindMany.mockResolvedValue(mockAccounts as any)
   })
 
   afterEach(() => {
