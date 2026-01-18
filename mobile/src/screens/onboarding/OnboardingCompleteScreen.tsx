@@ -26,11 +26,9 @@ export function OnboardingCompleteScreen({
   const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency];
 
   const handleComplete = async () => {
-    try {
-      await completeOnboarding();
+    await completeOnboarding();
+    if (!error) {
       navigation.navigate('OnboardingBiometric');
-    } catch (err) {
-      // Error is already set in the store
     }
   };
 

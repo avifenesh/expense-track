@@ -22,24 +22,28 @@ const updateCurrencySchema = z.object({
  * @throws {429} Rate limited - Too many requests
  */
 export async function PATCH(request: NextRequest) {
-  return withApiAuth(request, async (user) => {
-    const body = await parseJsonBody(request)
-    if (body === null) {
-      return validationError({ body: ['Invalid JSON'] })
-    }
+  return withApiAuth(
+    request,
+    async (user) => {
+      const body = await parseJsonBody(request)
+      if (body === null) {
+        return validationError({ body: ['Invalid JSON'] })
+      }
 
-    const parsed = updateCurrencySchema.safeParse(body)
-    if (!parsed.success) {
-      return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
-    }
+      const parsed = updateCurrencySchema.safeParse(body)
+      if (!parsed.success) {
+        return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
+      }
 
-    const data = parsed.data
+      const data = parsed.data
 
-    await prisma.user.update({
-      where: { id: user.userId },
-      data: { preferredCurrency: data.currency },
-    })
+      await prisma.user.update({
+        where: { id: user.userId },
+        data: { preferredCurrency: data.currency },
+      })
 
-    return successResponse({ currency: data.currency })
-  })
+      return successResponse({ currency: data.currency })
+    },
+    { requireSubscription: true },
+  )
 }

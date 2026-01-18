@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiPost, apiPatch } from '../services/api';
+import { apiPost, apiPatch, apiGet } from '../services/api';
 import { ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 
@@ -110,55 +110,39 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       }
 
       if (state.monthlyBudget !== null && state.monthlyBudget > 0) {
-        const accountsResponse = await fetch(
-          `${API_BASE_URL}/accounts`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          }
+        const accountsData = await apiGet<{ accounts: Array<{ id: string; name: string }> }>(
+          '/accounts',
+          accessToken
         );
 
-        if (accountsResponse.ok) {
-          const accountsData = await accountsResponse.json();
-          if (accountsData.success && accountsData.data.accounts.length > 0) {
-            const firstAccount = accountsData.data.accounts[0];
+        if (accountsData.accounts && accountsData.accounts.length > 0) {
+          const firstAccount = accountsData.accounts[0];
 
-            const categoriesResponse = await fetch(
-              `${API_BASE_URL}/categories`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json',
-                },
-              }
+          const categoriesData = await apiGet<{ categories: Array<{ id: string; name: string }> }>(
+            '/categories',
+            accessToken
+          );
+
+          if (categoriesData.categories) {
+            const totalCategory = categoriesData.categories.find(
+              (c: { name: string }) => c.name === 'Total'
             );
 
-            if (categoriesResponse.ok) {
-              const categoriesData = await categoriesResponse.json();
-              if (categoriesData.success) {
-                const totalCategory = categoriesData.data.categories.find(
-                  (c: { name: string }) => c.name === 'Total'
-                );
+            if (totalCategory) {
+              const now = new Date();
+              const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-                if (totalCategory) {
-                  const now = new Date();
-                  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-                  await apiPost<{ success: boolean }>(
-                    '/budgets/quick',
-                    {
-                      accountId: firstAccount.id,
-                      categoryId: totalCategory.id,
-                      monthKey,
-                      planned: state.monthlyBudget,
-                      currency: state.selectedCurrency,
-                    },
-                    accessToken
-                  );
-                }
-              }
+              await apiPost<{ success: boolean }>(
+                '/budgets/quick',
+                {
+                  accountId: firstAccount.id,
+                  categoryId: totalCategory.id,
+                  monthKey,
+                  planned: state.monthlyBudget,
+                  currency: state.selectedCurrency,
+                },
+                accessToken
+              );
             }
           }
         }
@@ -187,7 +171,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       } else {
         set({ error: 'Failed to complete onboarding', isCompleting: false });
       }
-      throw error;
     }
   },
 
