@@ -3,6 +3,7 @@ import { apiPost, apiPatch } from '../services/api';
 import { ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 export type Currency = 'USD' | 'EUR' | 'ILS';
 
 export interface CategorySelection {
@@ -39,6 +40,8 @@ const initialState: OnboardingState = {
   isCompleting: false,
   error: null,
 };
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+
 
 export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   ...initialState,
@@ -79,34 +82,14 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     set({ isCompleting: true, error: null });
 
     try {
-      // Step 1: Update currency
       await apiPatch<{ currency: Currency }>(
         '/users/me/currency',
         { currency: state.selectedCurrency },
         accessToken
       );
 
-      // Step 2: Create selected categories (if any)
       if (state.selectedCategories.length > 0) {
-        const DEFAULT_EXPENSE_CATEGORIES = [
-          { name: 'Groceries', color: '#22c55e' },
-          { name: 'Dining Out', color: '#f97316' },
-          { name: 'Transportation', color: '#3b82f6' },
-          { name: 'Utilities', color: '#8b5cf6' },
-          { name: 'Entertainment', color: '#ec4899' },
-          { name: 'Shopping', color: '#06b6d4' },
-          { name: 'Health', color: '#ef4444' },
-          { name: 'Housing', color: '#84cc16' },
-          { name: 'Insurance', color: '#6366f1' },
-          { name: 'Subscriptions', color: '#14b8a6' },
-        ];
 
-        const DEFAULT_INCOME_CATEGORIES = [
-          { name: 'Salary', color: '#10b981' },
-          { name: 'Freelance', color: '#06b6d4' },
-          { name: 'Investments', color: '#8b5cf6' },
-          { name: 'Other Income', color: '#6b7280' },
-        ];
 
         const allDefaultCategories = [
           ...DEFAULT_EXPENSE_CATEGORIES.map((c) => ({ ...c, type: 'EXPENSE' as const })),
@@ -126,11 +109,9 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         }
       }
 
-      // Step 3: Create budget if set (requires account and "Total" category)
       if (state.monthlyBudget !== null && state.monthlyBudget > 0) {
-        // First, get user's accounts to find the first one
         const accountsResponse = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/accounts`,
+          `${API_BASE_URL}/accounts`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -144,9 +125,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
           if (accountsData.success && accountsData.data.accounts.length > 0) {
             const firstAccount = accountsData.data.accounts[0];
 
-            // Get categories to find "Total" category
             const categoriesResponse = await fetch(
-              `${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/categories`,
+              `${API_BASE_URL}/categories`,
               {
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
@@ -163,7 +143,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
                 );
 
                 if (totalCategory) {
-                  // Get current month key (YYYY-MM)
                   const now = new Date();
                   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
@@ -185,7 +164,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         }
       }
 
-      // Step 4: Seed sample data if requested
       if (state.wantsSampleData) {
         await apiPost<{ categoriesCreated: number; transactionsCreated: number; budgetsCreated: number }>(
           '/seed-data',
@@ -194,14 +172,12 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         );
       }
 
-      // Step 5: Mark onboarding as complete
       await apiPost<{ hasCompletedOnboarding: boolean }>(
         '/onboarding/complete',
         {},
         accessToken
       );
 
-      // Step 6: Update auth store
       authStore.updateUser({ hasCompletedOnboarding: true });
 
       set({ isCompleting: false });

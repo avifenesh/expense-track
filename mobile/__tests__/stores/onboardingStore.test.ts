@@ -257,7 +257,6 @@ describe('onboardingStore', () => {
         try {
           await result.current.completeOnboarding();
         } catch {
-          // Expected
         }
       });
 
@@ -300,7 +299,6 @@ describe('onboardingStore', () => {
         try {
           await result.current.completeOnboarding();
         } catch {
-          // Expected
         }
       });
 
