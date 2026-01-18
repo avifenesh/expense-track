@@ -51,7 +51,7 @@ __tests__/
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
-    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, Budgets)
+    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets)
   services/        # Service tests (api, auth)
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
 ```
@@ -66,7 +66,7 @@ src/
   screens/      # Screen components
     auth/       # Authentication screens (Login, Register, ResetPassword, VerifyEmail)
     onboarding/ # Onboarding flow screens
-    main/       # Main app screens (Dashboard, Transactions, AddTransaction, Budgets)
+    main/       # Main app screens (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets)
   hooks/        # Custom React hooks (useAuthState)
   navigation/   # React Navigation setup
     types.ts    # Navigation type definitions
@@ -428,6 +428,7 @@ The app uses React Navigation with conditional routing:
 - **AppStack** - Main app with bottom tabs and modals
   - **Bottom Tabs**: Dashboard, Transactions, Budgets, Sharing, Settings
   - **Modals**: CreateTransaction (AddTransactionScreen)
+  - **Screens**: EditTransaction (EditTransactionScreen)
 
 ## Main App Features
 
@@ -470,7 +471,55 @@ Modal screen for creating new transactions with comprehensive form:
 - Syncs with transactions store on success
 - Updates dashboard and transaction list automatically
 
+#### EditTransactionScreen
+
+Screen for editing and deleting existing transactions:
+
+**Features:**
+- Pre-populated form with existing transaction data
+- Transaction type toggle (Income/Expense) with visual feedback
+- Amount editing with currency symbol display (USD: $, EUR: €, ILS: ₪)
+- Category selector with color-coded chips (filtered by transaction type)
+- Date selector with quick options:
+  - Today
+  - Yesterday
+  - Custom date picker (last 7 days)
+- Optional description field (max 200 characters)
+- Real-time form validation
+- Transaction preview showing updated values
+- Delete transaction functionality with confirmation dialog
+- Loading states and error handling
+- Transaction not found state handling
+
+**Access:**
+- Tap on any transaction from TransactionsScreen or DashboardScreen
+
+**Navigation:**
+- Opens as a full screen within AppStack
+- Cancel button returns to previous screen
+- Auto-dismisses on successful update or deletion
+
+**Validation:**
+- Amount: Required, positive, max 2 decimals, max value 999,999,999.99
+- Description: Optional, max 200 chars, XSS prevention
+- Category: Required
+- Date: Required, not in future, within 10 years
+
+**Integration:**
+- Uses `PUT /api/v1/transactions/[id]` endpoint for updates
+- Uses `DELETE /api/v1/transactions/[id]` endpoint for deletion
+- Syncs with transactions store on success
+- Updates dashboard and transaction list automatically
+
+**User Experience:**
+- Confirmation dialog before deletion
+- Clear visual feedback for destructive actions
+- Categories automatically filtered when type changes
+- Character counter for description field
+
 ### Validation Utilities
+
+
 
 The `lib/validation.ts` module provides client-side validation for all forms:
 
