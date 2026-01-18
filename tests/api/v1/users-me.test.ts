@@ -20,9 +20,9 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
-  checkRateLimit: vi.fn().mockReturnValue({ allowed: true }),
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, limit: 100, remaining: 99, resetAt: new Date() }),
   incrementRateLimit: vi.fn(),
-  checkRateLimitTyped: vi.fn().mockReturnValue({ allowed: true }),
+  checkRateLimitTyped: vi.fn().mockReturnValue({ allowed: true, limit: 100, remaining: 99, resetAt: new Date() }),
   incrementRateLimitTyped: vi.fn(),
 }))
 
@@ -41,13 +41,21 @@ import { prisma } from '@/lib/prisma'
 import { checkRateLimitTyped } from '@/lib/rate-limit'
 
 describe('GET /api/v1/users/me', () => {
+  // Full User model fields for TypeScript compatibility
   const mockUser = {
     id: 'user-123',
     email: 'test@example.com',
     displayName: 'Test User',
+    passwordHash: 'hashed-password',
     preferredCurrency: Currency.USD,
-    createdAt: new Date('2024-01-01'),
+    emailVerified: true,
+    emailVerificationToken: null,
+    emailVerificationExpires: null,
+    passwordResetToken: null,
+    passwordResetExpires: null,
     hasCompletedOnboarding: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
   }
 
   const mockSubscriptionState = {
@@ -61,7 +69,7 @@ describe('GET /api/v1/users/me', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: true, resetAt: null })
+    vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: true, limit: 100, remaining: 99, resetAt: new Date() })
   })
 
   describe('authentication', () => {
@@ -100,7 +108,7 @@ describe('GET /api/v1/users/me', () => {
       })
 
       const resetAt = new Date(Date.now() + 60000)
-      vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: false, resetAt })
+      vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: false, limit: 100, remaining: 0, resetAt })
 
       const request = new NextRequest('http://localhost/api/v1/users/me')
       const response = await GET(request)
