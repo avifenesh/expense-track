@@ -337,7 +337,7 @@ describe('POST /api/v1/categories/bulk', () => {
     })
 
     const response = await BulkCategories(request)
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(402) // 402 Payment Required for subscription errors
 
     // Reset subscription for other tests
     const trialEndsAt = new Date()

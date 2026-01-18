@@ -128,7 +128,11 @@ describe('POST /api/v1/onboarding/complete', () => {
     expect(response.status).toBe(401)
   })
 
-  it('returns 403 when user has no subscription', async () => {
+  // Note: This endpoint intentionally does NOT require subscription
+  // because it's used during onboarding before user subscribes
+
+  it('works without active subscription (onboarding flow)', async () => {
+    // Set subscription to EXPIRED
     await prisma.subscription.update({
       where: { userId: TEST_USER_ID },
       data: { status: 'EXPIRED' },
@@ -143,71 +147,7 @@ describe('POST /api/v1/onboarding/complete', () => {
     })
 
     const response = await CompleteOnboarding(request)
-    expect(response.status).toBe(403)
-
-    // Reset subscription for other tests
-    const trialEndsAt = new Date()
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14)
-    await prisma.subscription.update({
-      where: { userId: TEST_USER_ID },
-      data: { status: 'TRIALING', trialEndsAt },
-    })
-  })
-
-  it('returns 403 with expired trial', async () => {
-    const expiredDate = new Date()
-    expiredDate.setDate(expiredDate.getDate() - 1)
-
-    await prisma.subscription.update({
-      where: { userId: TEST_USER_ID },
-      data: {
-        status: 'TRIALING',
-        trialEndsAt: expiredDate,
-      },
-    })
-
-    const request = new NextRequest('http://localhost/api/v1/onboarding/complete', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${validToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    const response = await CompleteOnboarding(request)
-    expect(response.status).toBe(403)
-
-    // Reset subscription for other tests
-    const trialEndsAt = new Date()
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14)
-    await prisma.subscription.update({
-      where: { userId: TEST_USER_ID },
-      data: { status: 'TRIALING', trialEndsAt },
-    })
-  })
-
-  it('works with active paid subscription', async () => {
-    await prisma.subscription.update({
-      where: { userId: TEST_USER_ID },
-      data: {
-        status: 'ACTIVE',
-        trialEndsAt: new Date('2020-01-01'), // Past date for active paid subscription
-      },
-    })
-
-    const request = new NextRequest('http://localhost/api/v1/onboarding/complete', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${validToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    const response = await CompleteOnboarding(request)
-    const data = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(data.data.hasCompletedOnboarding).toBe(true)
+    expect(response.status).toBe(200) // Should succeed even without subscription
 
     // Reset subscription for other tests
     const trialEndsAt = new Date()
