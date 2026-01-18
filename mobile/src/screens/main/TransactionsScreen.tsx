@@ -14,7 +14,6 @@ import {
   useTransactionsStore,
   useAccountsStore,
   type Transaction,
-  type TransactionType,
 } from '../../stores';
 import {
   TransactionListItem,
