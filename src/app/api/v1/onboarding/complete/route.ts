@@ -24,6 +24,6 @@ export async function POST(request: NextRequest) {
 
       return successResponse({ hasCompletedOnboarding: true })
     },
-    { requireSubscription: true },
+    // Note: No subscription required - this is used during onboarding before user subscribes
   )
 }

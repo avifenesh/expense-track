@@ -44,6 +44,6 @@ export async function PATCH(request: NextRequest) {
 
       return successResponse({ currency: data.currency })
     },
-    { requireSubscription: true },
+    // Note: No subscription required - this is used during onboarding before user subscribes
   )
 }
