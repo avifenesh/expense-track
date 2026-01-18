@@ -82,3 +82,78 @@ export function formatDateHeader(dateKey: string): string {
     timeZone: 'UTC',
   });
 }
+
+/**
+ * Compare two month keys
+ * @param a - First month key in YYYY-MM format
+ * @param b - Second month key in YYYY-MM format
+ * @returns -1 if a < b, 0 if a === b, 1 if a > b
+ */
+export function compareMonths(a: string, b: string): number {
+  const [yearA, monthA] = a.split('-').map(Number);
+  const [yearB, monthB] = b.split('-').map(Number);
+
+  if (yearA !== yearB) {
+    return yearA < yearB ? -1 : 1;
+  }
+  if (monthA !== monthB) {
+    return monthA < monthB ? -1 : 1;
+  }
+  return 0;
+}
+
+/**
+ * Check if a month is before a reference month
+ * @param month - Month key to check in YYYY-MM format
+ * @param reference - Reference month key in YYYY-MM format
+ * @returns true if month is before reference
+ */
+export function isMonthBefore(month: string, reference: string): boolean {
+  return compareMonths(month, reference) < 0;
+}
+
+/**
+ * Check if a month is after a reference month
+ * @param month - Month key to check in YYYY-MM format
+ * @param reference - Reference month key in YYYY-MM format
+ * @returns true if month is after reference
+ */
+export function isMonthAfter(month: string, reference: string): boolean {
+  return compareMonths(month, reference) > 0;
+}
+
+/**
+ * Clamp a month key to be within min/max bounds
+ * @param month - Month key to clamp in YYYY-MM format
+ * @param min - Optional minimum month key
+ * @param max - Optional maximum month key
+ * @returns Clamped month key
+ */
+export function clampMonth(month: string, min?: string, max?: string): string {
+  let result = month;
+  if (min && isMonthBefore(result, min)) {
+    result = min;
+  }
+  if (max && isMonthAfter(result, max)) {
+    result = max;
+  }
+  return result;
+}
+
+/**
+ * Extract the year from a month key
+ * @param monthKey - Month key in YYYY-MM format
+ * @returns Year as a number
+ */
+export function getYearFromMonthKey(monthKey: string): number {
+  return parseInt(monthKey.split('-')[0], 10);
+}
+
+/**
+ * Extract the month (1-12) from a month key
+ * @param monthKey - Month key in YYYY-MM format
+ * @returns Month as a number (1-12)
+ */
+export function getMonthFromMonthKey(monthKey: string): number {
+  return parseInt(monthKey.split('-')[1], 10);
+}

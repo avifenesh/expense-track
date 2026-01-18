@@ -5,6 +5,12 @@ import {
   formatDateShort,
   getDateKey,
   formatDateHeader,
+  compareMonths,
+  isMonthBefore,
+  isMonthAfter,
+  clampMonth,
+  getYearFromMonthKey,
+  getMonthFromMonthKey,
 } from '../../src/utils/date';
 
 describe('date utilities', () => {
@@ -198,6 +204,125 @@ describe('date utilities', () => {
       const yesterday = formatDateHeader('2025-12-31');
 
       expect(yesterday).toBe('Yesterday');
+    });
+  });
+
+  describe('compareMonths', () => {
+    it('returns 0 for equal months', () => {
+      expect(compareMonths('2026-01', '2026-01')).toBe(0);
+      expect(compareMonths('2025-12', '2025-12')).toBe(0);
+    });
+
+    it('returns -1 when first month is earlier in same year', () => {
+      expect(compareMonths('2026-01', '2026-02')).toBe(-1);
+      expect(compareMonths('2026-06', '2026-12')).toBe(-1);
+    });
+
+    it('returns 1 when first month is later in same year', () => {
+      expect(compareMonths('2026-03', '2026-01')).toBe(1);
+      expect(compareMonths('2026-12', '2026-06')).toBe(1);
+    });
+
+    it('returns -1 when first year is earlier', () => {
+      expect(compareMonths('2025-12', '2026-01')).toBe(-1);
+      expect(compareMonths('2024-06', '2026-03')).toBe(-1);
+    });
+
+    it('returns 1 when first year is later', () => {
+      expect(compareMonths('2027-01', '2026-12')).toBe(1);
+      expect(compareMonths('2026-03', '2024-06')).toBe(1);
+    });
+  });
+
+  describe('isMonthBefore', () => {
+    it('returns true when month is before reference', () => {
+      expect(isMonthBefore('2026-01', '2026-02')).toBe(true);
+      expect(isMonthBefore('2025-12', '2026-01')).toBe(true);
+    });
+
+    it('returns false when month is equal to reference', () => {
+      expect(isMonthBefore('2026-01', '2026-01')).toBe(false);
+    });
+
+    it('returns false when month is after reference', () => {
+      expect(isMonthBefore('2026-03', '2026-01')).toBe(false);
+      expect(isMonthBefore('2027-01', '2026-12')).toBe(false);
+    });
+  });
+
+  describe('isMonthAfter', () => {
+    it('returns true when month is after reference', () => {
+      expect(isMonthAfter('2026-02', '2026-01')).toBe(true);
+      expect(isMonthAfter('2027-01', '2026-12')).toBe(true);
+    });
+
+    it('returns false when month is equal to reference', () => {
+      expect(isMonthAfter('2026-01', '2026-01')).toBe(false);
+    });
+
+    it('returns false when month is before reference', () => {
+      expect(isMonthAfter('2026-01', '2026-03')).toBe(false);
+      expect(isMonthAfter('2025-12', '2026-01')).toBe(false);
+    });
+  });
+
+  describe('clampMonth', () => {
+    it('returns month unchanged when within bounds', () => {
+      expect(clampMonth('2026-06', '2026-01', '2026-12')).toBe('2026-06');
+    });
+
+    it('returns min when month is before min', () => {
+      expect(clampMonth('2025-06', '2026-01', '2026-12')).toBe('2026-01');
+      expect(clampMonth('2025-12', '2026-01', '2026-12')).toBe('2026-01');
+    });
+
+    it('returns max when month is after max', () => {
+      expect(clampMonth('2027-01', '2026-01', '2026-12')).toBe('2026-12');
+      expect(clampMonth('2026-06', '2025-01', '2026-03')).toBe('2026-03');
+    });
+
+    it('handles undefined min', () => {
+      expect(clampMonth('2020-01', undefined, '2026-12')).toBe('2020-01');
+      expect(clampMonth('2027-01', undefined, '2026-12')).toBe('2026-12');
+    });
+
+    it('handles undefined max', () => {
+      expect(clampMonth('2020-01', '2026-01', undefined)).toBe('2026-01');
+      expect(clampMonth('2030-01', '2026-01', undefined)).toBe('2030-01');
+    });
+
+    it('handles both bounds undefined', () => {
+      expect(clampMonth('2020-01', undefined, undefined)).toBe('2020-01');
+    });
+
+    it('handles min equal to max (single valid month)', () => {
+      expect(clampMonth('2026-06', '2026-06', '2026-06')).toBe('2026-06');
+      expect(clampMonth('2026-01', '2026-06', '2026-06')).toBe('2026-06');
+      expect(clampMonth('2026-12', '2026-06', '2026-06')).toBe('2026-06');
+    });
+  });
+
+  describe('getYearFromMonthKey', () => {
+    it('extracts year correctly', () => {
+      expect(getYearFromMonthKey('2026-01')).toBe(2026);
+      expect(getYearFromMonthKey('2025-12')).toBe(2025);
+      expect(getYearFromMonthKey('1999-06')).toBe(1999);
+    });
+  });
+
+  describe('getMonthFromMonthKey', () => {
+    it('extracts month correctly for January', () => {
+      expect(getMonthFromMonthKey('2026-01')).toBe(1);
+    });
+
+    it('extracts month correctly for December', () => {
+      expect(getMonthFromMonthKey('2026-12')).toBe(12);
+    });
+
+    it('extracts month correctly for various months', () => {
+      expect(getMonthFromMonthKey('2026-06')).toBe(6);
+      expect(getMonthFromMonthKey('2025-09')).toBe(9);
+      expect(getMonthFromMonthKey('2024-03')).toBe(3);
     });
   });
 });
