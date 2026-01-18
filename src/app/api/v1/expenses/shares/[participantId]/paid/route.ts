@@ -50,12 +50,33 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       const paidAt = new Date()
-      const updated = await prisma.expenseParticipant.update({
-        where: { id: participantId },
+
+      // Use updateMany with status condition for atomic check-and-update
+      const updateResult = await prisma.expenseParticipant.updateMany({
+        where: {
+          id: participantId,
+          status: PaymentStatus.PENDING,
+        },
         data: {
           status: PaymentStatus.PAID,
           paidAt,
         },
+      })
+
+      // Race condition: another request changed status between check and update
+      if (updateResult.count === 0) {
+        const current = await prisma.expenseParticipant.findUnique({
+          where: { id: participantId },
+        })
+        return validationError({
+          status: [
+            `Cannot mark a share as paid that is already ${current?.status.toLowerCase() ?? 'unknown'}`,
+          ],
+        })
+      }
+
+      const updated = await prisma.expenseParticipant.findUniqueOrThrow({
+        where: { id: participantId },
       })
 
       serverLogger.info('Marked participant share as paid', {
