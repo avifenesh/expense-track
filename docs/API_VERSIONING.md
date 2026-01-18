@@ -164,4 +164,4 @@ tests/api/
 
 - [API Audit](./API_AUDIT.md)
 - [API Contracts](./API_CONTRACTS.md)
-- [SECURITY.md](./SECURITY.md)
+- [XSS Defense](./XSS_DEFENSE.md)
