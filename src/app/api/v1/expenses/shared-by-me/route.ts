@@ -2,11 +2,11 @@ import { NextRequest } from 'next/server'
 import { withApiAuth } from '@/lib/api-middleware'
 import { getSharedExpensesPaginated } from '@/lib/finance/expense-sharing'
 import { successResponse, validationError } from '@/lib/api-helpers'
-import { formatDateForApi } from '@/utils/date'
-import type { SharedExpenseSummary } from '@/lib/finance/types'
+import { formatSharedExpense } from '@/app/api/v1/expenses/formatters'
+import { DEFAULT_PAGINATION_LIMIT } from '@/lib/finance/types'
 import type { SharedExpenseStatusFilter } from '@/lib/finance/types'
 
-const DEFAULT_LIMIT = 50
+const DEFAULT_LIMIT = DEFAULT_PAGINATION_LIMIT
 const MAX_LIMIT = 100
 
 const VALID_STATUSES = ['pending', 'settled', 'all'] as const
@@ -16,47 +16,6 @@ const VALID_STATUSES = ['pending', 'settled', 'all'] as const
  */
 function isSharedExpenseStatusFilter(value: unknown): value is SharedExpenseStatusFilter {
   return typeof value === 'string' && VALID_STATUSES.includes(value as SharedExpenseStatusFilter)
-}
-
-/**
- * Format a shared expense for API response.
- * Converts Date objects and Decimals to strings.
- */
-function formatSharedExpense(expense: SharedExpenseSummary) {
-  return {
-    id: expense.id,
-    transactionId: expense.transactionId,
-    splitType: expense.splitType,
-    totalAmount: expense.totalAmount.toString(),
-    currency: expense.currency,
-    description: expense.description,
-    createdAt: expense.createdAt.toISOString(),
-    transaction: {
-      id: expense.transaction.id,
-      date: formatDateForApi(expense.transaction.date),
-      description: expense.transaction.description,
-      category: {
-        id: expense.transaction.category.id,
-        name: expense.transaction.category.name,
-      },
-    },
-    participants: expense.participants.map((p) => ({
-      id: p.id,
-      shareAmount: p.shareAmount.toString(),
-      sharePercentage: p.sharePercentage?.toString() ?? null,
-      status: p.status,
-      paidAt: p.paidAt?.toISOString() ?? null,
-      reminderSentAt: p.reminderSentAt?.toISOString() ?? null,
-      participant: {
-        id: p.participant.id,
-        email: p.participant.email,
-        displayName: p.participant.displayName,
-      },
-    })),
-    totalOwed: expense.totalOwed.toString(),
-    totalPaid: expense.totalPaid.toString(),
-    allSettled: expense.allSettled,
-  }
 }
 
 /**
