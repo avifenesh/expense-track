@@ -37,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Allows expense owner to mark participant payments as received
   - Updates payment status and timestamp
   - JWT authentication required
+- API: POST /api/v1/expenses/shares/[participantId]/decline endpoint (#186)
+  - Allows participants to decline expense shares assigned to them
+  - Optional decline reason field for explanation
+  - Updates ExpenseParticipant status to DECLINED with timestamp
+  - Authorization check ensures only assigned participant can decline
+  - JWT authentication and active subscription required
 - Mobile: EditTransactionScreen for editing and deleting transactions (#214)
   - Pre-populated form with existing transaction data
   - Transaction type toggle with visual feedback

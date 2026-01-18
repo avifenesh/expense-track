@@ -296,6 +296,8 @@ model ExpenseParticipant {
   sharePercentage Decimal?      @db.Decimal(5, 2)
   status          PaymentStatus @default(PENDING)
   paidAt          DateTime?
+  declinedAt      DateTime?
+  declineReason   String?
   reminderSentAt  DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
