@@ -9,7 +9,6 @@ import type {
   PaginationOptions,
   PaginatedResult,
   SharedExpensePaginationOptions,
-  SharedExpenseStatusFilter,
 } from './types'
 import { DEFAULT_PAGINATION_LIMIT } from './types'
 
