@@ -232,6 +232,30 @@ describe('POST /api/v1/expenses/share', () => {
       expect(data.fields.participants).toContain('Expenses can only be shared with others')
     })
 
+    it('returns 400 with duplicate participant emails', async () => {
+      const request = new NextRequest('http://localhost/api/v1/expenses/share', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionId,
+          splitType: 'EQUAL',
+          participants: [
+            { email: otherUser.email },
+            { email: otherUser.email.toUpperCase() }, // Same email, different case
+          ],
+        }),
+      })
+
+      const response = await ShareExpense(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.fields.participants).toContain('Duplicate participant emails are not allowed')
+    })
+
     it('returns 400 when participant email not found', async () => {
       const request = new NextRequest('http://localhost/api/v1/expenses/share', {
         method: 'POST',

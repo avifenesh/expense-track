@@ -100,6 +100,14 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Prevent duplicate participant emails
+      const uniqueEmails = new Set(participantEmails)
+      if (uniqueEmails.size !== participantEmails.length) {
+        return validationError({
+          participants: ['Duplicate participant emails are not allowed'],
+        })
+      }
+
       // 6. Look up participant users
       const participantUsers = await prisma.user.findMany({
         where: { email: { in: participantEmails } },
