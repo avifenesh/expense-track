@@ -19,7 +19,7 @@ describe('date utilities', () => {
     });
 
     it('formats date correctly for January', () => {
-      const date = new Date(2026, 0, 15); // January 15, 2026
+      const date = new Date(2026, 0, 15);
 
       const result = getMonthKey(date);
 
@@ -27,7 +27,7 @@ describe('date utilities', () => {
     });
 
     it('formats date correctly for December', () => {
-      const date = new Date(2026, 11, 31); // December 31, 2026
+      const date = new Date(2026, 11, 31);
 
       const result = getMonthKey(date);
 
@@ -35,7 +35,7 @@ describe('date utilities', () => {
     });
 
     it('pads single-digit months with zero', () => {
-      const date = new Date(2026, 2, 1); // March 1, 2026
+      const date = new Date(2026, 2, 1);
 
       const result = getMonthKey(date);
 
@@ -129,7 +129,7 @@ describe('date utilities', () => {
     it('handles ISO date strings', () => {
       const result = formatDateShort('2026-01-15T10:30:00.000Z');
 
-      expect(result).toMatch(/Jan 1[45]/); // Could be 14 or 15 depending on timezone
+      expect(result).toMatch(/Jan 1[45]/);
     });
   });
 

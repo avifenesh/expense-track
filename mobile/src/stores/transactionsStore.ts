@@ -157,10 +157,12 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
     }
 
     const newOffset = offset + limit;
+    set({ offset: newOffset });
+
     const success = await get().fetchTransactions(false);
 
-    if (success) {
-      set({ offset: newOffset });
+    if (!success) {
+      set({ offset });
     }
   },
 

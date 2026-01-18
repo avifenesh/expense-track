@@ -37,7 +37,7 @@ export function shiftMonth(monthKey: string, offset: number): string {
  */
 export function formatDateShort(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 /**
@@ -55,21 +55,23 @@ export function getDateKey(dateString: string): string {
  * @returns "Today", "Yesterday", or formatted date like "January 15, 2026"
  */
 export function formatDateHeader(dateKey: string): string {
-  // Parse date components manually to avoid timezone issues
+  // Parse the dateKey as a UTC date
   const [year, month, day] = dateKey.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = new Date(Date.UTC(year, month - 1, day));
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Get today's date at midnight UTC
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  // Get yesterday's date at midnight UTC
+  const yesterdayUTC = new Date(todayUTC);
+  yesterdayUTC.setUTCDate(yesterdayUTC.getUTCDate() - 1);
 
-  if (date.getTime() === today.getTime()) {
+  if (date.getTime() === todayUTC.getTime()) {
     return 'Today';
   }
 
-  if (date.getTime() === yesterday.getTime()) {
+  if (date.getTime() === yesterdayUTC.getTime()) {
     return 'Yesterday';
   }
 
@@ -77,5 +79,6 @@ export function formatDateHeader(dateKey: string): string {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
