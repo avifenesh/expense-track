@@ -425,62 +425,11 @@ The app uses React Navigation with conditional routing:
   - Login, Register, ResetPassword, VerifyEmail
 - **OnboardingStack** - Shown after login if onboarding not completed
   - Welcome, Currency, Categories, Budget, SampleData, Complete
-- **AppStack** - Main app with bottom tabs and modals
+- **AppStack** - Main app with bottom tabs
   - **Bottom Tabs**: Dashboard, Transactions, Budgets, Sharing, Settings
-  - **Modals**: CreateTransaction (AddTransactionScreen)
 
 ## Main App Features
 
 ### Transaction Management
 
-#### AddTransactionScreen
-
-Modal screen for creating new transactions with comprehensive form:
-
-**Features:**
-- Transaction type selector (Income/Expense) with visual feedback
-- Amount input with currency symbol display (USD: $, EUR: €, ILS: ₪)
-- Category selector with color-coded chips (filtered by transaction type)
-- Date selector with quick options:
-  - Today
-  - Yesterday
-  - Custom date picker (last 7 days)
-- Optional description field (max 200 characters)
-- Real-time form validation
-- Transaction preview before submission
-- Loading states and error handling
-
-**Access:**
-- FAB (Floating Action Button) on Dashboard screen
-- `+ Add` button on Transactions screen
-
-**Navigation:**
-- Presented as modal with slide-from-bottom animation
-- Cancel button returns to previous screen
-- Auto-dismisses on successful creation
-
-**Validation:**
-- Amount: Required, positive, max 2 decimals, max value 999,999,999.99
-- Description: Optional, max 200 chars, XSS prevention
-- Category: Required
-- Date: Required, not in future, within 10 years
-
-**Integration:**
-- Uses `POST /api/v1/transactions` endpoint
-- Syncs with transactions store on success
-- Updates dashboard and transaction list automatically
-
-### Validation Utilities
-
-The `lib/validation.ts` module provides client-side validation for all forms:
-
-**Transaction Validation:**
-- `validateTransactionAmount(amount: string)` - Amount validation
-- `validateTransactionDescription(description: string)` - Description validation with XSS prevention
-- `validateTransactionCategory(categoryId: string | null)` - Category selection validation
-- `validateTransactionDate(date: Date | null)` - Date validation
-
-**Auth Validation:**
-- `validateEmail(email: string)` - Email format validation
-- `validatePassword(password: string)` - Password strength validation
-- `validatePasswordMatch(password: string, confirmPassword: string)` - Password confirmation
+Provides views to browse, search, and filter transactions, and to review transaction details as part of the overall budgeting workflow.
