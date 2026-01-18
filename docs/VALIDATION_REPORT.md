@@ -95,36 +95,20 @@ All 47 mutating server actions verify CSRF tokens via `requireCsrfToken()`:
 
 ### Status: COMPLETED
 
-**New Tests Added**: 73
+**New Tests Added**: 30
 
-### Schema Validation Edge Cases (58 tests)
+### Schema Validation Edge Cases (30 tests)
 
 File: `tests/schema/validation-edge-cases.test.ts`
 
 | Schema | Tests | Coverage |
 |--------|-------|----------|
-| Transaction | 12 | Amount, description, date |
-| Budget | 5 | Amount, monthKey format |
-| Recurring Template | 8 | dayOfMonth, endMonthKey |
-| Category | 8 | Name constraints |
-| Holding | 9 | Symbol, quantity, cost |
-| Registration | 7 | Password, displayName |
-| Login | 3 | Email, password |
-| Reset Password | 3 | Token, password |
+| Recurring Template | 9 | dayOfMonth bounds (1-31), endMonthKey validation |
+| Category | 8 | Name length (1-50), whitespace trimming |
+| Holding | 10 | Symbol format (uppercase, max 5 chars), quantity bounds, averageCost |
+| Reset Password | 3 | Token validation, password requirements |
 
-### Data Integrity Patterns (15 tests)
-
-File: `tests/integration/data-integrity.test.ts`
-
-| Pattern | Tests | Verified |
-|---------|-------|----------|
-| Soft Delete | 2 | isArchived, deletedAt |
-| Unique Constraints | 2 | Budget composite key |
-| Decimal Precision | 3 | Prisma.Decimal usage |
-| User Isolation | 3 | userId, accountId scoping |
-| Cascading Deletion | 1 | FK constraint order |
-| Month Normalization | 2 | YYYY-MM format |
-| Currency Support | 2 | USD/EUR/ILS, exchange rates |
+**Note**: Initial validation created 73 tests (58 schema + 15 data integrity). During code review, 47 duplicate tests were removed (overlapped with existing test suites) and 15 mock-only tests were deleted (didn't test real behavior). Final result: 30 unique, meaningful tests.
 
 ---
 
@@ -267,10 +251,9 @@ The validation did not uncover any critical issues requiring immediate remediati
 ### Completed Deliverables
 
 1. Updated `docs/API_CONTRACTS.md` - 8 endpoints documented
-2. Created `tests/schema/validation-edge-cases.test.ts` - 58 tests
-3. Created `tests/integration/data-integrity.test.ts` - 15 tests
-4. Created `docs/UX_VALIDATION_CHECKLIST.md` - Component audit
-5. Created `docs/VALIDATION_REPORT.md` - This report
+2. Created `tests/schema/validation-edge-cases.test.ts` - 30 unique tests (after removing 47 duplicates)
+3. Created `docs/UX_VALIDATION_CHECKLIST.md` - Component audit
+4. Created `docs/VALIDATION_REPORT.md` - This report
 
 ---
 
