@@ -5,9 +5,6 @@ import { successResponse } from '@/lib/api-helpers'
 import { formatDateForApi } from '@/utils/date'
 import type { SharedExpenseSummary, ExpenseParticipationSummary, SettlementBalance } from '@/lib/finance/types'
 
-/**
- * Format a SharedExpenseSummary for API response
- */
 function formatSharedExpense(expense: SharedExpenseSummary) {
   return {
     id: expense.id,
@@ -45,9 +42,7 @@ function formatSharedExpense(expense: SharedExpenseSummary) {
   }
 }
 
-/**
- * Format an ExpenseParticipationSummary for API response
- */
+
 function formatParticipation(participation: ExpenseParticipationSummary) {
   return {
     id: participation.id,
@@ -80,9 +75,7 @@ function formatParticipation(participation: ExpenseParticipationSummary) {
   }
 }
 
-/**
- * Format a SettlementBalance for API response
- */
+
 function formatSettlementBalance(balance: SettlementBalance) {
   return {
     userId: balance.userId,
@@ -106,10 +99,9 @@ function formatSettlementBalance(balance: SettlementBalance) {
  * @returns {Object} { sharedExpenses, expensesSharedWithMe, settlementBalances }
  * @throws {401} Unauthorized - Invalid or missing auth token
  * @throws {429} Rate limited - Too many requests
- */
+
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
-    // Fetch all sharing data in parallel
     const [sharedExpensesResult, sharedWithMeResult, balances] = await Promise.all([
       getSharedExpenses(user.userId),
       getExpensesSharedWithMe(user.userId),

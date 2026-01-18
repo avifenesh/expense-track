@@ -39,13 +39,10 @@ interface BalanceSummaryProps {
 }
 
 function BalanceSummary({ balances }: BalanceSummaryProps) {
-  // Calculate net balance across all currencies (simplified - just sums netBalance)
-  // In a real app, you might want to convert currencies or show them separately
   const totalOwed = balances.reduce((sum, b) => sum + parseFloat(b.theyOwe), 0);
   const totalOwe = balances.reduce((sum, b) => sum + parseFloat(b.youOwe), 0);
   const netBalance = totalOwed - totalOwe;
 
-  // Determine primary currency from balances (use first one, or USD default)
   const primaryCurrency: Currency = balances[0]?.currency || 'USD';
 
   const isPositive = netBalance >= 0;
@@ -136,7 +133,6 @@ function SharedByMeCard({ expense, onMarkPaid }: SharedByMeCardProps) {
         {expense.transaction.category.name} - {formatDate(expense.createdAt)}
       </Text>
 
-      {/* Pending participants */}
       {pendingParticipants.length > 0 && (
         <View style={styles.participantsList}>
           {pendingParticipants.map((p) => (
@@ -145,7 +141,6 @@ function SharedByMeCard({ expense, onMarkPaid }: SharedByMeCardProps) {
         </View>
       )}
 
-      {/* Paid participants */}
       {paidParticipants.length > 0 && (
         <View style={styles.participantsList}>
           {paidParticipants.map((p) => (
@@ -211,22 +206,16 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
 
   const handleMarkPaid = useCallback(
     async (participantId: string) => {
-      try {
-        await markParticipantPaid(participantId);
-      } catch {
-        // Error handling - the store will have the error
-      }
+      await markParticipantPaid(participantId);
     },
     [markParticipantPaid]
   );
 
-  // Filter to show only pending items in "Shared With You"
   const pendingSharedWithMe = useMemo(
     () => sharedWithMe.filter((p) => p.status === 'PENDING'),
     [sharedWithMe]
   );
 
-  // Sort shared by me: unsettled first, then by date
   const sortedSharedByMe = useMemo(
     () =>
       [...sharedByMe].sort((a, b) => {
@@ -240,7 +229,6 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
 
   const hasNoData = sharedByMe.length === 0 && sharedWithMe.length === 0;
 
-  // Initial loading state
   if (isLoading && hasNoData && !isRefreshing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -252,7 +240,6 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
     );
   }
 
-  // Error state
   if (error && !isRefreshing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -296,7 +283,6 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
 
         <BalanceSummary balances={settlementBalances} />
 
-        {/* Shared With You Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Shared With You</Text>
           {isLoading && pendingSharedWithMe.length === 0 ? (
@@ -318,7 +304,6 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
           )}
         </View>
 
-        {/* You Shared Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>You Shared</Text>
           {isLoading && sortedSharedByMe.length === 0 ? (

@@ -13,17 +13,7 @@ interface RouteParams {
 
 /**
  * PATCH /api/v1/sharing/[participantId]/paid
- *
- * Marks a participant's share as paid. Only the expense owner can mark
- * participants as paid (they are the one collecting payment).
- *
- * @param participantId - The expense participant record ID
- *
- * @returns {Object} { id, status, paidAt }
- * @throws {401} Unauthorized - Invalid or missing auth token
- * @throws {403} Forbidden - User is not the expense owner
- * @throws {404} Not found - Participant record not found
- * @throws {429} Rate limited - Too many requests
+ * Mark a participant's share as paid (owner only).
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(
@@ -31,7 +21,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     async (user) => {
       const { participantId } = await params
 
-      // Find the participant record with its shared expense
       const participant = await prisma.expenseParticipant.findUnique({
         where: { id: participantId },
         include: {
@@ -47,12 +36,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         return notFoundError('Participant not found')
       }
 
-      // Verify the current user is the expense owner
       if (participant.sharedExpense.ownerId !== user.userId) {
         return forbiddenError('Only the expense owner can mark payments as received')
       }
 
-      // Update the participant status to PAID
       const now = new Date()
       const updated = await prisma.expenseParticipant.update({
         where: { id: participantId },
