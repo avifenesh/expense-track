@@ -1,15 +1,8 @@
 import { NextRequest } from 'next/server'
-import { requireJwtAuth } from '@/lib/api-auth'
-import {
-  authError,
-  serverError,
-  successResponse,
-  rateLimitError,
-} from '@/lib/api-helpers'
+import { withApiAuth } from '@/lib/api-middleware'
+import { authError, successResponse } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
-import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { getSubscriptionState } from '@/lib/subscription'
-import { serverLogger } from '@/lib/server-logger'
 
 /**
  * GET /api/v1/users/me
@@ -22,23 +15,7 @@ import { serverLogger } from '@/lib/server-logger'
  * @throws {500} Server error - Unable to fetch user profile
  */
 export async function GET(request: NextRequest) {
-  // 1. Authenticate with JWT
-  let user
-  try {
-    user = requireJwtAuth(request)
-  } catch (error) {
-    return authError(error instanceof Error ? error.message : 'Unauthorized')
-  }
-
-  // 2. Rate limit check
-  const rateLimit = checkRateLimit(user.userId)
-  if (!rateLimit.allowed) {
-    return rateLimitError(rateLimit.resetAt)
-  }
-  incrementRateLimit(user.userId)
-
-  // 3. Fetch user profile
-  try {
+  return withApiAuth(request, async (user) => {
     const dbUser = await prisma.user.findUnique({
       where: { id: user.userId },
       select: {
@@ -55,7 +32,6 @@ export async function GET(request: NextRequest) {
       return authError('User not found')
     }
 
-    // 4. Get subscription state
     const subscription = await getSubscriptionState(user.userId)
 
     return successResponse({
@@ -74,8 +50,5 @@ export async function GET(request: NextRequest) {
         daysRemaining: subscription.daysRemaining,
       },
     })
-  } catch (error) {
-    serverLogger.error('Failed to fetch user profile', { action: 'GET /api/v1/users/me' }, error)
-    return serverError('Unable to fetch user profile')
-  }
+  })
 }

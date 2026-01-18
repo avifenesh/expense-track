@@ -22,6 +22,8 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockReturnValue({ allowed: true }),
   incrementRateLimit: vi.fn(),
+  checkRateLimitTyped: vi.fn().mockReturnValue({ allowed: true }),
+  incrementRateLimitTyped: vi.fn(),
 }))
 
 vi.mock('@/lib/server-logger', () => ({
@@ -36,7 +38,7 @@ import { GET } from '@/app/api/v1/users/me/route'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { getSubscriptionState } from '@/lib/subscription'
 import { prisma } from '@/lib/prisma'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitTyped } from '@/lib/rate-limit'
 
 describe('GET /api/v1/users/me', () => {
   const mockUser = {
@@ -59,7 +61,7 @@ describe('GET /api/v1/users/me', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(checkRateLimit).mockReturnValue({ allowed: true, resetAt: null })
+    vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: true, resetAt: null })
   })
 
   describe('authentication', () => {
@@ -98,7 +100,7 @@ describe('GET /api/v1/users/me', () => {
       })
 
       const resetAt = new Date(Date.now() + 60000)
-      vi.mocked(checkRateLimit).mockReturnValue({ allowed: false, resetAt })
+      vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: false, resetAt })
 
       const request = new NextRequest('http://localhost/api/v1/users/me')
       const response = await GET(request)
@@ -341,7 +343,7 @@ describe('GET /api/v1/users/me', () => {
 
       expect(response.status).toBe(500)
       const body = await response.json()
-      expect(body.error).toBe('Unable to fetch user profile')
+      expect(body.error).toBe('An unexpected error occurred')
     })
 
     it('should return 500 when subscription state fetch fails', async () => {
@@ -358,7 +360,7 @@ describe('GET /api/v1/users/me', () => {
 
       expect(response.status).toBe(500)
       const body = await response.json()
-      expect(body.error).toBe('Unable to fetch user profile')
+      expect(body.error).toBe('An unexpected error occurred')
     })
   })
 })
