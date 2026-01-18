@@ -4,7 +4,6 @@ import { NextRequest } from 'next/server'
 import { verifyAccessToken } from './jwt'
 import { prisma } from './prisma'
 import type { AuthUser } from './auth'
-import { hasActiveSubscription } from './subscription'
 
 export interface AuthenticatedUser {
   userId: string
@@ -62,16 +61,5 @@ export async function getUserAuthInfo(userId: string): Promise<AuthUser> {
     defaultAccountName: dbUser.accounts[0].name,
     preferredCurrency: dbUser.preferredCurrency,
     hasCompletedOnboarding: dbUser.hasCompletedOnboarding,
-  }
-}
-
-/**
- * Require active subscription for API access
- * @throws Error if subscription is not active (active, trialing, or within grace period)
- */
-export async function requireActiveSubscriptionApi(userId: string): Promise<void> {
-  const isActive = await hasActiveSubscription(userId)
-  if (!isActive) {
-    throw new Error('Subscription required')
   }
 }

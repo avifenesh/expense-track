@@ -2,11 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { POST as CreateTransaction } from '@/app/api/v1/transactions/route'
 import { POST as CreateTransactionRequest } from '@/app/api/v1/transactions/requests/route'
+import { POST as ApproveTransactionRequest } from '@/app/api/v1/transactions/requests/[id]/approve/route'
+import { POST as RejectTransactionRequest } from '@/app/api/v1/transactions/requests/[id]/reject/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
-import { getApiTestUser, TEST_USER_ID } from './helpers'
-import { SubscriptionStatus } from '@prisma/client'
+import { getApiTestUser, getOtherTestUser, TEST_USER_ID, OTHER_USER_ID } from './helpers'
+import { SubscriptionStatus, TransactionRequestStatus } from '@prisma/client'
 
 /**
  * Subscription Enforcement Tests
@@ -378,6 +380,119 @@ describe('Subscription Enforcement on API Routes', () => {
 
       expect(response.status).toBe(402)
       expect(data.code).toBe('SUBSCRIPTION_REQUIRED')
+    })
+  })
+
+  describe('subscription enforcement on approve/reject endpoints', () => {
+    let otherUserToken: string
+    let otherAccountId: string
+    let transactionRequestId: string
+
+    beforeEach(async () => {
+      // Setup other user who will receive the transaction request
+      const otherUser = await getOtherTestUser()
+      otherUserToken = generateAccessToken(OTHER_USER_ID, 'api-other@example.com')
+
+      // Create account for other user
+      const otherAccount = await prisma.account.upsert({
+        where: { userId_name: { userId: otherUser.id, name: 'OtherSubTestAccount' } },
+        update: {},
+        create: { userId: otherUser.id, name: 'OtherSubTestAccount', type: 'SELF' },
+      })
+      otherAccountId = otherAccount.id
+
+      // Create a transaction request from test user to other user
+      const txRequest = await prisma.transactionRequest.create({
+        data: {
+          fromId: accountId,
+          toId: otherAccountId,
+          categoryId,
+          amount: 50.0,
+          currency: 'USD',
+          date: new Date('2024-01-15'),
+          description: 'SUB_TEST_Request',
+          status: TransactionRequestStatus.PENDING,
+        },
+      })
+      transactionRequestId = txRequest.id
+    })
+
+    afterEach(async () => {
+      // Cleanup transaction requests
+      await prisma.transactionRequest.deleteMany({
+        where: { description: { contains: 'SUB_TEST_' } },
+      })
+      await prisma.account.deleteMany({
+        where: { name: 'OtherSubTestAccount' },
+      })
+    })
+
+    it('POST /api/v1/transactions/requests/[id]/approve returns 402 with expired subscription', async () => {
+      // Set other user's subscription to EXPIRED (they're the one approving)
+      await prisma.subscription.update({
+        where: { userId: OTHER_USER_ID },
+        data: { status: SubscriptionStatus.EXPIRED },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${transactionRequestId}/approve`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${otherUserToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const response = await ApproveTransactionRequest(request, { params: Promise.resolve({ id: transactionRequestId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(402)
+      expect(data.code).toBe('SUBSCRIPTION_REQUIRED')
+    })
+
+    it('POST /api/v1/transactions/requests/[id]/reject returns 402 with expired subscription', async () => {
+      // Set other user's subscription to EXPIRED (they're the one rejecting)
+      await prisma.subscription.update({
+        where: { userId: OTHER_USER_ID },
+        data: { status: SubscriptionStatus.EXPIRED },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${transactionRequestId}/reject`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${otherUserToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const response = await RejectTransactionRequest(request, { params: Promise.resolve({ id: transactionRequestId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(402)
+      expect(data.code).toBe('SUBSCRIPTION_REQUIRED')
+    })
+
+    it('approve endpoint allows access with valid subscription', async () => {
+      // Ensure other user has valid subscription
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      await prisma.subscription.upsert({
+        where: { userId: OTHER_USER_ID },
+        update: { status: SubscriptionStatus.TRIALING, trialEndsAt },
+        create: { userId: OTHER_USER_ID, status: SubscriptionStatus.TRIALING, trialEndsAt },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/transactions/requests/${transactionRequestId}/approve`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${otherUserToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const response = await ApproveTransactionRequest(request, { params: Promise.resolve({ id: transactionRequestId }) })
+
+      // Should succeed (200) or fail for other reasons (not 402)
+      expect(response.status).not.toBe(402)
     })
   })
 })
