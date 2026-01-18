@@ -191,7 +191,7 @@ describe('POST /api/v1/onboarding/complete', () => {
       where: { userId: TEST_USER_ID },
       data: {
         status: 'ACTIVE',
-        trialEndsAt: null,
+        trialEndsAt: new Date('2020-01-01'), // Past date for active paid subscription
       },
     })
 
