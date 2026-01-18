@@ -15,6 +15,7 @@ import {
   useTransactionsStore,
   useBudgetsStore,
   useCategoriesStore,
+  type Category,
 } from '../../stores';
 import {
   MonthSelector,
@@ -70,13 +71,13 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
       .filter((t) => t.type === 'EXPENSE')
       .forEach((t) => {
         const current = map.get(t.categoryId) || 0;
-        map.set(t.categoryId, current + parseFloat(t.amount));
+        map.set(t.categoryId, current + (parseFloat(t.amount) || 0));
       });
     return map;
   }, [transactions]);
 
   const totalPlanned = useMemo(
-    () => budgets.reduce((sum, b) => sum + parseFloat(b.planned), 0),
+    () => budgets.reduce((sum, b) => sum + (parseFloat(b.planned) || 0), 0),
     [budgets]
   );
 
@@ -92,7 +93,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   }, [budgets, spentByCategory]);
 
   const categoryMap = useMemo(() => {
-    const map = new Map<string, typeof categories[0]>();
+    const map = new Map<string, Category>();
     categories.forEach((c) => map.set(c.id, c));
     return map;
   }, [categories]);
@@ -125,7 +126,13 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await fetchAccounts();
-    if (selectedAccountId) {
+    const currentAccountId = useAccountsStore.getState().selectedAccountId;
+
+    if (currentAccountId) {
+      setTransactionFilters({ accountId: currentAccountId, month: selectedMonth });
+      setBudgetFilters({ accountId: currentAccountId });
+      setBudgetSelectedMonth(selectedMonth);
+
       await Promise.all([
         fetchCategories('EXPENSE'),
         fetchBudgets(),
@@ -133,7 +140,16 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
       ]);
     }
     setIsRefreshing(false);
-  }, [fetchAccounts, fetchCategories, fetchBudgets, fetchTransactions, selectedAccountId]);
+  }, [
+    fetchAccounts,
+    fetchCategories,
+    fetchBudgets,
+    fetchTransactions,
+    selectedMonth,
+    setTransactionFilters,
+    setBudgetFilters,
+    setBudgetSelectedMonth,
+  ]);
 
   const handleMonthChange = useCallback((month: string) => {
     setSelectedMonth(month);
@@ -229,6 +245,8 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
           ) : (
             <View>
               {budgets.map((budget) => {
+                // Prefer category from categoryMap, fall back to budget.category
+                // when not in map (e.g., categories not loaded yet or category deleted)
                 const category = categoryMap.get(budget.categoryId) || budget.category;
                 const spent = spentByCategory.get(budget.categoryId) || 0;
                 return (
