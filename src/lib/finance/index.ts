@@ -23,6 +23,8 @@ export type {
   DashboardData,
   PaginationOptions,
   PaginatedResult,
+  SharedExpensePaginationOptions,
+  SharedExpenseStatusFilter,
 } from './types'
 
 export { DEFAULT_PAGINATION_LIMIT } from './types'
@@ -48,7 +50,10 @@ export { getDashboardData } from './dashboard'
 // Expense sharing operations
 export {
   getSharedExpenses,
+  getSharedExpensesPaginated,
   getExpensesSharedWithMe,
   calculateShares,
   getSettlementBalance,
 } from './expense-sharing'
+
+export type { OffsetPaginatedResult } from './expense-sharing'

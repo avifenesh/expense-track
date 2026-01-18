@@ -1,4 +1,5 @@
 // Finance module - expense sharing operations
+import type { Prisma } from '@prisma/client'
 import { Currency, PaymentStatus, SplitType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { decimalToNumber } from './utils'
@@ -8,8 +9,82 @@ import type {
   SettlementBalance,
   PaginationOptions,
   PaginatedResult,
+  SharedExpensePaginationOptions,
 } from './types'
 import { DEFAULT_PAGINATION_LIMIT } from './types'
+
+// Maximum items per page
+const MAX_LIMIT = 100
+
+// Type for shared expense query result with includes
+type SharedExpenseWithIncludes = Prisma.SharedExpenseGetPayload<{
+  include: {
+    transaction: {
+      include: {
+        category: true
+      }
+    }
+    participants: {
+      include: {
+        participant: {
+          select: {
+            id: true
+            email: true
+            displayName: true
+          }
+        }
+      }
+    }
+  }
+}>
+
+/**
+ * Transform a Prisma SharedExpense record into a SharedExpenseSummary.
+ * This helper is used by both getSharedExpenses and getSharedExpensesPaginated.
+ */
+function transformSharedExpense(expense: SharedExpenseWithIncludes): SharedExpenseSummary {
+  const totalAmount = decimalToNumber(expense.totalAmount)
+  const participants = expense.participants.map((p) => ({
+    id: p.id,
+    shareAmount: decimalToNumber(p.shareAmount),
+    sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
+    status: p.status,
+    paidAt: p.paidAt,
+    reminderSentAt: p.reminderSentAt,
+    participant: p.participant,
+  }))
+
+  const totalOwed = participants
+    .filter((p) => p.status === PaymentStatus.PENDING)
+    .reduce((sum, p) => sum + p.shareAmount, 0)
+  const totalPaid = participants
+    .filter((p) => p.status === PaymentStatus.PAID)
+    .reduce((sum, p) => sum + p.shareAmount, 0)
+  const allSettled = participants.every((p) => p.status !== PaymentStatus.PENDING)
+
+  return {
+    id: expense.id,
+    transactionId: expense.transactionId,
+    splitType: expense.splitType,
+    totalAmount,
+    currency: expense.currency,
+    description: expense.description,
+    createdAt: expense.createdAt,
+    transaction: {
+      id: expense.transaction.id,
+      date: expense.transaction.date,
+      description: expense.transaction.description,
+      category: {
+        id: expense.transaction.category.id,
+        name: expense.transaction.category.name,
+      },
+    },
+    participants,
+    totalOwed,
+    totalPaid,
+    allSettled,
+  }
+}
 
 /**
  * Get expenses shared by a user with others.
@@ -56,56 +131,84 @@ export async function getSharedExpenses(
 
   const hasMore = sharedExpenses.length > limit
   const results = hasMore ? sharedExpenses.slice(0, limit) : sharedExpenses
-
-  const items = results.map((expense) => {
-    const totalAmount = decimalToNumber(expense.totalAmount)
-    const participants = expense.participants.map((p) => ({
-      id: p.id,
-      shareAmount: decimalToNumber(p.shareAmount),
-      sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
-      status: p.status,
-      paidAt: p.paidAt,
-      reminderSentAt: p.reminderSentAt,
-      participant: p.participant,
-    }))
-
-    const totalOwed = participants
-      .filter((p) => p.status === PaymentStatus.PENDING)
-      .reduce((sum, p) => sum + p.shareAmount, 0)
-    const totalPaid = participants
-      .filter((p) => p.status === PaymentStatus.PAID)
-      .reduce((sum, p) => sum + p.shareAmount, 0)
-    const allSettled = participants.every((p) => p.status !== PaymentStatus.PENDING)
-
-    return {
-      id: expense.id,
-      transactionId: expense.transactionId,
-      splitType: expense.splitType,
-      totalAmount,
-      currency: expense.currency,
-      description: expense.description,
-      createdAt: expense.createdAt,
-      transaction: {
-        id: expense.transaction.id,
-        date: expense.transaction.date,
-        description: expense.transaction.description,
-        category: {
-          id: expense.transaction.category.id,
-          name: expense.transaction.category.name,
-        },
-      },
-      participants,
-      totalOwed,
-      totalPaid,
-      allSettled,
-    }
-  })
+  const items = results.map(transformSharedExpense)
 
   return {
     items,
     nextCursor: hasMore ? items[items.length - 1].id : null,
     hasMore,
   }
+}
+
+/**
+ * Offset-based paginated result type for API endpoints
+ */
+export type OffsetPaginatedResult<T> = {
+  items: T[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * Get expenses shared by a user with others (API version).
+ * Supports offset-based pagination and status filtering for REST API.
+ * Uses Prisma relation filters (some/none) and DB-side pagination.
+ *
+ * @param userId - The user who shared the expenses
+ * @param options - Optional pagination and filtering options
+ * @returns Paginated result with shared expenses and total count
+ */
+export async function getSharedExpensesPaginated(
+  userId: string,
+  options?: SharedExpensePaginationOptions,
+): Promise<OffsetPaginatedResult<SharedExpenseSummary>> {
+  const limit = Math.min(options?.limit ?? DEFAULT_PAGINATION_LIMIT, MAX_LIMIT)
+  const offset = options?.offset ?? 0
+  const statusFilter = options?.status ?? 'all'
+
+  // Build where clause with status filtering using Prisma relation filters
+  // "pending" = at least one participant is PENDING (some)
+  // "settled" = no participants are PENDING (none)
+  const where: Prisma.SharedExpenseWhereInput = { ownerId: userId }
+  if (statusFilter === 'pending') {
+    where.participants = { some: { status: PaymentStatus.PENDING } }
+  } else if (statusFilter === 'settled') {
+    where.participants = { none: { status: PaymentStatus.PENDING } }
+  }
+
+  // Use transaction for atomicity of count + fetch
+  const [total, sharedExpenses] = await prisma.$transaction([
+    prisma.sharedExpense.count({ where }),
+    prisma.sharedExpense.findMany({
+      where,
+      include: {
+        transaction: {
+          include: {
+            category: true,
+          },
+        },
+        participants: {
+          include: {
+            participant: {
+              select: {
+                id: true,
+                email: true,
+                displayName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: offset,
+      take: limit,
+    }),
+  ])
+
+  const items = sharedExpenses.map(transformSharedExpense)
+  const hasMore = offset + items.length < total
+
+  return { items, total, hasMore }
 }
 
 /**

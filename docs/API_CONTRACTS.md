@@ -815,13 +815,82 @@ Retrieves all sharing data for the authenticated user including expenses they sh
 
 ---
 
-### POST /api/v1/expenses/share (PLANNED)
+### GET /api/v1/expenses/shared-by-me
 
-> ⚠️ **Not yet implemented.** Planned for future release.
-
-Share an expense with other users.
+List expenses shared by the authenticated user with others. Supports filtering by status and pagination.
 
 **Auth:** Bearer token required
+
+**Query Parameters:**
+- `status`: Optional. Filter by status: `pending`, `settled`, or `all` (default: `all`)
+  - `pending`: Expenses with at least one participant still pending payment
+  - `settled`: Expenses where all participants have paid or declined
+  - `all`: All shared expenses
+- `limit`: Optional. Number of results (default: 50, max: 100)
+- `offset`: Optional. Pagination offset (default: 0)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "expenses": [
+      {
+        "id": "clx...",
+        "transactionId": "clx...",
+        "splitType": "EQUAL",
+        "totalAmount": "100.00",
+        "currency": "USD",
+        "description": "Dinner at restaurant",
+        "createdAt": "2024-01-15T12:00:00Z",
+        "transaction": {
+          "id": "clx...",
+          "date": "2024-01-15",
+          "description": "Restaurant",
+          "category": {
+            "id": "clx...",
+            "name": "Food & Dining"
+          }
+        },
+        "participants": [
+          {
+            "id": "clx...",
+            "shareAmount": "50.00",
+            "sharePercentage": null,
+            "status": "PENDING",
+            "paidAt": null,
+            "reminderSentAt": null,
+            "participant": {
+              "id": "clx...",
+              "email": "friend@example.com",
+              "displayName": "Friend"
+            }
+          }
+        ],
+        "totalOwed": "50.00",
+        "totalPaid": "0.00",
+        "allSettled": false
+      }
+    ],
+    "total": 10,
+    "hasMore": true
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid status, limit, or offset parameter
+- 401: Unauthorized - Invalid or missing auth token
+- 429: Rate limited - Too many requests
+
+---
+
+### POST /api/v1/expenses/share
+
+Share an expense with other users. Creates a shared expense from an existing transaction, calculating participant shares based on the split type.
+
+**Auth:** Bearer token required
+**Subscription:** Active subscription required (returns 402 if expired)
 
 **Request:**
 ```json
@@ -831,31 +900,84 @@ Share an expense with other users.
   "description": "Dinner at restaurant",
   "participants": [
     {
-      "email": "friend@example.com",
-      "shareAmount": 25.00
+      "email": "friend@example.com"
     }
   ]
 }
 ```
+
+**Request Fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| transactionId | string | Yes | ID of the transaction to share |
+| splitType | string | No | `EQUAL` (default), `PERCENTAGE`, or `FIXED` |
+| description | string | No | Optional description (max 240 chars) |
+| participants | array | Yes | At least one participant |
+| participants[].email | string | Yes | Participant's email address |
+| participants[].shareAmount | number | Conditional | Required for `FIXED` splits |
+| participants[].sharePercentage | number | Conditional | Required for `PERCENTAGE` splits (0-100) |
+
+**Split Type Behavior:**
+- `EQUAL`: Amount divided equally among all participants + owner
+- `PERCENTAGE`: Each participant gets their specified percentage of the total
+- `FIXED`: Each participant gets their specified fixed amount
 
 **Response (201):**
 ```json
 {
   "success": true,
   "data": {
-    "sharedExpenseId": "clx...",
+    "id": "clx...",
+    "transactionId": "clx...",
+    "splitType": "EQUAL",
+    "totalAmount": "100.00",
+    "currency": "USD",
+    "description": "Dinner at restaurant",
+    "createdAt": "2024-01-15T12:00:00Z",
     "participants": [
       {
         "id": "clx...",
         "userId": "clx...",
         "email": "friend@example.com",
-        "shareAmount": "25.00",
+        "displayName": "Friend",
+        "shareAmount": "50.00",
+        "sharePercentage": null,
         "status": "PENDING"
       }
     ]
   }
 }
 ```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 400 | Validation error (invalid email, missing fields, self-sharing, etc.) |
+| 401 | Invalid or missing auth token |
+| 402 | Subscription required |
+| 403 | User does not own the transaction |
+| 404 | Transaction not found |
+| 409 | Transaction is already shared |
+| 429 | Rate limited |
+
+**Example Error (400 - Participant not found):**
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "participants": ["Users not found: invalid@example.com"]
+  }
+}
+```
+
+**Notes:**
+- User cannot share an expense with themselves
+- All participant emails must belong to registered users
+- For `FIXED` splits, total share amounts cannot exceed transaction amount
+- For `PERCENTAGE` splits, total percentage cannot exceed 100%
+- Email notifications are sent to participants (asynchronous)
 
 ---
 
