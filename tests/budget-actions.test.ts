@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { upsertBudgetAction, deleteBudgetAction } from '@/app/actions'
+import {
+  upsertBudgetAction,
+  deleteBudgetAction,
+  upsertMonthlyIncomeGoalAction,
+  deleteMonthlyIncomeGoalAction,
+} from '@/app/actions'
 import { prisma } from '@/lib/prisma'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { Currency } from '@prisma/client'
@@ -60,12 +65,25 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
       findFirst: vi.fn(),
+      update: vi.fn(),
     },
     budget: {
       upsert: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
     },
+    monthlyIncomeGoal: {
+      upsert: vi.fn(),
+      update: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback({
+      monthlyIncomeGoal: {
+        upsert: vi.fn().mockResolvedValue({}),
+      },
+      account: {
+        update: vi.fn().mockResolvedValue({}),
+      },
+    })),
   },
 }))
 
@@ -420,5 +438,261 @@ describe('deleteBudgetAction', () => {
     if ('error' in result) {
       expect(result.error.general.some((msg: string) => msg.includes('Unable to delete budget'))).toBe(true)
     }
+  })
+})
+
+describe('upsertMonthlyIncomeGoalAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should fail when session is missing', async () => {
+    const { requireSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockRejectedValue(new Error('Unauthorized'))
+
+    const result = await upsertMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      amount: 5000,
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
+    }
+  })
+
+  it('should reject request with invalid CSRF token', async () => {
+    const { validateCsrfToken } = await import('@/lib/csrf')
+    vi.mocked(validateCsrfToken).mockResolvedValueOnce(false)
+
+    const result = await upsertMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      amount: 5000,
+      currency: Currency.USD,
+      csrfToken: 'invalid-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(
+        result.error.general?.some((msg: string) => msg.toLowerCase().includes('security')) ||
+          result.error.csrfToken !== undefined,
+      ).toBe(true)
+    }
+  })
+
+  it('should reject amount less than 0.01', async () => {
+    const result = await upsertMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      amount: 0,
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.amount).toBeDefined()
+    }
+  })
+
+  it('should fail when user does not have access to account', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'other-user',
+    } as any)
+
+    const result = await upsertMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      amount: 5000,
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.accountId).toContain('You do not have access to this account')
+    }
+  })
+
+  it('should successfully create income goal', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    const result = await upsertMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      amount: 5000,
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect(result).toEqual({ success: true })
+    expect(prisma.$transaction).toHaveBeenCalled()
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2026-01',
+      accountId: 'acc-1',
+    })
+  })
+
+  it('should set account default when setAsDefault is true', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    const result = await upsertMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      amount: 5000,
+      currency: Currency.USD,
+      setAsDefault: true,
+      csrfToken: 'test-token',
+    })
+
+    expect(result).toEqual({ success: true })
+    expect(prisma.$transaction).toHaveBeenCalled()
+  })
+})
+
+describe('deleteMonthlyIncomeGoalAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should fail when session is missing', async () => {
+    const { requireSession } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockRejectedValue(new Error('Unauthorized'))
+
+    const result = await deleteMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general.some((msg: string) => msg.includes('Your session expired'))).toBe(true)
+    }
+  })
+
+  it('should reject request with invalid CSRF token', async () => {
+    const { validateCsrfToken } = await import('@/lib/csrf')
+    vi.mocked(validateCsrfToken).mockResolvedValueOnce(false)
+
+    const result = await deleteMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      csrfToken: 'invalid-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(
+        result.error.general?.some((msg: string) => msg.toLowerCase().includes('security')) ||
+          result.error.csrfToken !== undefined,
+      ).toBe(true)
+    }
+  })
+
+  it('should successfully delete income goal', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue({
+      email: 'test@example.com',
+      id: 'test-user',
+      displayName: 'Test User',
+      passwordHash: 'hash',
+      preferredCurrency: Currency.USD,
+      hasCompletedOnboarding: true,
+      accountNames: ['Account1'],
+      defaultAccountName: 'Account1',
+    })
+
+    vi.mocked(prisma.account.findFirst).mockResolvedValue({
+      id: 'acc-1',
+      name: 'Account1',
+      type: 'SELF',
+      userId: 'test-user',
+    } as any)
+
+    vi.mocked(prisma.monthlyIncomeGoal.update).mockResolvedValue({} as any)
+
+    const result = await deleteMonthlyIncomeGoalAction({
+      accountId: 'acc-1',
+      monthKey: '2026-01',
+      csrfToken: 'test-token',
+    })
+
+    expect(result).toEqual({ success: true })
+    expect(prisma.monthlyIncomeGoal.update).toHaveBeenCalledWith({
+      where: {
+        accountId_month: {
+          accountId: 'acc-1',
+          month: expect.any(Date),
+        },
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: expect.any(Date),
+        deletedBy: 'test-user',
+      },
+    })
+    expect(invalidateDashboardCache).toHaveBeenCalledWith({
+      monthKey: '2026-01',
+      accountId: 'acc-1',
+    })
   })
 })

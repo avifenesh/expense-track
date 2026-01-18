@@ -156,6 +156,8 @@ export async function upsertMonthlyIncomeGoalAction(input: MonthlyIncomeGoalInpu
           amount: new Prisma.Decimal(toDecimalString(amount)),
           currency,
           notes: notes ?? null,
+          // Clear soft-delete flags to "un-delete" if previously deleted
+          // This preserves history while allowing reuse of the same record
           deletedAt: null,
           deletedBy: null,
         },

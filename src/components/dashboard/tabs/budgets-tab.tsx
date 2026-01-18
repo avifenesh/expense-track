@@ -424,6 +424,7 @@ export function BudgetsTab({
                   id="setAsDefault"
                   name="setAsDefault"
                   className="h-4 w-4 rounded border-white/20 bg-white/5 text-emerald-500"
+                  defaultChecked={monthlyIncomeGoal?.isDefault}
                 />
                 <label htmlFor="setAsDefault" className="text-xs text-slate-300">
                   Use as default for future months
