@@ -153,8 +153,8 @@ export function BudgetsTab({
     const formData = new FormData(form)
 
     const amount = Number(formData.get('incomeGoalAmount') || 0)
-    if (amount < 0) {
-      setIncomeGoalErrors({ amount: ['Income goal must be 0 or greater'] })
+    if (amount < 0.01) {
+      setIncomeGoalErrors({ amount: ['Income goal must be at least 0.01'] })
       return
     }
 
@@ -397,7 +397,7 @@ export function BudgetsTab({
                     id="incomeGoalAmount"
                     name="incomeGoalAmount"
                     type="number"
-                    min="0"
+                    min="0.01"
                     step="0.01"
                     defaultValue={incomeGoalAmount || ''}
                     placeholder="e.g. 5000"
