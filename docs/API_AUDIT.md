@@ -192,6 +192,8 @@ The following server actions have no corresponding REST API endpoints. These are
 
 ### High Priority (Expense Sharing)
 
+**Status**: Mobile sharingStore implemented (#207) - Zustand store ready for REST API integration when endpoints are available.
+
 Core feature for the app:
 
 ```
