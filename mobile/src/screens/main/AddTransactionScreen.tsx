@@ -193,7 +193,6 @@ export function AddTransactionScreen({
       const message =
         error instanceof Error ? error.message : 'Failed to create transaction';
       Alert.alert('Error', message);
-      setErrors({ general: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -267,6 +266,7 @@ export function AddTransactionScreen({
             onPress={handleCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel"
+            testID="cancel-button"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
@@ -342,6 +342,7 @@ export function AddTransactionScreen({
                 keyboardType="decimal-pad"
                 accessibilityLabel="Amount"
                 accessibilityHint="Enter the transaction amount"
+                testID="amount-input"
               />
             </View>
             {errors.amount && (
@@ -511,6 +512,7 @@ export function AddTransactionScreen({
               maxLength={200}
               accessibilityLabel="Description"
               accessibilityHint="Optional description for the transaction"
+              testID="description-input"
             />
             {errors.description && (
               <Text style={styles.errorText}>{errors.description}</Text>
@@ -568,6 +570,7 @@ export function AddTransactionScreen({
             accessibilityRole="button"
             accessibilityLabel="Save transaction"
             accessibilityState={{ disabled: isSubmitting }}
+            testID="submit-transaction-button"
           >
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#0f172a" />

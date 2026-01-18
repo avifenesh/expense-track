@@ -118,7 +118,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
   }, [hasMore, isLoading, fetchMoreTransactions]);
 
   const handleTransactionPress = useCallback((_transaction: Transaction) => {
-    // TODO: Navigate to transaction detail or edit screen
+    // Transaction detail/edit screen will be implemented in a future task
   }, []);
 
   const handleAddTransaction = useCallback(() => {
