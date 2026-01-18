@@ -44,3 +44,9 @@ next-env.d.ts
 /tmp
 tmpclaude-*
 mobile/coverage/
+
+# claude workflow state files (session-specific, not for version control)
+.claude/tasks.json
+.claude/workflow-status.json
+.claude/workflow-state.json
+.claude/validation-result.json
