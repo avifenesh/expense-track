@@ -8,9 +8,6 @@ const nextConfig = {
   experimental: {
     serverActions: {},
   },
-  proxy: {
-    matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-  },
 }
 
 // Sentry configuration
