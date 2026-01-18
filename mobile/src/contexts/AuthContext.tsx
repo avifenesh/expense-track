@@ -3,6 +3,7 @@ import * as authService from '../services/auth';
 import * as biometricService from '../services/biometric';
 import { ApiError } from '../services/api';
 import { tokenStorage } from '../lib/tokenStorage';
+import { logger } from '../lib/logger';
 import type { BiometricCapability } from '../services/biometric';
 
 export interface User {
@@ -74,19 +75,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
               hasCompletedOnboarding: storedCredentials.hasCompletedOnboarding,
             });
           } catch (error) {
-            if (__DEV__) {
-              // eslint-disable-next-line no-console
-              console.error('Failed to restore session on app start:', error);
-            }
+            logger.error('Failed to restore session on app start', error);
             await tokenStorage.clearTokens();
           }
         }
       } catch (error) {
         // Initialization failed - continue without auth
-        if (__DEV__) {
-          // eslint-disable-next-line no-console
-          console.error('Auth initialization failed:', error);
-        }
+        logger.error('Auth initialization failed', error);
       } finally {
         setIsLoading(false);
       }
@@ -108,10 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         );
       } catch (storageError) {
         // If we cannot securely store tokens, do not proceed with login
-        if (__DEV__) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to store tokens securely:', storageError);
-        }
+        logger.error('Failed to store tokens securely', storageError);
         // Try to clear any partial state
         try {
           await tokenStorage.clearTokens();
@@ -154,30 +146,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Logout errors are intentionally not propagated to avoid blocking the user
       // from logging out if the server is unreachable. The client-side state will
       // be cleared regardless, and the server will eventually expire the token.
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.warn('Logout request failed:', error);
-      }
+      logger.warn('Logout request failed', error);
     }
 
     // Clear tokens from secure storage - don't let errors block state reset
     try {
       await tokenStorage.clearTokens();
     } catch (storageError) {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to clear tokens from secure storage:', storageError);
-      }
+      logger.error('Failed to clear tokens from secure storage', storageError);
     }
 
     // Clear biometric credentials on logout
     try {
       await biometricService.clearStoredCredentials();
     } catch (biometricError) {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to clear biometric credentials:', biometricError);
-      }
+      logger.error('Failed to clear biometric credentials', biometricError);
     }
 
     // Always clear in-memory state, even if storage clear failed
@@ -218,10 +201,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Update tokens in storage
         await tokenStorage.setTokens(response.accessToken, response.refreshToken);
       } catch (storageError) {
-        if (__DEV__) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to update tokens in storage:', storageError);
-        }
+        logger.error('Failed to update tokens in storage', storageError);
         // Continue with in-memory tokens even if storage fails
         // On next app restart, user will need to re-login
       }
@@ -254,10 +234,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Persist onboarding state if it changed
       if ('hasCompletedOnboarding' in updates && updates.hasCompletedOnboarding !== undefined) {
         tokenStorage.setOnboardingComplete(updates.hasCompletedOnboarding).catch((error) => {
-          if (__DEV__) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to persist onboarding state:', error);
-          }
+          logger.error('Failed to persist onboarding state', error);
         });
       }
 
@@ -296,10 +273,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           true // Biometric login implies completed onboarding
         );
       } catch (storageError) {
-        if (__DEV__) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to store tokens after biometric login:', storageError);
-        }
+        logger.error('Failed to store tokens after biometric login', storageError);
         // Continue - at least in-memory auth works
       }
 
@@ -314,10 +288,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
     } catch (error) {
       // Clear invalid credentials
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('Biometric login failed during token refresh:', error);
-      }
+      logger.error('Biometric login failed during token refresh', error);
       await biometricService.clearStoredCredentials();
       setIsBiometricEnabled(false);
       throw new ApiError(
