@@ -51,7 +51,7 @@ __tests__/
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
-    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction)
+    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, Budgets)
   services/        # Service tests (api, auth)
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
 ```
@@ -66,7 +66,7 @@ src/
   screens/      # Screen components
     auth/       # Authentication screens (Login, Register, ResetPassword, VerifyEmail)
     onboarding/ # Onboarding flow screens
-    main/       # Main app screens (Dashboard, Transactions, AddTransaction)
+    main/       # Main app screens (Dashboard, Transactions, AddTransaction, Budgets)
   hooks/        # Custom React hooks (useAuthState)
   navigation/   # React Navigation setup
     types.ts    # Navigation type definitions
