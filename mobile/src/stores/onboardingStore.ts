@@ -26,7 +26,7 @@ interface OnboardingActions {
   toggleCategory: (name: string) => void;
   setBudget: (amount: number | null) => void;
   setSampleData: (wants: boolean) => void;
-  completeOnboarding: () => Promise<void>;
+  completeOnboarding: () => Promise<boolean>;
   reset: () => void;
 }
 
@@ -67,14 +67,14 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     set({ wantsSampleData: wants });
   },
 
-  completeOnboarding: async () => {
+  completeOnboarding: async (): Promise<boolean> => {
     const state = get();
     const authStore = useAuthStore.getState();
     const accessToken = authStore.accessToken;
 
     if (!accessToken) {
       set({ error: 'Not authenticated' });
-      return;
+      return false;
     }
 
     set({ isCompleting: true, error: null });
@@ -87,8 +87,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       );
 
       if (state.selectedCategories.length > 0) {
-
-
         const allDefaultCategories = [
           ...DEFAULT_EXPENSE_CATEGORIES.map((c) => ({ ...c, type: 'EXPENSE' as const })),
           ...DEFAULT_INCOME_CATEGORIES.map((c) => ({ ...c, type: 'INCOME' as const })),
@@ -107,7 +105,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         }
       }
 
-      if (state.monthlyBudget !== null && state.monthlyBudget > 0) {
+      // Budget creation: use first selected expense category (skip if no budget or no categories)
+      if (state.monthlyBudget !== null && state.monthlyBudget >= 0 && state.selectedCategories.length > 0) {
         const accountsData = await apiGet<{ accounts: Array<{ id: string; name: string }> }>(
           '/accounts',
           accessToken
@@ -116,17 +115,18 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         if (accountsData.accounts && accountsData.accounts.length > 0) {
           const firstAccount = accountsData.accounts[0];
 
-          const categoriesData = await apiGet<{ categories: Array<{ id: string; name: string }> }>(
+          const categoriesData = await apiGet<{ categories: Array<{ id: string; name: string; type: string }> }>(
             '/categories',
             accessToken
           );
 
           if (categoriesData.categories) {
-            const totalCategory = categoriesData.categories.find(
-              (c: { name: string }) => c.name === 'Total'
+            // Find first expense category from user's selected categories
+            const firstExpenseCategory = categoriesData.categories.find(
+              (c) => c.type === 'EXPENSE' && state.selectedCategories.includes(c.name)
             );
 
-            if (totalCategory) {
+            if (firstExpenseCategory) {
               const now = new Date();
               const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
@@ -134,7 +134,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
                 '/budgets/quick',
                 {
                   accountId: firstAccount.id,
-                  categoryId: totalCategory.id,
+                  categoryId: firstExpenseCategory.id,
                   monthKey,
                   planned: state.monthlyBudget,
                   currency: state.selectedCurrency,
@@ -163,12 +163,14 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       authStore.updateUser({ hasCompletedOnboarding: true });
 
       set({ isCompleting: false });
+      return true;
     } catch (error) {
       if (error instanceof ApiError) {
         set({ error: error.message, isCompleting: false });
       } else {
         set({ error: 'Failed to complete onboarding', isCompleting: false });
       }
+      return false;
     }
   },
 

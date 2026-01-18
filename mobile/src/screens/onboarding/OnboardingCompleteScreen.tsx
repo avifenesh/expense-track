@@ -26,8 +26,8 @@ export function OnboardingCompleteScreen({
   const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency];
 
   const handleComplete = async () => {
-    await completeOnboarding();
-    if (!error) {
+    const success = await completeOnboarding();
+    if (success) {
       navigation.navigate('OnboardingBiometric');
     }
   };

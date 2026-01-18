@@ -22,10 +22,10 @@ export function OnboardingBudgetScreen({
 
   const handleSetBudget = () => {
     const amount = parseFloat(inputValue);
-    if (!isNaN(amount) && amount > 0) {
+    if (!isNaN(amount) && amount >= 0) {
       setBudget(amount);
+      navigation.navigate('OnboardingSampleData');
     }
-    navigation.navigate('OnboardingSampleData');
   };
 
   const handleSkip = () => {
