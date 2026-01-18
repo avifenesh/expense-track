@@ -367,4 +367,46 @@ describe('DashboardScreen', () => {
       });
     });
   });
+
+  describe('Add Transaction FAB', () => {
+    it('renders FAB button', async () => {
+      renderDashboardScreen();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Add transaction')).toBeTruthy();
+      });
+    });
+
+    it('renders FAB with plus symbol', async () => {
+      renderDashboardScreen();
+
+      await waitFor(() => {
+        expect(screen.getByText('+')).toBeTruthy();
+      });
+    });
+
+    it('navigates to CreateTransaction when FAB is pressed', async () => {
+      const navigate = jest.fn();
+      const navWithNavigate = { ...mockNavigation, navigate };
+
+      render(
+        <NavigationContainer>
+          <DashboardScreen
+            navigation={navWithNavigate as typeof mockNavigation}
+            route={mockRoute}
+          />
+        </NavigationContainer>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Add transaction')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByLabelText('Add transaction'));
+
+      await waitFor(() => {
+        expect(navigate).toHaveBeenCalledWith('CreateTransaction');
+      });
+    });
+  });
 });

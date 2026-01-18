@@ -48,7 +48,7 @@ Every PR receives automatic reviews from 4 agents: **Copilot**, **Claude**, **Ge
 - **Sprint 4**: Production Infrastructure - External services, caching, monitoring, performance
 - **Sprint 5**: Launch Prep - Legal compliance, support infrastructure, app store submissions
 
-See `PLAN.md` for details. Issues tracked in GitHub Projects.
+Issues tracked in GitHub Projects.
 
 ## Commands
 
@@ -124,7 +124,7 @@ Key files:
 - `tests/security/xss-payloads.ts` - Attack vectors
 - `tests/security/xss-helpers.ts` - Validation utilities
 - `tests/security/xss.test.ts` - Test suite
-- `docs/SECURITY.md` - Full documentation
+- `docs/XSS_DEFENSE.md` - Full documentation
 
 ## GitHub Issues Workflow
 
