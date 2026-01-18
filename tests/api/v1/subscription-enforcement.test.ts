@@ -4,11 +4,12 @@ import { POST as CreateTransaction } from '@/app/api/v1/transactions/route'
 import { POST as CreateTransactionRequest } from '@/app/api/v1/transactions/requests/route'
 import { POST as ApproveTransactionRequest } from '@/app/api/v1/transactions/requests/[id]/approve/route'
 import { POST as RejectTransactionRequest } from '@/app/api/v1/transactions/requests/[id]/reject/route'
+import { PATCH as MarkSharePaid } from '@/app/api/v1/expenses/shares/[participantId]/paid/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, getOtherTestUser, TEST_USER_ID, OTHER_USER_ID } from './helpers'
-import { SubscriptionStatus, RequestStatus } from '@prisma/client'
+import { SubscriptionStatus, RequestStatus, SplitType, PaymentStatus, TransactionType } from '@prisma/client'
 
 /**
  * Subscription Enforcement Tests
@@ -502,6 +503,119 @@ describe('Subscription Enforcement on API Routes', () => {
 
       // Should succeed (200) or fail for other reasons (not 402)
       expect(response.status).not.toBe(402)
+    })
+  })
+
+  describe('subscription enforcement on expense share endpoints', () => {
+    let participantId: string
+    let transactionId: string
+    let sharedExpenseId: string
+
+    beforeEach(async () => {
+      const testUser = await getApiTestUser()
+      const otherUser = await getOtherTestUser()
+
+      const transaction = await prisma.transaction.create({
+        data: {
+          accountId,
+          categoryId,
+          type: TransactionType.EXPENSE,
+          amount: 100,
+          currency: 'USD',
+          date: new Date(),
+          month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          description: 'SUB_TEST_ShareTransaction',
+        },
+      })
+      transactionId = transaction.id
+
+      const sharedExpense = await prisma.sharedExpense.create({
+        data: {
+          transactionId,
+          ownerId: testUser.id,
+          splitType: SplitType.EQUAL,
+          totalAmount: 100,
+          currency: 'USD',
+          description: 'SUB_TEST_SharedExpense',
+          participants: {
+            create: {
+              userId: otherUser.id,
+              shareAmount: 50,
+              status: PaymentStatus.PENDING,
+            },
+          },
+        },
+        include: { participants: true },
+      })
+      sharedExpenseId = sharedExpense.id
+      participantId = sharedExpense.participants[0].id
+    })
+
+    afterEach(async () => {
+      await prisma.expenseParticipant.deleteMany({
+        where: { sharedExpense: { description: 'SUB_TEST_SharedExpense' } },
+      })
+      await prisma.sharedExpense.deleteMany({
+        where: { description: 'SUB_TEST_SharedExpense' },
+      })
+      await prisma.transaction.deleteMany({
+        where: { description: 'SUB_TEST_ShareTransaction' },
+      })
+    })
+
+    it('PATCH /api/v1/expenses/shares/[participantId]/paid returns 402 with expired subscription', async () => {
+      await prisma.subscription.update({
+        where: { userId: TEST_USER_ID },
+        data: { status: SubscriptionStatus.EXPIRED },
+      })
+
+      const request = new NextRequest(
+        `http://localhost/api/v1/expenses/shares/${participantId}/paid`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${validToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        }
+      )
+
+      const response = await MarkSharePaid(request, {
+        params: Promise.resolve({ participantId }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(402)
+      expect(data.code).toBe('SUBSCRIPTION_REQUIRED')
+    })
+
+    it('PATCH /api/v1/expenses/shares/[participantId]/paid allows access with valid subscription', async () => {
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      await prisma.subscription.upsert({
+        where: { userId: TEST_USER_ID },
+        update: { status: SubscriptionStatus.TRIALING, trialEndsAt },
+        create: { userId: TEST_USER_ID, status: SubscriptionStatus.TRIALING, trialEndsAt },
+      })
+
+      const request = new NextRequest(
+        `http://localhost/api/v1/expenses/shares/${participantId}/paid`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${validToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        }
+      )
+
+      const response = await MarkSharePaid(request, {
+        params: Promise.resolve({ participantId }),
+      })
+
+      expect(response.status).toBe(200)
     })
   })
 })
