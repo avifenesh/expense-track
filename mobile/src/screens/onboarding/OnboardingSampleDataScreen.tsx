@@ -2,10 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
+import { useOnboardingStore } from '../../stores';
 
 export function OnboardingSampleDataScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingSampleData'>) {
+  const { wantsSampleData, setSampleData } = useOnboardingStore();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -16,13 +19,19 @@ export function OnboardingSampleDataScreen({
         </Text>
 
         <View style={styles.optionsContainer}>
-          <Pressable style={[styles.option, styles.optionSelected]}>
+          <Pressable
+            style={[styles.option, wantsSampleData && styles.optionSelected]}
+            onPress={() => setSampleData(true)}
+          >
             <Text style={styles.optionTitle}>Yes, add samples</Text>
             <Text style={styles.optionDescription}>
               See how the app works with realistic data
             </Text>
           </Pressable>
-          <Pressable style={styles.option}>
+          <Pressable
+            style={[styles.option, !wantsSampleData && styles.optionSelected]}
+            onPress={() => setSampleData(false)}
+          >
             <Text style={styles.optionTitle}>No, start fresh</Text>
             <Text style={styles.optionDescription}>
               Begin with a clean slate

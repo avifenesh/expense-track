@@ -1,11 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
+import { useOnboardingStore } from '../../stores';
+
+const CURRENCY_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  ILS: '₪',
+};
 
 export function OnboardingCompleteScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingComplete'>) {
+  const {
+    selectedCurrency,
+    selectedCategories,
+    monthlyBudget,
+    wantsSampleData,
+    isCompleting,
+    error,
+    completeOnboarding,
+  } = useOnboardingStore();
+
+  const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency];
+
+  const handleComplete = async () => {
+    try {
+      await completeOnboarding();
+      navigation.navigate('OnboardingBiometric');
+    } catch (err) {
+      // Error is already set in the store
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -21,24 +49,47 @@ export function OnboardingCompleteScreen({
         <View style={styles.summaryContainer}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Currency</Text>
-            <Text style={styles.summaryValue}>USD</Text>
+            <Text style={styles.summaryValue}>{selectedCurrency}</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Categories</Text>
-            <Text style={styles.summaryValue}>8 selected</Text>
+            <Text style={styles.summaryValue}>
+              {selectedCategories.length > 0
+                ? `${selectedCategories.length} selected`
+                : 'None selected'}
+            </Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Monthly Budget</Text>
-            <Text style={styles.summaryValue}>$2,000</Text>
+            <Text style={styles.summaryValue}>
+              {monthlyBudget ? `${currencySymbol}${monthlyBudget.toLocaleString()}` : 'Not set'}
+            </Text>
+          </View>
+          <View style={[styles.summaryItem, { borderBottomWidth: 0 }]}>
+            <Text style={styles.summaryLabel}>Sample Data</Text>
+            <Text style={styles.summaryValue}>
+              {wantsSampleData ? 'Yes' : 'No'}
+            </Text>
           </View>
         </View>
 
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
         <Pressable
-          style={styles.button}
-          onPress={() => navigation.navigate('OnboardingBiometric')}
+          style={[styles.button, isCompleting && styles.buttonDisabled]}
+          onPress={handleComplete}
+          disabled={isCompleting}
           testID="continue-button"
         >
-          <Text style={styles.buttonText}>Continue</Text>
+          {isCompleting ? (
+            <ActivityIndicator color="#0f172a" />
+          ) : (
+            <Text style={styles.buttonText}>Get Started</Text>
+          )}
         </Pressable>
       </View>
     </SafeAreaView>
@@ -110,6 +161,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  errorContainer: {
+    width: '100%',
+    padding: 12,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#ef4444',
+    textAlign: 'center',
+    fontSize: 14,
+  },
   button: {
     width: '100%',
     backgroundColor: '#38bdf8',
@@ -117,6 +180,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#0f172a',

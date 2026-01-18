@@ -2,10 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
+import { useOnboardingStore, type Currency } from '../../stores';
+
+const CURRENCIES = [
+  { code: 'USD' as Currency, symbol: '$', name: 'USD - US Dollar' },
+  { code: 'EUR' as Currency, symbol: '€', name: 'EUR - Euro' },
+  { code: 'ILS' as Currency, symbol: '₪', name: 'ILS - Israeli Shekel' },
+];
 
 export function OnboardingCurrencyScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingCurrency'>) {
+  const { selectedCurrency, setCurrency } = useOnboardingStore();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -16,18 +25,19 @@ export function OnboardingCurrencyScreen({
         </Text>
 
         <View style={styles.optionsContainer}>
-          <Pressable style={[styles.option, styles.optionSelected]}>
-            <Text style={styles.optionSymbol}>$</Text>
-            <Text style={styles.optionText}>USD - US Dollar</Text>
-          </Pressable>
-          <Pressable style={styles.option}>
-            <Text style={styles.optionSymbol}>€</Text>
-            <Text style={styles.optionText}>EUR - Euro</Text>
-          </Pressable>
-          <Pressable style={styles.option}>
-            <Text style={styles.optionSymbol}>₪</Text>
-            <Text style={styles.optionText}>ILS - Israeli Shekel</Text>
-          </Pressable>
+          {CURRENCIES.map((currency) => (
+            <Pressable
+              key={currency.code}
+              style={[
+                styles.option,
+                selectedCurrency === currency.code && styles.optionSelected,
+              ]}
+              onPress={() => setCurrency(currency.code)}
+            >
+              <Text style={styles.optionSymbol}>{currency.symbol}</Text>
+              <Text style={styles.optionText}>{currency.name}</Text>
+            </Pressable>
+          ))}
         </View>
 
         <Pressable
