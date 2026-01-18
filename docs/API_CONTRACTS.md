@@ -1027,7 +1027,7 @@ Get current user profile including subscription status.
     "createdAt": "2024-01-15T00:00:00.000Z",
     "hasCompletedOnboarding": true,
     "subscription": {
-      "status": "TRIALING|ACTIVE|PAST_DUE|CANCELED|EXPIRED",
+      "status": "TRIALING",
       "isActive": true,
       "canAccessApp": true,
       "trialEndsAt": "2024-02-01T00:00:00.000Z",

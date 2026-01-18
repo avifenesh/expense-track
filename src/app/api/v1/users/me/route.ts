@@ -16,39 +16,29 @@ import { getSubscriptionState } from '@/lib/subscription'
  */
 export async function GET(request: NextRequest) {
   return withApiAuth(request, async (user) => {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.userId },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        preferredCurrency: true,
-        createdAt: true,
-        hasCompletedOnboarding: true,
-      },
-    })
+    // Parallelize user query and subscription state fetch for better performance
+    const [dbUser, subscription] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: user.userId },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          preferredCurrency: true,
+          createdAt: true,
+          hasCompletedOnboarding: true,
+        },
+      }),
+      getSubscriptionState(user.userId),
+    ])
 
     if (!dbUser) {
       return authError('User not found')
     }
 
-    const subscription = await getSubscriptionState(user.userId)
-
     return successResponse({
-      id: dbUser.id,
-      email: dbUser.email,
-      displayName: dbUser.displayName,
-      preferredCurrency: dbUser.preferredCurrency,
-      createdAt: dbUser.createdAt,
-      hasCompletedOnboarding: dbUser.hasCompletedOnboarding,
-      subscription: {
-        status: subscription.status,
-        isActive: subscription.isActive,
-        canAccessApp: subscription.canAccessApp,
-        trialEndsAt: subscription.trialEndsAt,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        daysRemaining: subscription.daysRemaining,
-      },
+      ...dbUser,
+      subscription,
     })
   })
 }
