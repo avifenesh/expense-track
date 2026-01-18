@@ -326,6 +326,24 @@ describe('Sharing API Routes', () => {
       expect(participant?.declinedAt).toBeTruthy()
     })
 
+    it('returns 400 when reason is not a string', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${otherToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason: 123 }),
+      })
+
+      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Validation failed')
+      expect(data.fields.reason).toContain('Reason must be a string')
+    })
+
     it('returns 403 when non-participant tries to decline', async () => {
       const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
         method: 'POST',
