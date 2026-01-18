@@ -129,6 +129,14 @@ describe('TransactionsScreen', () => {
       });
     });
 
+    it('renders Add button with accessibility label', async () => {
+      renderTransactionsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Add transaction')).toBeTruthy();
+      });
+    });
+
     it('renders filter chips', async () => {
       renderTransactionsScreen();
 
@@ -329,6 +337,32 @@ describe('TransactionsScreen', () => {
       await waitFor(() => {
         expect(setFilters).toHaveBeenCalledWith({ accountId: 'acc-1' });
         expect(fetchTransactions).toHaveBeenCalledWith(true);
+      });
+    });
+  });
+
+  describe('Add Transaction Navigation', () => {
+    it('navigates to CreateTransaction when Add button is pressed', async () => {
+      const navigate = jest.fn();
+      const navWithNavigate = { ...mockNavigation, navigate };
+
+      render(
+        <NavigationContainer>
+          <TransactionsScreen
+            navigation={navWithNavigate as typeof mockNavigation}
+            route={mockRoute}
+          />
+        </NavigationContainer>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('+ Add')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('+ Add'));
+
+      await waitFor(() => {
+        expect(navigate).toHaveBeenCalledWith('CreateTransaction');
       });
     });
   });

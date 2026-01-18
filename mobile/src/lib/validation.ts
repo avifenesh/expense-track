@@ -80,3 +80,86 @@ export function validatePasswordMatch(
   }
   return null;
 }
+
+
+export function validateTransactionAmount(amount: string): string | null {
+  if (!amount || amount.trim().length === 0) {
+    return 'Amount is required';
+  }
+
+  const numAmount = parseFloat(amount);
+
+  if (isNaN(numAmount)) {
+    return 'Please enter a valid amount';
+  }
+
+  if (numAmount <= 0) {
+    return 'Amount must be greater than zero';
+  }
+
+  if (numAmount > 999999999.99) {
+    return 'Amount is too large';
+  }
+
+  const parts = amount.split('.');
+  if (parts[1] && parts[1].length > 2) {
+    return 'Amount can have at most 2 decimal places';
+  }
+
+  return null;
+}
+
+export function validateTransactionDescription(
+  description: string | null | undefined
+): string | null {
+  if (!description || description.trim().length === 0) {
+    return null;
+  }
+
+  if (description.length > 200) {
+    return 'Description is too long (max 200 characters)';
+  }
+
+  // XSS prevention (allow optional whitespace in event handlers)
+  const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
+  if (dangerousPattern.test(description)) {
+    return 'Description contains invalid characters';
+  }
+
+  return null;
+}
+
+export function validateTransactionCategory(
+  categoryId: string | null
+): string | null {
+  if (!categoryId || categoryId.trim().length === 0) {
+    return 'Please select a category';
+  }
+
+  return null;
+}
+
+export function validateTransactionDate(date: Date | null): string | null {
+  if (!date) {
+    return 'Date is required';
+  }
+
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Please enter a valid date';
+  }
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  if (date > today) {
+    return 'Date cannot be in the future';
+  }
+
+  // Don't allow dates >10 years old
+  const tenYearsAgo = new Date();
+  tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+  if (date < tenYearsAgo) {
+    return 'Date is too far in the past';
+  }
+
+  return null;
+}
