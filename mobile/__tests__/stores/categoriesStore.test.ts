@@ -212,6 +212,25 @@ describe('categoriesStore', () => {
       expect(state.categories[0]).toEqual(mockIncomeCategory);
       expect(state.categories[1]).toEqual(mockCategory);
     });
+
+    it('updates existing category on reactivation instead of appending', async () => {
+      const archivedCategory = { ...mockCategory, isArchived: true };
+      useCategoriesStore.setState({ categories: [archivedCategory, mockIncomeCategory] });
+
+      const reactivatedCategory = { ...mockCategory, isArchived: false };
+      mockApiPost.mockResolvedValue(reactivatedCategory);
+
+      await useCategoriesStore.getState().createCategory({
+        name: 'Groceries',
+        type: 'EXPENSE',
+        color: '#4CAF50',
+      });
+
+      const state = useCategoriesStore.getState();
+      expect(state.categories).toHaveLength(2);
+      expect(state.categories[0]).toEqual(reactivatedCategory);
+      expect(state.categories[0].isArchived).toBe(false);
+    });
   });
 
   describe('archiveCategory', () => {
