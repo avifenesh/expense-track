@@ -8,10 +8,19 @@ import { Prisma, TransactionType, Currency, PaymentStatus, SplitType } from '@pr
 import type { getTransactionRequests } from './accounts'
 import type { getAccounts, getCategories } from './accounts'
 
+// Status filter for shared expenses
+export type SharedExpenseStatusFilter = 'pending' | 'settled' | 'all'
+
 // Pagination options for cursor-based pagination
 export type PaginationOptions = {
   cursor?: string
   limit?: number
+}
+
+// Extended pagination options for shared expenses with status filtering
+export type SharedExpensePaginationOptions = PaginationOptions & {
+  status?: SharedExpenseStatusFilter
+  offset?: number
 }
 
 // Generic paginated result type

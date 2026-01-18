@@ -8,8 +8,13 @@ import type {
   SettlementBalance,
   PaginationOptions,
   PaginatedResult,
+  SharedExpensePaginationOptions,
+  SharedExpenseStatusFilter,
 } from './types'
 import { DEFAULT_PAGINATION_LIMIT } from './types'
+
+// Maximum items per page
+const MAX_LIMIT = 100
 
 /**
  * Get expenses shared by a user with others.
@@ -106,6 +111,137 @@ export async function getSharedExpenses(
     nextCursor: hasMore ? items[items.length - 1].id : null,
     hasMore,
   }
+}
+
+/**
+ * Offset-based paginated result type for API endpoints
+ */
+export type OffsetPaginatedResult<T> = {
+  items: T[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * Get expenses shared by a user with others (API version).
+ * Supports offset-based pagination and status filtering for REST API.
+ *
+ * @param userId - The user who shared the expenses
+ * @param options - Optional pagination and filtering options
+ * @returns Paginated result with shared expenses and total count
+ */
+export async function getSharedExpensesPaginated(
+  userId: string,
+  options?: SharedExpensePaginationOptions,
+): Promise<OffsetPaginatedResult<SharedExpenseSummary>> {
+  const limit = Math.min(options?.limit ?? DEFAULT_PAGINATION_LIMIT, MAX_LIMIT)
+  const offset = options?.offset ?? 0
+  const statusFilter = options?.status ?? 'all'
+
+  // Build base where clause
+  const baseWhere = { ownerId: userId }
+
+  // Fetch all shared expenses first, then filter by status
+  // This is necessary because status filtering depends on participant statuses
+  const sharedExpenses = await prisma.sharedExpense.findMany({
+    where: baseWhere,
+    include: {
+      transaction: {
+        include: {
+          category: true,
+        },
+      },
+      participants: {
+        include: {
+          participant: {
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+  })
+
+  // Transform and filter by status
+  const allItems = sharedExpenses.map((expense) => {
+    const totalAmount = decimalToNumber(expense.totalAmount)
+    const participants = expense.participants.map((p) => ({
+      id: p.id,
+      shareAmount: decimalToNumber(p.shareAmount),
+      sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
+      status: p.status,
+      paidAt: p.paidAt,
+      reminderSentAt: p.reminderSentAt,
+      participant: p.participant,
+    }))
+
+    const totalOwed = participants
+      .filter((p) => p.status === PaymentStatus.PENDING)
+      .reduce((sum, p) => sum + p.shareAmount, 0)
+    const totalPaid = participants
+      .filter((p) => p.status === PaymentStatus.PAID)
+      .reduce((sum, p) => sum + p.shareAmount, 0)
+    const allSettled = participants.every((p) => p.status !== PaymentStatus.PENDING)
+
+    return {
+      id: expense.id,
+      transactionId: expense.transactionId,
+      splitType: expense.splitType,
+      totalAmount,
+      currency: expense.currency,
+      description: expense.description,
+      createdAt: expense.createdAt,
+      transaction: {
+        id: expense.transaction.id,
+        date: expense.transaction.date,
+        description: expense.transaction.description,
+        category: {
+          id: expense.transaction.category.id,
+          name: expense.transaction.category.name,
+        },
+      },
+      participants,
+      totalOwed,
+      totalPaid,
+      allSettled,
+    }
+  })
+
+  // Filter by status
+  const filteredItems = filterByStatus(allItems, statusFilter)
+
+  // Apply pagination
+  const total = filteredItems.length
+  const items = filteredItems.slice(offset, offset + limit)
+  const hasMore = offset + items.length < total
+
+  return { items, total, hasMore }
+}
+
+/**
+ * Filter shared expenses by status.
+ * - "pending": at least one participant is PENDING
+ * - "settled": all participants are PAID or DECLINED (no PENDING)
+ * - "all": no filtering
+ */
+function filterByStatus(
+  items: SharedExpenseSummary[],
+  status: SharedExpenseStatusFilter,
+): SharedExpenseSummary[] {
+  if (status === 'all') {
+    return items
+  }
+
+  if (status === 'pending') {
+    return items.filter((item) => !item.allSettled)
+  }
+
+  // status === 'settled'
+  return items.filter((item) => item.allSettled)
 }
 
 /**
