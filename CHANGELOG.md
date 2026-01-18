@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Mobile: SharingScreen with expense sharing UI (#217)
+  - Net balance summary showing overall settlements
+  - View expenses shared by you with payment status tracking
+  - View expenses shared with you by others
+  - Pull-to-refresh functionality
+  - Loading and error states
+  - Empty state when no shared expenses exist
+  - Integration with sharingStore for real-time data
+  - Settlement balance display per contact
+- API: GET /api/v1/sharing endpoint for retrieving all sharing data (#217)
+  - Returns expenses shared by user
+  - Returns expenses shared with user
+  - Returns settlement balances with each contact
+  - JWT authentication required
+- API: PATCH /api/v1/sharing/[participantId]/paid endpoint (#217)
+  - Allows expense owner to mark participant payments as received
+  - Updates payment status and timestamp
+  - JWT authentication required
 - Mobile: EditTransactionScreen for editing and deleting transactions (#214)
   - Pre-populated form with existing transaction data
   - Transaction type toggle with visual feedback
@@ -41,3 +59,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Background refresh after mutations
   - Logout integration for state cleanup
   - 641-line comprehensive test suite with 90%+ coverage
+

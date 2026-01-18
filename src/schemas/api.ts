@@ -212,3 +212,11 @@ export const idApiSchema = z.object({
 export const userLookupApiSchema = z.object({
   email: z.string().email('Enter a valid email address'),
 })
+
+// ============================================
+// Sharing Schemas (API)
+// ============================================
+
+export const markPaidApiSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+})

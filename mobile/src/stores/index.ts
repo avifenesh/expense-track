@@ -38,6 +38,8 @@ export type {
   ShareUser,
   ShareParticipant,
   SharedExpense,
+  SharedExpenseTransaction,
   SharedWithMeParticipation,
+  SettlementBalance,
   CreateSharedExpenseInput,
 } from './sharingStore';

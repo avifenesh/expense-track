@@ -531,3 +531,94 @@ The `lib/validation.ts` module provides client-side validation for all forms:
 - `validateEmail(email: string)` - Email format validation
 - `validatePassword(password: string)` - Password strength validation
 - `validatePasswordMatch(password: string, confirmPassword: string)` - Password confirmation
+
+## State Management
+
+The app uses Zustand for state management with dedicated stores for each domain:
+
+### Stores
+
+- **authStore** - Authentication state (login, logout, token management)
+- **accountsStore** - User accounts data
+- **transactionsStore** - Transaction management
+- **budgetsStore** - Budget tracking and management
+- **categoriesStore** - Category management
+- **sharingStore** - Expense sharing and settlement tracking
+
+### sharingStore
+
+Manages expense sharing between users with support for split types and payment tracking.
+
+**State:**
+```typescript
+{
+  sharedByMe: SharedExpense[]           // Expenses you shared with others
+  sharedWithMe: SharedWithMeParticipation[]  // Expenses shared with you
+  settlementBalances: SettlementBalance[]    // Net balances with each contact
+  isLoading: boolean
+  error: string | null
+}
+```
+
+**Actions:**
+- `fetchSharing()` - Load all sharing data from API
+- `markParticipantPaid(participantId)` - Mark a participant's share as paid (owner only)
+- `declineShare(participantId)` - Decline a shared expense
+- `cancelSharedExpense(sharedExpenseId)` - Cancel a shared expense (owner only)
+- `sendReminder(participantId)` - Send payment reminder to participant
+- `lookupUser(email)` - Look up user by email for sharing
+- `clearError()` - Clear error state
+- `reset()` - Reset store to initial state
+
+**Split Types:**
+- `EQUAL` - Split equally among all participants
+- `PERCENTAGE` - Split by percentage
+- `FIXED` - Fixed amounts per participant
+
+**Payment Status:**
+- `PENDING` - Awaiting payment
+- `PAID` - Payment confirmed
+- `DECLINED` - Participant declined the expense
+
+**Usage:**
+```typescript
+import { useSharingStore } from '@/stores';
+
+function SharingScreen() {
+  const { 
+    sharedByMe, 
+    sharedWithMe, 
+    settlementBalances,
+    fetchSharing,
+    markParticipantPaid,
+    isLoading 
+  } = useSharingStore();
+
+  useEffect(() => {
+    fetchSharing();
+  }, []);
+
+  const handleMarkPaid = async (participantId: string) => {
+    try {
+      await markParticipantPaid(participantId);
+      // Local state updated automatically
+    } catch (error) {
+      // Handle error
+    }
+  };
+
+  return (
+    // UI implementation
+  );
+}
+```
+
+**API Integration:**
+- `GET /api/v1/sharing` - Fetch all sharing data
+- `PATCH /api/v1/sharing/[participantId]/paid` - Mark payment received
+- `POST /api/v1/expenses/shares/[participantId]/decline` - Decline share
+- `DELETE /api/v1/expenses/shares/[sharedExpenseId]` - Cancel shared expense
+- `POST /api/v1/expenses/shares/[participantId]/remind` - Send reminder
+- `GET /api/v1/users/lookup` - Lookup user by email
+
+See `docs/API_CONTRACTS.md` for detailed API documentation.

@@ -17,35 +17,73 @@ const mockSharedExpense = {
   totalAmount: '100.00',
   currency: 'USD' as const,
   createdAt: '2026-01-15T12:00:00Z',
+  transaction: {
+    id: 'tx-1',
+    date: '2026-01-15',
+    description: 'Restaurant dinner',
+    category: {
+      id: 'cat-1',
+      name: 'Food',
+    },
+  },
   participants: [
     {
       id: 'part-1',
-      userId: 'user-2',
-      user: {
+      shareAmount: '50.00',
+      sharePercentage: null,
+      status: 'PENDING' as const,
+      paidAt: null,
+      reminderSentAt: null,
+      participant: {
+        id: 'user-2',
         email: 'friend@example.com',
         displayName: 'Friend',
       },
-      email: 'friend@example.com',
-      shareAmount: '50.00',
-      status: 'PENDING' as const,
     },
   ],
+  totalOwed: '50.00',
+  totalPaid: '0.00',
+  allSettled: false,
 };
 
 const mockParticipation = {
   id: 'part-2',
   shareAmount: '25.00',
+  sharePercentage: null,
   status: 'PENDING' as const,
+  paidAt: null,
   sharedExpense: {
     id: 'share-2',
-    description: 'Movie tickets',
+    splitType: 'EQUAL' as const,
     totalAmount: '50.00',
     currency: 'USD' as const,
+    description: 'Movie tickets',
+    createdAt: '2026-01-14T10:00:00Z',
+    transaction: {
+      id: 'tx-2',
+      date: '2026-01-14',
+      description: 'Movie tickets',
+      category: {
+        id: 'cat-2',
+        name: 'Entertainment',
+      },
+    },
     owner: {
+      id: 'user-3',
       email: 'owner@example.com',
       displayName: 'Owner',
     },
   },
+};
+
+const mockSettlementBalance = {
+  userId: 'user-2',
+  userEmail: 'friend@example.com',
+  userDisplayName: 'Friend',
+  currency: 'USD' as const,
+  youOwe: '0.00',
+  theyOwe: '50.00',
+  netBalance: '50.00',
 };
 
 const mockUser = {
@@ -66,73 +104,30 @@ describe('sharingStore', () => {
       const state = useSharingStore.getState();
       expect(state.sharedByMe).toEqual([]);
       expect(state.sharedWithMe).toEqual([]);
+      expect(state.settlementBalances).toEqual([]);
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
   });
 
-  describe('fetchSharedByMe', () => {
-    it('fetches shared expenses successfully', async () => {
+  describe('fetchSharing', () => {
+    it('fetches all sharing data successfully', async () => {
       mockApiGet.mockResolvedValue({
         sharedExpenses: [mockSharedExpense],
+        expensesSharedWithMe: [mockParticipation],
+        settlementBalances: [mockSettlementBalance],
       });
 
-      await useSharingStore.getState().fetchSharedByMe();
+      await useSharingStore.getState().fetchSharing();
 
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-by-me', 'test-token');
+      expect(mockApiGet).toHaveBeenCalledWith('/sharing', 'test-token');
       const state = useSharingStore.getState();
       expect(state.sharedByMe).toHaveLength(1);
       expect(state.sharedByMe[0]).toEqual(mockSharedExpense);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-    });
-
-    it('sets loading state during fetch', async () => {
-      let loadingDuringFetch = false;
-      mockApiGet.mockImplementation(async () => {
-        loadingDuringFetch = useSharingStore.getState().isLoading;
-        return { sharedExpenses: [] };
-      });
-
-      await useSharingStore.getState().fetchSharedByMe();
-
-      expect(loadingDuringFetch).toBe(true);
-      expect(useSharingStore.getState().isLoading).toBe(false);
-    });
-
-    it('handles API errors', async () => {
-      mockApiGet.mockRejectedValue(new ApiError('Server error', 'SERVER_ERROR', 500));
-
-      await useSharingStore.getState().fetchSharedByMe();
-
-      const state = useSharingStore.getState();
-      expect(state.error).toBe('Server error');
-      expect(state.isLoading).toBe(false);
-    });
-
-    it('handles non-ApiError errors', async () => {
-      mockApiGet.mockRejectedValue(new Error('Network failure'));
-
-      await useSharingStore.getState().fetchSharedByMe();
-
-      const state = useSharingStore.getState();
-      expect(state.error).toBe('Failed to fetch shared expenses');
-      expect(state.isLoading).toBe(false);
-    });
-  });
-
-  describe('fetchSharedWithMe', () => {
-    it('fetches participations successfully', async () => {
-      mockApiGet.mockResolvedValue({
-        participations: [mockParticipation],
-      });
-
-      await useSharingStore.getState().fetchSharedWithMe();
-
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-with-me', 'test-token');
-      const state = useSharingStore.getState();
       expect(state.sharedWithMe).toHaveLength(1);
       expect(state.sharedWithMe[0]).toEqual(mockParticipation);
+      expect(state.settlementBalances).toHaveLength(1);
+      expect(state.settlementBalances[0]).toEqual(mockSettlementBalance);
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -141,10 +136,14 @@ describe('sharingStore', () => {
       let loadingDuringFetch = false;
       mockApiGet.mockImplementation(async () => {
         loadingDuringFetch = useSharingStore.getState().isLoading;
-        return { participations: [] };
+        return {
+          sharedExpenses: [],
+          expensesSharedWithMe: [],
+          settlementBalances: [],
+        };
       });
 
-      await useSharingStore.getState().fetchSharedWithMe();
+      await useSharingStore.getState().fetchSharing();
 
       expect(loadingDuringFetch).toBe(true);
       expect(useSharingStore.getState().isLoading).toBe(false);
@@ -153,7 +152,7 @@ describe('sharingStore', () => {
     it('handles API errors', async () => {
       mockApiGet.mockRejectedValue(new ApiError('Server error', 'SERVER_ERROR', 500));
 
-      await useSharingStore.getState().fetchSharedWithMe();
+      await useSharingStore.getState().fetchSharing();
 
       const state = useSharingStore.getState();
       expect(state.error).toBe('Server error');
@@ -163,58 +162,7 @@ describe('sharingStore', () => {
     it('handles non-ApiError errors', async () => {
       mockApiGet.mockRejectedValue(new Error('Network failure'));
 
-      await useSharingStore.getState().fetchSharedWithMe();
-
-      const state = useSharingStore.getState();
-      expect(state.error).toBe('Failed to fetch expenses shared with you');
-      expect(state.isLoading).toBe(false);
-    });
-  });
-
-  describe('fetchAll', () => {
-    it('fetches both shared expenses and participations in parallel', async () => {
-      mockApiGet
-        .mockResolvedValueOnce({ sharedExpenses: [mockSharedExpense] })
-        .mockResolvedValueOnce({ participations: [mockParticipation] });
-
-      await useSharingStore.getState().fetchAll();
-
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-by-me', 'test-token');
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-with-me', 'test-token');
-      const state = useSharingStore.getState();
-      expect(state.sharedByMe).toHaveLength(1);
-      expect(state.sharedWithMe).toHaveLength(1);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-    });
-
-    it('sets loading state during fetch', async () => {
-      let loadingDuringFetch = false;
-      mockApiGet.mockImplementation(async () => {
-        loadingDuringFetch = useSharingStore.getState().isLoading;
-        return { sharedExpenses: [], participations: [] };
-      });
-
-      await useSharingStore.getState().fetchAll();
-
-      expect(loadingDuringFetch).toBe(true);
-      expect(useSharingStore.getState().isLoading).toBe(false);
-    });
-
-    it('handles API errors', async () => {
-      mockApiGet.mockRejectedValue(new ApiError('Server error', 'SERVER_ERROR', 500));
-
-      await useSharingStore.getState().fetchAll();
-
-      const state = useSharingStore.getState();
-      expect(state.error).toBe('Server error');
-      expect(state.isLoading).toBe(false);
-    });
-
-    it('handles non-ApiError errors', async () => {
-      mockApiGet.mockRejectedValue(new Error('Network failure'));
-
-      await useSharingStore.getState().fetchAll();
+      await useSharingStore.getState().fetchSharing();
 
       const state = useSharingStore.getState();
       expect(state.error).toBe('Failed to fetch sharing data');
@@ -222,101 +170,7 @@ describe('sharingStore', () => {
     });
   });
 
-  describe('createSharedExpense', () => {
-    it('creates shared expense and refetches list', async () => {
-      const createResponse = {
-        sharedExpenseId: 'share-new',
-        participants: [
-          {
-            id: 'part-new',
-            userId: 'user-2',
-            email: 'friend@example.com',
-            shareAmount: '50.00',
-            status: 'PENDING' as const,
-          },
-        ],
-      };
-
-      mockApiPost.mockResolvedValue(createResponse);
-      mockApiGet.mockResolvedValue({ sharedExpenses: [mockSharedExpense] });
-
-      const result = await useSharingStore.getState().createSharedExpense({
-        transactionId: 'tx-1',
-        splitType: 'EQUAL',
-        description: 'Test expense',
-        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
-      });
-
-      expect(mockApiPost).toHaveBeenCalledWith(
-        '/expenses/share',
-        {
-          transactionId: 'tx-1',
-          splitType: 'EQUAL',
-          description: 'Test expense',
-          participants: [{ email: 'friend@example.com', shareAmount: 50 }],
-        },
-        'test-token'
-      );
-      expect(result).toEqual(createResponse);
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-by-me', 'test-token');
-    });
-
-    it('throws ApiError on API failure', async () => {
-      mockApiPost.mockRejectedValue(new ApiError('Validation error', 'VALIDATION_ERROR', 400));
-
-      await expect(
-        useSharingStore.getState().createSharedExpense({
-          transactionId: 'tx-1',
-          splitType: 'EQUAL',
-          description: 'Test',
-          participants: [],
-        })
-      ).rejects.toThrow(ApiError);
-    });
-
-    it('throws wrapped error on non-ApiError failure', async () => {
-      mockApiPost.mockRejectedValue(new Error('Network error'));
-
-      await expect(
-        useSharingStore.getState().createSharedExpense({
-          transactionId: 'tx-1',
-          splitType: 'EQUAL',
-          description: 'Test',
-          participants: [],
-        })
-      ).rejects.toThrow('Failed to share expense');
-    });
-
-    it('succeeds even if background refresh fails', async () => {
-      const createResponse = {
-        sharedExpenseId: 'share-new',
-        participants: [
-          {
-            id: 'part-new',
-            userId: 'user-2',
-            email: 'friend@example.com',
-            shareAmount: '50.00',
-            status: 'PENDING' as const,
-          },
-        ],
-      };
-
-      mockApiPost.mockResolvedValue(createResponse);
-      mockApiGet.mockRejectedValue(new ApiError('Server error', 'SERVER_ERROR', 500));
-
-      // Should not throw even though refresh fails
-      const result = await useSharingStore.getState().createSharedExpense({
-        transactionId: 'tx-1',
-        splitType: 'EQUAL',
-        description: 'Test expense',
-        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
-      });
-
-      expect(result).toEqual(createResponse);
-    });
-  });
-
-  describe('markShareAsPaid', () => {
+  describe('markParticipantPaid', () => {
     beforeEach(() => {
       useSharingStore.setState({
         sharedByMe: [mockSharedExpense],
@@ -332,10 +186,10 @@ describe('sharingStore', () => {
 
       mockApiPatch.mockResolvedValue(paidResponse);
 
-      const result = await useSharingStore.getState().markShareAsPaid('part-1');
+      const result = await useSharingStore.getState().markParticipantPaid('part-1');
 
       expect(mockApiPatch).toHaveBeenCalledWith(
-        '/expenses/shares/part-1/paid',
+        '/sharing/part-1/paid',
         {},
         'test-token'
       );
@@ -353,10 +207,16 @@ describe('sharingStore', () => {
           { ...mockSharedExpense.participants[0], id: 'part-1' },
           {
             id: 'part-2',
-            userId: 'user-3',
-            email: 'other@example.com',
             shareAmount: '25.00',
+            sharePercentage: null,
             status: 'PENDING' as const,
+            paidAt: null,
+            reminderSentAt: null,
+            participant: {
+              id: 'user-3',
+              email: 'other@example.com',
+              displayName: 'Other',
+            },
           },
         ],
       };
@@ -368,7 +228,7 @@ describe('sharingStore', () => {
         paidAt: '2026-01-16T14:00:00Z',
       });
 
-      await useSharingStore.getState().markShareAsPaid('part-1');
+      await useSharingStore.getState().markParticipantPaid('part-1');
 
       const state = useSharingStore.getState();
       expect(state.sharedByMe[0].participants[0].status).toBe('PAID');
@@ -379,7 +239,7 @@ describe('sharingStore', () => {
       mockApiPatch.mockRejectedValue(new ApiError('Not found', 'NOT_FOUND', 404));
 
       await expect(
-        useSharingStore.getState().markShareAsPaid('invalid')
+        useSharingStore.getState().markParticipantPaid('invalid')
       ).rejects.toThrow(ApiError);
     });
 
@@ -387,7 +247,7 @@ describe('sharingStore', () => {
       mockApiPatch.mockRejectedValue(new Error('Network error'));
 
       await expect(
-        useSharingStore.getState().markShareAsPaid('part-1')
+        useSharingStore.getState().markParticipantPaid('part-1')
       ).rejects.toThrow('Failed to mark share as paid');
     });
   });
@@ -605,6 +465,7 @@ describe('sharingStore', () => {
       useSharingStore.setState({
         sharedByMe: [mockSharedExpense],
         sharedWithMe: [mockParticipation],
+        settlementBalances: [mockSettlementBalance],
         isLoading: true,
         error: 'Some error',
       });
@@ -614,6 +475,7 @@ describe('sharingStore', () => {
       const state = useSharingStore.getState();
       expect(state.sharedByMe).toEqual([]);
       expect(state.sharedWithMe).toEqual([]);
+      expect(state.settlementBalances).toEqual([]);
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -622,20 +484,28 @@ describe('sharingStore', () => {
   describe('auth token usage', () => {
     it('uses access token from auth store', async () => {
       useAuthStore.setState({ accessToken: 'different-token' });
-      mockApiGet.mockResolvedValue({ sharedExpenses: [] });
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
 
-      await useSharingStore.getState().fetchSharedByMe();
+      await useSharingStore.getState().fetchSharing();
 
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-by-me', 'different-token');
+      expect(mockApiGet).toHaveBeenCalledWith('/sharing', 'different-token');
     });
 
     it('works when access token is null', async () => {
       useAuthStore.setState({ accessToken: null });
-      mockApiGet.mockResolvedValue({ sharedExpenses: [] });
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
 
-      await useSharingStore.getState().fetchSharedByMe();
+      await useSharingStore.getState().fetchSharing();
 
-      expect(mockApiGet).toHaveBeenCalledWith('/expenses/shared-by-me', null);
+      expect(mockApiGet).toHaveBeenCalledWith('/sharing', null);
     });
   });
 });
