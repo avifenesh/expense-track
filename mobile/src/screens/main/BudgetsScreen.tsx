@@ -64,7 +64,6 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
-  // Calculate spent per category from expense transactions (memoized for performance)
   const spentByCategory = useMemo(() => {
     const map = new Map<string, number>();
     transactions
@@ -76,15 +75,12 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
     return map;
   }, [transactions]);
 
-  // Calculate total planned budget
   const totalPlanned = useMemo(
     () => budgets.reduce((sum, b) => sum + parseFloat(b.planned), 0),
     [budgets]
   );
 
-  // Calculate total spent across all budgeted categories
   const totalSpent = useMemo(() => {
-    // Only sum spent for categories that have budgets
     const budgetedCategoryIds = new Set(budgets.map((b) => b.categoryId));
     let sum = 0;
     spentByCategory.forEach((spent, categoryId) => {
@@ -95,20 +91,16 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
     return sum;
   }, [budgets, spentByCategory]);
 
-  // Build category lookup map for efficient access
   const categoryMap = useMemo(() => {
     const map = new Map<string, typeof categories[0]>();
     categories.forEach((c) => map.set(c.id, c));
     return map;
   }, [categories]);
 
-  // Initial load - fetch accounts
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  // When account or month changes, update filters and fetch data in one effect
-  // This prevents race conditions between setting filters and fetching data
   useEffect(() => {
     if (selectedAccountId) {
       setTransactionFilters({ accountId: selectedAccountId, month: selectedMonth });
