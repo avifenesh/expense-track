@@ -9,6 +9,15 @@ import type { SharedExpenseStatusFilter } from '@/lib/finance/types'
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
 
+const VALID_STATUSES = ['pending', 'settled', 'all'] as const
+
+/**
+ * Type guard to check if a value is a valid SharedExpenseStatusFilter.
+ */
+function isSharedExpenseStatusFilter(value: unknown): value is SharedExpenseStatusFilter {
+  return typeof value === 'string' && VALID_STATUSES.includes(value as SharedExpenseStatusFilter)
+}
+
 /**
  * Format a shared expense for API response.
  * Converts Date objects and Decimals to strings.
@@ -71,15 +80,14 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get('limit')
     const offsetParam = searchParams.get('offset')
 
-    // Validate status parameter
-    const validStatuses: SharedExpenseStatusFilter[] = ['pending', 'settled', 'all']
+    // Validate status parameter using type guard
     let status: SharedExpenseStatusFilter = 'all'
 
     if (statusParam) {
-      if (!validStatuses.includes(statusParam as SharedExpenseStatusFilter)) {
+      if (!isSharedExpenseStatusFilter(statusParam)) {
         return validationError({ status: ['status must be "pending", "settled", or "all"'] })
       }
-      status = statusParam as SharedExpenseStatusFilter
+      status = statusParam
     }
 
     // Parse and validate limit

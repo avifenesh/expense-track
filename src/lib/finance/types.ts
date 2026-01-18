@@ -17,10 +17,15 @@ export type PaginationOptions = {
   limit?: number
 }
 
-// Extended pagination options for shared expenses with status filtering
-export type SharedExpensePaginationOptions = PaginationOptions & {
-  status?: SharedExpenseStatusFilter
+// Pagination options for offset-based pagination (no cursor)
+export type OffsetPaginationOptions = {
   offset?: number
+  limit?: number
+}
+
+// Extended pagination options for shared expenses with status filtering (offset-based)
+export type SharedExpensePaginationOptions = OffsetPaginationOptions & {
+  status?: SharedExpenseStatusFilter
 }
 
 // Generic paginated result type

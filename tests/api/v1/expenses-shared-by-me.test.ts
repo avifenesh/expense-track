@@ -61,13 +61,24 @@ describe('GET /api/v1/expenses/shared-by-me', () => {
     createdSharedExpenseIds.length = 0
   })
 
+  /**
+   * Helper to create test shared expense data.
+   *
+   * Note: This uses a single account (testUser's) for all transactions regardless of
+   * the shared expense owner. While this creates unrealistic data (a user "owning" a
+   * shared expense linked to another user's transaction), it's acceptable for these
+   * tests because:
+   * 1. The endpoint filters by SharedExpense.ownerId, not transaction ownership
+   * 2. This simplifies test setup without affecting the behavior being tested
+   * 3. Real-world shared expenses would have proper account ownership
+   */
   async function createTestSharedExpense(options: {
     ownerId: string
     participantId: string
     status?: PaymentStatus
     description?: string
   }) {
-    // Create transaction
+    // Create transaction (using testUser's account for simplicity)
     const transaction = await prisma.transaction.create({
       data: {
         accountId,
