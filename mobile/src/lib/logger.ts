@@ -1,9 +1,3 @@
-/**
- * Mobile logger for development debugging.
- * Only logs in development mode (__DEV__).
- * Sanitizes sensitive data before logging.
- */
-
 /* eslint-disable no-console -- This is the designated logging module */
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';

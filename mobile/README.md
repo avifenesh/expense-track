@@ -50,6 +50,7 @@ __tests__/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
   services/        # Service tests (api, auth)
+  stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
 ```
 
 ## Project Structure
@@ -70,7 +71,8 @@ src/
     MainTabNavigator.tsx
     AppStack.tsx
     RootNavigator.tsx
-  lib/          # Utilities (validation, tokenStorage)
+  stores/       # Zustand stores (auth, accounts, transactions, budgets, categories)
+  lib/          # Utilities (validation, tokenStorage, logger)
   services/     # API services (api, auth)
   types/        # TypeScript definitions
   constants/    # App constants
