@@ -3,12 +3,7 @@ import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { useOnboardingStore } from '../../stores';
-
-const CURRENCY_SYMBOLS = {
-  USD: '$',
-  EUR: '€',
-  ILS: '₪',
-};
+import { CURRENCY_SYMBOLS } from '../../constants/categories';
 
 export function OnboardingBudgetScreen({
   navigation,

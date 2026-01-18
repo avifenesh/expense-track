@@ -1,3 +1,9 @@
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  ILS: '₪',
+};
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Groceries', color: '#22c55e' },
   { name: 'Dining Out', color: '#f97316' },

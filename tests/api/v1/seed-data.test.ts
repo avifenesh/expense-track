@@ -260,7 +260,7 @@ describe('POST /api/v1/seed-data', () => {
     expect(response.status).toBe(401)
   })
 
-  it('returns 403 when user has no subscription', async () => {
+  it('returns 402 when user has no subscription', async () => {
     await prisma.subscription.update({
       where: { userId: TEST_USER_ID },
       data: { status: 'EXPIRED' },

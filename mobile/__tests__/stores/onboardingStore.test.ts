@@ -141,7 +141,7 @@ describe('onboardingStore', () => {
           ok: true,
           json: async () => ({
             success: true,
-            data: { categories: [{ id: 'cat-1', name: 'Total' }] },
+            data: { categories: [{ id: 'cat-1', name: 'Groceries', type: 'EXPENSE' }] },
           }),
         });
 
@@ -253,14 +253,12 @@ describe('onboardingStore', () => {
 
       const { result } = renderHook(() => useOnboardingStore());
 
+      let success: boolean | undefined;
       await act(async () => {
-        try {
-          await result.current.completeOnboarding();
-        } catch {
-          // Expected error - handled by store
-        }
+        success = await result.current.completeOnboarding();
       });
 
+      expect(success).toBe(false);
       expect(result.current.error).toBe(errorMessage);
       expect(result.current.isCompleting).toBe(false);
     });
@@ -288,7 +286,7 @@ describe('onboardingStore', () => {
       expect(result.current.isCompleting).toBe(false);
     });
 
-    it('throws error when not authenticated', async () => {
+    it('returns false when not authenticated', async () => {
       mockedAuthStore.mockReturnValue({
         accessToken: null,
         updateUser: jest.fn(),
@@ -296,14 +294,12 @@ describe('onboardingStore', () => {
 
       const { result } = renderHook(() => useOnboardingStore());
 
+      let success: boolean | undefined;
       await act(async () => {
-        try {
-          await result.current.completeOnboarding();
-        } catch {
-          // Expected error - handled by store
-        }
+        success = await result.current.completeOnboarding();
       });
 
+      expect(success).toBe(false);
       expect(result.current.error).toBe('Not authenticated');
     });
   });

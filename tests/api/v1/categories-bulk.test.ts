@@ -319,7 +319,7 @@ describe('POST /api/v1/categories/bulk', () => {
     expect(response.status).toBe(400)
   })
 
-  it('returns 403 when user has no subscription', async () => {
+  it('returns 402 when user has no subscription', async () => {
     await prisma.subscription.update({
       where: { userId: TEST_USER_ID },
       data: { status: 'EXPIRED' },

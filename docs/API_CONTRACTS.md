@@ -1114,7 +1114,7 @@ Mark onboarding as complete.
 
 **Errors:**
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 429: Rate limited - Too many requests
 
 ---
@@ -1168,7 +1168,7 @@ Update preferred currency.
 **Errors:**
 - 400: Validation error - Invalid currency
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 429: Rate limited - Too many requests
 
 ---
@@ -1228,7 +1228,7 @@ Bulk create categories (or reactivate existing archived ones).
 **Errors:**
 - 400: Validation error - Invalid input
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 429: Rate limited - Too many requests
 
 ---
@@ -1270,7 +1270,7 @@ Create a budget for specified account, category, and month (used during onboardi
 **Errors:**
 - 400: Validation error - Invalid input
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired or access denied
+- 402: Payment Required - Subscription expired or access denied
 - 429: Rate limited - Too many requests
 
 ---
@@ -1300,7 +1300,7 @@ Seed user's account with sample data (default categories, sample transactions, s
 
 **Errors:**
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired or no account found
+- 402: Payment Required - Subscription expired or no account found
 - 429: Rate limited - Too many requests
 
 ---
@@ -1490,7 +1490,7 @@ Updates an existing holding.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 404: Not found - Holding does not exist
 - 429: Rate limited - Too many requests
 
@@ -1514,7 +1514,7 @@ Deletes an existing holding.
 
 **Errors:**
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 404: Not found - Holding does not exist
 - 429: Rate limited - Too many requests
 
@@ -1647,7 +1647,7 @@ Toggles a recurring template's active status.
 **Errors:**
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Subscription expired
+- 402: Payment Required - Subscription expired
 - 404: Not found - Recurring template not found
 - 429: Rate limited - Too many requests
 
