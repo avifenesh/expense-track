@@ -116,7 +116,7 @@ describe('POST /api/v1/categories/bulk', () => {
     })
 
     const response = await BulkCategories(request)
-    const data = await response.json()
+    await response.json()
 
     expect(response.status).toBe(201)
 

@@ -121,7 +121,7 @@ describe('onboardingStore', () => {
       mockedAuthStore.mockReturnValue({
         accessToken: mockAccessToken,
         updateUser: mockUpdateUser,
-      } as any);
+      } as unknown as ReturnType<typeof useAuthStore>);
 
       global.fetch = jest.fn();
     });
@@ -257,6 +257,7 @@ describe('onboardingStore', () => {
         try {
           await result.current.completeOnboarding();
         } catch {
+          // Expected error - handled by store
         }
       });
 
@@ -265,12 +266,12 @@ describe('onboardingStore', () => {
     });
 
     it('sets isCompleting flag during execution', async () => {
-      let resolvePatch: (value: any) => void;
+      let resolvePatch: (value: unknown) => void;
       const patchPromise = new Promise((resolve) => {
         resolvePatch = resolve;
       });
 
-      mockedApi.apiPatch.mockReturnValue(patchPromise as any);
+      mockedApi.apiPatch.mockReturnValue(patchPromise as Promise<{ currency: string }>);
       mockedApi.apiPost.mockResolvedValue({});
 
       const { result } = renderHook(() => useOnboardingStore());
@@ -291,7 +292,7 @@ describe('onboardingStore', () => {
       mockedAuthStore.mockReturnValue({
         accessToken: null,
         updateUser: jest.fn(),
-      } as any);
+      } as unknown as ReturnType<typeof useAuthStore>);
 
       const { result } = renderHook(() => useOnboardingStore());
 
@@ -299,6 +300,7 @@ describe('onboardingStore', () => {
         try {
           await result.current.completeOnboarding();
         } catch {
+          // Expected error - handled by store
         }
       });
 
