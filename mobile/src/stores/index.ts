@@ -43,3 +43,10 @@ export type {
   SettlementBalance,
   CreateSharedExpenseInput,
 } from './sharingStore';
+
+export { useOnboardingStore } from './onboardingStore';
+export type {
+  OnboardingStore,
+  Currency,
+  CategorySelection,
+} from './onboardingStore';
