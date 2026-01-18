@@ -9,41 +9,70 @@ export type ShareStatus = 'PENDING' | 'PAID' | 'DECLINED';
 export interface ShareUser {
   id?: string;
   email: string;
-  displayName?: string;
+  displayName?: string | null;
 }
 
 export interface ShareParticipant {
   id: string;
-  userId?: string;
-  user?: ShareUser;
-  email: string;
   shareAmount: string;
+  sharePercentage?: string | null;
   status: ShareStatus;
-  paidAt?: string;
+  paidAt?: string | null;
+  reminderSentAt?: string | null;
+  participant: ShareUser;
+}
+
+export interface SharedExpenseTransaction {
+  id: string;
+  date: string;
+  description: string | null;
+  category: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface SharedExpense {
   id: string;
   transactionId: string;
   splitType: SplitType;
-  description: string;
+  description: string | null;
   totalAmount: string;
   currency: Currency;
   createdAt: string;
+  transaction: SharedExpenseTransaction;
   participants: ShareParticipant[];
+  totalOwed: string;
+  totalPaid: string;
+  allSettled: boolean;
 }
 
 export interface SharedWithMeParticipation {
   id: string;
   shareAmount: string;
+  sharePercentage?: string | null;
   status: ShareStatus;
+  paidAt?: string | null;
   sharedExpense: {
     id: string;
-    description: string;
+    splitType: SplitType;
     totalAmount: string;
     currency: Currency;
+    description: string | null;
+    createdAt: string;
+    transaction: SharedExpenseTransaction;
     owner: ShareUser;
   };
+}
+
+export interface SettlementBalance {
+  userId: string;
+  userEmail: string;
+  userDisplayName: string | null;
+  currency: Currency;
+  youOwe: string;
+  theyOwe: string;
+  netBalance: string;
 }
 
 export interface CreateSharedExpenseInput {
@@ -64,7 +93,7 @@ export interface CreateShareResponse {
 export interface MarkPaidResponse {
   id: string;
   status: ShareStatus;
-  paidAt: string;
+  paidAt: string | null;
 }
 
 export interface DeclineShareResponse {
@@ -76,27 +105,23 @@ export interface UserLookupResponse {
   user: ShareUser;
 }
 
-interface SharedByMeResponse {
+interface SharingResponse {
   sharedExpenses: SharedExpense[];
-}
-
-interface SharedWithMeResponse {
-  participations: SharedWithMeParticipation[];
+  expensesSharedWithMe: SharedWithMeParticipation[];
+  settlementBalances: SettlementBalance[];
 }
 
 interface SharingState {
   sharedByMe: SharedExpense[];
   sharedWithMe: SharedWithMeParticipation[];
+  settlementBalances: SettlementBalance[];
   isLoading: boolean;
   error: string | null;
 }
 
 interface SharingActions {
-  fetchSharedByMe: () => Promise<void>;
-  fetchSharedWithMe: () => Promise<void>;
-  fetchAll: () => Promise<void>;
-  createSharedExpense: (data: CreateSharedExpenseInput) => Promise<CreateShareResponse>;
-  markShareAsPaid: (participantId: string) => Promise<MarkPaidResponse>;
+  fetchSharing: () => Promise<void>;
+  markParticipantPaid: (participantId: string) => Promise<MarkPaidResponse>;
   declineShare: (participantId: string) => Promise<DeclineShareResponse>;
   cancelSharedExpense: (sharedExpenseId: string) => Promise<void>;
   sendReminder: (participantId: string) => Promise<void>;
@@ -110,71 +135,26 @@ export type SharingStore = SharingState & SharingActions;
 const initialState: SharingState = {
   sharedByMe: [],
   sharedWithMe: [],
+  settlementBalances: [],
   isLoading: false,
   error: null,
 };
 
-export const useSharingStore = create<SharingStore>((set, get) => ({
+export const useSharingStore = create<SharingStore>((set, _get) => ({
   ...initialState,
 
-  fetchSharedByMe: async () => {
+  fetchSharing: async () => {
     const accessToken = useAuthStore.getState().accessToken;
 
     set({ isLoading: true, error: null });
 
     try {
-      const response = await apiGet<SharedByMeResponse>(
-        '/expenses/shared-by-me',
-        accessToken
-      );
+      const response = await apiGet<SharingResponse>('/sharing', accessToken);
 
       set({
         sharedByMe: response.sharedExpenses,
-        isLoading: false,
-      });
-    } catch (error) {
-      const message =
-        error instanceof ApiError ? error.message : 'Failed to fetch shared expenses';
-      set({ error: message, isLoading: false });
-    }
-  },
-
-  fetchSharedWithMe: async () => {
-    const accessToken = useAuthStore.getState().accessToken;
-
-    set({ isLoading: true, error: null });
-
-    try {
-      const response = await apiGet<SharedWithMeResponse>(
-        '/expenses/shared-with-me',
-        accessToken
-      );
-
-      set({
-        sharedWithMe: response.participations,
-        isLoading: false,
-      });
-    } catch (error) {
-      const message =
-        error instanceof ApiError ? error.message : 'Failed to fetch expenses shared with you';
-      set({ error: message, isLoading: false });
-    }
-  },
-
-  fetchAll: async () => {
-    const accessToken = useAuthStore.getState().accessToken;
-
-    set({ isLoading: true, error: null });
-
-    try {
-      const [sharedByMeResponse, sharedWithMeResponse] = await Promise.all([
-        apiGet<SharedByMeResponse>('/expenses/shared-by-me', accessToken),
-        apiGet<SharedWithMeResponse>('/expenses/shared-with-me', accessToken),
-      ]);
-
-      set({
-        sharedByMe: sharedByMeResponse.sharedExpenses,
-        sharedWithMe: sharedWithMeResponse.participations,
+        sharedWithMe: response.expensesSharedWithMe,
+        settlementBalances: response.settlementBalances,
         isLoading: false,
       });
     } catch (error) {
@@ -184,36 +164,12 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
     }
   },
 
-  createSharedExpense: async (data: CreateSharedExpenseInput) => {
-    const accessToken = useAuthStore.getState().accessToken;
-
-    try {
-      const response = await apiPost<CreateShareResponse>(
-        '/expenses/share',
-        data,
-        accessToken
-      );
-
-      // Refresh the list in background - don't block on failure
-      get().fetchSharedByMe().catch(() => {
-        // Refresh failure is non-critical; the create succeeded
-      });
-
-      return response;
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError('Failed to share expense', 'SHARE_FAILED', 0);
-    }
-  },
-
-  markShareAsPaid: async (participantId: string) => {
+  markParticipantPaid: async (participantId: string) => {
     const accessToken = useAuthStore.getState().accessToken;
 
     try {
       const response = await apiPatch<MarkPaidResponse>(
-        `/expenses/shares/${participantId}/paid`,
+        `/sharing/${participantId}/paid`,
         {},
         accessToken
       );
