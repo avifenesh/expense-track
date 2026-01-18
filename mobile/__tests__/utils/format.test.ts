@@ -52,7 +52,10 @@ describe('format utilities', () => {
     it('handles negative amounts', () => {
       const result = formatCurrency(-50.25, 'USD');
 
-      expect(result).toMatch(/-?\$?50\.25/);
+      // Different environments may format negative currency differently
+      // e.g., "-$50.25" or "($50.25)" or "$-50.25"
+      expect(result).toContain('50.25');
+      expect(result).toContain('$');
     });
 
     it('defaults to USD when no currency provided', () => {

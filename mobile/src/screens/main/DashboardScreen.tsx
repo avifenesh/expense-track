@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -58,16 +58,25 @@ export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
-  // Calculate totals from transactions
-  const totalIncome = transactions
-    .filter((t) => t.type === 'INCOME')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  // Calculate totals from transactions (memoized for performance)
+  const totalIncome = useMemo(
+    () => transactions
+      .filter((t) => t.type === 'INCOME')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0),
+    [transactions]
+  );
 
-  const totalExpenses = transactions
-    .filter((t) => t.type === 'EXPENSE')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  const totalExpenses = useMemo(
+    () => transactions
+      .filter((t) => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0),
+    [transactions]
+  );
 
-  const totalBudget = budgets.reduce((sum, b) => sum + parseFloat(b.planned), 0);
+  const totalBudget = useMemo(
+    () => budgets.reduce((sum, b) => sum + parseFloat(b.planned), 0),
+    [budgets]
+  );
 
   const recentTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT);
 
@@ -76,12 +85,15 @@ export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  // When account or month changes, update filters and fetch data
+  // When account or month changes, update filters and fetch data in one effect
+  // This prevents race conditions between setting filters and fetching data
   useEffect(() => {
     if (selectedAccountId) {
       setTransactionFilters({ accountId: selectedAccountId, month: selectedMonth });
       setBudgetFilters({ accountId: selectedAccountId });
       setBudgetSelectedMonth(selectedMonth);
+      fetchTransactions();
+      fetchBudgets();
     }
   }, [
     selectedAccountId,
@@ -89,15 +101,9 @@ export function DashboardScreen(_props: MainTabScreenProps<'Dashboard'>) {
     setTransactionFilters,
     setBudgetFilters,
     setBudgetSelectedMonth,
+    fetchTransactions,
+    fetchBudgets,
   ]);
-
-  // Fetch data when filters are set
-  useEffect(() => {
-    if (selectedAccountId) {
-      fetchTransactions();
-      fetchBudgets();
-    }
-  }, [selectedAccountId, selectedMonth, fetchTransactions, fetchBudgets]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

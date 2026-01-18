@@ -70,28 +70,23 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
   } = useAccountsStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Fetch accounts on mount if not loaded
   useEffect(() => {
-    async function init() {
-      if (accounts.length === 0) {
-        await fetchAccounts();
-      }
+    if (accounts.length === 0) {
+      fetchAccounts();
     }
-    init();
   }, [accounts.length, fetchAccounts]);
 
+  // Derive accountId to load - this triggers data fetch when account changes
+  const accountIdToLoad = selectedAccountId || accounts[0]?.id;
+
   useEffect(() => {
-    async function loadTransactions() {
-      const accountId = selectedAccountId || accounts[0]?.id;
-      if (accountId && !isInitialized) {
-        setFilters({ accountId });
-        await fetchTransactions(true);
-        setIsInitialized(true);
-      }
+    if (accountIdToLoad) {
+      setFilters({ accountId: accountIdToLoad });
+      fetchTransactions(true);
     }
-    loadTransactions();
-  }, [selectedAccountId, accounts, fetchTransactions, setFilters, isInitialized]);
+  }, [accountIdToLoad, setFilters, fetchTransactions]);
 
   const handleFilterChange = useCallback(
     async (type: FilterType) => {

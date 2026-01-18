@@ -55,21 +55,21 @@ export function getDateKey(dateString: string): string {
  * @returns "Today", "Yesterday", or formatted date like "January 15, 2026"
  */
 export function formatDateHeader(dateKey: string): string {
-  const date = new Date(dateKey + 'T00:00:00');
+  // Parse date components manually to avoid timezone issues
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  const dateOnly = new Date(date);
-  dateOnly.setHours(0, 0, 0, 0);
-
-  if (dateOnly.getTime() === today.getTime()) {
+  if (date.getTime() === today.getTime()) {
     return 'Today';
   }
 
-  if (dateOnly.getTime() === yesterday.getTime()) {
+  if (date.getTime() === yesterday.getTime()) {
     return 'Yesterday';
   }
 

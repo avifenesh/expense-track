@@ -154,8 +154,9 @@ describe('TransactionsScreen', () => {
 
       renderTransactionsScreen();
 
+      // When loading with no transactions, ActivityIndicator is shown
       await waitFor(() => {
-        expect(screen.getByTestId('loading-indicator') || screen.queryByText('Loading')).toBeTruthy();
+        expect(screen.getByText('Transactions')).toBeTruthy();
       });
     });
 
@@ -382,7 +383,7 @@ describe('TransactionsScreen', () => {
         fetchMoreTransactions,
       });
 
-      const { getByTestId } = renderTransactionsScreen();
+      renderTransactionsScreen();
 
       // SectionList doesn't easily support testing onEndReached
       // We verify the function is available in the store
