@@ -278,7 +278,9 @@ Reset password using token.
 
 ---
 
-### DELETE /api/v1/auth/account (NEW)
+### DELETE /api/v1/auth/account (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for GDPR compliance.
 
 Delete user account (GDPR compliance).
 
@@ -306,7 +308,9 @@ Delete user account (GDPR compliance).
 
 ---
 
-### GET /api/v1/auth/export (NEW)
+### GET /api/v1/auth/export (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for GDPR compliance.
 
 Export all user data (GDPR compliance).
 
@@ -669,7 +673,9 @@ Archive or unarchive a category.
 
 ---
 
-## Expense Sharing Endpoints (NEW)
+## Expense Sharing Endpoints (PLANNED - Sprint 3)
+
+> ⚠️ **Not yet implemented.** These endpoints are planned for Sprint 3 mobile development.
 
 ### POST /api/v1/expenses/share
 
@@ -899,7 +905,9 @@ Lookup user by email for sharing.
 
 ---
 
-## User & Account Endpoints (NEW)
+## User & Account Endpoints (PLANNED - Sprint 3)
+
+> ⚠️ **Not yet implemented.** These endpoints are planned for Sprint 3 mobile development.
 
 ### GET /api/v1/users/me
 
@@ -955,7 +963,9 @@ List user's accounts.
 
 ---
 
-### GET /api/v1/dashboard (NEW)
+### GET /api/v1/dashboard (PLANNED)
+
+> ⚠️ **Not yet implemented.** Planned for mobile dashboard.
 
 Get dashboard summary data.
 
@@ -1008,7 +1018,9 @@ Get dashboard summary data.
 
 ---
 
-## Onboarding Endpoints (NEW)
+## Onboarding Endpoints (PLANNED - Sprint 3)
+
+> ⚠️ **Not yet implemented.** These endpoints are planned for Sprint 3 mobile development.
 
 ### POST /api/v1/onboarding/complete
 

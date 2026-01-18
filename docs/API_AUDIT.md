@@ -4,7 +4,7 @@ Server actions and REST API endpoints audit for Issue #64.
 
 
 - **Server Actions**: 43 actions across 9 files (excluding shared.ts utilities)
-- **REST Endpoints**: 17 route files with ~25 HTTP method handlers
+- **REST Endpoints**: 24 route files with ~40 HTTP method handlers
 - **Mobile Compatibility**: REST API is mobile-ready; server actions require web session
 
 ## Server Actions Inventory
@@ -262,7 +262,7 @@ Server actions use:
 
 ### Current State
 - **Web app**: Fully functional with 43 server actions
-- **REST API**: 17 route files covering core CRUD operations
+- **REST API**: 24 route files covering core CRUD operations
 - **Authentication**: JWT-based for mobile, cookie-based for web
 
 ### Sprint 4 Priorities
