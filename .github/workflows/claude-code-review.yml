@@ -103,14 +103,11 @@ jobs:
         id: claude-review
         uses: anthropics/claude-code-action@v1
         env:
-          AWS_BEARER_TOKEN_BEDROCK: ${{ secrets.AWS_BEARER_TOKEN_BEDROCK }}
-          AWS_REGION: us-east-1
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
-          use_bedrock: "true"
           github_token: ${{ secrets.GITHUB_TOKEN }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          claude_args: |
-            --model us.anthropic.claude-opus-4-5-20251101-v1:0
+          model: claude-opus-4-5
 

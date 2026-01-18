@@ -34,13 +34,10 @@ jobs:
         id: claude
         uses: anthropics/claude-code-action@v1
         env:
-          AWS_BEARER_TOKEN_BEDROCK: ${{ secrets.AWS_BEARER_TOKEN_BEDROCK }}
-          AWS_REGION: us-east-1
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
-          use_bedrock: "true"
           github_token: ${{ secrets.GITHUB_TOKEN }}
           additional_permissions: |
             actions: read
-          claude_args: |
-            --model us.anthropic.claude-opus-4-5-20251101-v1:0
+          model: claude-opus-4-5
 
