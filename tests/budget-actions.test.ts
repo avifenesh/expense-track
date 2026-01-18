@@ -455,6 +455,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       monthKey: '2026-01',
       amount: 5000,
       currency: Currency.USD,
+      setAsDefault: false,
       csrfToken: 'test-token',
     })
 
@@ -473,6 +474,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       monthKey: '2026-01',
       amount: 5000,
       currency: Currency.USD,
+      setAsDefault: false,
       csrfToken: 'invalid-token',
     })
 
@@ -491,6 +493,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       monthKey: '2026-01',
       amount: 0,
       currency: Currency.USD,
+      setAsDefault: false,
       csrfToken: 'test-token',
     })
 
@@ -526,6 +529,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       monthKey: '2026-01',
       amount: 5000,
       currency: Currency.USD,
+      setAsDefault: false,
       csrfToken: 'test-token',
     })
 
@@ -561,6 +565,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       monthKey: '2026-01',
       amount: 5000,
       currency: Currency.USD,
+      setAsDefault: false,
       csrfToken: 'test-token',
     })
 
