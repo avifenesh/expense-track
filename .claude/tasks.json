@@ -1,133 +1,23 @@
 {
-  "claimedTasks": [
-    {
-      "id": "30",
-      "title": "Migrate existing data to user-based model",
-      "status": "in_progress",
-      "claimedAt": "2026-01-16T00:00:00Z"
-    },
-    {
-      "id": "64",
-      "title": "Audit server actions for mobile API compatibility",
-      "status": "completed",
-      "claimedAt": "2026-01-16T00:00:00Z",
-      "completedAt": "2026-01-16T18:50:00Z"
-    },
-    {
-      "id": "67",
-      "title": "Create API documentation with Swagger/OpenAPI",
-      "status": "completed",
-      "claimedAt": "2026-01-16T00:00:00Z",
-      "completedAt": "2026-01-16T19:10:00Z",
-      "worktreePath": "../expense-track-api-docs",
-      "branch": "feature/67-api-documentation",
-      "pr": "https://github.com/avifenesh/expense-track/pull/150"
-    },
-    {
-      "id": "68",
-      "title": "Initialize React Native project with Expo",
-      "status": "in_progress",
-      "claimedAt": "2026-01-16T19:03:00Z",
-      "worktreePath": "../expense-track-mobile-init-68",
-      "branch": "feature/mobile-init-68"
-    },
-    {
-      "id": "70",
-      "title": "Create mobile authentication screens",
-      "status": "shipped",
-      "branch": "feature/mobile-auth-screens-70",
-      "startedAt": "2026-01-16T21:00:00Z",
-      "completedAt": "2026-01-16T22:14:08Z",
-      "pr": "https://github.com/avifenesh/expense-track/pull/154",
-      "mergeCommit": "d4234329ba359e3aa5144583e1b7aff3a97ecce5"
-    },
-    {
-      "id": "85",
-      "title": "Write Jest unit tests for mobile app",
-      "status": "shipped",
-      "claimedAt": "2026-01-16T20:21:00Z",
-      "completedAt": "2026-01-16T21:02:16Z",
-      "branch": "feature/mobile-jest-tests-85",
-      "pr": "https://github.com/avifenesh/expense-track/pull/153",
-      "mergeCommit": "a53c224f1d6d74ad4d3fc7d1fc2903341fe88133"
-    },
-    {
-      "id": "155",
-      "title": "Create Terms of Service, Pricing pages and update domain to balancebeacon.app",
-      "status": "in_progress",
-      "claimedAt": "2026-01-16T23:30:00Z",
-      "branch": "feature/legal-pages-155",
-      "worktreePath": "C:/Users/avife/expense-track-legal-pages-155",
-      "labels": [
-        "infrastructure"
-      ],
-      "url": "https://github.com/avifenesh/expense-track/issues/155"
-    }
-  ],
-  "lastUpdated": "2026-01-17T00:50:00Z",
+  "claimedTasks": [],
+  "lastUpdated": "2026-01-18T09:30:00Z",
   "tasks": [
     {
-      "id": "72",
-      "source": "GitHub issue",
-      "title": "Set up state management with Zustand",
-      "description": "Configure state management for mobile app.\n- Install Zustand\n- Create auth store\n- Create transactions store\n- Create budgets store\n- Test state persistence",
-      "labels": [
-        "mobile"
-      ],
-      "milestone": "Sprint 3: Mobile App",
-      "branch": "feature/zustand-state-72",
-      "status": "shipped",
-      "claimedAt": "2026-01-17T00:00:00Z",
-      "completedAt": "2026-01-17T01:15:00Z",
-      "pr": "https://github.com/avifenesh/balance-beacon/pull/167",
-      "mergeCommit": "a180bf5",
-      "url": "https://github.com/avifenesh/balance-beacon/issues/72"
-    },
-    {
-      "id": "80",
+      "id": 208,
       "source": "github",
-      "title": "Implement biometric authentication on mobile",
-      "description": "Add Face ID/Touch ID for quick login with password fallback",
-      "labels": ["mobile", "security"],
-      "milestone": "Sprint 3: Mobile App",
-      "branch": "feature/biometric-auth-80",
-      "status": "shipped",
-      "claimedAt": "2026-01-17T00:10:00Z",
-      "completedAt": "2026-01-17T00:50:00Z",
-      "pr": "https://github.com/avifenesh/balance-beacon/pull/162",
-      "mergeCommit": "fcca2dc"
-    },
-    {
-      "id": "71",
-      "source": "github",
-      "title": "Implement secure token storage on mobile",
-      "description": "Use SecureStore/Keychain for storing access tokens, refresh tokens, and handling token expiry",
+      "title": "Create categoriesStore for category management",
+      "description": "Foundation store needed by multiple screens (transactions, budgets). Dependency of #213, #214, #215, #216.",
       "labels": [
         "mobile",
-        "security"
+        "phase:sprint-3",
+        "priority:high"
       ],
-      "milestone": "Sprint 3: Mobile App",
-      "branch": "feature/secure-token-storage-71",
-      "worktreePath": "C:\\Users\\avife\\worktrees\\expense-track-secure-token-71",
-      "claimedAt": "2026-01-17T00:00:34.610Z",
+      "branch": "feature/categories-store-208",
+      "worktreePath": "C:/Users/avife/worktrees/expense-track-categories-store-208",
+      "claimedAt": "2026-01-18T00:00:00Z",
       "status": "claimed",
-      "lastActivityAt": "2026-01-17T00:00:34.611Z"
-    },
-    {
-      "id": "137",
-      "source": "github-issue",
-      "title": "Integrate payment provider for subscriptions",
-      "description": "Set up payment provider integration for handling subscription billing and payments",
-      "labels": [
-        "subscription",
-        "infrastructure"
-      ],
-      "branch": "feature/payment-provider-137",
-      "worktreePath": "C:/Users/avife/worktrees/payment-provider-137",
-      "claimedAt": "2026-01-17T00:30:00Z",
-      "status": "claimed",
-      "lastActivityAt": "2026-01-17T00:30:00Z",
-      "url": "https://github.com/avifenesh/expense-track/issues/137"
+      "lastActivityAt": "2026-01-18T00:00:00Z",
+      "url": "https://github.com/avifenesh/expense-track/issues/208"
     }
   ]
 }

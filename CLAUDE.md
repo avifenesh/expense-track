@@ -50,13 +50,6 @@ Every PR receives automatic reviews from 4 agents: **Copilot**, **Claude**, **Ge
 
 See `PLAN.md` for details. Issues tracked in GitHub Projects.
 
-## Legacy 2-User Architecture (Being Removed)
-
-Historical context - originally built for 2 users. Active refactoring in Sprint 2:
-
-- **Hardcoded auth**: `AUTH_USER1_*` and `AUTH_USER2_*` env vars in `src/lib/auth.ts` → being replaced
-- **Partial userId isolation**: Schema has User model, server actions being updated to enforce filtering
-
 ## Commands
 
 ```bash
