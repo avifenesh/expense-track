@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { Prisma, PaymentStatus, SplitType } from '@prisma/client'
+import { Prisma, PaymentStatus, SplitType, TransactionType } from '@prisma/client'
 import { withApiAuth, parseJsonBody } from '@/lib/api-middleware'
 import { prisma } from '@/lib/prisma'
 import { shareExpenseApiSchema } from '@/schemas/api'
@@ -78,12 +78,19 @@ export async function POST(request: NextRequest) {
         return forbiddenError('You do not have access to this transaction')
       }
 
-      // 3. Check if transaction is already shared
+      // 3. Verify transaction is an expense (not income)
+      if (transaction.type !== TransactionType.EXPENSE) {
+        return validationError({
+          transactionId: ['Only expense transactions can be shared'],
+        })
+      }
+
+      // 4. Check if transaction is already shared
       if (transaction.sharedExpense) {
         return errorResponse('This transaction is already shared', 409)
       }
 
-      // 4. Validate participants
+      // 5. Validate participants
       const participantEmails = data.participants.map((p) => p.email.toLowerCase())
 
       // Prevent sharing with yourself
@@ -93,7 +100,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 5. Look up participant users
+      // 6. Look up participant users
       const participantUsers = await prisma.user.findMany({
         where: { email: { in: participantEmails } },
         select: { id: true, email: true, displayName: true },
@@ -108,7 +115,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 6. Validate FIXED split amounts
+      // 7. Validate FIXED split amounts
       const totalAmount = Number(transaction.amount)
 
       if (data.splitType === SplitType.FIXED) {
@@ -122,7 +129,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 7. Calculate shares
+      // 8. Calculate shares
       const participantShares = calculateShares(
         data.splitType,
         totalAmount,
@@ -130,50 +137,50 @@ export async function POST(request: NextRequest) {
         participantUsers.map((u) => u.email),
       )
 
-      // 8. Create SharedExpense and ExpenseParticipants atomically
+      // 9. Create SharedExpense and ExpenseParticipants atomically
       let sharedExpense
       try {
         sharedExpense = await prisma.$transaction(async (tx) => {
-        const shared = await tx.sharedExpense.create({
-          data: {
-            transactionId: data.transactionId,
-            ownerId: user.userId,
-            splitType: data.splitType,
-            totalAmount: new Prisma.Decimal(toDecimalString(totalAmount)),
-            currency: transaction.currency,
-            description: data.description,
-          },
-        })
-
-        const participantData = participantUsers.map((pUser) => {
-          const share = participantShares.get(pUser.email.toLowerCase())
-          if (!share) {
-            throw new Error(`Share data not found for user ${pUser.email}`)
-          }
-          return {
-            sharedExpenseId: shared.id,
-            userId: pUser.id,
-            shareAmount: new Prisma.Decimal(toDecimalString(share.amount)),
-            sharePercentage: share.percentage
-              ? new Prisma.Decimal(toDecimalString(share.percentage))
-              : null,
-            status: PaymentStatus.PENDING,
-          }
-        })
-
-        await tx.expenseParticipant.createMany({
-          data: participantData,
-        })
-
-        // Fetch the created participants to return in response
-        const participants = await tx.expenseParticipant.findMany({
-          where: { sharedExpenseId: shared.id },
-          include: {
-            participant: {
-              select: { id: true, email: true, displayName: true },
+          const shared = await tx.sharedExpense.create({
+            data: {
+              transactionId: data.transactionId,
+              ownerId: user.userId,
+              splitType: data.splitType,
+              totalAmount: new Prisma.Decimal(toDecimalString(totalAmount)),
+              currency: transaction.currency,
+              description: data.description,
             },
-          },
-        })
+          })
+
+          const participantData = participantUsers.map((pUser) => {
+            const share = participantShares.get(pUser.email.toLowerCase())
+            if (!share) {
+              throw new Error(`Share data not found for user ${pUser.email}`)
+            }
+            return {
+              sharedExpenseId: shared.id,
+              userId: pUser.id,
+              shareAmount: new Prisma.Decimal(toDecimalString(share.amount)),
+              sharePercentage: share.percentage
+                ? new Prisma.Decimal(toDecimalString(share.percentage))
+                : null,
+              status: PaymentStatus.PENDING,
+            }
+          })
+
+          await tx.expenseParticipant.createMany({
+            data: participantData,
+          })
+
+          // Fetch the created participants to return in response
+          const participants = await tx.expenseParticipant.findMany({
+            where: { sharedExpenseId: shared.id },
+            include: {
+              participant: {
+                select: { id: true, email: true, displayName: true },
+              },
+            },
+          })
 
           return { shared, participants }
         })
@@ -188,7 +195,7 @@ export async function POST(request: NextRequest) {
         throw error
       }
 
-      // 9. Send email notifications (fire-and-forget)
+      // 10. Send email notifications (fire-and-forget)
       for (const pUser of participantUsers) {
         const share = participantShares.get(pUser.email.toLowerCase())
         if (!share) continue
@@ -218,7 +225,7 @@ export async function POST(request: NextRequest) {
         splitType: data.splitType,
       })
 
-      // 10. Return response
+      // 11. Return response
       return successResponse(
         {
           id: sharedExpense.shared.id,

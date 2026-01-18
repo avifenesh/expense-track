@@ -320,6 +320,51 @@ describe('POST /api/v1/expenses/share', () => {
       expect(data.error).toContain('do not have access')
     })
 
+    it('returns 400 when trying to share an income transaction', async () => {
+      // Create an income category
+      const incomeCategory = await prisma.category.upsert({
+        where: { userId_name_type: { userId: testUser.id, name: 'ShareExpenseIncomeTestCategory', type: TransactionType.INCOME } },
+        update: {},
+        create: { userId: testUser.id, name: 'ShareExpenseIncomeTestCategory', type: TransactionType.INCOME },
+      })
+
+      // Create an income transaction
+      const incomeTransaction = await prisma.transaction.create({
+        data: {
+          accountId,
+          categoryId: incomeCategory.id,
+          type: TransactionType.INCOME,
+          amount: 100,
+          currency: 'USD',
+          date: new Date(),
+          month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          description: 'ShareExpenseTestTransaction', // Same description for cleanup
+        },
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/expenses/share', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionId: incomeTransaction.id,
+          splitType: 'EQUAL',
+          participants: [{ email: otherUser.email }],
+        }),
+      })
+
+      const response = await ShareExpense(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.fields.transactionId).toContain('Only expense transactions can be shared')
+
+      // Clean up income category
+      await prisma.category.deleteMany({ where: { name: 'ShareExpenseIncomeTestCategory' } })
+    })
+
     it('returns 409 when transaction is already shared', async () => {
       // First, create a shared expense for this transaction
       await prisma.sharedExpense.create({
