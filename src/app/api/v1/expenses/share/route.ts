@@ -126,7 +126,9 @@ export async function POST(request: NextRequest) {
       )
 
       // 8. Create SharedExpense and ExpenseParticipants atomically
-      const sharedExpense = await prisma.$transaction(async (tx) => {
+      let sharedExpense
+      try {
+        sharedExpense = await prisma.$transaction(async (tx) => {
         const shared = await tx.sharedExpense.create({
           data: {
             transactionId: data.transactionId,
@@ -168,8 +170,18 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        return { shared, participants }
-      })
+          return { shared, participants }
+        })
+      } catch (error) {
+        // Handle unique constraint violation (transaction already shared - concurrent request)
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          return errorResponse('This transaction is already shared', 409)
+        }
+        throw error
+      }
 
       // 9. Send email notifications (fire-and-forget)
       for (const pUser of participantUsers) {
@@ -207,7 +219,7 @@ export async function POST(request: NextRequest) {
           id: sharedExpense.shared.id,
           transactionId: sharedExpense.shared.transactionId,
           splitType: sharedExpense.shared.splitType,
-          totalAmount: sharedExpense.shared.totalAmount.toString(),
+          totalAmount: Number(sharedExpense.shared.totalAmount).toFixed(2),
           currency: sharedExpense.shared.currency,
           description: sharedExpense.shared.description,
           createdAt: sharedExpense.shared.createdAt.toISOString(),
@@ -216,8 +228,10 @@ export async function POST(request: NextRequest) {
             userId: p.participant.id,
             email: p.participant.email,
             displayName: p.participant.displayName,
-            shareAmount: p.shareAmount.toString(),
-            sharePercentage: p.sharePercentage?.toString() ?? null,
+            shareAmount: Number(p.shareAmount).toFixed(2),
+            sharePercentage: p.sharePercentage
+              ? Number(p.sharePercentage).toFixed(2)
+              : null,
             status: p.status,
           })),
         },
