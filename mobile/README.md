@@ -519,8 +519,6 @@ Screen for editing and deleting existing transactions:
 
 ### Validation Utilities
 
-
-
 The `lib/validation.ts` module provides client-side validation for all forms:
 
 **Transaction Validation:**

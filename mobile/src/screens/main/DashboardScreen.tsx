@@ -15,6 +15,7 @@ import {
   useAccountsStore,
   useTransactionsStore,
   useBudgetsStore,
+  type Transaction,
 } from '../../stores';
 import {
   MonthSelector,
@@ -123,7 +124,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     navigation.navigate('CreateTransaction');
   }, [navigation]);
 
-  const handleTransactionPress = useCallback((transaction: { id: string }) => {
+  const handleTransactionPress = useCallback((transaction: Transaction) => {
     navigation.navigate('EditTransaction', { transactionId: transaction.id });
   }, [navigation]);
 

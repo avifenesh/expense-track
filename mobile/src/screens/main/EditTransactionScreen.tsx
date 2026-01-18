@@ -129,6 +129,10 @@ export function EditTransactionScreen({
       setCategoryId(transaction.categoryId);
       setDate(parseISODate(transaction.date));
       setIsInitialized(true);
+    } else if (!transaction && !isInitialized) {
+      // Set initialized after a brief delay if transaction not found
+      const timer = setTimeout(() => setIsInitialized(true), 1000);
+      return () => clearTimeout(timer);
     }
   }, [transaction, isInitialized]);
 
@@ -136,19 +140,14 @@ export function EditTransactionScreen({
     fetchCategories(type);
   }, [fetchCategories, type]);
 
-  useEffect(() => {
-    if (isInitialized) {
-      setCategoryId(null);
-      setErrors((prev) => ({ ...prev, categoryId: undefined }));
-    }
-  }, [type, isInitialized]);
-
   const filteredCategories = useMemo(() => {
     return categories.filter((c) => c.type === type && !c.isArchived);
   }, [categories, type]);
 
   const handleTypeChange = useCallback((newType: TransactionType) => {
     setType(newType);
+    setCategoryId(null);
+    setErrors((prev) => ({ ...prev, categoryId: undefined }));
   }, []);
 
   const handleAmountChange = useCallback((text: string) => {
@@ -228,7 +227,7 @@ export function EditTransactionScreen({
         amount: parseFloat(amount),
         currency,
         date: formatDateToLocalISO(date),
-        description: description.trim() || undefined,
+        description: description.trim(),
       });
 
       navigation.goBack();
