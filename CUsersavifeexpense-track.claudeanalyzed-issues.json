@@ -1,0 +1,329 @@
+[
+  {
+    "number": 229,
+    "title": "mobile: Wire Settings export and delete account",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:low"
+    ],
+    "body": "## Problem\nSettings Export Data and Delete Account menu items not functional.\n\n## Requirements\n\n### Export Data\n- Tap shows format selection (JSON or CSV)\n- Calls export API endpoint\n- Downloads/shares file\n- Shows success toast\n\n### Delete Account\n- Tap shows confirmation dialog\n- Require email con",
+    "created": "2026-01-18T01:56:10Z"
+  },
+  {
+    "number": 228,
+    "title": "mobile: Implement toast notifications for actions",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nNo feedback when actions complete or fail. Users don't know if operations succeeded.\n\n## Requirements\n\n### Toast System\n- Success toasts (green): Transaction created, Budget saved, etc.\n- Error toasts (red): Failed to save, Network error, etc.\n- Info toasts (blue): General notifications\n\n",
+    "created": "2026-01-18T01:56:06Z"
+  },
+  {
+    "number": 227,
+    "title": "mobile: Add loading skeletons to all screens",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nScreens show nothing or placeholder during loading. Need skeleton loaders for better UX.\n\n## Requirements\n\n### Screens to Add Skeletons\n- DashboardScreen: Summary card skeleton, stats skeleton, transaction list skeleton\n- TransactionsScreen: Transaction item skeletons (5-10 items)\n- Budge",
+    "created": "2026-01-18T01:56:02Z"
+  },
+  {
+    "number": 226,
+    "title": "mobile: Implement pull-to-refresh on all list screens",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nNo pull-to-refresh functionality on any screen.\n\n## Requirements\n\n### Screens to Update\n- DashboardScreen (refresh all data)\n- TransactionsScreen (refresh transactions)\n- BudgetsScreen (refresh budgets)\n- SharingScreen (refresh shared expenses)\n\n### Implementation\n- Use React Native Refre",
+    "created": "2026-01-18T01:55:42Z"
+  },
+  {
+    "number": 225,
+    "title": "mobile: Create EmptyState and ErrorState components",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nScreens need consistent empty and error states. Currently placeholder text only.\n\n## Requirements\n\n### EmptyState Component\n**Props**\n- `icon: string` (icon name)\n- `title: string`\n- `message: string`\n- `actionLabel?: string`\n- `onAction?: () => void`\n\n**Usage Examples**\n- No transactions",
+    "created": "2026-01-18T01:55:38Z"
+  },
+  {
+    "number": 223,
+    "title": "mobile: Create MonthSelector component",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Problem\nDashboard and Budgets screens need month navigation. No reusable component exists.\n\n## Requirements\n\n### Component: MonthSelector\nReusable component for month navigation\n\n### Props\n- `selectedMonth: Date`\n- `onMonthChange: (date: Date) => void`\n- `minMonth?: Date` (optional limit)\n- `maxM",
+    "created": "2026-01-18T01:55:31Z"
+  },
+  {
+    "number": 222,
+    "title": "mobile: Create CategoriesScreen for category management",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nSettings shows Categories menu item but no screen exists.\n\n## Requirements\n\n### Screen: CategoriesScreen\nNavigate from SettingsScreen Categories row\n\n### Display\n- Tabs: Income / Expense\n- List of categories per type\n- Category color indicator\n- Archived categories (collapsed section)\n\n##",
+    "created": "2026-01-18T01:55:04Z"
+  },
+  {
+    "number": 221,
+    "title": "mobile: Create AccountsScreen for account management",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nSettings shows Accounts menu item but no screen exists.\n\n## Requirements\n\n### Screen: AccountsScreen\nNavigate from SettingsScreen Accounts row\n\n### Display\n- List of user accounts\n- Active account highlighted\n- Account type badge (Personal, Partner, Joint, Other)\n- Account color indicator",
+    "created": "2026-01-18T01:55:01Z"
+  },
+  {
+    "number": 220,
+    "title": "mobile: Create ProfileScreen in Settings",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "## Problem\nSettings shows Profile menu item but no screen exists.\n\n## Requirements\n\n### Screen: ProfileScreen\nNavigate from SettingsScreen Profile row\n\n### Display Fields\n- Display name\n- Email (read-only)\n- Preferred currency\n\n### Editable Fields\n- Display name (text input)\n- Preferred currency (pi",
+    "created": "2026-01-18T01:54:57Z"
+  },
+  {
+    "number": 219,
+    "title": "mobile: Wire onboarding screens to onboardingStore",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Problem\nAll 7 onboarding screens are UI-only. No data persists.\n\n## Current State\n- Currency selection visual only (USD pre-selected, not saved)\n- Categories all pre-selected, not tracked\n- Budget shows $2,000 static, no input\n- Complete screen shows hardcoded summary\n\n## Requirements\n\n### Onboar",
+    "created": "2026-01-18T01:54:53Z"
+  },
+  {
+    "number": 218,
+    "title": "mobile: Create ShareExpenseScreen with split calculator",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Problem\nNo way to create shared expenses from mobile.\n\n## Requirements\n\n### Screen: ShareExpenseScreen\nModal from SharingScreen FAB\n\n### Form Steps\n\n**Step 1: Expense Details**\n- Description (required)\n- Total amount (required)\n- Date (default today)\n- Category picker\n\n**Step 2: Add Participants*",
+    "created": "2026-01-18T01:54:28Z"
+  },
+  {
+    "number": 216,
+    "title": "mobile: Create AddBudgetScreen with category picker",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Problem\nNo way to create budgets from mobile.\n\n## Requirements\n\n### Screen: AddBudgetScreen\nModal presentation from BudgetsScreen\n\n### Form Fields\n- Category picker (only categories without budget this month)\n- Amount input (planned budget)\n- Month selector (default current)\n- Currency display (f",
+    "created": "2026-01-18T01:54:20Z"
+  },
+  {
+    "number": 210,
+    "title": "mobile: Create onboardingStore to persist selections",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Problem\nOnboarding screens exist but selections (currency, categories, budget) are not saved. Users complete onboarding with no data persisted.\n\n## Requirements\nCreate `mobile/src/stores/onboardingStore.ts` with:\n\n### State\n- `selectedCurrency: Currency` (USD | EUR | ILS)\n- `selectedCategories: s",
+    "created": "2026-01-18T01:53:12Z"
+  },
+  {
+    "number": 209,
+    "title": "mobile: Create accountsStore for account management",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Problem\nNo store exists for managing user accounts. Account switching (#78) depends on this.\n\n## Requirements\nCreate `mobile/src/stores/accountsStore.ts` with:\n\n### State\n- `accounts: Account[]`\n- `activeAccountId: string | null`\n- `isLoading: boolean`\n- `error: string | null`\n\n### Actions\n- `fet",
+    "created": "2026-01-18T01:53:08Z"
+  },
+  {
+    "number": 206,
+    "title": "API: PATCH /api/v1/accounts/[id]/activate - Switch active account",
+    "labels": [
+      "api",
+      "phase:sprint-3"
+    ],
+    "body": "Support switching active account from mobile.\n\n**Endpoint:** `PATCH /api/v1/accounts/:id/activate`\n\n**Request Body:** None required\n\n**Response:** Updated user session with new active account\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Low Priority (Misc)",
+    "created": "2026-01-18T00:33:55Z"
+  },
+  {
+    "number": 205,
+    "title": "API: POST /api/v1/accounts/[id]/set-balance - Set account balance",
+    "labels": [
+      "api",
+      "phase:sprint-3"
+    ],
+    "body": "Support setting account balance from mobile (balance adjustment).\n\n**Endpoint:** `POST /api/v1/accounts/:id/set-balance`\n\n**Request Body:**\n```json\n{\n  \"targetBalance\": 1000.00,\n  \"currency\": \"USD\",\n  \"monthKey\": \"2026-01\"\n}\n```\n\n**Response:** Created adjustment transaction\n\n**Auth:** JWT Bearer tok",
+    "created": "2026-01-18T00:33:51Z"
+  },
+  {
+    "number": 204,
+    "title": "API: POST /api/v1/exchange-rates/refresh - Refresh exchange rates",
+    "labels": [
+      "api",
+      "phase:sprint-3"
+    ],
+    "body": "Support manual exchange rate refresh from mobile.\n\n**Endpoint:** `POST /api/v1/exchange-rates/refresh`\n\n**Request Body:** None required\n\n**Response:** Updated exchange rates object with USD/EUR/ILS rates\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Low Priority (Misc)",
+    "created": "2026-01-18T00:33:47Z"
+  },
+  {
+    "number": 203,
+    "title": "API: POST /api/v1/seed-data - Seed sample data",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Support mobile onboarding sample data seeding for demo purposes.\n\n**Endpoint:** `POST /api/v1/seed-data`\n\n**Request Body:** None required\n\n**Response:** Summary of seeded data (accounts, categories, transactions created)\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority",
+    "created": "2026-01-18T00:33:35Z"
+  },
+  {
+    "number": 202,
+    "title": "API: POST /api/v1/budgets/quick - Quick budget creation",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Support mobile onboarding quick budget setup.\n\n**Endpoint:** `POST /api/v1/budgets/quick`\n\n**Request Body:**\n```json\n{\n  \"accountId\": \"string\",\n  \"categoryId\": \"string\",\n  \"monthKey\": \"2026-01\",\n  \"planned\": 500.00,\n  \"currency\": \"USD\"\n}\n```\n\n**Response:** Created budget object\n\n**Auth:** JWT Bearer",
+    "created": "2026-01-18T00:33:31Z"
+  },
+  {
+    "number": 201,
+    "title": "API: POST /api/v1/categories/bulk - Bulk create categories",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Support mobile onboarding bulk category creation.\n\n**Endpoint:** `POST /api/v1/categories/bulk`\n\n**Request Body:**\n```json\n{\n  \"categories\": [\n    { \"name\": \"Food\", \"type\": \"EXPENSE\", \"color\": \"#FF5733\" },\n    { \"name\": \"Salary\", \"type\": \"INCOME\", \"color\": \"#33FF57\" }\n  ]\n}\n```\n\n**Response:** Array ",
+    "created": "2026-01-18T00:33:27Z"
+  },
+  {
+    "number": 200,
+    "title": "API: PATCH /api/v1/users/me/currency - Update preferred currency",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Support mobile currency preference update during onboarding.\n\n**Endpoint:** `PATCH /api/v1/users/me/currency`\n\n**Request Body:**\n```json\n{\n  \"currency\": \"USD\" | \"EUR\" | \"ILS\"\n}\n```\n\n**Response:** Updated user object\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority (Onb",
+    "created": "2026-01-18T00:33:23Z"
+  },
+  {
+    "number": 199,
+    "title": "API: POST /api/v1/onboarding/skip - Skip onboarding",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Support mobile onboarding skip functionality.\n\n**Endpoint:** `POST /api/v1/onboarding/skip`\n\n**Request Body:** None required\n\n**Response:** Updated user object with `hasCompletedOnboarding: true`\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority (Onboarding)",
+    "created": "2026-01-18T00:33:19Z"
+  },
+  {
+    "number": 198,
+    "title": "API: POST /api/v1/onboarding/complete - Mark onboarding complete",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Support mobile onboarding flow completion.\n\n**Endpoint:** `POST /api/v1/onboarding/complete`\n\n**Request Body:** None required\n\n**Response:** Updated user object with `hasCompletedOnboarding: true`\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority (Onboarding)",
+    "created": "2026-01-18T00:33:15Z"
+  },
+  {
+    "number": 197,
+    "title": "API: GET /api/v1/recurring - List recurring templates",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Mobile needs list endpoint for recurring template data sync.\n\n**Endpoint:** `GET /api/v1/recurring`\n\n**Query Parameters:**\n- `accountId` (required) - Filter by account\n- `isActive` (optional) - Filter by active status\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority (R",
+    "created": "2026-01-18T00:32:57Z"
+  },
+  {
+    "number": 196,
+    "title": "API: GET /api/v1/holdings - List holdings for account",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Mobile needs list endpoint for holdings/asset data sync.\n\n**Endpoint:** `GET /api/v1/holdings`\n\n**Query Parameters:**\n- `accountId` (required) - Filter by account\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority (Read Endpoints)",
+    "created": "2026-01-18T00:32:53Z"
+  },
+  {
+    "number": 195,
+    "title": "API: GET /api/v1/categories - List user categories",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Mobile needs list endpoint for category data sync.\n\n**Endpoint:** `GET /api/v1/categories`\n\n**Query Parameters:**\n- `type` (optional) - Filter by INCOME/EXPENSE\n- `includeArchived` (optional) - Include archived categories\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priorit",
+    "created": "2026-01-18T00:32:49Z"
+  },
+  {
+    "number": 194,
+    "title": "API: GET /api/v1/budgets - List budgets for account/month",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Mobile needs list endpoint for budget data sync.\n\n**Endpoint:** `GET /api/v1/budgets`\n\n**Query Parameters:**\n- `accountId` (required) - Filter by account\n- `month` (optional) - Filter by month (YYYY-MM format)\n\n**Auth:** JWT Bearer token\n\n**Reference:** docs/API_AUDIT.md - Medium Priority (Read Endp",
+    "created": "2026-01-18T00:32:44Z"
+  },
+  {
+    "number": 193,
+    "title": "API: GET /api/v1/transactions - List transactions with filters",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "body": "Mobile needs list endpoint for transaction data sync.\n\n**Endpoint:** `GET /api/v1/transactions`\n\n**Query Parameters:**\n- `accountId` (required) - Filter by account\n- `month` (optional) - Filter by month (YYYY-MM format)\n- `categoryId` (optional) - Filter by category\n- `type` (optional) - Filter by I",
+    "created": "2026-01-18T00:32:41Z"
+  },
+  {
+    "number": 192,
+    "title": "API: GET /api/v1/users/me - Current user profile",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Description\nImplement REST API endpoint to get the current user's profile information.\n\n## Endpoint\n`GET /api/v1/users/me`\n\n## Response\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"string\",\n    \"email\": \"string\",\n    \"name\": \"string\",\n    \"preferredCurrency\": \"USD|EUR|ILS\",\n    \"createdAt\"",
+    "created": "2026-01-17T23:35:58Z"
+  },
+  {
+    "number": 191,
+    "title": "API: GET /api/v1/dashboard - Dashboard summary data",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:high"
+    ],
+    "body": "## Description\nImplement REST API endpoint to get dashboard summary data for mobile app.\n\n## Endpoint\n`GET /api/v1/dashboard`\n\n## Query Parameters\n- `month`: YYYY-MM (optional, defaults to current month)\n- `accountId`: string (optional, filter by account)\n\n## Response\n```json\n{\n  \"success\": true,\n  ",
+    "created": "2026-01-17T23:35:54Z"
+  }
+]

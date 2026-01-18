@@ -279,7 +279,6 @@ describe('Sharing API Routes', () => {
 
   describe('POST /api/v1/expenses/shares/[participantId]/decline', () => {
     it('declines share when called by participant', async () => {
-      // Other user (participant) declines their own share
       const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
         method: 'POST',
         headers: {
@@ -298,7 +297,6 @@ describe('Sharing API Routes', () => {
     })
 
     it('returns 403 when non-participant tries to decline', async () => {
-      // Owner (testUser) tries to decline the participant's share
       const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
         method: 'POST',
         headers: {
@@ -329,7 +327,6 @@ describe('Sharing API Routes', () => {
     })
 
     it('returns 400 when trying to decline PAID share', async () => {
-      // First mark as paid
       await prisma.expenseParticipant.update({
         where: { id: participantId },
         data: { status: PaymentStatus.PAID, paidAt: new Date() },
@@ -352,7 +349,6 @@ describe('Sharing API Routes', () => {
     })
 
     it('returns 400 when trying to decline already DECLINED share', async () => {
-      // First set to declined
       await prisma.expenseParticipant.update({
         where: { id: participantId },
         data: { status: PaymentStatus.DECLINED },
@@ -396,7 +392,6 @@ describe('Sharing API Routes', () => {
 
       await DeclineShare(request, { params: Promise.resolve({ participantId }) })
 
-      // Verify in database
       const participant = await prisma.expenseParticipant.findUnique({
         where: { id: participantId },
       })

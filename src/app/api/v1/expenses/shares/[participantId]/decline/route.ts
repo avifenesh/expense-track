@@ -14,9 +14,6 @@ interface RouteParams {
 /**
  * POST /api/v1/expenses/shares/[participantId]/decline
  * Decline a shared expense (participant only).
- *
- * Authorization: Only the participant (assignee) can decline their own share.
- * Status validation: Share must be PENDING (cannot decline PAID or already DECLINED).
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(
@@ -39,12 +36,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         return notFoundError('Participant not found')
       }
 
-      // Authorization: Only the participant can decline their own share
       if (participant.userId !== user.userId) {
         return forbiddenError('You can only decline shares assigned to you')
       }
 
-      // Status validation: Must be PENDING
       if (participant.status !== PaymentStatus.PENDING) {
         return validationError({
           status: [`Cannot decline a share that is already ${participant.status.toLowerCase()}`],

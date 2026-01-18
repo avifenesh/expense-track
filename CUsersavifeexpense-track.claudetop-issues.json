@@ -1,0 +1,247 @@
+[
+  {
+    "number": 35,
+    "title": "Implement Google OAuth integration",
+    "labels": [
+      "auth",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:17:18Z",
+    "body": "## Description\nAllow users to sign in with Google.\n\n## Tasks\n- [ ] Set up Google OAuth app\n- [ ] Implement OAuth flow\n- [ ] Create/link user accounts\n- [ ] Handle profile data\n- [ ] Test OAuth flow\n- "
+  },
+  {
+    "number": 36,
+    "title": "Implement GitHub OAuth integration",
+    "labels": [
+      "auth",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:17:21Z",
+    "body": "## Description\nAllow users to sign in with GitHub.\n\n## Tasks\n- [ ] Set up GitHub OAuth app\n- [ ] Implement OAuth flow\n- [ ] Create/link user accounts\n- [ ] Handle profile data\n- [ ] Test OAuth flow\n- "
+  },
+  {
+    "number": 42,
+    "title": "Optimize dashboard aggregation queries",
+    "labels": [
+      "performance",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:18:11Z",
+    "body": "## Description\nImprove performance of dashboard data loading.\n\n## Tasks\n- [ ] Profile current query performance\n- [ ] Reduce N+1 queries\n- [ ] Use database aggregations\n- [ ] Add pagination where need"
+  },
+  {
+    "number": 44,
+    "title": "Set up Redis for session storage",
+    "labels": [
+      "infrastructure",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:18:17Z",
+    "body": "## Description\nMove sessions to Redis for scalability.\n\n## Tasks\n- [ ] Set up Redis instance\n- [ ] Migrate session storage to Redis\n- [ ] Configure session TTL\n- [ ] Handle Redis failures gracefully\n-"
+  },
+  {
+    "number": 52,
+    "title": "Set up user analytics tracking",
+    "labels": [
+      "infrastructure",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:18:43Z",
+    "body": "## Description\nTrack user behavior and feature usage.\n\n## Tasks\n- [ ] Choose analytics tool (PostHog/Mixpanel)\n- [ ] Integrate SDK\n- [ ] Track key events\n- [ ] Set up funnels\n- [ ] Test tracking\n\n## A"
+  },
+  {
+    "number": 56,
+    "title": "Optimize bundle size",
+    "labels": [
+      "performance",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:19:21Z",
+    "body": "## Description\nReduce JavaScript bundle size for faster loads.\n\n## Tasks\n- [ ] Analyze bundle with webpack-bundle-analyzer\n- [ ] Implement code splitting\n- [ ] Remove unused dependencies\n- [ ] Use dyn"
+  },
+  {
+    "number": 57,
+    "title": "Implement lazy loading for heavy components",
+    "labels": [
+      "performance",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:19:24Z",
+    "body": "## Description\nLazy load heavy components to improve initial load.\n\n## Tasks\n- [ ] Identify heavy components\n- [ ] Implement dynamic imports\n- [ ] Add loading fallbacks\n- [ ] Test lazy loading\n- [ ] M"
+  },
+  {
+    "number": 60,
+    "title": "Set up staging environment",
+    "labels": [
+      "infrastructure",
+      "phase:sprint-4",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:19:35Z",
+    "body": "## Description\nCreate staging environment for pre-production testing.\n\n## Tasks\n- [ ] Set up staging deployment\n- [ ] Configure staging database\n- [ ] Set up environment variables\n- [ ] Test deploymen"
+  },
+  {
+    "number": 81,
+    "title": "Set up push notifications infrastructure",
+    "labels": [
+      "infrastructure",
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:21:40Z",
+    "body": "## Description\nConfigure push notifications for mobile app.\n\n## Tasks\n- [ ] Set up Firebase/OneSignal\n- [ ] Configure iOS certificates\n- [ ] Configure Android setup\n- [ ] Test notifications\n- [ ] Hand"
+  },
+  {
+    "number": 82,
+    "title": "Add receipt photo capture feature",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:21:43Z",
+    "body": "## Description\nAllow users to attach photos to transactions.\n\n## Tasks\n- [ ] Add camera integration\n- [ ] Add photo picker\n- [ ] Upload photos to storage\n- [ ] Display photos in transactions\n- [ ] Tes"
+  },
+  {
+    "number": 84,
+    "title": "Add dark mode support to mobile app",
+    "labels": [
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:21:49Z",
+    "body": "## Description\nImplement dark mode theme for mobile.\n\n## Tasks\n- [ ] Design dark mode palette\n- [ ] Implement theme switching\n- [ ] Respect system preference\n- [ ] Test all screens\n- [ ] Test on iOS a"
+  },
+  {
+    "number": 86,
+    "title": "Set up Detox E2E testing for mobile",
+    "labels": [
+      "testing",
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:21:55Z",
+    "body": "## Description\nAdd E2E tests for critical mobile flows.\n\n## Tasks\n- [ ] Set up Detox\n- [ ] Write login flow test\n- [ ] Write transaction creation test\n- [ ] Configure CI for E2E\n- [ ] Test on iOS and "
+  },
+  {
+    "number": 87,
+    "title": "Test mobile app on iOS devices",
+    "labels": [
+      "testing",
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:21:58Z",
+    "body": "## Description\nTest app on various iOS devices and versions.\n\n## Tasks\n- [ ] Test on iPhone SE (small screen)\n- [ ] Test on iPhone 14 Pro (standard)\n- [ ] Test on iPhone 14 Pro Max (large)\n- [ ] Test "
+  },
+  {
+    "number": 88,
+    "title": "Test mobile app on Android devices",
+    "labels": [
+      "testing",
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:22:17Z",
+    "body": "## Description\nTest app on various Android devices and versions.\n\n## Tasks\n- [ ] Test on small screen device (5\")\n- [ ] Test on standard device (6\")\n- [ ] Test on large device (6.5\"+)\n- [ ] Test on An"
+  },
+  {
+    "number": 89,
+    "title": "Profile mobile app performance",
+    "labels": [
+      "performance",
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:22:20Z",
+    "body": "## Description\nProfile and optimize mobile app performance.\n\n## Tasks\n- [ ] Profile render performance\n- [ ] Optimize list rendering\n- [ ] Reduce bundle size\n- [ ] Test on low-end devices\n- [ ] Fix pe"
+  },
+  {
+    "number": 101,
+    "title": "Add in-app bug reporting mechanism",
+    "labels": [
+      "infrastructure",
+      "phase:sprint-5",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:23:26Z",
+    "body": "## Description\nAllow users to report bugs directly in app.\n\n## Tasks\n- [ ] Create bug report form\n- [ ] Capture app state\n- [ ] Capture device info\n- [ ] Send to tracking system\n- [ ] Test bug reporti"
+  },
+  {
+    "number": 102,
+    "title": "Create feature request tracking system",
+    "labels": [
+      "infrastructure",
+      "phase:sprint-5",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-13T17:23:29Z",
+    "body": "## Description\nAllow users to request and vote on features.\n\n## Tasks\n- [ ] Set up feature request platform\n- [ ] Add submission form\n- [ ] Enable voting\n- [ ] Review submissions regularly\n- [ ] Commu"
+  },
+  {
+    "number": 189,
+    "title": "API: POST /api/v1/expenses/shares/[id]/remind - Send payment reminder",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-17T23:35:29Z",
+    "body": "## Description\nImplement REST API endpoint to send a payment reminder to a participant.\n\n## Endpoint\n`POST /api/v1/expenses/shares/{id}/remind`\n\n## Request Body\n```json\n{\n  \"message\": \"string (optiona"
+  },
+  {
+    "number": 193,
+    "title": "API: GET /api/v1/transactions - List transactions with filters",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-18T00:32:41Z",
+    "body": "Mobile needs list endpoint for transaction data sync.\n\n**Endpoint:** `GET /api/v1/transactions`\n\n**Query Parameters:**\n- `accountId` (required) - Filter by account\n- `month` (optional) - Filter by mon"
+  },
+  {
+    "number": 194,
+    "title": "API: GET /api/v1/budgets - List budgets for account/month",
+    "labels": [
+      "api",
+      "phase:sprint-3",
+      "priority:medium"
+    ],
+    "priority": "priority:medium",
+    "created": "2026-01-18T00:32:44Z",
+    "body": "Mobile needs list endpoint for budget data sync.\n\n**Endpoint:** `GET /api/v1/budgets`\n\n**Query Parameters:**\n- `accountId` (required) - Filter by account\n- `month` (optional) - Filter by month (YYYY-M"
+  }
+]
