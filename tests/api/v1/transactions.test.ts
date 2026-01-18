@@ -38,6 +38,15 @@ describe('Transaction API Routes', () => {
       },
     })
 
+    // Approver needs a valid subscription to approve/reject requests
+    const approverTrialEndsAt = new Date()
+    approverTrialEndsAt.setDate(approverTrialEndsAt.getDate() + 14)
+    await prisma.subscription.upsert({
+      where: { userId: approverUser.id },
+      update: { status: 'TRIALING', trialEndsAt: approverTrialEndsAt },
+      create: { userId: approverUser.id, status: 'TRIALING', trialEndsAt: approverTrialEndsAt },
+    })
+
     // Upsert test accounts and category (atomic, no race condition)
     const account = await prisma.account.upsert({
       where: { userId_name: { userId: testUser.id, name: 'TestAccount' } },
@@ -754,6 +763,15 @@ describe('Transaction API Routes', () => {
         where: { userId_name: { userId: userB.id, name: 'AttackerAccount' } },
         update: {},
         create: { userId: userB.id, name: 'AttackerAccount', type: 'SELF' },
+      })
+
+      // User B needs a valid subscription to reach authorization checks
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      await prisma.subscription.upsert({
+        where: { userId: userB.id },
+        update: { status: 'TRIALING', trialEndsAt },
+        create: { userId: userB.id, status: 'TRIALING', trialEndsAt },
       })
 
       userBToken = generateAccessToken('user-b-attacker', 'attacker@example.com')
