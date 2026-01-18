@@ -3,18 +3,15 @@ import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../services/api'
 import { useAuthStore } from './authStore';
 import type { Currency } from '../types';
 
-// Split types for expense sharing
 export type SplitType = 'EQUAL' | 'PERCENTAGE' | 'FIXED';
 export type ShareStatus = 'PENDING' | 'PAID' | 'DECLINED';
 
-// User info for sharing context
 export interface ShareUser {
   id?: string;
   email: string;
   displayName?: string;
 }
 
-// Participant in a shared expense
 export interface ShareParticipant {
   id: string;
   userId?: string;
@@ -25,7 +22,6 @@ export interface ShareParticipant {
   paidAt?: string;
 }
 
-// Shared expense I created
 export interface SharedExpense {
   id: string;
   transactionId: string;
@@ -37,7 +33,6 @@ export interface SharedExpense {
   participants: ShareParticipant[];
 }
 
-// Expense shared with me by someone else
 export interface SharedWithMeParticipation {
   id: string;
   shareAmount: string;
@@ -51,7 +46,6 @@ export interface SharedWithMeParticipation {
   };
 }
 
-// Input for creating a shared expense
 export interface CreateSharedExpenseInput {
   transactionId: string;
   splitType: SplitType;
@@ -62,31 +56,26 @@ export interface CreateSharedExpenseInput {
   }[];
 }
 
-// Response from share creation
 export interface CreateShareResponse {
   sharedExpenseId: string;
   participants: ShareParticipant[];
 }
 
-// Response from marking share as paid
 export interface MarkPaidResponse {
   id: string;
   status: ShareStatus;
   paidAt: string;
 }
 
-// Response from declining share
 export interface DeclineShareResponse {
   id: string;
   status: ShareStatus;
 }
 
-// Response from user lookup
 export interface UserLookupResponse {
   user: ShareUser;
 }
 
-// API response shapes
 interface SharedByMeResponse {
   sharedExpenses: SharedExpense[];
 }
@@ -95,7 +84,6 @@ interface SharedWithMeResponse {
   participations: SharedWithMeParticipation[];
 }
 
-// Store state
 interface SharingState {
   sharedByMe: SharedExpense[];
   sharedWithMe: SharedWithMeParticipation[];
@@ -103,7 +91,6 @@ interface SharingState {
   error: string | null;
 }
 
-// Store actions
 interface SharingActions {
   fetchSharedByMe: () => Promise<void>;
   fetchSharedWithMe: () => Promise<void>;
@@ -207,7 +194,6 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
         accessToken
       );
 
-      // Refetch shared expenses to get the complete data with all fields
       await get().fetchSharedByMe();
 
       return response;
@@ -229,7 +215,6 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
         accessToken
       );
 
-      // Update local state - update participant status in sharedByMe
       set((state) => ({
         sharedByMe: state.sharedByMe.map((expense) => ({
           ...expense,
@@ -260,7 +245,6 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
         accessToken
       );
 
-      // Update local state - remove the declined share from sharedWithMe
       set((state) => ({
         sharedWithMe: state.sharedWithMe.filter((p) => p.id !== participantId),
       }));
@@ -283,7 +267,6 @@ export const useSharingStore = create<SharingStore>((set, get) => ({
         accessToken
       );
 
-      // Remove the cancelled shared expense from local state
       set((state) => ({
         sharedByMe: state.sharedByMe.filter((e) => e.id !== sharedExpenseId),
       }));
