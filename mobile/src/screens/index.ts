@@ -17,6 +17,7 @@ export { OnboardingBiometricScreen } from './onboarding/OnboardingBiometricScree
 export { DashboardScreen } from './main/DashboardScreen';
 export { TransactionsScreen } from './main/TransactionsScreen';
 export { AddTransactionScreen } from './main/AddTransactionScreen';
+export { EditTransactionScreen } from './main/EditTransactionScreen';
 export { BudgetsScreen } from './main/BudgetsScreen';
 export { SharingScreen } from './main/SharingScreen';
 export { SettingsScreen } from './main/SettingsScreen';
