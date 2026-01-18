@@ -418,6 +418,15 @@ describe('Subscription Enforcement on API Routes', () => {
     })
 
     afterEach(async () => {
+      // Reset other user's subscription to valid state for other tests
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      await prisma.subscription.upsert({
+        where: { userId: OTHER_USER_ID },
+        update: { status: SubscriptionStatus.TRIALING, trialEndsAt },
+        create: { userId: OTHER_USER_ID, status: SubscriptionStatus.TRIALING, trialEndsAt },
+      })
+
       // Cleanup transaction requests
       await prisma.transactionRequest.deleteMany({
         where: { description: { contains: 'SUB_TEST_' } },
