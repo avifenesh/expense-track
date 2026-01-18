@@ -3,22 +3,11 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { useOnboardingStore } from '../../stores';
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../../constants/categories';
 
 const DEFAULT_CATEGORIES = [
-  'Groceries',
-  'Dining Out',
-  'Transportation',
-  'Utilities',
-  'Entertainment',
-  'Shopping',
-  'Health',
-  'Housing',
-  'Insurance',
-  'Subscriptions',
-  'Salary',
-  'Freelance',
-  'Investments',
-  'Other Income',
+  ...DEFAULT_EXPENSE_CATEGORIES.map(c => c.name),
+  ...DEFAULT_INCOME_CATEGORIES.map(c => c.name),
 ];
 
 export function OnboardingCategoriesScreen({

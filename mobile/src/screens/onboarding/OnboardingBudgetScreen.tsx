@@ -10,7 +10,7 @@ export function OnboardingBudgetScreen({
 }: OnboardingScreenProps<'OnboardingBudget'>) {
   const { selectedCurrency, monthlyBudget, setBudget } = useOnboardingStore();
   const [inputValue, setInputValue] = useState(
-    monthlyBudget ? monthlyBudget.toString() : '2000'
+    monthlyBudget ? monthlyBudget.toString() : ''
   );
 
   const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency];
