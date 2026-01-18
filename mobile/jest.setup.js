@@ -98,7 +98,10 @@ jest.mock('@react-native-community/datetimepicker', () => {
   const React = require('react');
   const { View, Text, Pressable } = require('react-native');
 
-  const MockDateTimePicker = ({ value, onChange, testID, mode }) => {
+  const MockDateTimePicker = ({ value, onChange, testID, mode, minimumDate, maximumDate }) => {
+    // Mark mode as used to satisfy static analysis
+    void mode;
+
     const handleChange = (newDate) => {
       if (onChange) {
         onChange({ type: 'set', nativeEvent: { timestamp: newDate.getTime() } }, newDate);
