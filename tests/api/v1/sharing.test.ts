@@ -294,6 +294,38 @@ describe('Sharing API Routes', () => {
       expect(data.success).toBe(true)
       expect(data.data.id).toBe(participantId)
       expect(data.data.status).toBe('DECLINED')
+      expect(data.data.declinedAt).toBeTruthy()
+      // Verify declinedAt is a valid ISO timestamp
+      expect(new Date(data.data.declinedAt).toISOString()).toBe(data.data.declinedAt)
+    })
+
+    it('declines share with optional reason', async () => {
+      const declineReason = 'I was not part of this expense'
+      const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${otherToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason: declineReason }),
+      })
+
+      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data.id).toBe(participantId)
+      expect(data.data.status).toBe('DECLINED')
+      expect(data.data.declinedAt).toBeTruthy()
+
+      // Verify reason is persisted in database
+      const participant = await prisma.expenseParticipant.findUnique({
+        where: { id: participantId },
+      })
+      expect(participant).toBeDefined()
+      expect(participant?.declineReason).toBe(declineReason)
+      expect(participant?.declinedAt).toBeTruthy()
     })
 
     it('returns 403 when non-participant tries to decline', async () => {
@@ -381,7 +413,7 @@ describe('Sharing API Routes', () => {
       expect(response.status).toBe(401)
     })
 
-    it('persists declined status in database', async () => {
+    it('persists declined status and declinedAt in database', async () => {
       const request = new NextRequest(`http://localhost/api/v1/expenses/shares/${participantId}/decline`, {
         method: 'POST',
         headers: {
@@ -390,7 +422,9 @@ describe('Sharing API Routes', () => {
         },
       })
 
+      const beforeDecline = new Date()
       await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const afterDecline = new Date()
 
       const participant = await prisma.expenseParticipant.findUnique({
         where: { id: participantId },
@@ -398,6 +432,10 @@ describe('Sharing API Routes', () => {
 
       expect(participant).toBeDefined()
       expect(participant?.status).toBe(PaymentStatus.DECLINED)
+      expect(participant?.declinedAt).toBeTruthy()
+      // Verify declinedAt is within the expected time range
+      expect(participant?.declinedAt?.getTime()).toBeGreaterThanOrEqual(beforeDecline.getTime())
+      expect(participant?.declinedAt?.getTime()).toBeLessThanOrEqual(afterDecline.getTime())
     })
   })
 })
