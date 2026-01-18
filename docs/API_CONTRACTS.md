@@ -875,7 +875,7 @@ Decline a shared expense assigned to you.
 ```
 
 **Request Fields:**
-- `reason`: Optional. A string explaining why the share is being declined. If provided, will be stored and visible to the expense owner.
+- `reason`: Optional decline explanation
 
 **Response (200):**
 ```json
@@ -892,7 +892,7 @@ Decline a shared expense assigned to you.
 **Response Fields:**
 - `id`: The participant ID
 - `status`: Always "DECLINED" on success
-- `declinedAt`: ISO 8601 timestamp of when the share was declined
+- `declinedAt`: Decline timestamp
 
 **Errors:**
 - 400: Validation error - Share is not in PENDING status (already paid or declined), or reason is not a string

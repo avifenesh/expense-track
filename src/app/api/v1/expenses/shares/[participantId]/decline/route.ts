@@ -18,14 +18,6 @@ interface DeclineRequestBody {
 /**
  * POST /api/v1/expenses/shares/[participantId]/decline
  * Decline a shared expense (participant only).
- *
- * Request body (optional):
- * - reason: Optional string explaining why the share was declined
- *
- * Response:
- * - id: Participant ID
- * - status: 'DECLINED'
- * - declinedAt: ISO timestamp when the share was declined
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(
@@ -33,7 +25,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     async (user) => {
       const { participantId } = await params
 
-      // Parse optional request body for reason
       let reason: string | undefined
       try {
         const body = await request.json() as DeclineRequestBody
@@ -46,7 +37,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           reason = body.reason.trim() || undefined
         }
       } catch {
-        // Empty body is valid - reason is optional
       }
 
       const participant = await prisma.expenseParticipant.findUnique({

@@ -295,7 +295,6 @@ describe('Sharing API Routes', () => {
       expect(data.data.id).toBe(participantId)
       expect(data.data.status).toBe('DECLINED')
       expect(data.data.declinedAt).toBeTruthy()
-      // Verify declinedAt is a valid ISO timestamp
       expect(new Date(data.data.declinedAt).toISOString()).toBe(data.data.declinedAt)
     })
 
@@ -319,7 +318,6 @@ describe('Sharing API Routes', () => {
       expect(data.data.status).toBe('DECLINED')
       expect(data.data.declinedAt).toBeTruthy()
 
-      // Verify reason is persisted in database
       const participant = await prisma.expenseParticipant.findUnique({
         where: { id: participantId },
       })
