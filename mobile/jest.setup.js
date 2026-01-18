@@ -93,6 +93,49 @@ jest.mock('react-native-screens', () => ({
   enableFreeze: jest.fn(),
 }));
 
+// Mock @react-native-community/datetimepicker
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = require('react');
+  const { View, Text, Pressable } = require('react-native');
+
+  const MockDateTimePicker = ({ value, onChange, testID, mode, minimumDate, maximumDate }) => {
+    // Mark mode as used to satisfy static analysis
+    void mode;
+
+    const handleChange = (newDate) => {
+      if (onChange) {
+        onChange({ type: 'set', nativeEvent: { timestamp: newDate.getTime() } }, newDate);
+      }
+    };
+
+    // Create a simple mock that shows the current value and allows changing
+    return React.createElement(
+      View,
+      { testID: testID || 'datetime-picker' },
+      React.createElement(
+        Text,
+        { testID: testID ? `${testID}-value` : 'picker-value' },
+        value ? value.toISOString() : 'No date'
+      ),
+      React.createElement(
+        Pressable,
+        {
+          testID: testID ? `${testID}-change` : 'picker-change',
+          onPress: () => handleChange(new Date('2026-06-15T12:00:00Z')),
+        },
+        React.createElement(Text, null, 'Change Date')
+      )
+    );
+  };
+
+  MockDateTimePicker.displayName = 'DateTimePicker';
+
+  return {
+    __esModule: true,
+    default: MockDateTimePicker,
+  };
+});
+
 // Mock react-native-safe-area-context with proper context
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
