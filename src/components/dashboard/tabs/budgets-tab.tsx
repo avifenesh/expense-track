@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { TransactionType, Currency } from '@prisma/client'
 import { FileSpreadsheet } from 'lucide-react'
-import { deleteBudgetAction, upsertBudgetAction } from '@/app/actions'
+import { deleteBudgetAction, upsertBudgetAction, upsertMonthlyIncomeGoalAction } from '@/app/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,7 @@ import { toast } from '@/hooks/useToast'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { useFormValidation, validators } from '@/hooks/useFormValidation'
 import { DashboardCategory, DashboardAccount, DashboardBudget, typeFilterOptions, currencyOptions } from './types'
+import type { MonthlyIncomeGoalSummary } from '@/lib/finance'
 
 type FormErrors = Partial<Record<string, string[]>>
 
@@ -27,6 +28,8 @@ export type BudgetsTabProps = {
   activeAccount: string
   monthKey: string
   preferredCurrency: Currency
+  monthlyIncomeGoal?: MonthlyIncomeGoalSummary
+  actualIncome?: number
 }
 
 export function BudgetsTab({
@@ -36,6 +39,8 @@ export function BudgetsTab({
   activeAccount,
   monthKey,
   preferredCurrency,
+  monthlyIncomeGoal,
+  actualIncome = 0,
 }: BudgetsTabProps) {
   const router = useRouter()
   const csrfToken = useCsrfToken()
@@ -50,7 +55,9 @@ export function BudgetsTab({
   const [budgetAccountFilter, setBudgetAccountFilter] = useState<string>(activeAccount)
   const [budgetTypeFilter, setBudgetTypeFilter] = useState<'all' | TransactionType>('all')
   const [isPendingBudget, startBudget] = useTransition()
+  const [isPendingIncomeGoal, startIncomeGoal] = useTransition()
   const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
+  const [incomeGoalErrors, setIncomeGoalErrors] = useState<FormErrors | null>(null)
   const [deletingBudgetKey, setDeletingBudgetKey] = useState<string | null>(null)
 
   // Derived options
@@ -138,6 +145,46 @@ export function BudgetsTab({
       router.refresh()
     })
   }
+
+  const handleIncomeGoalSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    setIncomeGoalErrors(null)
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const amount = Number(formData.get('incomeGoalAmount') || 0)
+    if (amount < 0) {
+      setIncomeGoalErrors({ amount: ['Income goal must be 0 or greater'] })
+      return
+    }
+
+    const payload = {
+      accountId: (formData.get('incomeGoalAccountId') as string) || defaultAccountId,
+      monthKey,
+      amount,
+      currency: (formData.get('incomeGoalCurrency') as Currency) || preferredCurrency,
+      setAsDefault: formData.get('setAsDefault') === 'on',
+      csrfToken,
+    }
+
+    startIncomeGoal(async () => {
+      const result = await upsertMonthlyIncomeGoalAction(payload)
+      if ('error' in result) {
+        const serverErrors = result.error as FormErrors
+        setIncomeGoalErrors(serverErrors)
+        toast.error('Unable to save income goal.')
+        return
+      }
+      toast.success('Income goal saved.')
+      setIncomeGoalErrors(null)
+      router.refresh()
+    })
+  }
+
+  // Calculate income goal progress
+  const incomeGoalAmount = monthlyIncomeGoal?.amount ?? 0
+  const incomeProgress = incomeGoalAmount > 0 ? Math.min((actualIncome / incomeGoalAmount) * 100, 100) : 0
+  const incomeRemaining = incomeGoalAmount > 0 ? incomeGoalAmount - actualIncome : 0
 
   return (
     <div role="tabpanel" id="panel-budgets" aria-labelledby="tab-budgets" className="space-y-6">
@@ -282,6 +329,105 @@ export function BudgetsTab({
               )
             })}
           </div>
+
+          {/* Income Goal Section */}
+          <div className="space-y-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-white">Monthly income goal</h3>
+              <p className="text-xs text-slate-400">
+                Set an expected income target for freelancers or variable income.
+                {monthlyIncomeGoal?.isDefault && ' (Using account default)'}
+              </p>
+            </div>
+
+            {incomeGoalAmount > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-slate-300">
+                    Target: {formatCurrency(incomeGoalAmount, preferredCurrency)}
+                  </span>
+                  <span className="text-sm text-slate-300">
+                    Actual: {formatCurrency(actualIncome, preferredCurrency)} ({Math.round(incomeProgress)}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-2 rounded-full bg-emerald-400/80 transition-all duration-300 ease-out"
+                    style={{ width: `${incomeProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-slate-300">
+                  {incomeRemaining > 0
+                    ? `${formatCurrency(incomeRemaining, preferredCurrency)} to go`
+                    : 'Goal reached!'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">No income goal set for this month.</p>
+            )}
+
+            <form onSubmit={handleIncomeGoalSubmit} className="space-y-4 pt-2 border-t border-white/10">
+              {incomeGoalErrors?.general && (
+                <p className="text-xs text-rose-300">{incomeGoalErrors.general[0]}</p>
+              )}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-slate-300" htmlFor="incomeGoalAccountId">
+                    Account
+                  </label>
+                  <Select
+                    id="incomeGoalAccountId"
+                    name="incomeGoalAccountId"
+                    defaultValue={defaultAccountId}
+                    options={accountsOptions}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-slate-300" htmlFor="incomeGoalAmount">
+                    Target amount
+                  </label>
+                  <Input
+                    id="incomeGoalAmount"
+                    name="incomeGoalAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={incomeGoalAmount || ''}
+                    placeholder="e.g. 5000"
+                  />
+                  {incomeGoalErrors?.amount && (
+                    <p className="text-xs text-rose-300">{incomeGoalErrors.amount[0]}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-slate-300" htmlFor="incomeGoalCurrency">
+                    Currency
+                  </label>
+                  <Select
+                    id="incomeGoalCurrency"
+                    name="incomeGoalCurrency"
+                    defaultValue={monthlyIncomeGoal?.currency || preferredCurrency}
+                    options={currencyOptions}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="setAsDefault"
+                  name="setAsDefault"
+                  className="h-4 w-4 rounded border-white/20 bg-white/5 text-emerald-500"
+                />
+                <label htmlFor="setAsDefault" className="text-xs text-slate-300">
+                  Use as default for future months
+                </label>
+              </div>
+              <Button type="submit" loading={isPendingIncomeGoal} className="w-full" variant="outline">
+                Save income goal
+              </Button>
+            </form>
+          </div>
+
           <form
             id="budget-form"
             onSubmit={handleBudgetSubmit}

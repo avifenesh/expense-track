@@ -7,9 +7,13 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     account: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
     },
     category: {
       findMany: vi.fn(),
+    },
+    monthlyIncomeGoal: {
+      findFirst: vi.fn(),
     },
     transaction: {
       findMany: vi.fn(),
@@ -46,10 +50,17 @@ import * as currencyLib from '@/lib/currency'
 import * as financeLib from '@/lib/finance'
 import type { RateCache } from '@/lib/currency'
 
-// Type for mocked prisma with holding support
+// Type for mocked prisma with holding and income goal support
 type MockedPrisma = typeof prisma & {
   holding: {
     findMany: ReturnType<typeof vi.fn>
+  }
+  monthlyIncomeGoal: {
+    findFirst: ReturnType<typeof vi.fn>
+  }
+  account: {
+    findMany: ReturnType<typeof vi.fn>
+    findUnique: ReturnType<typeof vi.fn>
   }
 }
 const mockedPrisma = prisma as MockedPrisma
@@ -364,6 +375,7 @@ describe('finance.ts', () => {
         categoryId: 'cat1',
         month: new Date('2024-01-01'),
         planned: new Prisma.Decimal(500),
+        currency: Currency.USD,
         category: mockCategories[0],
         account: mockAccounts[0],
       },
@@ -373,6 +385,7 @@ describe('finance.ts', () => {
         categoryId: 'cat2',
         month: new Date('2024-01-01'),
         planned: new Prisma.Decimal(3000),
+        currency: Currency.USD,
         category: mockCategories[1],
         account: mockAccounts[0],
       },
@@ -509,6 +522,7 @@ describe('finance.ts', () => {
         categoryId: 'cat1',
         month: new Date('2024-01-01'),
         planned: new Prisma.Decimal(500),
+        currency: Currency.USD,
         category: mockCategories[0],
         account: mockAccounts[0],
       },
@@ -518,6 +532,7 @@ describe('finance.ts', () => {
         categoryId: 'cat2',
         month: new Date('2024-01-01'),
         planned: new Prisma.Decimal(3000),
+        currency: Currency.USD,
         category: mockCategories[1],
         account: mockAccounts[0],
       },
@@ -557,7 +572,12 @@ describe('finance.ts', () => {
 
     beforeEach(() => {
       vi.mocked(currencyLib.batchLoadExchangeRates).mockResolvedValue(mockExchangeRates)
-      vi.mocked(currencyLib.convertAmountWithCache).mockImplementation((amount) => amount)
+      // Mock currency conversion with actual rate lookup
+      vi.mocked(currencyLib.convertAmountWithCache).mockImplementation((amount, from, to) => {
+        if (from === to) return amount
+        const rate = mockExchangeRates.get(`${from}:${to}`) ?? 1
+        return Math.round(amount * rate * 100) / 100
+      })
       vi.mocked(currencyLib.convertAmount).mockImplementation(async (amount) => amount)
       vi.mocked(currencyLib.getLastUpdateTime).mockResolvedValue(new Date('2024-01-15'))
 
@@ -567,6 +587,10 @@ describe('finance.ts', () => {
       vi.mocked(prisma.transactionRequest.findMany).mockResolvedValue([])
       vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValue([])
       vi.mocked(prisma.budget.findMany).mockResolvedValue(mockBudgets as unknown as Budget[])
+      // Monthly income goal - default to null (no goal set)
+      vi.mocked(mockedPrisma.monthlyIncomeGoal.findFirst).mockResolvedValue(null)
+      // Account default income goal - default to null
+      vi.mocked(mockedPrisma.account.findUnique).mockResolvedValue(null)
     })
 
     it('should calculate stats correctly', async () => {
@@ -603,11 +627,216 @@ describe('finance.ts', () => {
       })
 
       // Monthly goal (planned net) = 3000 - 500 = 2500
+      // Falls back to income budget since no recurring templates
       expect(result.stats[3]).toMatchObject({
         label: 'Monthly goal',
         amount: 2500,
         variant: 'positive',
       })
+    })
+
+    it('should use recurring income templates for monthly goal when available', async () => {
+      // Mock recurring income template
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValueOnce([
+        {
+          id: 'rec1',
+          accountId: 'acc1',
+          categoryId: 'cat2',
+          type: TransactionType.INCOME,
+          amount: new Prisma.Decimal(5000), // Higher than budgeted 3000
+          description: 'Salary',
+          dayOfMonth: 1,
+          isActive: true,
+          startMonth: null,
+          endMonth: null,
+          deletedAt: null,
+          category: mockCategories[1],
+          account: mockAccounts[0],
+        },
+      ] as unknown as (RecurringTemplate & { category: Category; account: Account })[])
+
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+      })
+
+      // Monthly goal should use recurring income (5000) instead of income budget (3000)
+      // plannedNet = 5000 - 500 = 4500
+      expect(result.stats[3]).toMatchObject({
+        label: 'Monthly goal',
+        amount: 4500,
+        variant: 'positive',
+      })
+    })
+
+    it('should exclude inactive recurring templates from monthly goal', async () => {
+      // Mock inactive recurring income template
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValueOnce([
+        {
+          id: 'rec1',
+          accountId: 'acc1',
+          categoryId: 'cat2',
+          type: TransactionType.INCOME,
+          amount: new Prisma.Decimal(5000),
+          description: 'Salary',
+          dayOfMonth: 1,
+          isActive: false, // Inactive
+          startMonth: null,
+          endMonth: null,
+          deletedAt: null,
+          category: mockCategories[1],
+          account: mockAccounts[0],
+        },
+      ] as unknown as (RecurringTemplate & { category: Category; account: Account })[])
+
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+      })
+
+      // Should fall back to income budget (3000) since recurring is inactive
+      // plannedNet = 3000 - 500 = 2500
+      expect(result.stats[3]).toMatchObject({
+        label: 'Monthly goal',
+        amount: 2500,
+        variant: 'positive',
+      })
+    })
+
+    it('should use monthly income goal when set (priority over recurring)', async () => {
+      // Mock month-specific income goal
+      vi.mocked(mockedPrisma.monthlyIncomeGoal.findFirst).mockResolvedValueOnce({
+        id: 'goal1',
+        accountId: 'acc1',
+        month: new Date('2024-01-01'),
+        amount: new Prisma.Decimal(7000), // Higher than recurring (5000) or budget (3000)
+        currency: Currency.USD,
+        notes: null,
+        deletedAt: null,
+      })
+
+      // Also mock recurring income template (should be ignored)
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValueOnce([
+        {
+          id: 'rec1',
+          accountId: 'acc1',
+          categoryId: 'cat2',
+          type: TransactionType.INCOME,
+          amount: new Prisma.Decimal(5000),
+          description: 'Salary',
+          dayOfMonth: 1,
+          isActive: true,
+          startMonth: null,
+          endMonth: null,
+          deletedAt: null,
+          category: mockCategories[1],
+          account: mockAccounts[0],
+        },
+      ] as unknown as (RecurringTemplate & { category: Category; account: Account })[])
+
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+      })
+
+      // Monthly goal should use income goal (7000) instead of recurring (5000)
+      // plannedNet = 7000 - 500 = 6500
+      expect(result.stats[3]).toMatchObject({
+        label: 'Monthly goal',
+        amount: 6500,
+        variant: 'positive',
+      })
+      // Should also return the monthlyIncomeGoal in the result
+      expect(result.monthlyIncomeGoal).toMatchObject({
+        amount: 7000,
+        currency: 'USD',
+        isDefault: false,
+      })
+    })
+
+    it('should use account default income goal when no month-specific goal', async () => {
+      // No month-specific goal
+      vi.mocked(mockedPrisma.monthlyIncomeGoal.findFirst).mockResolvedValueOnce(null)
+
+      // Account has default income goal
+      vi.mocked(mockedPrisma.account.findUnique).mockResolvedValueOnce({
+        id: 'acc1',
+        defaultIncomeGoal: new Prisma.Decimal(6000),
+        defaultIncomeGoalCurrency: Currency.USD,
+      })
+
+      // Also mock recurring income template (should be ignored since account default exists)
+      vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValueOnce([
+        {
+          id: 'rec1',
+          accountId: 'acc1',
+          categoryId: 'cat2',
+          type: TransactionType.INCOME,
+          amount: new Prisma.Decimal(5000),
+          description: 'Salary',
+          dayOfMonth: 1,
+          isActive: true,
+          startMonth: null,
+          endMonth: null,
+          deletedAt: null,
+          category: mockCategories[1],
+          account: mockAccounts[0],
+        },
+      ] as unknown as (RecurringTemplate & { category: Category; account: Account })[])
+
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+      })
+
+      // Monthly goal should use account default (6000) instead of recurring (5000)
+      // plannedNet = 6000 - 500 = 5500
+      expect(result.stats[3]).toMatchObject({
+        label: 'Monthly goal',
+        amount: 5500,
+        variant: 'positive',
+      })
+      // Should indicate this is the default
+      expect(result.monthlyIncomeGoal).toMatchObject({
+        amount: 6000,
+        currency: 'USD',
+        isDefault: true,
+      })
+    })
+
+    it('should return actualIncome in dashboard data', async () => {
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+      })
+
+      // actualIncome should be the sum of income transactions (3000)
+      expect(result.actualIncome).toBe(3000)
     })
 
     it('should calculate budget summaries correctly', async () => {
@@ -642,6 +871,54 @@ describe('finance.ts', () => {
         actual: 3000,
         remaining: 0,
       })
+    })
+
+    it('should convert budget amounts to preferred currency', async () => {
+      // Budget in EUR, preferred currency is USD
+      const eurBudget = {
+        id: 'bud-eur',
+        accountId: 'acc1',
+        categoryId: 'cat1',
+        month: new Date('2024-01-01'),
+        planned: new Prisma.Decimal(600), // 600 EUR
+        currency: Currency.EUR,
+        category: mockCategories[0],
+        account: mockAccounts[0],
+      }
+
+      vi.mocked(prisma.budget.findMany).mockResolvedValueOnce([eurBudget] as unknown as Budget[])
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce([]) // No transactions
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+        preferredCurrency: Currency.USD,
+      })
+
+      // 600 EUR * 1.18 (EUR:USD rate) = 708 USD
+      expect(result.budgets[0].planned).toBe(708)
+      // With no actual spending, remaining should equal planned
+      expect(result.budgets[0].remaining).toBe(708)
+    })
+
+    it('should not convert budget amounts when currency matches preferred', async () => {
+      vi.mocked(prisma.transaction.findMany)
+        .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[])
+        .mockResolvedValueOnce(mockHistoryTransactions as unknown as Transaction[])
+
+      const result = await financeLib.getDashboardData({
+        monthKey: '2024-01',
+        accountId: 'acc1',
+        preferredCurrency: Currency.USD, // Same as budget currency
+      })
+
+      // Budgets are in USD, preferred is USD - no conversion
+      expect(result.budgets[0].planned).toBe(500)
+      expect(result.budgets[1].planned).toBe(3000)
     })
 
     it('should calculate comparison correctly', async () => {
@@ -818,13 +1095,11 @@ describe('finance.ts', () => {
       expect(result.preferredCurrency).toBe(Currency.EUR)
     })
 
-    it('should handle currency conversion errors gracefully', async () => {
-      // Make convertAmount throw an error to test error handling
-      vi.mocked(currencyLib.convertAmount).mockRejectedValue(new Error('API error'))
-
+    it('should convert previous month amounts when preferredCurrency differs', async () => {
+      // Previous month transactions in USD, preferred currency is EUR
       vi.mocked(prisma.transaction.findMany)
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[]) // Previous month with different currency
+        .mockResolvedValueOnce(mockPreviousTransactions as unknown as Transaction[]) // Previous month (USD)
         .mockResolvedValueOnce([])
 
       const result = await financeLib.getDashboardData({
@@ -833,9 +1108,11 @@ describe('finance.ts', () => {
         preferredCurrency: Currency.EUR,
       })
 
-      // Should fall back to original amounts when conversion fails
-      // Previous net = 2500 - 200 = 2300 (fallback to original USD amounts)
-      expect(result.comparison.previousNet).toBe(2300)
+      // Previous transactions are converted from USD to EUR using rate 0.85
+      // 2500 USD * 0.85 = 2125 EUR (income)
+      // 200 USD * 0.85 = 170 EUR (expense)
+      // Previous net = 2125 - 170 = 1955 EUR
+      expect(result.comparison.previousNet).toBe(1955)
     })
   })
 

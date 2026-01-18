@@ -200,6 +200,12 @@ export type TransactionWithDisplay = Omit<
   month: string
 }
 
+export type MonthlyIncomeGoalSummary = {
+  amount: number
+  currency: string
+  isDefault: boolean
+} | null
+
 export type DashboardData = {
   month: string
   stats: MonetaryStat[]
@@ -218,6 +224,10 @@ export type DashboardData = {
   history: MonthlyHistoryPoint[]
   exchangeRateLastUpdate: Date | null
   preferredCurrency?: Currency
+  // Income goal for freelancers/variable income
+  monthlyIncomeGoal?: MonthlyIncomeGoalSummary
+  // Actual income for this month (for income goal progress)
+  actualIncome?: number
   // Expense sharing data
   sharedExpenses?: SharedExpenseSummary[]
   expensesSharedWithMe?: ExpenseParticipationSummary[]
