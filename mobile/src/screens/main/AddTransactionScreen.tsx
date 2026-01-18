@@ -52,7 +52,6 @@ export function AddTransactionScreen({
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
-  // Form state
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -62,18 +61,15 @@ export function AddTransactionScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch categories on mount and when type changes
   useEffect(() => {
     fetchCategories(type);
   }, [fetchCategories, type]);
 
-  // Reset category when type changes
   useEffect(() => {
     setCategoryId(null);
     setErrors((prev) => ({ ...prev, categoryId: undefined }));
   }, [type]);
 
-  // Filter categories by type
   const filteredCategories = useMemo(() => {
     return categories.filter((c) => c.type === type && !c.isArchived);
   }, [categories, type]);
@@ -83,14 +79,11 @@ export function AddTransactionScreen({
   }, []);
 
   const handleAmountChange = useCallback((text: string) => {
-    // Allow only numbers and decimal point
     const sanitized = text.replace(/[^0-9.]/g, '');
-    // Prevent multiple decimal points
     const parts = sanitized.split('.');
     if (parts.length > 2) {
       return;
     }
-    // Limit decimal places to 2
     if (parts[1] && parts[1].length > 2) {
       return;
     }

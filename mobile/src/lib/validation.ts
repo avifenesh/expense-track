@@ -81,7 +81,6 @@ export function validatePasswordMatch(
   return null;
 }
 
-// Transaction validation helpers
 
 export function validateTransactionAmount(amount: string): string | null {
   if (!amount || amount.trim().length === 0) {
@@ -102,7 +101,6 @@ export function validateTransactionAmount(amount: string): string | null {
     return 'Amount is too large';
   }
 
-  // Check for too many decimal places
   const parts = amount.split('.');
   if (parts[1] && parts[1].length > 2) {
     return 'Amount can have at most 2 decimal places';
@@ -115,7 +113,6 @@ export function validateTransactionDescription(
   description: string
 ): string | null {
   if (!description || description.trim().length === 0) {
-    // Description is optional
     return null;
   }
 
@@ -123,7 +120,7 @@ export function validateTransactionDescription(
     return 'Description is too long (max 200 characters)';
   }
 
-  // Check for potentially dangerous characters (XSS prevention)
+  // XSS prevention
   const dangerousPattern = /<script|javascript:|on\w+=/i;
   if (dangerousPattern.test(description)) {
     return 'Description contains invalid characters';
@@ -151,14 +148,13 @@ export function validateTransactionDate(date: Date | null): string | null {
     return 'Please enter a valid date';
   }
 
-  // Don't allow future dates
   const today = new Date();
   today.setHours(23, 59, 59, 999);
   if (date > today) {
     return 'Date cannot be in the future';
   }
 
-  // Don't allow dates too far in the past (e.g., more than 10 years)
+  // Don't allow dates >10 years old
   const tenYearsAgo = new Date();
   tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
   if (date < tenYearsAgo) {
