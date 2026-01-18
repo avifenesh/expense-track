@@ -51,6 +51,7 @@ __tests__/
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
+    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction)
   services/        # Service tests (api, auth)
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
 ```
@@ -65,7 +66,7 @@ src/
   screens/      # Screen components
     auth/       # Authentication screens (Login, Register, ResetPassword, VerifyEmail)
     onboarding/ # Onboarding flow screens
-    main/       # Main app screens (Dashboard, Transactions, etc.)
+    main/       # Main app screens (Dashboard, Transactions, AddTransaction)
   hooks/        # Custom React hooks (useAuthState)
   navigation/   # React Navigation setup
     types.ts    # Navigation type definitions
@@ -80,6 +81,51 @@ src/
   types/        # TypeScript definitions
   constants/    # App constants
 ```
+
+## UI Components
+
+The mobile app includes reusable UI components for building consistent interfaces. All components follow the dark theme design system with sky blue (#38bdf8) accents.
+
+### BudgetCategoryCard
+
+A card component displaying budget information for a specific category with visual progress indication.
+
+```tsx
+import { BudgetCategoryCard } from '@/components';
+
+<BudgetCategoryCard
+  categoryName="Food & Dining"
+  categoryColor="#4CAF50"
+  planned={500}
+  spent={350}
+  currency="USD"
+  onPress={() => console.log('Category tapped')}
+/>
+```
+
+**Props:**
+- `categoryName` - Category display name
+- `categoryColor` - Hex color for category indicator dot
+- `planned` - Planned budget amount (in major currency units)
+- `spent` - Amount spent so far (in major currency units)
+- `currency` - Currency code (USD | EUR | ILS)
+- `onPress` - Optional press handler (makes card tappable)
+
+**Features:**
+- Visual progress bar showing spent vs planned
+- Over-budget indication with red color when spent exceeds planned
+- Currency-aware formatting
+- Accessible with screen reader support
+- Optional tap interaction
+
+### Other UI Components
+
+- **MonthSelector** - Month navigation with previous/next controls
+- **BudgetProgressCard** - Overall budget summary card
+- **EmptyState** - Empty state placeholder with title and message
+- **TransactionListItem** - Transaction row with category color
+- **DateSectionHeader** - Date section divider for grouped lists
+
 
 ## Form Components
 
@@ -379,5 +425,62 @@ The app uses React Navigation with conditional routing:
   - Login, Register, ResetPassword, VerifyEmail
 - **OnboardingStack** - Shown after login if onboarding not completed
   - Welcome, Currency, Categories, Budget, SampleData, Complete
-- **AppStack** - Main app with bottom tabs
-  - Dashboard, Transactions, Budgets, Sharing, Settings
+- **AppStack** - Main app with bottom tabs and modals
+  - **Bottom Tabs**: Dashboard, Transactions, Budgets, Sharing, Settings
+  - **Modals**: CreateTransaction (AddTransactionScreen)
+
+## Main App Features
+
+### Transaction Management
+
+#### AddTransactionScreen
+
+Modal screen for creating new transactions with comprehensive form:
+
+**Features:**
+- Transaction type selector (Income/Expense) with visual feedback
+- Amount input with currency symbol display (USD: $, EUR: €, ILS: ₪)
+- Category selector with color-coded chips (filtered by transaction type)
+- Date selector with quick options:
+  - Today
+  - Yesterday
+  - Custom date picker (last 7 days)
+- Optional description field (max 200 characters)
+- Real-time form validation
+- Transaction preview before submission
+- Loading states and error handling
+
+**Access:**
+- FAB (Floating Action Button) on Dashboard screen
+- `+ Add` button on Transactions screen
+
+**Navigation:**
+- Presented as modal with slide-from-bottom animation
+- Cancel button returns to previous screen
+- Auto-dismisses on successful creation
+
+**Validation:**
+- Amount: Required, positive, max 2 decimals, max value 999,999,999.99
+- Description: Optional, max 200 chars, XSS prevention
+- Category: Required
+- Date: Required, not in future, within 10 years
+
+**Integration:**
+- Uses `POST /api/v1/transactions` endpoint
+- Syncs with transactions store on success
+- Updates dashboard and transaction list automatically
+
+### Validation Utilities
+
+The `lib/validation.ts` module provides client-side validation for all forms:
+
+**Transaction Validation:**
+- `validateTransactionAmount(amount: string)` - Amount validation
+- `validateTransactionDescription(description: string)` - Description validation with XSS prevention
+- `validateTransactionCategory(categoryId: string | null)` - Category selection validation
+- `validateTransactionDate(date: Date | null)` - Date validation
+
+**Auth Validation:**
+- `validateEmail(email: string)` - Email format validation
+- `validatePassword(password: string)` - Password strength validation
+- `validatePasswordMatch(password: string, confirmPassword: string)` - Password confirmation
