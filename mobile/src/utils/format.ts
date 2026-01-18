@@ -50,6 +50,8 @@ export function formatSignedCurrency(
   type: 'INCOME' | 'EXPENSE',
   currency: Currency = 'USD'
 ): string {
-  const formatted = formatCurrency(amount, currency);
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const absAmount = isNaN(numAmount) ? 0 : Math.abs(numAmount);
+  const formatted = formatCurrency(absAmount, currency);
   return type === 'INCOME' ? `+${formatted}` : `-${formatted}`;
 }

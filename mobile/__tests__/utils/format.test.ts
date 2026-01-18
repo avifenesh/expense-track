@@ -1,131 +1,137 @@
 import { formatCurrency, formatSignedCurrency } from '../../src/utils/format';
 
-describe('format utilities', () => {
-  describe('formatCurrency', () => {
-    it('formats USD correctly', () => {
-      const result = formatCurrency(1234.56, 'USD');
-
-      expect(result).toBe('$1,234.56');
+describe('formatCurrency', () => {
+  describe('USD formatting', () => {
+    it('formats whole numbers', () => {
+      expect(formatCurrency(100, 'USD')).toBe('$100.00');
     });
 
-    it('formats EUR correctly', () => {
-      const result = formatCurrency(1234.56, 'EUR');
-
-      // EUR formatting may vary by locale implementation
-      expect(result).toContain('1');
-      expect(result).toContain('234');
-      expect(result).toMatch(/€/);
+    it('formats decimal amounts', () => {
+      expect(formatCurrency(99.99, 'USD')).toBe('$99.99');
     });
 
-    it('formats ILS correctly', () => {
-      const result = formatCurrency(1234.56, 'ILS');
-
-      expect(result).toContain('1');
-      expect(result).toContain('234');
-      expect(result).toMatch(/₪/);
+    it('formats large amounts with commas', () => {
+      expect(formatCurrency(1234567.89, 'USD')).toBe('$1,234,567.89');
     });
 
-    it('handles string amount input', () => {
-      const result = formatCurrency('1234.56', 'USD');
-
-      expect(result).toBe('$1,234.56');
+    it('formats string amounts', () => {
+      expect(formatCurrency('50.00', 'USD')).toBe('$50.00');
     });
 
-    it('handles zero amount', () => {
-      const result = formatCurrency(0, 'USD');
-
-      expect(result).toBe('$0.00');
-    });
-
-    it('handles large amounts', () => {
-      const result = formatCurrency(1000000.99, 'USD');
-
-      expect(result).toBe('$1,000,000.99');
-    });
-
-    it('handles decimal precision', () => {
-      const result = formatCurrency(10.1, 'USD');
-
-      expect(result).toBe('$10.10');
+    it('handles zero', () => {
+      expect(formatCurrency(0, 'USD')).toBe('$0.00');
     });
 
     it('handles negative amounts', () => {
-      const result = formatCurrency(-50.25, 'USD');
-
-      // Different environments may format negative currency differently
-      // e.g., "-$50.25" or "($50.25)" or "$-50.25"
-      expect(result).toContain('50.25');
-      expect(result).toContain('$');
-    });
-
-    it('defaults to USD when no currency provided', () => {
-      const result = formatCurrency(100);
-
-      expect(result).toBe('$100.00');
-    });
-
-    it('handles NaN input gracefully', () => {
-      const result = formatCurrency('invalid', 'USD');
-
-      expect(result).toBe('$0.00');
-    });
-
-    it('handles empty string input', () => {
-      const result = formatCurrency('', 'USD');
-
-      expect(result).toBe('$0.00');
+      expect(formatCurrency(-50, 'USD')).toBe('-$50.00');
     });
   });
 
-  describe('formatSignedCurrency', () => {
-    it('adds plus sign for INCOME', () => {
-      const result = formatSignedCurrency(100, 'INCOME', 'USD');
-
-      expect(result).toBe('+$100.00');
+  describe('EUR formatting', () => {
+    it('formats with Euro symbol', () => {
+      const result = formatCurrency(100, 'EUR');
+      expect(result).toMatch(/€/);
+      expect(result).toMatch(/100/);
     });
 
-    it('adds minus sign for EXPENSE', () => {
-      const result = formatSignedCurrency(100, 'EXPENSE', 'USD');
+    it('formats large amounts with proper grouping', () => {
+      const result = formatCurrency(1234567.89, 'EUR');
+      expect(result).toMatch(/€/);
+      expect(result).toMatch(/1.*234.*567/);
+    });
+  });
 
-      expect(result).toBe('-$100.00');
+  describe('ILS formatting', () => {
+    it('formats with Shekel symbol', () => {
+      const result = formatCurrency(100, 'ILS');
+      expect(result).toMatch(/₪/);
+      expect(result).toMatch(/100/);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('defaults to USD when no currency provided', () => {
+      expect(formatCurrency(100)).toBe('$100.00');
     });
 
-    it('handles string amounts', () => {
-      const result = formatSignedCurrency('250.50', 'INCOME', 'USD');
-
-      expect(result).toBe('+$250.50');
+    it('handles NaN by returning zero', () => {
+      expect(formatCurrency(NaN, 'USD')).toBe('$0.00');
     });
 
-    it('works with different currencies for income', () => {
+    it('handles invalid string amounts', () => {
+      expect(formatCurrency('invalid', 'USD')).toBe('$0.00');
+    });
+
+    it('handles empty string', () => {
+      expect(formatCurrency('', 'USD')).toBe('$0.00');
+    });
+  });
+});
+
+describe('formatSignedCurrency', () => {
+  describe('INCOME transactions', () => {
+    it('adds + prefix for income', () => {
+      expect(formatSignedCurrency(100, 'INCOME', 'USD')).toBe('+$100.00');
+    });
+
+    it('formats large income amounts', () => {
+      expect(formatSignedCurrency(1000, 'INCOME', 'USD')).toBe('+$1,000.00');
+    });
+
+    it('formats income with EUR', () => {
       const result = formatSignedCurrency(100, 'INCOME', 'EUR');
-
       expect(result).toMatch(/^\+/);
       expect(result).toMatch(/€/);
     });
+  });
 
-    it('works with different currencies for expense', () => {
+  describe('EXPENSE transactions', () => {
+    it('adds - prefix for expense', () => {
+      expect(formatSignedCurrency(50, 'EXPENSE', 'USD')).toBe('-$50.00');
+    });
+
+    it('formats large expense amounts', () => {
+      expect(formatSignedCurrency(1000, 'EXPENSE', 'USD')).toBe('-$1,000.00');
+    });
+
+    it('formats expense with ILS', () => {
       const result = formatSignedCurrency(100, 'EXPENSE', 'ILS');
-
       expect(result).toMatch(/^-/);
       expect(result).toMatch(/₪/);
     });
+  });
 
-    it('defaults to USD', () => {
-      const result = formatSignedCurrency(100, 'INCOME');
-
-      expect(result).toBe('+$100.00');
+  describe('edge cases', () => {
+    it('handles zero income', () => {
+      expect(formatSignedCurrency(0, 'INCOME', 'USD')).toBe('+$0.00');
     });
 
-    it('handles zero amounts for income', () => {
-      const result = formatSignedCurrency(0, 'INCOME', 'USD');
-
-      expect(result).toBe('+$0.00');
+    it('handles zero expense', () => {
+      expect(formatSignedCurrency(0, 'EXPENSE', 'USD')).toBe('-$0.00');
     });
 
-    it('handles zero amounts for expense', () => {
-      const result = formatSignedCurrency(0, 'EXPENSE', 'USD');
+    it('handles string amounts for income', () => {
+      expect(formatSignedCurrency('250.50', 'INCOME', 'USD')).toBe('+$250.50');
+    });
 
-      expect(result).toBe('-$0.00');
+    it('handles string amounts for expense', () => {
+      expect(formatSignedCurrency('75.25', 'EXPENSE', 'USD')).toBe('-$75.25');
+    });
+
+    it('defaults to USD when currency not provided', () => {
+      expect(formatSignedCurrency(100, 'INCOME')).toBe('+$100.00');
+    });
+
+    it('handles negative amounts for expense (normalizes to absolute)', () => {
+      expect(formatSignedCurrency(-50, 'EXPENSE', 'USD')).toBe('-$50.00');
+    });
+
+    it('handles negative amounts for income (normalizes to absolute)', () => {
+      expect(formatSignedCurrency(-100, 'INCOME', 'USD')).toBe('+$100.00');
+    });
+
+    it('handles negative string amounts', () => {
+      expect(formatSignedCurrency('-75.25', 'EXPENSE', 'USD')).toBe('-$75.25');
     });
   });
 });

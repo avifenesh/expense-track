@@ -70,30 +70,39 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch accounts on mount if not loaded
   useEffect(() => {
-    if (accounts.length === 0) {
-      fetchAccounts();
+    async function init() {
+      if (accounts.length === 0) {
+        await fetchAccounts();
+      }
     }
+    init();
   }, [accounts.length, fetchAccounts]);
 
-  // Derive accountId to load - this triggers data fetch when account changes
-  const accountIdToLoad = selectedAccountId || accounts[0]?.id;
-
   useEffect(() => {
-    if (accountIdToLoad) {
-      setFilters({ accountId: accountIdToLoad });
-      fetchTransactions(true);
+    async function loadTransactions() {
+      if (selectedAccountId) {
+        setFilters({ accountId: selectedAccountId });
+        await fetchTransactions(true);
+      }
     }
-  }, [accountIdToLoad, setFilters, fetchTransactions]);
+    loadTransactions();
+  }, [selectedAccountId, fetchTransactions, setFilters]);
 
   const handleFilterChange = useCallback(
     async (type: FilterType) => {
+      const accountId = selectedAccountId || accounts[0]?.id;
+      if (!accountId) {
+        return;
+      }
       setFilterType(type);
-      setFilters({ type: type === 'all' ? undefined : type });
+      setFilters({
+        accountId,
+        type: type === 'all' ? undefined : type,
+      });
       await fetchTransactions(true);
     },
-    [setFilters, fetchTransactions]
+    [setFilters, fetchTransactions, selectedAccountId, accounts]
   );
 
   const handleRefresh = useCallback(async () => {

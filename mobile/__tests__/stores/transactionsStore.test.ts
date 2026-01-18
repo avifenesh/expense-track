@@ -176,6 +176,53 @@ describe('transactionsStore', () => {
 
       expect(mockApiGet).not.toHaveBeenCalled();
     });
+
+    it('uses correct offset for pagination', async () => {
+      mockApiGet
+        .mockResolvedValueOnce({
+          transactions: [{ ...mockTransaction, id: 'tx-1' }],
+          total: 100,
+          hasMore: true,
+        })
+        .mockResolvedValueOnce({
+          transactions: [{ ...mockTransaction, id: 'tx-2' }],
+          total: 100,
+          hasMore: true,
+        });
+
+      useTransactionsStore.getState().setFilters({ accountId: 'acc-1' });
+      await useTransactionsStore.getState().fetchTransactions();
+
+      expect(mockApiGet).toHaveBeenLastCalledWith(
+        expect.stringContaining('offset=0'),
+        'test-token'
+      );
+
+      await useTransactionsStore.getState().fetchMoreTransactions();
+
+      expect(mockApiGet).toHaveBeenLastCalledWith(
+        expect.stringContaining('offset=50'),
+        'test-token'
+      );
+
+      expect(useTransactionsStore.getState().offset).toBe(50);
+    });
+
+    it('reverts offset on failed pagination', async () => {
+      mockApiGet
+        .mockResolvedValueOnce({
+          transactions: [{ ...mockTransaction, id: 'tx-1' }],
+          total: 100,
+          hasMore: true,
+        })
+        .mockRejectedValueOnce(new ApiError('Network error', 'NETWORK_ERROR', 0));
+
+      useTransactionsStore.getState().setFilters({ accountId: 'acc-1' });
+      await useTransactionsStore.getState().fetchTransactions();
+      await useTransactionsStore.getState().fetchMoreTransactions();
+
+      expect(useTransactionsStore.getState().offset).toBe(0);
+    });
   });
 
   describe('createTransaction', () => {
