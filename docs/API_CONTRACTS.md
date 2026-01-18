@@ -815,32 +815,6 @@ Retrieves all sharing data for the authenticated user including expenses they sh
 
 ---
 
-### PATCH /api/v1/sharing/[participantId]/paid
-
-Mark a participant's share as paid (owner only).
-
-**Auth:** Bearer token required
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "clx...",
-    "status": "PAID",
-    "paidAt": "2024-01-16T14:00:00Z"
-  }
-}
-```
-
-**Errors:**
-- 401: Unauthorized - Invalid or missing auth token
-- 403: Forbidden - Only the expense owner can mark payments
-- 404: Not found - Participant not found
-- 429: Rate limited - Too many requests
-
----
-
 ### GET /api/v1/expenses/shared-by-me
 
 List expenses shared by the authenticated user with others. Supports filtering by status and pagination.
@@ -1048,6 +1022,43 @@ Decline a shared expense assigned to you.
 - 400: Validation error - Share is not in PENDING status (already paid or declined), or reason is not a string
 - 401: Unauthorized - Invalid or missing auth token
 - 403: Forbidden - You can only decline shares assigned to you
+- 404: Not found - Participant not found
+- 429: Rate limited - Too many requests
+
+---
+
+### PATCH /api/v1/expenses/shares/[participantId]/paid
+
+Mark a participant's share as paid (owner only).
+
+**Auth:** Bearer token required
+
+**Authorization:** Only the expense owner can mark payments as received. Participants cannot mark their own shares as paid.
+
+**Status Requirements:** Share must be in PENDING status. Cannot mark shares that are already PAID or DECLINED.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "PAID",
+    "paidAt": "2024-01-16T14:00:00.000Z"
+  }
+}
+```
+
+**Response Fields:**
+- `id`: The participant ID
+- `status`: Always "PAID" on success
+- `paidAt`: Payment confirmation timestamp
+
+**Errors:**
+- 400: Validation error - Share is not in PENDING status (already paid or declined)
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - Only the expense owner can mark payments
 - 404: Not found - Participant not found
 - 429: Rate limited - Too many requests
 

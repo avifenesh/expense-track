@@ -189,7 +189,7 @@ describe('sharingStore', () => {
       const result = await useSharingStore.getState().markParticipantPaid('part-1');
 
       expect(mockApiPatch).toHaveBeenCalledWith(
-        '/sharing/part-1/paid',
+        '/expenses/shares/part-1/paid',
         {},
         'test-token'
       );

@@ -169,7 +169,7 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
 
     try {
       const response = await apiPatch<MarkPaidResponse>(
-        `/sharing/${participantId}/paid`,
+        `/expenses/shares/${participantId}/paid`,
         {},
         accessToken
       );

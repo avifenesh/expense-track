@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET as GetSharing } from '@/app/api/v1/sharing/route'
-import { PATCH as MarkPaid } from '@/app/api/v1/sharing/[participantId]/paid/route'
 import { POST as DeclineShare } from '@/app/api/v1/expenses/shares/[participantId]/decline/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
@@ -190,90 +189,6 @@ describe('Sharing API Routes', () => {
 
       const response = await GetSharing(request)
       expect(response.status).toBe(401)
-    })
-  })
-
-  describe('PATCH /api/v1/sharing/[participantId]/paid', () => {
-    it('marks participant as paid when called by owner', async () => {
-      const request = new NextRequest(`http://localhost/api/v1/sharing/${participantId}/paid`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${validToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      })
-
-      const response = await MarkPaid(request, { params: Promise.resolve({ participantId }) })
-      const data = await response.json()
-
-      expect(response.status).toBe(200)
-      expect(data.success).toBe(true)
-      expect(data.data.id).toBe(participantId)
-      expect(data.data.status).toBe('PAID')
-      expect(data.data.paidAt).toBeTruthy()
-    })
-
-    it('returns 403 when called by non-owner', async () => {
-      // Other user (participant) tries to mark themselves as paid
-      const request = new NextRequest(`http://localhost/api/v1/sharing/${participantId}/paid`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${otherToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      })
-
-      const response = await MarkPaid(request, { params: Promise.resolve({ participantId }) })
-      expect(response.status).toBe(403)
-    })
-
-    it('returns 404 for non-existent participant', async () => {
-      const request = new NextRequest('http://localhost/api/v1/sharing/non-existent-id/paid', {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${validToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      })
-
-      const response = await MarkPaid(request, { params: Promise.resolve({ participantId: 'non-existent-id' }) })
-      expect(response.status).toBe(404)
-    })
-
-    it('returns 401 with missing token', async () => {
-      const request = new NextRequest(`http://localhost/api/v1/sharing/${participantId}/paid`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-
-      const response = await MarkPaid(request, { params: Promise.resolve({ participantId }) })
-      expect(response.status).toBe(401)
-    })
-
-    it('persists paid status in database', async () => {
-      const request = new NextRequest(`http://localhost/api/v1/sharing/${participantId}/paid`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${validToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      })
-
-      await MarkPaid(request, { params: Promise.resolve({ participantId }) })
-
-      // Verify in database
-      const participant = await prisma.expenseParticipant.findUnique({
-        where: { id: participantId },
-      })
-
-      expect(participant).toBeDefined()
-      expect(participant?.status).toBe(PaymentStatus.PAID)
-      expect(participant?.paidAt).toBeTruthy()
     })
   })
 
