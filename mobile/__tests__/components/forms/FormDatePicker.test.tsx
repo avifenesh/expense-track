@@ -90,7 +90,7 @@ describe('FormDatePicker', () => {
           onChange={() => {}}
         />
       );
-      expect(screen.getByText('📅')).toBeTruthy();
+      expect(screen.getByText('\u{1F4C5}')).toBeTruthy();
     });
   });
 

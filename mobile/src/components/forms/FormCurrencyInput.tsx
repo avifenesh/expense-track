@@ -38,10 +38,10 @@ export interface FormCurrencyInputProps extends Omit<TextInputProps, 'style' | '
   minValue?: number;
 }
 
-const CURRENCY_CONFIG: Record<CurrencyCode, { symbol: string; decimalPlaces: number; locale: string }> = {
-  USD: { symbol: '$', decimalPlaces: 2, locale: 'en-US' },
-  EUR: { symbol: '€', decimalPlaces: 2, locale: 'de-DE' },
-  ILS: { symbol: '₪', decimalPlaces: 2, locale: 'he-IL' },
+const CURRENCY_CONFIG: Record<CurrencyCode, { symbol: string; decimalPlaces: number }> = {
+  USD: { symbol: '$', decimalPlaces: 2 },
+  EUR: { symbol: '€', decimalPlaces: 2 },
+  ILS: { symbol: '₪', decimalPlaces: 2 },
 };
 
 const COLORS = {
@@ -61,7 +61,7 @@ const COLORS = {
  * Formats a value in cents to display string (e.g., 1234 -> "12.34")
  */
 function formatCentsToDisplay(cents: number | null, decimalPlaces: number): string {
-  if (cents === null || cents === undefined) return '';
+  if (cents === null) return '';
   const divisor = Math.pow(10, decimalPlaces);
   const value = cents / divisor;
   return value.toFixed(decimalPlaces);
@@ -170,20 +170,20 @@ export const FormCurrencyInput = forwardRef<TextInput, FormCurrencyInputProps>(
           }
         }
 
-        setDisplayValue(sanitized);
-
         const cents = parseDisplayToCents(sanitized, config.decimalPlaces);
 
-        // Apply min/max constraints
+        // Apply min/max constraints - reject input that violates them
         if (cents !== null) {
           if (maxValue !== undefined && cents > maxValue) {
-            return; // Don't allow value exceeding max
+            return; // Don't update display or value when exceeding max
           }
           if (minValue !== undefined && cents < minValue) {
-            return; // Don't allow value below min
+            return; // Don't update display or value when below min
           }
         }
 
+        // Only update display after all validations pass
+        setDisplayValue(sanitized);
         onChangeValue(cents);
       },
       [allowNegative, config.decimalPlaces, maxValue, minValue, onChangeValue]

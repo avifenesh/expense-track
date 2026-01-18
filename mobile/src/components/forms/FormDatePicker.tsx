@@ -161,11 +161,6 @@ export function FormDatePicker({
     ? formatDate(value, mode, formatOptions)
     : placeholder;
 
-  const getPickerMode = (): 'date' | 'time' | 'datetime' => {
-    // On Android, datetime mode needs to be handled separately
-    return mode;
-  };
-
   const renderIOSPicker = () => {
     if (Platform.OS !== 'ios') return null;
 
@@ -206,7 +201,7 @@ export function FormDatePicker({
             <View style={styles.pickerContainer}>
               <DateTimePicker
                 value={tempDate || new Date()}
-                mode={getPickerMode()}
+                mode={mode}
                 display="spinner"
                 onChange={handleDateChange}
                 minimumDate={minimumDate}
@@ -239,7 +234,7 @@ export function FormDatePicker({
     return (
       <DateTimePicker
         value={tempDate || new Date()}
-        mode={getPickerMode()}
+        mode={mode}
         onChange={handleDateChange}
         minimumDate={minimumDate}
         maximumDate={maximumDate}
@@ -270,7 +265,7 @@ export function FormDatePicker({
         >
           {displayText}
         </Text>
-        <Text style={[styles.icon, disabled && styles.textDisabled]}>📅</Text>
+        <Text style={[styles.icon, disabled && styles.textDisabled]}>{'\u{1F4C5}'}</Text>
       </Pressable>
 
       {hasError && (
