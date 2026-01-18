@@ -44,21 +44,13 @@ const COLORS = {
 };
 
 interface MonthSelectorProps {
-  /** Currently selected month in YYYY-MM format */
   selectedMonth: string;
-  /** Callback when month changes */
   onMonthChange: (month: string) => void;
-  /** Disable all interactions */
   disabled?: boolean;
-  /** Minimum selectable month in YYYY-MM format */
   minMonth?: string;
-  /** Maximum selectable month in YYYY-MM format (default: current month) */
   maxMonth?: string;
-  /** Allow selection of future months (removes default max restriction) */
   allowFutureMonths?: boolean;
-  /** Number of years to show in the picker (default: 5) */
   yearRange?: number;
-  /** Test ID for testing */
   testID?: string;
 }
 
@@ -77,7 +69,6 @@ export function MonthSelector({
     getYearFromMonthKey(selectedMonth)
   );
 
-  // Compute effective max month
   const effectiveMaxMonth = useMemo(() => {
     if (allowFutureMonths && !maxMonth) {
       return undefined;
@@ -85,7 +76,6 @@ export function MonthSelector({
     return maxMonth || getMonthKey(new Date());
   }, [allowFutureMonths, maxMonth]);
 
-  // Compute navigation button disabled states
   const isPrevDisabled = useMemo(() => {
     if (disabled) return true;
     if (!minMonth) return false;
@@ -100,7 +90,6 @@ export function MonthSelector({
     return isMonthAfter(nextMonth, effectiveMaxMonth);
   }, [disabled, effectiveMaxMonth, selectedMonth]);
 
-  // Compute year range for picker
   const { minYear, maxYear } = useMemo(() => {
     const currentYear = new Date().getFullYear();
     let min = currentYear - yearRange;
