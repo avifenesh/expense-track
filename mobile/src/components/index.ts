@@ -3,6 +3,8 @@ export { DateSectionHeader } from './DateSectionHeader';
 export { TransactionListItem } from './TransactionListItem';
 export { MonthSelector } from './MonthSelector';
 export { BudgetProgressCard } from './BudgetProgressCard';
+export { BudgetCategoryCard } from './BudgetCategoryCard';
+export type { BudgetCategoryCardProps } from './BudgetCategoryCard';
 
 // Form Components
 export {

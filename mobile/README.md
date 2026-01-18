@@ -51,7 +51,7 @@ __tests__/
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
-    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction)
+    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, Budgets)
   services/        # Service tests (api, auth)
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories)
 ```
@@ -66,7 +66,7 @@ src/
   screens/      # Screen components
     auth/       # Authentication screens (Login, Register, ResetPassword, VerifyEmail)
     onboarding/ # Onboarding flow screens
-    main/       # Main app screens (Dashboard, Transactions, AddTransaction)
+    main/       # Main app screens (Dashboard, Transactions, AddTransaction, Budgets)
   hooks/        # Custom React hooks (useAuthState)
   navigation/   # React Navigation setup
     types.ts    # Navigation type definitions
@@ -81,6 +81,51 @@ src/
   types/        # TypeScript definitions
   constants/    # App constants
 ```
+
+## UI Components
+
+The mobile app includes reusable UI components for building consistent interfaces. All components follow the dark theme design system with sky blue (#38bdf8) accents.
+
+### BudgetCategoryCard
+
+A card component displaying budget information for a specific category with visual progress indication.
+
+```tsx
+import { BudgetCategoryCard } from '@/components';
+
+<BudgetCategoryCard
+  categoryName="Food & Dining"
+  categoryColor="#4CAF50"
+  planned={500}
+  spent={350}
+  currency="USD"
+  onPress={() => console.log('Category tapped')}
+/>
+```
+
+**Props:**
+- `categoryName` - Category display name
+- `categoryColor` - Hex color for category indicator dot
+- `planned` - Planned budget amount (in major currency units)
+- `spent` - Amount spent so far (in major currency units)
+- `currency` - Currency code (USD | EUR | ILS)
+- `onPress` - Optional press handler (makes card tappable)
+
+**Features:**
+- Visual progress bar showing spent vs planned
+- Over-budget indication with red color when spent exceeds planned
+- Currency-aware formatting
+- Accessible with screen reader support
+- Optional tap interaction
+
+### Other UI Components
+
+- **MonthSelector** - Month navigation with previous/next controls
+- **BudgetProgressCard** - Overall budget summary card
+- **EmptyState** - Empty state placeholder with title and message
+- **TransactionListItem** - Transaction row with category color
+- **DateSectionHeader** - Date section divider for grouped lists
+
 
 ## Form Components
 
