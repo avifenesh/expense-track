@@ -857,13 +857,15 @@ Share an expense with other users.
 
 ---
 
-### POST /api/v1/expenses/shares/[participantId]/decline (PLANNED)
+### POST /api/v1/expenses/shares/[participantId]/decline
 
-> ⚠️ **Not yet implemented.** Planned for future release.
-
-Decline a shared expense.
+Decline a shared expense assigned to you.
 
 **Auth:** Bearer token required
+
+**Authorization:** Only the participant (assignee) can decline their own share. The expense owner cannot decline on behalf of participants.
+
+**Status Requirements:** Share must be in PENDING status. Cannot decline shares that are already PAID or DECLINED.
 
 **Response (200):**
 ```json
@@ -875,6 +877,13 @@ Decline a shared expense.
   }
 }
 ```
+
+**Errors:**
+- 400: Validation error - Share is not in PENDING status (already paid or declined)
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - You can only decline shares assigned to you
+- 404: Not found - Participant not found
+- 429: Rate limited - Too many requests
 
 ---
 
