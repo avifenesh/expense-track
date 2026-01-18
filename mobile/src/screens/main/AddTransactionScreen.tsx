@@ -10,9 +10,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import type { AppStackScreenProps } from '../../navigation/types';
 import {
   useAccountsStore,
@@ -108,16 +108,35 @@ export function AddTransactionScreen({
     setErrors((prev) => ({ ...prev, categoryId: undefined }));
   }, []);
 
-  const handleDateChange = useCallback(
-    (_event: unknown, selectedDate?: Date) => {
-      setShowDatePicker(Platform.OS === 'ios');
-      if (selectedDate) {
-        setDate(selectedDate);
-        setErrors((prev) => ({ ...prev, date: undefined }));
-      }
-    },
-    []
-  );
+  const handleDateSelect = useCallback((selectedDate: Date) => {
+    setDate(selectedDate);
+    setShowDatePicker(false);
+    setErrors((prev) => ({ ...prev, date: undefined }));
+  }, []);
+
+  const getYesterday = useCallback(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday;
+  }, []);
+
+  const isToday = useCallback((d: Date) => {
+    const today = new Date();
+    return (
+      d.getDate() === today.getDate() &&
+      d.getMonth() === today.getMonth() &&
+      d.getFullYear() === today.getFullYear()
+    );
+  }, []);
+
+  const isYesterday = useCallback((d: Date) => {
+    const yesterday = getYesterday();
+    return (
+      d.getDate() === yesterday.getDate() &&
+      d.getMonth() === yesterday.getMonth() &&
+      d.getFullYear() === yesterday.getFullYear()
+    );
+  }, [getYesterday]);
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
@@ -358,30 +377,129 @@ export function AddTransactionScreen({
             )}
           </View>
 
-          {/* Date Picker */}
+          {/* Date Selector */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Date</Text>
-            <Pressable
-              style={[styles.dateButton, errors.date && styles.inputError]}
-              onPress={() => setShowDatePicker(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Select date"
-              accessibilityHint={`Current date is ${formatDateDisplay(date)}`}
-            >
-              <Text style={styles.dateText}>{formatDateDisplay(date)}</Text>
-            </Pressable>
+            <View style={styles.dateRow}>
+              <Pressable
+                style={[
+                  styles.dateChip,
+                  isToday(date) && styles.dateChipActive,
+                ]}
+                onPress={() => handleDateSelect(new Date())}
+                accessibilityRole="button"
+                accessibilityLabel="Today"
+                accessibilityState={{ selected: isToday(date) }}
+              >
+                <Text
+                  style={[
+                    styles.dateChipText,
+                    isToday(date) && styles.dateChipTextActive,
+                  ]}
+                >
+                  Today
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.dateChip,
+                  isYesterday(date) && styles.dateChipActive,
+                ]}
+                onPress={() => handleDateSelect(getYesterday())}
+                accessibilityRole="button"
+                accessibilityLabel="Yesterday"
+                accessibilityState={{ selected: isYesterday(date) }}
+              >
+                <Text
+                  style={[
+                    styles.dateChipText,
+                    isYesterday(date) && styles.dateChipTextActive,
+                  ]}
+                >
+                  Yesterday
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.dateChip,
+                  !isToday(date) && !isYesterday(date) && styles.dateChipActive,
+                ]}
+                onPress={() => setShowDatePicker(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Select custom date"
+              >
+                <Text
+                  style={[
+                    styles.dateChipText,
+                    !isToday(date) && !isYesterday(date) && styles.dateChipTextActive,
+                  ]}
+                >
+                  {!isToday(date) && !isYesterday(date)
+                    ? formatDateDisplay(date)
+                    : 'Other'}
+                </Text>
+              </Pressable>
+            </View>
             {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleDateChange}
-                maximumDate={new Date()}
-                themeVariant="dark"
-              />
-            )}
           </View>
+
+          {/* Date Picker Modal */}
+          <Modal
+            visible={showDatePicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowDatePicker(false)}
+          >
+            <Pressable
+              style={styles.modalOverlay}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <View style={styles.datePickerModal}>
+                <Text style={styles.datePickerTitle}>Select Date</Text>
+                <View style={styles.datePickerContent}>
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    return (
+                      <Pressable
+                        key={i}
+                        style={[
+                          styles.datePickerOption,
+                          date.toDateString() === d.toDateString() &&
+                            styles.datePickerOptionActive,
+                        ]}
+                        onPress={() => handleDateSelect(d)}
+                      >
+                        <Text
+                          style={[
+                            styles.datePickerOptionText,
+                            date.toDateString() === d.toDateString() &&
+                              styles.datePickerOptionTextActive,
+                          ]}
+                        >
+                          {i === 0
+                            ? 'Today'
+                            : i === 1
+                              ? 'Yesterday'
+                              : d.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <Pressable
+                  style={styles.datePickerClose}
+                  onPress={() => setShowDatePicker(false)}
+                >
+                  <Text style={styles.datePickerCloseText}>Cancel</Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Modal>
 
           {/* Description Input */}
           <View style={styles.section}>
@@ -615,17 +733,82 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  dateButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+  dateRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  dateChip: {
+    flex: 1,
+    paddingVertical: 14,
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  dateText: {
-    fontSize: 16,
+  dateChipActive: {
+    backgroundColor: 'rgba(56,189,248,0.15)',
+    borderColor: '#38bdf8',
+  },
+  dateChipText: {
+    fontSize: 14,
+    color: '#94a3b8',
+  },
+  dateChipTextActive: {
     color: '#fff',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  datePickerModal: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    width: '85%',
+    maxWidth: 360,
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  datePickerContent: {
+    gap: 8,
+  },
+  datePickerOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  datePickerOptionActive: {
+    backgroundColor: 'rgba(56,189,248,0.2)',
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+  },
+  datePickerOptionText: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+  },
+  datePickerOptionTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  datePickerClose: {
+    marginTop: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  datePickerCloseText: {
+    fontSize: 16,
+    color: '#38bdf8',
   },
   descriptionInput: {
     backgroundColor: 'rgba(255,255,255,0.05)',
