@@ -89,6 +89,8 @@ describe('POST /api/chat', () => {
     description: null,
     deletedAt: null,
     deletedBy: null,
+    defaultIncomeGoal: null,
+    defaultIncomeGoalCurrency: null,
   }
 
   beforeEach(() => {

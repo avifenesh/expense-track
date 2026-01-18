@@ -24,6 +24,8 @@ const mockAccounts = [
     updatedAt: new Date(),
     deletedAt: null,
     deletedBy: null,
+    defaultIncomeGoal: null,
+    defaultIncomeGoalCurrency: null,
   },
   {
     id: 'acc-secondary',
@@ -38,6 +40,8 @@ const mockAccounts = [
     updatedAt: new Date(),
     deletedAt: null,
     deletedBy: null,
+    defaultIncomeGoal: null,
+    defaultIncomeGoalCurrency: null,
   },
 ]
 

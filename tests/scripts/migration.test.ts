@@ -74,6 +74,8 @@ function createMockAccount(overrides: Partial<{
     updatedAt: new Date(),
     deletedAt: null,
     deletedBy: null,
+    defaultIncomeGoal: null,
+    defaultIncomeGoalCurrency: null,
   }
 }
 

@@ -150,6 +150,8 @@ function mockAccount(partial: Partial<Account>): Account {
     updatedAt: partial.updatedAt ?? new Date(),
     deletedAt: partial.deletedAt ?? null,
     deletedBy: partial.deletedBy ?? null,
+    defaultIncomeGoal: partial.defaultIncomeGoal ?? null,
+    defaultIncomeGoalCurrency: partial.defaultIncomeGoalCurrency ?? null,
   }
 }
 
