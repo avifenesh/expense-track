@@ -2,7 +2,7 @@ import type { Currency } from '../types';
 
 const currencyFormats: Record<Currency, { locale: string; currency: string }> = {
   USD: { locale: 'en-US', currency: 'USD' },
-  EUR: { locale: 'en-EU', currency: 'EUR' },
+  EUR: { locale: 'de-DE', currency: 'EUR' },
   ILS: { locale: 'he-IL', currency: 'ILS' },
 };
 

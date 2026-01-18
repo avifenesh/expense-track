@@ -69,7 +69,6 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
   } = useAccountsStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -82,23 +81,25 @@ export function TransactionsScreen(_props: MainTabScreenProps<'Transactions'>) {
 
   useEffect(() => {
     async function loadTransactions() {
-      const accountId = selectedAccountId || accounts[0]?.id;
-      if (accountId && !isInitialized) {
-        setFilters({ accountId });
+      if (selectedAccountId) {
+        setFilters({ accountId: selectedAccountId });
         await fetchTransactions(true);
-        setIsInitialized(true);
       }
     }
     loadTransactions();
-  }, [selectedAccountId, accounts, fetchTransactions, setFilters, isInitialized]);
+  }, [selectedAccountId, fetchTransactions, setFilters]);
 
   const handleFilterChange = useCallback(
     async (type: FilterType) => {
+      const accountId = selectedAccountId || accounts[0]?.id;
       setFilterType(type);
-      setFilters({ type: type === 'all' ? undefined : type });
+      setFilters({
+        accountId,
+        type: type === 'all' ? undefined : type,
+      });
       await fetchTransactions(true);
     },
-    [setFilters, fetchTransactions]
+    [setFilters, fetchTransactions, selectedAccountId, accounts]
   );
 
   const handleRefresh = useCallback(async () => {

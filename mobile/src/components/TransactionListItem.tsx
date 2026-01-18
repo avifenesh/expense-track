@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { Transaction } from '../stores';
-import { formatCurrency } from '../utils/format';
+import { formatSignedCurrency } from '../utils/format';
 import { formatDateShort } from '../utils/date';
 
 interface TransactionListItemProps {
@@ -13,10 +13,9 @@ export function TransactionListItem({
   transaction,
   onPress,
 }: TransactionListItemProps) {
-  const isIncome = transaction.type === 'INCOME';
-  const amountColor = isIncome ? '#22c55e' : '#ef4444';
-  const amountPrefix = isIncome ? '+' : '-';
+  const amountColor = transaction.type === 'INCOME' ? '#22c55e' : '#ef4444';
   const categoryColor = transaction.category?.color || '#64748b';
+  const formattedAmount = formatSignedCurrency(transaction.amount, transaction.type, transaction.currency);
 
   const handlePress = () => {
     onPress?.(transaction);
@@ -32,7 +31,7 @@ export function TransactionListItem({
         <Text style={styles.dateText}>{formatDateShort(transaction.date)}</Text>
       </View>
       <Text style={[styles.amount, { color: amountColor }]}>
-        {amountPrefix}{formatCurrency(transaction.amount, transaction.currency)}
+        {formattedAmount}
       </Text>
     </View>
   );
@@ -43,7 +42,7 @@ export function TransactionListItem({
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${transaction.description || transaction.category?.name}, ${amountPrefix}${formatCurrency(transaction.amount, transaction.currency)}`}
+        accessibilityLabel={`${transaction.description || transaction.category?.name}, ${formattedAmount}`}
       >
         {content}
       </TouchableOpacity>
