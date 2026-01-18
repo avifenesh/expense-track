@@ -1,18 +1,19 @@
 import { NextRequest } from 'next/server'
-import { withApiAuth } from '@/lib/api-middleware'
 import { prisma } from '@/lib/prisma'
+import { withApiAuth } from '@/lib/api-middleware'
+import {
+  successResponse,
+  notFoundError,
+  forbiddenError,
+  validationError,
+} from '@/lib/api-helpers'
 import { PaymentStatus } from '@prisma/client'
-import { successResponse, notFoundError, forbiddenError } from '@/lib/api-helpers'
 import { serverLogger } from '@/lib/server-logger'
 
-interface RouteParams {
-  params: Promise<{
-    participantId: string
-  }>
-}
+type RouteParams = { params: Promise<{ participantId: string }> }
 
 /**
- * PATCH /api/v1/sharing/[participantId]/paid
+ * PATCH /api/v1/expenses/shares/[participantId]/paid
  * Mark a participant's share as paid (owner only).
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
@@ -25,9 +26,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         where: { id: participantId },
         include: {
           sharedExpense: {
-            select: {
-              ownerId: true,
-            },
+            select: { ownerId: true },
           },
         },
       })
@@ -37,20 +36,30 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       if (participant.sharedExpense.ownerId !== user.userId) {
-        return forbiddenError('Only the expense owner can mark payments as received')
+        return forbiddenError(
+          'Only the expense owner can mark payments as received'
+        )
       }
 
-      const now = new Date()
+      if (participant.status !== PaymentStatus.PENDING) {
+        return validationError({
+          status: [
+            `Cannot mark a share as paid that is already ${participant.status.toLowerCase()}`,
+          ],
+        })
+      }
+
+      const paidAt = new Date()
       const updated = await prisma.expenseParticipant.update({
         where: { id: participantId },
         data: {
           status: PaymentStatus.PAID,
-          paidAt: now,
+          paidAt,
         },
       })
 
       serverLogger.info('Marked participant share as paid', {
-        action: 'PATCH /api/v1/sharing/[participantId]/paid',
+        action: 'PATCH /api/v1/expenses/shares/[participantId]/paid',
         userId: user.userId,
         participantId,
       })
@@ -61,6 +70,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         paidAt: updated.paidAt?.toISOString() ?? null,
       })
     },
-    { requireSubscription: true },
+    { requireSubscription: true }
   )
 }
