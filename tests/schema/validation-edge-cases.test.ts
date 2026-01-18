@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { TransactionType, Currency } from '@prisma/client'
 import {
   transactionSchema,
-  transactionUpdateSchema,
   budgetSchema,
   recurringTemplateSchema,
   categorySchema,
   holdingSchema,
-  updateHoldingSchema,
   registrationSchema,
   loginSchema,
   resetPasswordSchema,
