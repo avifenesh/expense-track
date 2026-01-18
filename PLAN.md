@@ -122,6 +122,7 @@ Transform personal finance app into commercial multi-tenant service with mobile 
 ### External Services
 
 - [ ] #34 - Set up email service for transactional emails
+- [ ] Configure SMTP credentials in Railway (SMTP_HOST, SMTP_USER, SMTP_PASS)
 - [ ] #35 - Implement Google OAuth integration
 - [ ] #36 - Implement GitHub OAuth integration
 - [x] #137 - Integrate payment provider for subscriptions (Paddle)
