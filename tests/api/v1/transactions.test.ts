@@ -807,6 +807,7 @@ describe('Transaction API Routes', () => {
 
     it('should reject modification of transactions from another user account', async () => {
       // User B tries to update User A's transaction
+      // Returns 404 (not 403) to avoid revealing resource existence
       const request = new NextRequest(`http://localhost/api/v1/transactions/${userATransactionId}`, {
         method: 'PUT',
         headers: {
@@ -825,18 +826,19 @@ describe('Transaction API Routes', () => {
       })
 
       const response = await UpdateTransaction(request, { params: Promise.resolve({ id: userATransactionId }) })
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(404)
     })
 
     it('should reject deletion of transactions from another user account', async () => {
       // User B tries to delete User A's transaction
+      // Returns 404 (not 403) to avoid revealing resource existence
       const request = new NextRequest(`http://localhost/api/v1/transactions/${userATransactionId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${userBToken}` },
       })
 
       const response = await DeleteTransaction(request, { params: Promise.resolve({ id: userATransactionId }) })
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(404)
 
       // Verify transaction still exists
       const stillExists = await prisma.transaction.findUnique({ where: { id: userATransactionId } })
