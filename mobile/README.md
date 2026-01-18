@@ -118,9 +118,44 @@ import { BudgetCategoryCard } from '@/components';
 - Accessible with screen reader support
 - Optional tap interaction
 
+### MonthSelector
+
+A month navigation component with arrow controls and modal picker for selecting months.
+
+```tsx
+import { MonthSelector } from '@/components';
+
+<MonthSelector
+  selectedMonth="2026-01"
+  onMonthChange={(month) => console.log('Selected:', month)}
+  minMonth="2025-01"
+  maxMonth="2026-12"
+  allowFutureMonths={false}
+  yearRange={5}
+  testID="dashboard-month-selector"
+/>
+```
+
+**Props:**
+- `selectedMonth` - Currently selected month in YYYY-MM format (required)
+- `onMonthChange` - Callback when month changes, receives new month in YYYY-MM format (required)
+- `disabled` - Disable all interactions (default: false)
+- `minMonth` - Minimum selectable month in YYYY-MM format (optional)
+- `maxMonth` - Maximum selectable month in YYYY-MM format (default: current month)
+- `allowFutureMonths` - Allow selection of future months, removes default max restriction (default: false)
+- `yearRange` - Number of years to show in the modal picker (default: 5)
+- `testID` - Test ID for testing library queries (optional)
+
+**Features:**
+- Previous/next arrow buttons for month navigation
+- Tap on month label opens modal picker
+- Modal with year selector and month grid (4 columns x 3 rows)
+- Disabled state for navigation buttons at min/max boundaries
+- Disabled months in grid for out-of-bounds selections
+- Full accessibility support with proper labels, roles, and states
+
 ### Other UI Components
 
-- **MonthSelector** - Month navigation with previous/next controls
 - **BudgetProgressCard** - Overall budget summary card
 - **EmptyState** - Empty state placeholder with title and message
 - **TransactionListItem** - Transaction row with category color

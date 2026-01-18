@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Mobile: MonthSelector component for month navigation (#223)
+  - Previous/next arrow buttons for month navigation
+  - Tap on month label opens modal picker
+  - Modal with year selector and month grid (4 columns x 3 rows)
+  - Support for min/max month boundaries
+  - Optional future month selection with allowFutureMonths prop
+  - Configurable year range for picker
+  - Disabled state for navigation buttons at boundaries
+  - Full accessibility support with proper labels and states
+  - Month utility functions (formatMonthLabel, shiftMonth, compareMonths, etc.)
+  - Comprehensive test suite with 95%+ coverage
 - Mobile: SharingScreen with expense sharing UI (#217)
   - Net balance summary showing overall settlements
   - View expenses shared by you with payment status tracking
