@@ -1,0 +1,84 @@
+# Pull Request Labeler configuration
+# Labels are automatically applied based on file changes
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/**'
+          - 'src/app/**/page.tsx'
+          - 'src/app/**/layout.tsx'
+          - 'src/app/globals.css'
+          - 'tailwind.config.ts'
+          - 'postcss.config.js'
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/api/**'
+          - 'src/app/actions/**'
+          - 'src/lib/**'
+          - 'src/schemas/**'
+
+mobile:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'mobile/**'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - 'README.md'
+          - 'CHANGELOG.md'
+          - 'CLAUDE.md'
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'prisma/**'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/**'
+          - '**/*.test.ts'
+          - '**/*.test.tsx'
+          - 'vitest.config.ts'
+          - 'playwright.config.ts'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+          - 'mobile/package.json'
+          - 'mobile/package-lock.json'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/dependabot.yml'
+          - '.github/labeler.yml'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/lib/csrf.ts'
+          - 'src/lib/auth*.ts'
+          - 'src/app/api/auth/**'
+          - 'src/app/actions/auth/**'
+          - 'tests/security/**'
+          - 'docs/XSS_DEFENSE.md'
+          - 'docs/SECRET_ROTATION.md'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tsconfig.json'
+          - 'next.config.js'
+          - 'eslint.config.mjs'
+          - '.prettierrc'
+          - '.prettierignore'
+          - '.gitignore'
+          - '.npmrc'
