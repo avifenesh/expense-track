@@ -39,6 +39,11 @@ jobs:
         with:
           xcode-version: '16.2'
 
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew install applesimutils
+
       # Cache CocoaPods before prebuild
       - name: Cache CocoaPods
         uses: actions/cache@v4
