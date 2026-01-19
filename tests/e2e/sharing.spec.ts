@@ -77,7 +77,8 @@ test.describe('sharing', () => {
       await expect(shareButton).toBeVisible()
       await shareButton.click()
 
-      const submitButton = page.getByRole('button', { name: /share expense/i })
+      // Click submit without adding participants - use type="submit" to be specific
+      const submitButton = page.locator('button[type="submit"]', { hasText: /share expense/i })
       await submitButton.click()
 
       // Validation message is "Add at least one person to share with"
