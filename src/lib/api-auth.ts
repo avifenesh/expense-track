@@ -45,7 +45,19 @@ export function requireJwtAuth(request: NextRequest): AuthenticatedUser {
 export async function getUserAuthInfo(userId: string): Promise<AuthUser> {
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
-    include: { accounts: { orderBy: { name: 'asc' } } },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      passwordHash: true,
+      preferredCurrency: true,
+      hasCompletedOnboarding: true,
+      activeAccountId: true,
+      accounts: {
+        where: { deletedAt: null },
+        orderBy: { name: 'asc' },
+      },
+    },
   })
 
   if (!dbUser || dbUser.accounts.length === 0) {
@@ -61,5 +73,6 @@ export async function getUserAuthInfo(userId: string): Promise<AuthUser> {
     defaultAccountName: dbUser.accounts[0].name,
     preferredCurrency: dbUser.preferredCurrency,
     hasCompletedOnboarding: dbUser.hasCompletedOnboarding,
+    activeAccountId: dbUser.activeAccountId,
   }
 }

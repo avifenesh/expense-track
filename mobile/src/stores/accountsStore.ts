@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiGet, ApiError } from '../services/api';
+import { apiGet, apiPatch, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import { registerStoreReset } from './storeRegistry';
 import type { Currency } from '../types';
@@ -17,19 +17,28 @@ export interface Account {
 }
 
 interface AccountsResponse {
-  accounts: Account[];
+  accounts: Array<{
+    id: string;
+    name: string;
+    type: 'SELF' | 'PARTNER' | 'OTHER';
+    preferredCurrency: Currency | null;
+    color: string | null;
+    icon: string | null;
+    description: string | null;
+  }>;
 }
 
 interface AccountsState {
   accounts: Account[];
-  selectedAccountId: string | null;
+  activeAccountId: string | null;
   isLoading: boolean;
   error: string | null;
 }
 
 interface AccountsActions {
   fetchAccounts: () => Promise<boolean>;
-  setSelectedAccount: (accountId: string | null) => void;
+  setActiveAccount: (accountId: string | null) => Promise<boolean>;
+  getActiveAccount: () => Account | undefined;
   clearError: () => void;
   reset: () => void;
 }
@@ -38,10 +47,14 @@ export type AccountsStore = AccountsState & AccountsActions;
 
 const initialState: AccountsState = {
   accounts: [],
-  selectedAccountId: null,
+  activeAccountId: null,
   isLoading: false,
   error: null,
 };
+
+function mapAccountType(dbType: 'SELF' | 'PARTNER' | 'OTHER'): AccountType {
+  return dbType === 'SELF' ? 'PERSONAL' : 'SHARED';
+}
 
 export const useAccountsStore = create<AccountsStore>((set, get) => ({
   ...initialState,
@@ -54,20 +67,23 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
     try {
       const response = await apiGet<AccountsResponse>('/accounts', accessToken);
 
-      const accounts = response.accounts;
-      const { selectedAccountId } = get();
+      const accounts = response.accounts.map((acc) => ({
+        ...acc,
+        type: mapAccountType(acc.type),
+      }));
 
-      // Auto-select first account if none selected
-      const newSelectedId =
-        selectedAccountId && accounts.some((a) => a.id === selectedAccountId)
-          ? selectedAccountId
+      const { activeAccountId } = get();
+
+      const newActiveId =
+        activeAccountId && accounts.some((a) => a.id === activeAccountId)
+          ? activeAccountId
           : accounts.length > 0
             ? accounts[0].id
             : null;
 
       set({
         accounts,
-        selectedAccountId: newSelectedId,
+        activeAccountId: newActiveId,
         isLoading: false,
       });
 
@@ -80,8 +96,31 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
     }
   },
 
-  setSelectedAccount: (accountId: string | null) => {
-    set({ selectedAccountId: accountId });
+  setActiveAccount: async (accountId: string | null) => {
+    const accessToken = useAuthStore.getState().accessToken;
+
+    if (!accountId) {
+      set({ activeAccountId: null });
+      return true;
+    }
+
+    set({ isLoading: true, error: null });
+
+    try {
+      await apiPatch(`/accounts/${accountId}/activate`, {}, accessToken);
+      set({ activeAccountId: accountId, isLoading: false });
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : 'Failed to activate account';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  getActiveAccount: () => {
+    const { accounts, activeAccountId } = get();
+    return accounts.find((acc) => acc.id === activeAccountId);
   },
 
   clearError: () => {

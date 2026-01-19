@@ -162,6 +162,7 @@ describe('upsertBudgetAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -199,6 +200,7 @@ describe('upsertBudgetAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -268,6 +270,7 @@ describe('upsertBudgetAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -362,6 +365,7 @@ describe('deleteBudgetAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -414,6 +418,7 @@ describe('deleteBudgetAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -513,6 +518,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -549,6 +555,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -587,6 +594,7 @@ describe('upsertMonthlyIncomeGoalAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -662,6 +670,7 @@ describe('deleteMonthlyIncomeGoalAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })

@@ -63,7 +63,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
 
   const {
     accounts,
-    selectedAccountId,
+    activeAccountId,
     isLoading: isLoadingAccounts,
     fetchAccounts,
   } = useAccountsStore();
@@ -81,17 +81,17 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
 
   useEffect(() => {
     async function loadTransactions() {
-      if (selectedAccountId) {
-        setFilters({ accountId: selectedAccountId });
+      if (activeAccountId) {
+        setFilters({ accountId: activeAccountId });
         await fetchTransactions(true);
       }
     }
     loadTransactions();
-  }, [selectedAccountId, fetchTransactions, setFilters]);
+  }, [activeAccountId, fetchTransactions, setFilters]);
 
   const handleFilterChange = useCallback(
     async (type: FilterType) => {
-      const accountId = selectedAccountId || accounts[0]?.id;
+      const accountId = activeAccountId || accounts[0]?.id;
       if (!accountId) {
         return;
       }
@@ -102,7 +102,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
       });
       await fetchTransactions(true);
     },
-    [setFilters, fetchTransactions, selectedAccountId, accounts]
+    [setFilters, fetchTransactions, activeAccountId, accounts]
   );
 
   const handleRefresh = useCallback(async () => {

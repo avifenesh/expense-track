@@ -54,6 +54,7 @@ describe('GET /api/v1/users/me', () => {
     passwordResetToken: null,
     passwordResetExpires: null,
     hasCompletedOnboarding: true,
+    activeAccountId: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   }
@@ -138,6 +139,7 @@ describe('GET /api/v1/users/me', () => {
         displayName: 'Test User',
         preferredCurrency: 'USD',
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         subscription: {
           status: 'TRIALING',
           isActive: true,
@@ -325,6 +327,7 @@ describe('GET /api/v1/users/me', () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         ...mockUser,
         hasCompletedOnboarding: false,
+    activeAccountId: null,
       })
       vi.mocked(getSubscriptionState).mockResolvedValue(mockSubscriptionState)
 

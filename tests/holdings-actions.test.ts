@@ -101,6 +101,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -147,6 +148,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -192,6 +194,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -238,6 +241,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -319,6 +323,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -359,6 +364,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -399,6 +405,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -445,6 +452,7 @@ describe('createHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -499,6 +507,7 @@ describe('updateHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -539,6 +548,7 @@ describe('updateHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -569,6 +579,7 @@ describe('updateHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -609,6 +620,7 @@ describe('updateHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -657,6 +669,7 @@ describe('deleteHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -697,6 +710,7 @@ describe('deleteHoldingAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -739,6 +753,7 @@ describe('refreshHoldingPricesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -781,6 +796,7 @@ describe('refreshHoldingPricesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -813,6 +829,7 @@ describe('refreshHoldingPricesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -853,6 +870,7 @@ describe('refreshHoldingPricesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -882,6 +900,7 @@ describe('refreshHoldingPricesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })

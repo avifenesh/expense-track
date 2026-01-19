@@ -47,6 +47,7 @@ describe('POST /api/v1/auth/verify-email', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -62,6 +63,7 @@ describe('POST /api/v1/auth/verify-email', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -96,6 +98,7 @@ describe('POST /api/v1/auth/verify-email', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -135,6 +138,7 @@ describe('POST /api/v1/auth/verify-email', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

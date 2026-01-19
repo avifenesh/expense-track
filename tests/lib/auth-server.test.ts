@@ -13,6 +13,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn().mockResolvedValue(null), // By default, no DB user found (legacy users only)
+      update: vi.fn().mockResolvedValue({}), // For activeAccountId updates
     },
   },
 }))
@@ -548,6 +549,7 @@ describe('auth-server.ts', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: true,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           accounts: [{ name: 'Account1' }, { name: 'Shared' }],
@@ -587,6 +589,7 @@ describe('auth-server.ts', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: true,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           accounts: [{ name: 'Account1' }],
@@ -613,6 +616,7 @@ describe('auth-server.ts', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: true,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           accounts: [],

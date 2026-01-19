@@ -120,6 +120,7 @@ describe('User Isolation: Transaction Requests', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['Attacker Account'],
         defaultAccountName: 'Attacker Account',
       })
@@ -168,6 +169,7 @@ describe('User Isolation: Transaction Requests', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['Owner Account'],
         defaultAccountName: 'Owner Account',
       })
@@ -215,6 +217,7 @@ describe('User Isolation: Transaction Requests', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['Attacker Account'],
         defaultAccountName: 'Attacker Account',
       })
@@ -257,6 +260,7 @@ describe('User Isolation: Transaction Requests', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['Owner Account'],
         defaultAccountName: 'Owner Account',
       })
@@ -305,6 +309,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['User A Account'],
       defaultAccountName: 'User A Account',
     })
@@ -350,6 +355,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Owner Account'],
       defaultAccountName: 'Owner Account',
     })
@@ -396,6 +402,7 @@ describe('User Isolation: Holdings Category Validation', () => {
       passwordHash: 'mock-hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Owner Account'],
       defaultAccountName: 'Owner Account',
     })
@@ -534,6 +541,7 @@ describe('User Isolation: Account Switching Security', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['User A Account'],
         defaultAccountName: 'User A Account',
       })
@@ -577,6 +585,7 @@ describe('User Isolation: Account Switching Security', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['Attacker Account'],
         defaultAccountName: 'Attacker Account',
       })
@@ -627,6 +636,7 @@ describe('User Isolation: Account Switching Security', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['Account 1', 'Account 2'],
         defaultAccountName: 'Account 1',
       })
@@ -664,6 +674,7 @@ describe('User Isolation: Account Switching Security', () => {
         passwordHash: 'mock-hash',
         preferredCurrency: Currency.USD,
         hasCompletedOnboarding: true,
+    activeAccountId: null,
         accountNames: ['User Account'],
         defaultAccountName: 'User Account',
       })

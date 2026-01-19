@@ -17,6 +17,7 @@ function createMockUser(overrides: Partial<User> = {}): User {
     passwordResetToken: null,
     passwordResetExpires: null,
     hasCompletedOnboarding: false,
+    activeAccountId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

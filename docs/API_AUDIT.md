@@ -239,10 +239,12 @@ Support mobile onboarding flow:
 
 ### Low Priority (Misc)
 
+> ✅ **1 of 3 endpoints implemented in Issue #206, #209**
+
 ```
 POST   /api/v1/exchange-rates/refresh   - Refresh exchange rates
 POST   /api/v1/accounts/[id]/set-balance - Set account balance
-PATCH  /api/v1/accounts/[id]/activate   - Switch active account
+✅ PATCH  /api/v1/accounts/[id]/activate   - Switch active account
 ```
 
 ## Critical Issue: Subscription Validation

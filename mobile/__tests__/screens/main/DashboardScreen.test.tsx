@@ -97,11 +97,11 @@ function renderDashboardScreen() {
 describe('DashboardScreen', () => {
   const defaultAccountsState = {
     accounts: [mockAccount],
-    selectedAccountId: 'acc-1',
+    activeAccountId: 'acc-1',
     isLoading: false,
     error: null,
     fetchAccounts: jest.fn().mockResolvedValue(true),
-    setSelectedAccount: jest.fn(),
+    setActiveAccount: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
   };
@@ -187,7 +187,7 @@ describe('DashboardScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: true,
       });
 
@@ -204,7 +204,7 @@ describe('DashboardScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
         error: 'Failed to load accounts',
       });
@@ -221,7 +221,7 @@ describe('DashboardScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
         error: 'Network error',
       });
@@ -238,7 +238,7 @@ describe('DashboardScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
         error: 'Network error',
         fetchAccounts,
@@ -263,7 +263,7 @@ describe('DashboardScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
       });
 

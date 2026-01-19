@@ -471,6 +471,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as User)

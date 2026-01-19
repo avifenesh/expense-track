@@ -574,11 +574,82 @@ The app uses Zustand for state management with dedicated stores for each domain:
 ### Stores
 
 - **authStore** - Authentication state (login, logout, token management)
-- **accountsStore** - User accounts data
+- **accountsStore** - User accounts data and active account management
 - **transactionsStore** - Transaction management
 - **budgetsStore** - Budget tracking and management
 - **categoriesStore** - Category management
 - **sharingStore** - Expense sharing and settlement tracking
+
+### accountsStore
+
+Manages user accounts and active account selection. Supports switching between accounts (e.g., personal, shared with partner).
+
+**State:**
+```typescript
+{
+  accounts: Account[]          // User's accounts
+  activeAccountId: string | null  // Currently selected account ID
+  isLoading: boolean
+  error: string | null
+}
+```
+
+**Actions:**
+- `fetchAccounts()` - Load all accounts from API
+- `setActiveAccount(accountId)` - Switch active account and persist to backend
+- `getActiveAccount()` - Get currently active account object
+- `clearError()` - Clear error state
+- `reset()` - Reset store to initial state
+
+**Account Types:**
+- `PERSONAL` - Individual user account
+- `SHARED` - Shared account (e.g., with partner, roommate)
+
+**Usage:**
+```typescript
+import { useAccountsStore } from '@/stores';
+
+function AccountSwitcher() {
+  const {
+    accounts,
+    activeAccountId,
+    setActiveAccount,
+    getActiveAccount,
+    fetchAccounts,
+    isLoading
+  } = useAccountsStore();
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  const handleAccountSwitch = async (accountId: string) => {
+    const success = await setActiveAccount(accountId);
+    if (success) {
+      // Active account updated, UI will refresh automatically
+    }
+  };
+
+  const activeAccount = getActiveAccount();
+
+  return (
+    // UI implementation
+  );
+}
+```
+
+**API Integration:**
+- `GET /api/v1/accounts` - Fetch all user accounts
+- `PATCH /api/v1/accounts/[id]/activate` - Switch active account
+
+**Persistence:**
+- Active account ID is persisted in the database via the API
+- On app start, the store defaults to the first account; server-driven restoration requires fetching user's `activeAccountId` from the API
+- Falls back to first account if previous selection no longer exists
+
+See `docs/API_CONTRACTS.md` for detailed API documentation.
+
+---
 
 ### sharingStore
 

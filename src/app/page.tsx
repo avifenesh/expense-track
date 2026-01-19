@@ -84,10 +84,11 @@ export default async function Page({ searchParams }: PageProps) {
   const allowedAccounts = accounts.filter((account) => allowedAccountNames.has(account.name))
   const accountLookup = new Map(allowedAccounts.map((account) => [account.id, account]))
 
+  const serverActiveAccountId = authUser.activeAccountId && accountLookup.has(authUser.activeAccountId) ? authUser.activeAccountId : undefined
   const sessionAccountId = session.accountId && accountLookup.has(session.accountId) ? session.accountId : undefined
   const queryAccountId = typeof accountParam === 'string' && accountLookup.has(accountParam) ? accountParam : undefined
 
-  const accountId = queryAccountId ?? sessionAccountId ?? allowedAccounts[0]?.id
+  const accountId = queryAccountId ?? serverActiveAccountId ?? sessionAccountId ?? allowedAccounts[0]?.id
 
   if (!accountId) {
     redirect('/login?reason=no-accounts')
