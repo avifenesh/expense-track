@@ -178,8 +178,11 @@ export function ShareExpenseForm({
           {formErrors?.general && <p className="text-sm text-rose-300">{formErrors.general[0]}</p>}
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-300">Split type</label>
+            <label className="text-xs font-medium text-slate-300" htmlFor="share-split-type">
+              Split type
+            </label>
             <Select
+              id="share-split-type"
               value={splitType}
               onChange={(e) => setSplitType(e.target.value as SplitType)}
               options={splitTypeOptions}

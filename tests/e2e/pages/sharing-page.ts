@@ -19,7 +19,8 @@ export class SharingPage extends BasePage {
     percentages?: number[]
   }) {
     if (data.splitType) {
-      await this.selectOption('Split type', data.splitType)
+      // Use label matching since split type options have labels like 'Split equally'
+      await this.selectOption('Split type', { label: data.splitType })
     }
 
     for (const email of data.participantEmails) {

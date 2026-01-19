@@ -15,20 +15,24 @@ export class TransactionsPage extends BasePage {
     description?: string
     currency?: string
   }) {
+    // Scope all form fields to the transaction form to avoid matching filter elements
+    const form = this.page.locator('#transaction-form')
+
     if (data.type) {
-      await this.selectOption('Type', data.type)
+      // Use exact ID to avoid matching "Type filter"
+      await form.locator('#transactionType').selectOption({ label: data.type })
     }
     if (data.account) {
-      await this.selectOption('Account', data.account)
+      await form.locator('#transactionAccount').selectOption({ label: data.account })
     }
-    await this.selectOption('Category', data.category)
-    await this.fillInput('Amount', data.amount)
-    await this.fillInput('Date', data.date)
+    await form.locator('#transactionCategory').selectOption({ label: data.category })
+    await form.getByLabel('Amount').fill(data.amount)
+    await form.getByLabel('Date').fill(data.date)
     if (data.description) {
-      await this.page.getByLabel('Description (optional)').fill(data.description)
+      await form.getByLabel('Description (optional)').fill(data.description)
     }
     if (data.currency) {
-      await this.selectOption('Currency', data.currency)
+      await form.locator('#transactionCurrency').selectOption({ label: data.currency })
     }
   }
 
