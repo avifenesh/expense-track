@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:e2e": "ts-node --compiler-options {\"module\":\"commonjs\"} prisma/seed-e2e.ts",
     "migrate:users": "tsx scripts/migrate-to-user-model.ts",
     "rollback:users": "tsx scripts/rollback-user-migration.ts",
     "db:up:local": "docker compose up -d db",
