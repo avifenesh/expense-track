@@ -35,26 +35,6 @@ test.describe('subscription', () => {
     })
   })
 
-  // Note: /pricing page does not exist - subscription info is shown on /upgrade page
-  test.describe('pricing page', () => {
-    test.skip('should show pricing information', async ({ page }) => {
-      // Skipped: /pricing page doesn't exist - use /upgrade instead
-      await page.goto('/pricing')
-      await expect(page.getByText(/pricing/i)).toBeVisible()
-      await expect(page.getByText(/month/i)).toBeVisible()
-      await expect(page.getByText(/trial/i)).toBeVisible()
-    })
-
-    test.skip('should have sign up CTA', async ({ page }) => {
-      // Skipped: /pricing page doesn't exist - use /upgrade instead
-      await page.goto('/pricing')
-      const signUpButton = page.getByRole('link', { name: /sign up|get started/i })
-      if (await signUpButton.isVisible()) {
-        await expect(signUpButton).toBeVisible()
-      }
-    })
-  })
-
   test.describe('upgrade flow', () => {
     test('should show subscription options on upgrade page', async ({ page }) => {
       // Note: /upgrade requires authentication, but test users have active trial

@@ -65,40 +65,6 @@ test.describe('sharing', () => {
       await dashboardPage.clickSignOut()
     })
 
-    // Note: This test cannot work as designed because the Submit button is disabled
-    // when there are no participants. The validation message only appears on form submission,
-    // but the disabled button prevents submission. The UI correctly prevents this invalid state.
-    test.skip('should show validation error for empty participants', async ({ page }) => {
-      const transactionsPage = new TransactionsPage(page)
-      const sharingPage = new SharingPage(page)
-      const dashboardPage = new DashboardPage(page)
-
-      await transactionsPage.navigateToTransactionsTab()
-
-      await transactionsPage.fillTransactionForm({
-        category: TEST_CATEGORIES.HOUSING,
-        amount: '1000.00',
-        date: getToday(),
-        description: 'Monthly rent',
-      })
-
-      await transactionsPage.submitTransaction()
-
-      // Wait for transaction to be saved and find the share button (icon button with title)
-      await page.waitForLoadState('networkidle')
-      const shareButton = page.getByTitle('Share expense').first()
-      await expect(shareButton).toBeVisible()
-      await shareButton.click()
-
-      // Click submit without adding participants
-      await sharingPage.submitShareExpense()
-
-      // Validation message is "Add at least one person to share with"
-      await expect(page.getByText(/add at least one person/i)).toBeVisible()
-
-      await dashboardPage.clickSignOut()
-    })
-
     test('should add and remove participants', async ({ page }) => {
       const transactionsPage = new TransactionsPage(page)
       const sharingPage = new SharingPage(page)

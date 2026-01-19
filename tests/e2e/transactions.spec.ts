@@ -64,29 +64,6 @@ test.describe('transactions', () => {
       await dashboardPage.clickSignOut()
     })
 
-    // Note: This test cannot work as designed because the category dropdown
-    // auto-selects the first category on load (no empty placeholder option).
-    // The test would need UI changes to add a placeholder option.
-    test.skip('should show validation error for missing category', async ({ page }) => {
-      const transactionsPage = new TransactionsPage(page)
-      const dashboardPage = new DashboardPage(page)
-
-      await transactionsPage.navigateToTransactionsTab()
-
-      // Category field has no empty option, so can't test missing category
-      await transactionsPage.fillTransactionForm({
-        category: '',
-        amount: '50.00',
-        date: getToday(),
-      })
-
-      await transactionsPage.submitTransaction()
-
-      await transactionsPage.expectValidationError(/select a category/i)
-
-      await dashboardPage.clickSignOut()
-    })
-
     test('should show validation error for invalid amount', async ({ page }) => {
       const transactionsPage = new TransactionsPage(page)
       const dashboardPage = new DashboardPage(page)
