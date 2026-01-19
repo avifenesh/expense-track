@@ -227,10 +227,32 @@ export async function getDashboardData({
       )
     : 0
 
+  // Calculate total expected income from all active recurring income templates (applied + unapplied)
+  // This is used for plannedNet (the "Monthly goal" - a target, not a projection)
+  const totalRecurringIncome = recurringTemplates
+    .filter((template) => {
+      if (template.type !== TransactionType.INCOME || !template.isActive) return false
+      if (template.startMonthKey && template.startMonthKey > monthKey) return false
+      if (template.endMonthKey && template.endMonthKey < monthKey) return false
+      return true
+    })
+    .reduce(
+      (sum, template) =>
+        sum +
+        convertTransactionAmountSync(template.amount, template.currency, preferredCurrency, currentMonthRates),
+      0,
+    )
+
   // Priority: income goal (month-specific or default) → recurring → budgets
-  // For income goal: remaining = goal - actual (how much more we expect)
-  // For recurring: only count unapplied templates (already filtered above)
-  // For budgets: use remainingIncome from budget calculations
+  // plannedIncome is the TARGET income for the month (for "Monthly goal" stat)
+  const plannedIncomeTarget =
+    incomeGoalConverted > 0 ? incomeGoalConverted : totalRecurringIncome > 0 ? totalRecurringIncome : plannedIncome
+  const plannedNet = plannedIncomeTarget - plannedExpense
+
+  // For projectedNet ("On track for"), use remaining expected income:
+  // - If income goal set: remaining = goal - actual
+  // - If recurring templates: only count unapplied templates
+  // - Otherwise: use remaining from budgets
   const expectedRemainingIncome =
     incomeGoalConverted > 0
       ? Math.max(incomeGoalConverted - actualIncome, 0)
@@ -238,15 +260,6 @@ export async function getDashboardData({
         ? expectedRecurringIncome // Already excludes applied templates
         : Math.max(remainingIncome, 0)
 
-  const expectedIncome =
-    incomeGoalConverted > 0
-      ? incomeGoalConverted
-      : expectedRecurringIncome > 0
-        ? actualIncome + expectedRecurringIncome // Actual + remaining unapplied
-        : plannedIncome
-  const plannedNet = expectedIncome - plannedExpense
-
-  // Projected net uses expected remaining income (what we still expect to receive)
   const projectedNet = actualIncome + expectedRemainingIncome - (actualExpense + Math.max(remainingExpense, 0))
 
   // Convert previous month's transactions using that month's exchange rates
