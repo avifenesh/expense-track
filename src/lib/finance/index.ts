@@ -26,6 +26,13 @@ export type {
   SharedExpensePaginationOptions,
   SharedExpenseStatusFilter,
   MonthlyIncomeGoalSummary,
+  // Stat breakdown types
+  IncomeSource,
+  StatBreakdown,
+  NetThisMonthBreakdown,
+  OnTrackForBreakdown,
+  LeftToSpendBreakdown,
+  MonthlyTargetBreakdown,
 } from './types'
 
 export { DEFAULT_PAGINATION_LIMIT } from './types'

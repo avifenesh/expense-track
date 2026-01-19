@@ -31,6 +31,7 @@ import {
 import { logoutAction, persistActiveAccountAction, refreshExchangeRatesAction } from '@/app/actions'
 import { BalanceForm } from '@/components/dashboard/balance-form'
 import { Sparkline } from '@/components/dashboard/sparkline'
+import { StatBreakdownPanel } from '@/components/dashboard/stat-breakdown'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
@@ -183,6 +184,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const [accountFeedback, setAccountFeedback] = useState<Feedback | null>(null)
   const [showBalanceForm, setShowBalanceForm] = useState(false)
   const [activeTab, setActiveTab] = useState<TabValue>('overview')
+  const [expandedStat, setExpandedStat] = useState<string | null>(null)
 
   const [, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
@@ -598,13 +600,21 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             const variantKey = stat.variant ?? 'neutral'
             const styles = STAT_VARIANT_STYLES[variantKey]
             const Icon = resolveStatIcon(stat.label)
+            const isExpanded = expandedStat === stat.label
+            const hasBreakdown = !!stat.breakdown
             return (
-              <div
+              <button
                 key={stat.label}
+                type="button"
+                onClick={() => hasBreakdown && setExpandedStat(isExpanded ? null : stat.label)}
                 className={cn(
-                  'flex items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition hover:bg-white/10',
+                  'flex w-full items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition text-left',
+                  hasBreakdown && 'cursor-pointer hover:bg-white/10',
+                  !hasBreakdown && 'cursor-default',
                   styles.border,
+                  isExpanded && 'ring-1 ring-white/30',
                 )}
+                aria-expanded={hasBreakdown ? isExpanded : undefined}
               >
                 <span className={cn('inline-flex shrink-0 items-center justify-center rounded-lg p-1.5', styles.chip)}>
                   <Icon className={cn('h-3.5 w-3.5', styles.icon)} />
@@ -617,15 +627,42 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                     {formatCurrency(stat.amount, preferredCurrency)}
                   </p>
                 </div>
-                <InfoTooltip
-                  description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
-                  label={`Explain ${stat.label}`}
-                  placement="left"
-                />
-              </div>
+                {hasBreakdown && (
+                  <ChevronDown
+                    className={cn(
+                      'h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform',
+                      isExpanded && 'rotate-180',
+                    )}
+                  />
+                )}
+              </button>
             )
           })}
         </div>
+
+        {/* Stat breakdown panel */}
+        {expandedStat && (
+          <div className="relative z-10 mt-2 rounded-xl border border-white/15 bg-white/5 p-4 backdrop-blur">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-300">
+                {expandedStat} breakdown
+              </p>
+              <button
+                type="button"
+                onClick={() => setExpandedStat(null)}
+                className="text-xs text-slate-400 hover:text-white transition"
+              >
+                Close
+              </button>
+            </div>
+            {data.stats.find((s) => s.label === expandedStat)?.breakdown && (
+              <StatBreakdownPanel
+                breakdown={data.stats.find((s) => s.label === expandedStat)!.breakdown!}
+                currency={preferredCurrency}
+              />
+            )}
+          </div>
+        )}
 
         {/* Exchange rate refresh - compact */}
         {data.exchangeRateLastUpdate && (
