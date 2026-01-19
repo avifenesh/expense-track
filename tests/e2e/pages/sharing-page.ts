@@ -50,8 +50,9 @@ export class SharingPage extends BasePage {
   }
 
   async submitShareExpense() {
-    // Button text is lowercase "Share expense"
-    await this.clickButton('Share expense')
+    // Use type="submit" to distinguish from icon buttons with title="Share expense"
+    const submitButton = this.page.locator('button[type="submit"]', { hasText: 'Share expense' })
+    await submitButton.click()
   }
 
   async removeParticipant(email: string) {

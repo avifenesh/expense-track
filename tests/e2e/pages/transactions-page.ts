@@ -21,11 +21,17 @@ export class TransactionsPage extends BasePage {
     if (data.type) {
       // Use exact ID to avoid matching "Type filter"
       await form.locator('#transactionType').selectOption({ label: data.type })
+      // Wait for category dropdown to update after type change
+      // (category options are filtered by type)
+      await this.page.waitForLoadState('domcontentloaded')
     }
     if (data.account) {
       await form.locator('#transactionAccount').selectOption({ label: data.account })
     }
-    await form.locator('#transactionCategory').selectOption({ label: data.category })
+    // Wait for category option to be available before selecting
+    const categorySelect = form.locator('#transactionCategory')
+    await categorySelect.locator(`option:text("${data.category}")`).waitFor({ state: 'attached' })
+    await categorySelect.selectOption({ label: data.category })
     await form.getByLabel('Amount').fill(data.amount)
     await form.getByLabel('Date').fill(data.date)
     if (data.description) {

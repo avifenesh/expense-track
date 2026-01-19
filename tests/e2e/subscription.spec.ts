@@ -59,7 +59,6 @@ test.describe('subscription', () => {
     test('should show subscription options on upgrade page', async ({ page }) => {
       // Note: /upgrade requires authentication, but test users have active trial
       // so they can access the upgrade page
-      const dashboardPage = new DashboardPage(page)
 
       // Navigate to upgrade from dashboard (user is already logged in from beforeEach)
       await page.goto('/upgrade')
@@ -67,6 +66,9 @@ test.describe('subscription', () => {
       // Should show upgrade page content (user is on trial, so can access upgrade page)
       await expect(page.getByText(/upgrade/i)).toBeVisible()
 
+      // Navigate back to dashboard to sign out (upgrade page doesn't have account menu)
+      await page.goto('/')
+      const dashboardPage = new DashboardPage(page)
       await dashboardPage.clickSignOut()
     })
   })
