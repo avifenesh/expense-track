@@ -58,24 +58,26 @@ jobs:
       - name: Seed E2E database
         run: npm run db:seed:e2e
         env:
-          AUTH_USER1_EMAIL: ${{ secrets.E2E_USER1_EMAIL }}
-          AUTH_USER1_DISPLAY_NAME: ${{ secrets.E2E_USER1_DISPLAY_NAME }}
-          AUTH_USER1_PASSWORD_HASH: ${{ secrets.E2E_USER1_PASSWORD_HASH }}
-          AUTH_USER2_EMAIL: ${{ secrets.E2E_USER2_EMAIL }}
-          AUTH_USER2_DISPLAY_NAME: ${{ secrets.E2E_USER2_DISPLAY_NAME }}
-          AUTH_USER2_PASSWORD_HASH: ${{ secrets.E2E_USER2_PASSWORD_HASH }}
+          # E2E test users - not sensitive, created for automated testing only
+          AUTH_USER1_EMAIL: e2e-user1@test.local
+          AUTH_USER1_DISPLAY_NAME: TestUserOne
+          # bcrypt hash of 'TestPassword123!'
+          AUTH_USER1_PASSWORD_HASH: $2a$10$XQxBtJXKQkPbFvGqN8e5/.1YL5PZE/EKuPPYXIJAJMN7Y1cDrJvHe
+          AUTH_USER2_EMAIL: e2e-user2@test.local
+          AUTH_USER2_DISPLAY_NAME: TestUserTwo
+          AUTH_USER2_PASSWORD_HASH: $2a$10$XQxBtJXKQkPbFvGqN8e5/.1YL5PZE/EKuPPYXIJAJMN7Y1cDrJvHe
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
-          AUTH_USER1_EMAIL: ${{ secrets.E2E_USER1_EMAIL }}
-          AUTH_USER1_DISPLAY_NAME: ${{ secrets.E2E_USER1_DISPLAY_NAME }}
-          AUTH_USER1_PASSWORD_HASH: ${{ secrets.E2E_USER1_PASSWORD_HASH }}
-          AUTH_USER2_EMAIL: ${{ secrets.E2E_USER2_EMAIL }}
-          AUTH_USER2_DISPLAY_NAME: ${{ secrets.E2E_USER2_DISPLAY_NAME }}
-          AUTH_USER2_PASSWORD_HASH: ${{ secrets.E2E_USER2_PASSWORD_HASH }}
-          JWT_SECRET: ${{ secrets.E2E_JWT_SECRET }}
-          CSRF_SECRET: ${{ secrets.E2E_CSRF_SECRET }}
+          # E2E test users - must match seeded data
+          AUTH_USER1_EMAIL: e2e-user1@test.local
+          AUTH_USER1_PASSWORD: TestPassword123!
+          AUTH_USER2_EMAIL: e2e-user2@test.local
+          AUTH_USER2_PASSWORD: TestPassword123!
+          # App secrets for E2E testing
+          JWT_SECRET: e2e-test-jwt-secret-not-for-production
+          CSRF_SECRET: e2e-test-csrf-secret-not-for-production
 
       - name: Upload test results
         if: always()
