@@ -135,34 +135,35 @@ const STAT_VARIANT_STYLES: Record<
 }
 
 const STAT_TOOLTIPS: Record<string, string> = {
-  'Saved so far': `Income received minus expenses paid.
+  'Net this month': `Actual income minus actual expenses.
 
-This is your real position this month based on actual transactions.`,
+This is your real position this month based on recorded transactions.`,
 
-  'On track for': `Where you'll be at month end if you follow your budgets.
+  'On track for': `Projected balance at month end.
 
-Calculated from what you've saved plus remaining planned income, minus remaining planned expenses.`,
+Calculated from actual income plus remaining expected income, minus remaining budgeted expenses.`,
 
   'Left to spend': `How much of your expense budget you haven't used yet.
 
 Zero means you've hit your spending plan exactly. Negative if you've overspent.`,
 
-  'Monthly goal': `Your target for the month based on budgets.
+  'Monthly target': `Your planned savings target for this month.
 
-Budgeted income minus budgeted expenses. Negative means planned expenses exceed planned income.`,
+Calculated as: planned income (from income goal, recurring templates, or budgets) minus budgeted expenses.
+If negative, your planned expenses exceed planned income.`,
 }
 
 const DEFAULT_STAT_TOOLTIP = 'Monitors this monthly metric based on your recorded data and budgets.'
 
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
-  if (normalized.includes('saved') || normalized.includes('income') || normalized.includes('inflow')) {
+  if (normalized.includes('net') || normalized.includes('saved') || normalized.includes('income') || normalized.includes('inflow')) {
     return Wallet
   }
   if (normalized.includes('spend') || normalized.includes('expense') || normalized.includes('outflow')) {
     return PiggyBank
   }
-  if (normalized.includes('goal') || normalized.includes('budget') || normalized.includes('track')) {
+  if (normalized.includes('target') || normalized.includes('goal') || normalized.includes('budget') || normalized.includes('track')) {
     return Layers
   }
   return TrendingUp
@@ -626,6 +627,29 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           })}
         </div>
 
+        {/* Debug: Monthly target breakdown */}
+        {data.plannedIncomeBreakdown && (
+          <details className="relative z-10 mt-3 rounded-lg bg-slate-800/50 p-3 text-xs text-slate-300">
+            <summary className="cursor-pointer font-medium">Monthly Target Breakdown (Debug)</summary>
+            <div className="mt-2 space-y-1 font-mono">
+              <p>Income templates found: {data.plannedIncomeBreakdown.totalRecurringIncomeTemplates}</p>
+              <p>From income goal: {formatCurrency(data.plannedIncomeBreakdown.fromIncomeGoal, preferredCurrency)}</p>
+              <p>From recurring templates: {formatCurrency(data.plannedIncomeBreakdown.fromRecurringTemplates, preferredCurrency)}</p>
+              <p>From budgets: {formatCurrency(data.plannedIncomeBreakdown.fromBudgets, preferredCurrency)}</p>
+              <p>Planned expense: {formatCurrency(data.plannedIncomeBreakdown.plannedExpense, preferredCurrency)}</p>
+              <p className="border-t border-slate-600 pt-1">
+                <strong>Monthly target = </strong>
+                {data.plannedIncomeBreakdown.fromIncomeGoal > 0
+                  ? `income goal (${formatCurrency(data.plannedIncomeBreakdown.fromIncomeGoal, preferredCurrency)})`
+                  : data.plannedIncomeBreakdown.fromRecurringTemplates > 0
+                    ? `recurring (${formatCurrency(data.plannedIncomeBreakdown.fromRecurringTemplates, preferredCurrency)})`
+                    : `budgets (${formatCurrency(data.plannedIncomeBreakdown.fromBudgets, preferredCurrency)})`}{' '}
+                - {formatCurrency(data.plannedIncomeBreakdown.plannedExpense, preferredCurrency)}
+              </p>
+            </div>
+          </details>
+        )}
+
         {/* Exchange rate refresh - compact */}
         {data.exchangeRateLastUpdate && (
           <div className="relative z-10 mt-3 flex items-center justify-end gap-2 text-xs text-slate-400">
@@ -656,7 +680,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           activeAccount={activeAccount}
           monthKey={monthKey}
           preferredCurrency={preferredCurrency}
-          currentNet={data.stats.find((s) => s.label === 'Saved so far')?.amount ?? 0}
+          currentNet={data.stats.find((s) => s.label === 'Net this month')?.amount ?? 0}
           onClose={() => setShowBalanceForm(false)}
         />
       )}

@@ -386,6 +386,11 @@ export async function getDashboardData({
       }
     : null
 
+  // Count how many recurring templates are INCOME type
+  const incomeTemplateCount = recurringTemplates.filter(
+    (t) => t.type === TransactionType.INCOME && t.isActive,
+  ).length
+
   return {
     month: monthKey,
     stats,
@@ -409,5 +414,12 @@ export async function getDashboardData({
     sharedExpenses,
     expensesSharedWithMe,
     settlementBalances,
+    plannedIncomeBreakdown: {
+      fromIncomeGoal: incomeGoalConverted,
+      fromRecurringTemplates: totalRecurringIncome,
+      fromBudgets: plannedIncome,
+      totalRecurringIncomeTemplates: incomeTemplateCount,
+      plannedExpense,
+    },
   }
 }

@@ -233,4 +233,12 @@ export type DashboardData = {
   sharedExpenses?: SharedExpenseSummary[]
   expensesSharedWithMe?: ExpenseParticipationSummary[]
   settlementBalances?: SettlementBalance[]
+  // Debug: breakdown of Monthly target calculation
+  plannedIncomeBreakdown?: {
+    fromIncomeGoal: number
+    fromRecurringTemplates: number
+    fromBudgets: number
+    totalRecurringIncomeTemplates: number
+    plannedExpense: number
+  }
 }
