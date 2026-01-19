@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/DevSkim/main/schemas/devskim.config.schema.json",
   "ignores": [
     {
-      "rule_ids": ["DS137138"],
+      "rule_ids": ["DS137138", "DS126858", "DS162092"],
       "paths": [
         ".github/workflows/e2e-mobile.yml",
         "mobile/e2e/**"
@@ -10,12 +10,16 @@
       "comment": "Localhost URLs are expected in E2E test configurations - tests run locally against emulator/simulator"
     },
     {
-      "rule_ids": ["DS126858"],
+      "rule_ids": ["DS162092"],
       "paths": [
-        ".github/workflows/e2e-mobile.yml",
-        "mobile/e2e/**"
+        "next.config.js",
+        "playwright.config.ts",
+        "tests/e2e/**",
+        "tests/lib/api-auth.test.ts",
+        "scripts/playwright-dev-server.js",
+        "scripts/setup-local.sh"
       ],
-      "comment": "HTTP URLs without TLS are expected for local E2E testing"
+      "comment": "Localhost URLs are expected in development/test configuration files - local dev server, Playwright tests, and setup scripts"
     }
   ]
 }
