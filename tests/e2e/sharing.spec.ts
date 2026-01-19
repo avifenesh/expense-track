@@ -17,7 +17,7 @@ test.describe('sharing', () => {
 
       await sharingPage.navigateToSharingTab()
 
-      await expect(page.getByText(/settlement summary/i)).toBeVisible()
+      await expect(page.getByText(/expenses you shared/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })
@@ -124,8 +124,8 @@ test.describe('sharing', () => {
 
       await sharingPage.navigateToSharingTab()
 
-      await expect(page.getByText(/expenses i shared/i)).toBeVisible()
-      await expect(page.getByText(/expenses shared with me/i)).toBeVisible()
+      await expect(page.getByText(/expenses you shared/i)).toBeVisible()
+      await expect(page.getByText(/expenses shared with you/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })

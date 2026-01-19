@@ -18,11 +18,11 @@ export class BudgetsPage extends BasePage {
   }
 
   async submitBudget() {
-    await this.clickButton('Add Budget')
+    await this.clickButton('Save budget')
   }
 
   async updateBudget() {
-    await this.clickButton('Update Budget')
+    await this.clickButton('Save budget')
   }
 
   async expectBudgetInList(category: string, planned: string) {

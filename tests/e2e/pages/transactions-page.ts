@@ -16,7 +16,7 @@ export class TransactionsPage extends BasePage {
     currency?: string
   }) {
     if (data.type) {
-      await this.selectOption('Transaction type', data.type)
+      await this.selectOption('Type', data.type)
     }
     if (data.account) {
       await this.selectOption('Account', data.account)
@@ -33,7 +33,7 @@ export class TransactionsPage extends BasePage {
   }
 
   async submitTransaction() {
-    await this.clickButton('Add Transaction')
+    await this.clickButton('Save transaction')
   }
 
   async expectTransactionInList(description: string, amount: string) {
