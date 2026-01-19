@@ -239,10 +239,3 @@ Run with retries:
 npx playwright test --retries=2
 ```
 
-## Future Enhancements
-
-- [ ] Mobile E2E tests with Detox
-- [ ] Visual regression testing
-- [ ] Performance testing
-- [ ] Accessibility audits
-- [ ] API mocking for isolated tests

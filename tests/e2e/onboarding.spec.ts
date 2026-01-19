@@ -5,8 +5,6 @@ import { DashboardPage } from './pages/dashboard-page'
 test.describe('onboarding', () => {
   test.describe('onboarding flow', () => {
     test('should show onboarding wizard for new users', async ({ page }) => {
-      // This test assumes a new user without onboarding completion
-      // In real scenario, this would be tested with a fresh user account
       await page.goto('/onboarding')
 
       await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible()
@@ -71,8 +69,6 @@ test.describe('onboarding', () => {
 
   test.describe('onboarding redirect', () => {
     test('should redirect to onboarding if not completed', async ({ page }) => {
-      // This test verifies that incomplete onboarding redirects from dashboard
-      // Note: This test may not work with existing test users who have completed onboarding
       await page.goto('/')
 
       const url = page.url()
