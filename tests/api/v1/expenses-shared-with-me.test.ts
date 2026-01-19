@@ -45,18 +45,18 @@ describe('GET /api/v1/expenses/shared-with-me', () => {
   })
 
   afterEach(async () => {
-    // Clean up test data in reverse order of creation
-    for (const id of createdSharedExpenseIds) {
-      await prisma.expenseParticipant.deleteMany({ where: { sharedExpenseId: id } })
-      await prisma.sharedExpense.deleteMany({ where: { id } })
+    // Clean up test data using cascade deletes for efficiency.
+    // Deleting transactions will cascade to SharedExpense and ExpenseParticipant.
+    if (createdTransactionIds.length > 0) {
+      await prisma.transaction.deleteMany({
+        where: { id: { in: createdTransactionIds } },
+      })
     }
-    for (const id of createdTransactionIds) {
-      await prisma.transaction.deleteMany({ where: { id } })
-    }
+    // These are upserted, so we clean them up to ensure test isolation.
     await prisma.category.deleteMany({ where: { name: 'SharedWithMeTestCategory' } })
     await prisma.account.deleteMany({ where: { name: 'SharedWithMeTestAccount' } })
 
-    // Reset arrays
+    // Reset tracking arrays
     createdTransactionIds.length = 0
     createdSharedExpenseIds.length = 0
   })

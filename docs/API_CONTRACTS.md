@@ -947,7 +947,6 @@ List expenses shared with the authenticated user by others. Supports filtering b
 
 ---
 
-
 ### POST /api/v1/expenses/share
 
 Share an expense with other users. Creates a shared expense from an existing transaction, calculating participant shares based on the split type.

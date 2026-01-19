@@ -39,6 +39,28 @@ type SharedExpenseWithIncludes = Prisma.SharedExpenseGetPayload<{
   }
 }>
 
+// Type for expense participation query result with includes
+type ExpenseParticipationWithIncludes = Prisma.ExpenseParticipantGetPayload<{
+  include: {
+    sharedExpense: {
+      include: {
+        transaction: {
+          include: {
+            category: true
+          }
+        }
+        owner: {
+          select: {
+            id: true
+            email: true
+            displayName: true
+          }
+        }
+      }
+    }
+  }
+}>
+
 /**
  * Transform a Prisma SharedExpense record into a SharedExpenseSummary.
  * This helper is used by both getSharedExpenses and getSharedExpensesPaginated.
@@ -84,6 +106,38 @@ function transformSharedExpense(expense: SharedExpenseWithIncludes): SharedExpen
     totalOwed,
     totalPaid,
     allSettled,
+  }
+}
+
+/**
+ * Transform a Prisma ExpenseParticipant record into an ExpenseParticipationSummary.
+ * This helper is used by both getExpensesSharedWithMe and getExpensesSharedWithMePaginated.
+ */
+function transformExpenseParticipation(p: ExpenseParticipationWithIncludes): ExpenseParticipationSummary {
+  return {
+    id: p.id,
+    shareAmount: decimalToNumber(p.shareAmount),
+    sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
+    status: p.status,
+    paidAt: p.paidAt,
+    sharedExpense: {
+      id: p.sharedExpense.id,
+      splitType: p.sharedExpense.splitType,
+      totalAmount: decimalToNumber(p.sharedExpense.totalAmount),
+      currency: p.sharedExpense.currency,
+      description: p.sharedExpense.description,
+      createdAt: p.sharedExpense.createdAt,
+      transaction: {
+        id: p.sharedExpense.transaction.id,
+        date: p.sharedExpense.transaction.date,
+        description: p.sharedExpense.transaction.description,
+        category: {
+          id: p.sharedExpense.transaction.category.id,
+          name: p.sharedExpense.transaction.category.name,
+        },
+      },
+      owner: p.sharedExpense.owner,
+    },
   }
 }
 
@@ -257,32 +311,7 @@ export async function getExpensesSharedWithMe(
 
   const hasMore = participations.length > limit
   const results = hasMore ? participations.slice(0, limit) : participations
-
-  const items = results.map((p) => ({
-    id: p.id,
-    shareAmount: decimalToNumber(p.shareAmount),
-    sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
-    status: p.status,
-    paidAt: p.paidAt,
-    sharedExpense: {
-      id: p.sharedExpense.id,
-      splitType: p.sharedExpense.splitType,
-      totalAmount: decimalToNumber(p.sharedExpense.totalAmount),
-      currency: p.sharedExpense.currency,
-      description: p.sharedExpense.description,
-      createdAt: p.sharedExpense.createdAt,
-      transaction: {
-        id: p.sharedExpense.transaction.id,
-        date: p.sharedExpense.transaction.date,
-        description: p.sharedExpense.transaction.description,
-        category: {
-          id: p.sharedExpense.transaction.category.id,
-          name: p.sharedExpense.transaction.category.name,
-        },
-      },
-      owner: p.sharedExpense.owner,
-    },
-  }))
+  const items = results.map(transformExpenseParticipation)
 
   return {
     items,
@@ -345,32 +374,7 @@ export async function getExpensesSharedWithMePaginated(
     }),
   ])
 
-  const items = participations.map((p) => ({
-    id: p.id,
-    shareAmount: decimalToNumber(p.shareAmount),
-    sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
-    status: p.status,
-    paidAt: p.paidAt,
-    sharedExpense: {
-      id: p.sharedExpense.id,
-      splitType: p.sharedExpense.splitType,
-      totalAmount: decimalToNumber(p.sharedExpense.totalAmount),
-      currency: p.sharedExpense.currency,
-      description: p.sharedExpense.description,
-      createdAt: p.sharedExpense.createdAt,
-      transaction: {
-        id: p.sharedExpense.transaction.id,
-        date: p.sharedExpense.transaction.date,
-        description: p.sharedExpense.transaction.description,
-        category: {
-          id: p.sharedExpense.transaction.category.id,
-          name: p.sharedExpense.transaction.category.name,
-        },
-      },
-      owner: p.sharedExpense.owner,
-    },
-  }))
-
+  const items = participations.map(transformExpenseParticipation)
   const hasMore = offset + items.length < total
 
   return { items, total, hasMore }
