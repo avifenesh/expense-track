@@ -102,6 +102,7 @@ const TEST_USER = {
   defaultAccountName: 'Personal',
   preferredCurrency: Currency.USD,
   hasCompletedOnboarding: true,
+    activeAccountId: null,
 }
 
 const now = new Date()
@@ -128,6 +129,7 @@ describe('exportUserDataAction', () => {
       preferredCurrency: TEST_USER.preferredCurrency,
       emailVerified: true,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       createdAt: now,
     } as never)
 

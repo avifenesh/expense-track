@@ -75,6 +75,7 @@ describe('POST /api/chat', () => {
     defaultAccountName: 'Test Account',
     preferredCurrency: 'USD' as const,
     hasCompletedOnboarding: true,
+    activeAccountId: null,
   }
   const mockAccount = {
     id: 'account-123',

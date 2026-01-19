@@ -141,6 +141,7 @@ describe('createTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -186,6 +187,7 @@ describe('createTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -245,6 +247,7 @@ describe('createTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -294,6 +297,7 @@ describe('createTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -333,6 +337,7 @@ describe('createTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -386,6 +391,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -422,6 +428,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -486,6 +493,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1', 'Account2'],
       defaultAccountName: 'Account1',
     })
@@ -539,6 +547,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -585,6 +594,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -634,6 +644,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -689,6 +700,7 @@ describe('updateTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -760,6 +772,7 @@ describe('deleteTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -784,6 +797,7 @@ describe('deleteTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -827,6 +841,7 @@ describe('deleteTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -861,6 +876,7 @@ describe('deleteTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -898,6 +914,7 @@ describe('deleteTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -940,6 +957,7 @@ describe('deleteTransactionAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -968,6 +986,7 @@ describe('subscription state edge cases', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -1186,6 +1205,7 @@ describe('auto-create RecurringTemplate', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })

@@ -104,6 +104,7 @@ const mockAuthUser = {
   passwordHash: 'hash',
   preferredCurrency: Currency.USD,
   hasCompletedOnboarding: true,
+    activeAccountId: null,
   accountNames: ['Account1'],
   defaultAccountName: 'Account1',
 }

@@ -97,6 +97,7 @@ describe('completeOnboardingAction', () => {
       preferredCurrency: 'USD',
       emailVerified: true,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
     } as any)
 
     const result = await completeOnboardingAction({ csrfToken: 'valid-token' })
@@ -138,6 +139,7 @@ describe('skipOnboardingAction', () => {
     vi.mocked(prisma.user.update).mockResolvedValue({
       id: 'test-user',
       hasCompletedOnboarding: true,
+    activeAccountId: null,
     } as any)
 
     const result = await skipOnboardingAction({ csrfToken: 'valid-token' })

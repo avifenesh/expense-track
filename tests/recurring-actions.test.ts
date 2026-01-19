@@ -96,6 +96,7 @@ describe('upsertRecurringTemplateAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -137,6 +138,7 @@ describe('upsertRecurringTemplateAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -242,6 +244,7 @@ describe('upsertRecurringTemplateAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -288,6 +291,7 @@ describe('toggleRecurringTemplateAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -330,6 +334,7 @@ describe('toggleRecurringTemplateAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -364,6 +369,7 @@ describe('applyRecurringTemplatesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -414,6 +420,7 @@ describe('applyRecurringTemplatesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -468,6 +475,7 @@ describe('applyRecurringTemplatesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -516,6 +524,7 @@ describe('applyRecurringTemplatesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
@@ -551,6 +560,7 @@ describe('applyRecurringTemplatesAction', () => {
       passwordHash: 'hash',
       preferredCurrency: Currency.USD,
       hasCompletedOnboarding: true,
+    activeAccountId: null,
       accountNames: ['Account1'],
       defaultAccountName: 'Account1',
     })
