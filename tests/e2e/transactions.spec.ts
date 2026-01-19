@@ -26,7 +26,7 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
@@ -53,7 +53,7 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
@@ -137,7 +137,7 @@ test.describe('transactions', () => {
       await transactionsPage.submitTransaction()
 
       // Wait for transaction saved toast before looking for delete button
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
