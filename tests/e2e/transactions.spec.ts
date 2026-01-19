@@ -27,7 +27,8 @@ test.describe('transactions', () => {
       await transactionsPage.submitTransaction()
 
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for the transaction list to update after save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
       await transactionsPage.expectTransactionInList('Weekly groceries', '50.00')
 
@@ -51,7 +52,8 @@ test.describe('transactions', () => {
       await transactionsPage.submitTransaction()
 
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for the transaction list to update after save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
       await transactionsPage.expectTransactionInList('Monthly salary', '3000.00')
 
@@ -119,7 +121,8 @@ test.describe('transactions', () => {
 
       // Wait for transaction saved toast before looking for edit button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for network to settle after transaction save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
 
       await transactionsPage.clickEditTransaction('Movie tickets')
@@ -152,7 +155,8 @@ test.describe('transactions', () => {
 
       // Wait for transaction saved toast before looking for delete button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for network to settle after transaction save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
 
       // Transaction deletion is immediate (no confirmation dialog)

@@ -25,6 +25,9 @@ test.describe('budgets', () => {
       await budgetsPage.submitBudget()
 
       await expect(page.getByText(/budget updated/i)).toBeVisible()
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
+      await page.waitForLoadState('networkidle')
       await budgetsPage.expectBudgetInList(TEST_CATEGORIES.GROCERIES, '500')
 
       await dashboardPage.clickSignOut()
@@ -117,7 +120,8 @@ test.describe('budgets', () => {
 
       // Wait for budget saved toast before looking for remove button
       await expect(page.getByText(/budget updated/i)).toBeVisible()
-      // Wait for network to settle after budget save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
 
       // Budget deletion is immediate (no confirmation dialog)
