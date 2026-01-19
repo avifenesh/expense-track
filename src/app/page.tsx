@@ -7,6 +7,7 @@ import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import { getMonthKey } from '@/utils/date'
 import { getSession, updateSessionAccount, getDbUserAsAuthUser } from '@/lib/auth-server'
 import { getSubscriptionState } from '@/lib/subscription'
+import { logger } from '@/lib/server-logger'
 import type { SubscriptionBannerData } from '@/components/subscription'
 
 export const dynamic = 'force-dynamic'
@@ -101,10 +102,18 @@ export default async function Page({ searchParams }: PageProps) {
       const updateResult = await updateSessionAccount(accountId)
       if ('error' in updateResult) {
         // Non-fatal: dashboard can still work with URL param specifying account
+        logger.debug('Session account sync returned error (non-fatal)', {
+          accountId,
+          error: updateResult.error,
+        })
       }
-    } catch {
+    } catch (error) {
       // Cookie update failed (expected in Server Component context)
       // Dashboard will use URL param for account selection
+      logger.debug('Session account sync failed (expected in Server Component)', {
+        accountId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
     }
   }
 

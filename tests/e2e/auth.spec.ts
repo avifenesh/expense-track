@@ -89,6 +89,7 @@ test.describe('authentication', () => {
       const accountSelect = page.getByLabel('Account')
       await expect(accountSelect).toBeVisible()
 
+      // User1 owns their personal account and the Joint account
       const options = await accountSelect.locator('option').allTextContents()
       expect(options).toContain(TEST_USER_1.displayName)
       expect(options).toContain('Joint')
@@ -114,7 +115,8 @@ test.describe('authentication', () => {
       await expect(accountSelect2).toBeVisible()
 
       // User2 should see their personal account but NOT User1's accounts
-      // Note: Joint account is owned by User1 and not shared with User2 in seed data
+      // Note: Joint account is owned by User1 and not shared with User2 in seed data,
+      // so User2 should not see the Joint account in their account list
       const options2 = await accountSelect2.locator('option').allTextContents()
       expect(options2).toContain(TEST_USER_2.displayName)
       expect(options2).not.toContain(TEST_USER_1.displayName)

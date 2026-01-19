@@ -32,7 +32,7 @@ export class BudgetsPage extends BasePage {
 
   async clickEditBudget(category: string) {
     const item = this.page.locator('div', { hasText: category })
-    await item.getByRole('button', { name: /edit|remove/i }).first().click()
+    await item.getByRole('button', { name: /edit/i }).first().click()
   }
 
   async clickDeleteBudget(category: string) {
