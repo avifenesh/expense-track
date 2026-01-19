@@ -462,7 +462,6 @@ describe('GET /api/v1/expenses/shared-with-me', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      // Should return 2 items (skipping first)
       const offsetExpenses = data.data.expenses.filter(
         (e: { sharedExpense: { description: string } }) => e.sharedExpense.description.startsWith('Offset test')
       )

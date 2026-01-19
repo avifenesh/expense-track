@@ -6,14 +6,10 @@ import { formatParticipation } from '@/app/api/v1/expenses/formatters'
 import { DEFAULT_PAGINATION_LIMIT } from '@/lib/finance/types'
 import type { ParticipantStatusFilter } from '@/lib/finance/types'
 
-const DEFAULT_LIMIT = DEFAULT_PAGINATION_LIMIT
 const MAX_LIMIT = 100
 
 const VALID_STATUSES = ['pending', 'paid', 'declined', 'all'] as const
 
-/**
- * Type guard to check if a value is a valid ParticipantStatusFilter.
- */
 function isParticipantStatusFilter(value: unknown): value is ParticipantStatusFilter {
   return typeof value === 'string' && VALID_STATUSES.includes(value as ParticipantStatusFilter)
 }
@@ -39,7 +35,6 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get('limit')
     const offsetParam = searchParams.get('offset')
 
-    // Validate status parameter using type guard
     let status: ParticipantStatusFilter = 'all'
 
     if (statusParam) {
@@ -49,8 +44,7 @@ export async function GET(request: NextRequest) {
       status = statusParam
     }
 
-    // Parse and validate limit
-    let limit = DEFAULT_LIMIT
+    let limit = DEFAULT_PAGINATION_LIMIT
     if (limitParam) {
       const parsed = parseInt(limitParam, 10)
       if (isNaN(parsed) || parsed < 1) {
@@ -59,7 +53,6 @@ export async function GET(request: NextRequest) {
       limit = Math.min(parsed, MAX_LIMIT)
     }
 
-    // Parse and validate offset
     let offset = 0
     if (offsetParam) {
       const parsed = parseInt(offsetParam, 10)
@@ -69,7 +62,6 @@ export async function GET(request: NextRequest) {
       offset = parsed
     }
 
-    // Fetch expenses shared with user
     const result = await getExpensesSharedWithMePaginated(user.userId, {
       status,
       limit,

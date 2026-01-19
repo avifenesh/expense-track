@@ -307,7 +307,6 @@ export async function getExpensesSharedWithMePaginated(
   const offset = options?.offset ?? 0
   const statusFilter = options?.status ?? 'all'
 
-  // Build where clause with status filtering
   const where: Prisma.ExpenseParticipantWhereInput = { userId }
   if (statusFilter === 'pending') {
     where.status = PaymentStatus.PENDING

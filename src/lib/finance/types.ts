@@ -8,10 +8,10 @@ import { Prisma, TransactionType, Currency, PaymentStatus, SplitType } from '@pr
 import type { getTransactionRequests } from './accounts'
 import type { getAccounts, getCategories } from './accounts'
 
-// Status filter for shared expenses (as owner - aggregate status)
+// Status filter for shared expenses
 export type SharedExpenseStatusFilter = 'pending' | 'settled' | 'all'
 
-// Status filter for expense participations (as participant - individual status)
+// Status filter for expense participations
 export type ParticipantStatusFilter = 'pending' | 'paid' | 'declined' | 'all'
 
 // Pagination options for cursor-based pagination
@@ -31,7 +31,7 @@ export type SharedExpensePaginationOptions = OffsetPaginationOptions & {
   status?: SharedExpenseStatusFilter
 }
 
-// Pagination options for expense participations with status filtering (offset-based)
+// Pagination options for expense participations with status filtering
 export type ParticipantPaginationOptions = OffsetPaginationOptions & {
   status?: ParticipantStatusFilter
 }
