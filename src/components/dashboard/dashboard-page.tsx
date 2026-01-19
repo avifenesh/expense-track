@@ -283,6 +283,20 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
     return () => window.clearTimeout(timer)
   }, [accountFeedback])
 
+  // Handle ESC key to close breakdown panel
+  useEffect(() => {
+    if (!expandedStat) return
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpandedStat(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscKey)
+    return () => document.removeEventListener('keydown', handleEscKey)
+  }, [expandedStat])
+
   const historyWithLabels = useMemo(
     () =>
       data.history.map((point) => ({
@@ -580,20 +594,9 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             const Icon = resolveStatIcon(stat.label)
             const isExpanded = expandedStat === stat.label
             const hasBreakdown = !!stat.breakdown
-            return (
-              <button
-                key={stat.label}
-                type="button"
-                onClick={() => hasBreakdown && setExpandedStat(isExpanded ? null : stat.label)}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition text-left',
-                  hasBreakdown && 'cursor-pointer hover:bg-white/10',
-                  !hasBreakdown && 'cursor-default',
-                  styles.border,
-                  isExpanded && 'ring-1 ring-white/30',
-                )}
-                aria-expanded={hasBreakdown ? isExpanded : undefined}
-              >
+
+            const cardContent = (
+              <>
                 <span className={cn('inline-flex shrink-0 items-center justify-center rounded-lg p-1.5', styles.chip)}>
                   <Icon className={cn('h-3.5 w-3.5', styles.icon)} />
                 </span>
@@ -613,7 +616,30 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                     )}
                   />
                 )}
+              </>
+            )
+
+            const cardClassName = cn(
+              'flex w-full items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition',
+              styles.border,
+              isExpanded && 'ring-1 ring-white/30',
+            )
+
+            // Use button for interactive cards, div for non-interactive
+            return hasBreakdown ? (
+              <button
+                key={stat.label}
+                type="button"
+                onClick={() => setExpandedStat(isExpanded ? null : stat.label)}
+                className={cn(cardClassName, 'cursor-pointer hover:bg-white/10 text-left')}
+                aria-expanded={isExpanded}
+              >
+                {cardContent}
               </button>
+            ) : (
+              <div key={stat.label} className={cardClassName}>
+                {cardContent}
+              </div>
             )
           })}
         </div>
