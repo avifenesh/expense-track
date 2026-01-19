@@ -22,6 +22,7 @@ export async function getRecurringTemplates({ accountId }: { accountId: string }
     categoryId: template.categoryId,
     type: template.type,
     amount: decimalToNumber(template.amount),
+    currency: template.currency,
     description: template.description,
     dayOfMonth: template.dayOfMonth,
     isActive: template.isActive,

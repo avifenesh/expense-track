@@ -194,18 +194,27 @@ export async function getDashboardData({
       { plannedExpense: 0, remainingExpense: 0 },
     )
 
-  const projectedNet = actualIncome + Math.max(remainingIncome, 0) - (actualExpense + Math.max(remainingExpense, 0))
-
   // Calculate expected income from active recurring income templates for this month
+  // Only count templates that haven't been applied yet (no matching transaction with recurringTemplateId)
+  const appliedTemplateIds = new Set(
+    transactionsWithNumbers.filter((t) => t.recurringTemplateId).map((t) => t.recurringTemplateId),
+  )
   const expectedRecurringIncome = recurringTemplates
     .filter((template) => {
       if (template.type !== TransactionType.INCOME || !template.isActive) return false
       // Check if template is active for this month (within start/end range)
       if (template.startMonthKey && template.startMonthKey > monthKey) return false
       if (template.endMonthKey && template.endMonthKey < monthKey) return false
+      // Don't count if already applied as a transaction this month
+      if (appliedTemplateIds.has(template.id)) return false
       return true
     })
-    .reduce((sum, template) => sum + template.amount, 0)
+    .reduce(
+      (sum, template) =>
+        sum +
+        convertTransactionAmountSync(template.amount, template.currency, preferredCurrency, currentMonthRates),
+      0,
+    )
 
   // Calculate expected income with priority: income goal → recurring templates → budgets
   // Convert income goal to preferred currency if set
@@ -219,13 +228,26 @@ export async function getDashboardData({
     : 0
 
   // Priority: income goal (month-specific or default) → recurring → budgets
+  // For income goal: remaining = goal - actual (how much more we expect)
+  // For recurring: only count unapplied templates (already filtered above)
+  // For budgets: use remainingIncome from budget calculations
+  const expectedRemainingIncome =
+    incomeGoalConverted > 0
+      ? Math.max(incomeGoalConverted - actualIncome, 0)
+      : expectedRecurringIncome > 0
+        ? expectedRecurringIncome // Already excludes applied templates
+        : Math.max(remainingIncome, 0)
+
   const expectedIncome =
     incomeGoalConverted > 0
       ? incomeGoalConverted
       : expectedRecurringIncome > 0
-        ? expectedRecurringIncome
+        ? actualIncome + expectedRecurringIncome // Actual + remaining unapplied
         : plannedIncome
   const plannedNet = expectedIncome - plannedExpense
+
+  // Projected net uses expected remaining income (what we still expect to receive)
+  const projectedNet = actualIncome + expectedRemainingIncome - (actualExpense + Math.max(remainingExpense, 0))
 
   // Convert previous month's transactions using that month's exchange rates
   const previousTransactionsConverted = previousTransactionsRaw.map((transaction) => ({

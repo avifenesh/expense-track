@@ -71,6 +71,7 @@ export type RecurringTemplateSummary = {
   categoryId: string
   type: TransactionType
   amount: number
+  currency: Currency
   description: string | null
   dayOfMonth: number
   isActive: boolean
