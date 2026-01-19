@@ -202,7 +202,7 @@ PATCH  /api/v1/expenses/shares/[id]/paid   - Mark share as paid
 DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense
 POST   /api/v1/expenses/shares/[id]/decline - Decline share
 GET    /api/v1/expenses/shared-by-me       - Get my shared expenses
-GET    /api/v1/expenses/shared-with-me     - Get expenses shared with me
+✓ GET  /api/v1/expenses/shared-with-me     - Get expenses shared with me (Issue #184)
 GET    /api/v1/users/lookup                - Lookup user by email
 POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder
 ```

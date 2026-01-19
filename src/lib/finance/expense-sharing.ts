@@ -10,6 +10,7 @@ import type {
   PaginationOptions,
   PaginatedResult,
   SharedExpensePaginationOptions,
+  ParticipantPaginationOptions,
 } from './types'
 import { DEFAULT_PAGINATION_LIMIT } from './types'
 
@@ -27,6 +28,28 @@ type SharedExpenseWithIncludes = Prisma.SharedExpenseGetPayload<{
     participants: {
       include: {
         participant: {
+          select: {
+            id: true
+            email: true
+            displayName: true
+          }
+        }
+      }
+    }
+  }
+}>
+
+// Type for expense participation query result with includes
+type ExpenseParticipationWithIncludes = Prisma.ExpenseParticipantGetPayload<{
+  include: {
+    sharedExpense: {
+      include: {
+        transaction: {
+          include: {
+            category: true
+          }
+        }
+        owner: {
           select: {
             id: true
             email: true
@@ -83,6 +106,38 @@ function transformSharedExpense(expense: SharedExpenseWithIncludes): SharedExpen
     totalOwed,
     totalPaid,
     allSettled,
+  }
+}
+
+/**
+ * Transform a Prisma ExpenseParticipant record into an ExpenseParticipationSummary.
+ * This helper is used by both getExpensesSharedWithMe and getExpensesSharedWithMePaginated.
+ */
+function transformExpenseParticipation(p: ExpenseParticipationWithIncludes): ExpenseParticipationSummary {
+  return {
+    id: p.id,
+    shareAmount: decimalToNumber(p.shareAmount),
+    sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
+    status: p.status,
+    paidAt: p.paidAt,
+    sharedExpense: {
+      id: p.sharedExpense.id,
+      splitType: p.sharedExpense.splitType,
+      totalAmount: decimalToNumber(p.sharedExpense.totalAmount),
+      currency: p.sharedExpense.currency,
+      description: p.sharedExpense.description,
+      createdAt: p.sharedExpense.createdAt,
+      transaction: {
+        id: p.sharedExpense.transaction.id,
+        date: p.sharedExpense.transaction.date,
+        description: p.sharedExpense.transaction.description,
+        category: {
+          id: p.sharedExpense.transaction.category.id,
+          name: p.sharedExpense.transaction.category.name,
+        },
+      },
+      owner: p.sharedExpense.owner,
+    },
   }
 }
 
@@ -256,38 +311,73 @@ export async function getExpensesSharedWithMe(
 
   const hasMore = participations.length > limit
   const results = hasMore ? participations.slice(0, limit) : participations
-
-  const items = results.map((p) => ({
-    id: p.id,
-    shareAmount: decimalToNumber(p.shareAmount),
-    sharePercentage: p.sharePercentage ? decimalToNumber(p.sharePercentage) : null,
-    status: p.status,
-    paidAt: p.paidAt,
-    sharedExpense: {
-      id: p.sharedExpense.id,
-      splitType: p.sharedExpense.splitType,
-      totalAmount: decimalToNumber(p.sharedExpense.totalAmount),
-      currency: p.sharedExpense.currency,
-      description: p.sharedExpense.description,
-      createdAt: p.sharedExpense.createdAt,
-      transaction: {
-        id: p.sharedExpense.transaction.id,
-        date: p.sharedExpense.transaction.date,
-        description: p.sharedExpense.transaction.description,
-        category: {
-          id: p.sharedExpense.transaction.category.id,
-          name: p.sharedExpense.transaction.category.name,
-        },
-      },
-      owner: p.sharedExpense.owner,
-    },
-  }))
+  const items = results.map(transformExpenseParticipation)
 
   return {
     items,
     nextCursor: hasMore ? items[items.length - 1].id : null,
     hasMore,
   }
+}
+
+/**
+ * Get expenses shared with a user by others (API version).
+ * Supports offset-based pagination and status filtering for REST API.
+ *
+ * @param userId - The user who participates in the shared expenses
+ * @param options - Optional pagination and filtering options
+ * @returns Paginated result with expense participations and total count
+ */
+export async function getExpensesSharedWithMePaginated(
+  userId: string,
+  options?: ParticipantPaginationOptions,
+): Promise<OffsetPaginatedResult<ExpenseParticipationSummary>> {
+  const limit = Math.min(options?.limit ?? DEFAULT_PAGINATION_LIMIT, MAX_LIMIT)
+  const offset = options?.offset ?? 0
+  const statusFilter = options?.status ?? 'all'
+
+  const where: Prisma.ExpenseParticipantWhereInput = { userId }
+  if (statusFilter === 'pending') {
+    where.status = PaymentStatus.PENDING
+  } else if (statusFilter === 'paid') {
+    where.status = PaymentStatus.PAID
+  } else if (statusFilter === 'declined') {
+    where.status = PaymentStatus.DECLINED
+  }
+
+  // Use transaction for atomicity of count + fetch
+  const [total, participations] = await prisma.$transaction([
+    prisma.expenseParticipant.count({ where }),
+    prisma.expenseParticipant.findMany({
+      where,
+      include: {
+        sharedExpense: {
+          include: {
+            transaction: {
+              include: {
+                category: true,
+              },
+            },
+            owner: {
+              select: {
+                id: true,
+                email: true,
+                displayName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: offset,
+      take: limit,
+    }),
+  ])
+
+  const items = participations.map(transformExpenseParticipation)
+  const hasMore = offset + items.length < total
+
+  return { items, total, hasMore }
 }
 
 /**

@@ -883,6 +883,68 @@ List expenses shared by the authenticated user with others. Supports filtering b
 - 401: Unauthorized - Invalid or missing auth token
 - 429: Rate limited - Too many requests
 
+### GET /api/v1/expenses/shared-with-me
+
+List expenses shared with the authenticated user by others. Supports filtering by participant status and pagination.
+
+**Auth:** Bearer token required
+
+**Query Parameters:**
+- `status`: Optional. Filter by status: `pending`, `paid`, `declined`, or `all` (default: `all`)
+  - `pending`: Expenses where the user has not yet paid
+  - `paid`: Expenses where the user has paid
+  - `declined`: Expenses the user has declined
+  - `all`: All expenses shared with the user
+- `limit`: Optional. Number of results (default: 50, max: 100)
+- `offset`: Optional. Pagination offset (default: 0)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "expenses": [
+      {
+        "id": "clx...",
+        "shareAmount": "30.00",
+        "sharePercentage": null,
+        "status": "PENDING",
+        "paidAt": null,
+        "sharedExpense": {
+          "id": "clx...",
+          "splitType": "EQUAL",
+          "totalAmount": "120.00",
+          "currency": "USD",
+          "description": "Team lunch",
+          "createdAt": "2024-01-16T14:00:00Z",
+          "transaction": {
+            "id": "clx...",
+            "date": "2024-01-16",
+            "description": "Lunch",
+            "category": {
+              "id": "clx...",
+              "name": "Food & Dining"
+            }
+          },
+          "owner": {
+            "id": "clx...",
+            "email": "owner@example.com",
+            "displayName": "Owner"
+          }
+        }
+      }
+    ],
+    "total": 5,
+    "hasMore": false
+  }
+}
+```
+
+**Errors:**
+- 400: Validation error - Invalid status, limit, or offset parameter
+- 401: Unauthorized - Invalid or missing auth token
+- 429: Rate limited - Too many requests
+
 ---
 
 ### POST /api/v1/expenses/share
@@ -979,7 +1041,6 @@ Share an expense with other users. Creates a shared expense from an existing tra
 - For `PERCENTAGE` splits, total percentage cannot exceed 100%
 - Email notifications are sent to participants (asynchronous)
 
----
 
 ### POST /api/v1/expenses/shares/[participantId]/decline
 
