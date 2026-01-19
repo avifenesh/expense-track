@@ -38,10 +38,13 @@ test.describe('sharing', () => {
 
       await transactionsPage.submitTransaction()
 
-      // Wait for transaction to be saved and find the share button (icon button with title)
+      // Wait for transaction saved toast before looking for share button
+      await expect(page.getByText(/transaction saved/i)).toBeVisible()
       await page.waitForLoadState('networkidle')
+
+      // Find the share button (icon button with title)
       const shareButton = page.getByTitle('Share expense').first()
-      await expect(shareButton).toBeVisible()
+      await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
 
       await sharingPage.fillShareExpenseForm({
@@ -106,10 +109,13 @@ test.describe('sharing', () => {
 
       await transactionsPage.submitTransaction()
 
-      // Wait for transaction to be saved and find the share button (icon button with title)
+      // Wait for transaction saved toast before looking for share button
+      await expect(page.getByText(/transaction saved/i)).toBeVisible()
       await page.waitForLoadState('networkidle')
+
+      // Find the share button (icon button with title)
       const shareButton = page.getByTitle('Share expense').first()
-      await expect(shareButton).toBeVisible()
+      await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
 
       // Add participant (aria-label="Add participant")
@@ -117,6 +123,8 @@ test.describe('sharing', () => {
       await emailInput.fill(TEST_USER_2.email)
       const addButton = page.getByLabel('Add participant')
       await addButton.click()
+      // Wait for participant lookup (async server action) to complete
+      await page.waitForLoadState('networkidle')
 
       await sharingPage.expectParticipantAdded(TEST_USER_2.email)
 

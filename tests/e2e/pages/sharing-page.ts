@@ -29,7 +29,10 @@ export class SharingPage extends BasePage {
       // Button has aria-label="Add participant", not visible text
       const addButton = this.page.getByLabel('Add participant')
       await addButton.click()
-      await expect(this.getByText(email)).toBeVisible()
+      // Wait for participant lookup (async server action) to complete
+      await this.page.waitForLoadState('networkidle')
+      // Participant card shows email, allow longer timeout for async lookup
+      await expect(this.getByText(email)).toBeVisible({ timeout: 10000 })
     }
 
     if (data.description) {
