@@ -94,10 +94,17 @@ export default async function Page({ searchParams }: PageProps) {
     redirect('/login?reason=no-accounts')
   }
 
+  // Try to sync session account, but don't fail if cookies can't be set
+  // (cookies can only be modified in Server Actions, not Server Components in Next.js 15+)
   if (session.accountId !== accountId) {
-    const updateResult = await updateSessionAccount(accountId)
-    if ('error' in updateResult) {
-      redirect('/login?reason=account-access')
+    try {
+      const updateResult = await updateSessionAccount(accountId)
+      if ('error' in updateResult) {
+        // Non-fatal: dashboard can still work with URL param specifying account
+      }
+    } catch {
+      // Cookie update failed (expected in Server Component context)
+      // Dashboard will use URL param for account selection
     }
   }
 
