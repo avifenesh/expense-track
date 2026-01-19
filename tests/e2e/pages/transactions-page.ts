@@ -45,7 +45,15 @@ export class TransactionsPage extends BasePage {
   }
 
   async expectTransactionInList(description: string, amount: string) {
-    const item = this.page.locator('div', { hasText: description }).filter({ hasText: amount })
+    // Amount in UI is formatted with currency symbol and commas (e.g., "-$50.00", "+$3,000.00")
+    // Convert input like "50.00" to a regex that matches the formatted version
+    const amountNum = parseFloat(amount)
+    // Create regex that matches the amount with optional sign, currency symbol, and commas
+    // e.g., "3000.00" should match "-$3,000.00" or "+$3,000.00"
+    const formattedWithCommas = amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
+
+    const item = this.page.locator('div', { hasText: description }).filter({ hasText: amountRegex })
     await expect(item.first()).toBeVisible()
   }
 
