@@ -43,10 +43,13 @@ test.describe('dashboard', () => {
 
       const currentUrl = page.url()
       await prevButton.click()
-      await page.waitForLoadState('networkidle')
+
+      // Wait for URL to change (client-side navigation adds month param)
+      await page.waitForURL((url) => url.toString() !== currentUrl)
 
       const newUrl = page.url()
       expect(newUrl).not.toBe(currentUrl)
+      expect(newUrl).toContain('month=')
     })
 
     test('should navigate to next month', async ({ page }) => {
@@ -55,10 +58,13 @@ test.describe('dashboard', () => {
 
       const currentUrl = page.url()
       await nextButton.click()
-      await page.waitForLoadState('networkidle')
+
+      // Wait for URL to change (client-side navigation adds month param)
+      await page.waitForURL((url) => url.toString() !== currentUrl)
 
       const newUrl = page.url()
       expect(newUrl).not.toBe(currentUrl)
+      expect(newUrl).toContain('month=')
     })
 
     test('should display current month label', async ({ page }) => {
@@ -103,7 +109,7 @@ test.describe('dashboard', () => {
 
       await dashboardPage.navigateToTab('Sharing')
       await page.waitForLoadState('networkidle')
-      await expect(page.getByText(/settlement summary/i)).toBeVisible()
+      await expect(page.getByText(/expenses you shared/i)).toBeVisible()
 
       await dashboardPage.navigateToTab('Transactions')
       await page.waitForLoadState('networkidle')

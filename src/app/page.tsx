@@ -7,6 +7,7 @@ import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import { getMonthKey } from '@/utils/date'
 import { getSession, updateSessionAccount, getDbUserAsAuthUser } from '@/lib/auth-server'
 import { getSubscriptionState } from '@/lib/subscription'
+import { serverLogger } from '@/lib/server-logger'
 import type { SubscriptionBannerData } from '@/components/subscription'
 
 export const dynamic = 'force-dynamic'
@@ -101,10 +102,18 @@ export default async function Page({ searchParams }: PageProps) {
       const updateResult = await updateSessionAccount(accountId)
       if ('error' in updateResult) {
         // Non-fatal: dashboard can still work with URL param specifying account
+        serverLogger.info('Session account sync returned error (non-fatal)', {
+          accountId,
+          errorDetails: updateResult.error,
+        })
       }
-    } catch {
+    } catch (error) {
       // Cookie update failed (expected in Server Component context)
       // Dashboard will use URL param for account selection
+      serverLogger.info('Session account sync failed (expected in Server Component)', {
+        accountId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      })
     }
   }
 
@@ -118,8 +127,12 @@ export default async function Page({ searchParams }: PageProps) {
       trialEndsAt: subState.trialEndsAt?.toISOString() ?? null,
       currentPeriodEnd: subState.currentPeriodEnd?.toISOString() ?? null,
     }
-  } catch {
+  } catch (error) {
     // If subscription check fails, don't block the dashboard
+    serverLogger.info('Subscription check failed (non-blocking)', {
+      userId: authUser.id,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    })
     subscription = null
   }
 
