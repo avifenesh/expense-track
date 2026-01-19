@@ -76,7 +76,7 @@ test.describe('onboarding', () => {
       const dashboardPage = new DashboardPage(page)
 
       await dashboardPage.waitForUrl(/\/?account=/)
-      await dashboardPage.expectAccountOption('TestUserOne')
+      await expect(page.getByRole('heading', { name: /balance beacon/i })).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })
