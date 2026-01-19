@@ -15,7 +15,7 @@ jobs:
   e2e-web:
     name: Run Playwright E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -25,7 +25,7 @@ jobs:
           POSTGRES_PASSWORD: e2e_password
           POSTGRES_DB: balance_beacon_e2e
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U e2e_user"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
