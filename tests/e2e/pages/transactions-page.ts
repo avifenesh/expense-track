@@ -57,8 +57,8 @@ export class TransactionsPage extends BasePage {
     const formattedWithCommas = amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
 
-    // Verify the amount also appears - it should be near the description
-    await expect(this.page.getByText(amountRegex)).toBeVisible({ timeout: 10000 })
+    // Verify the amount also appears - use .first() as amount may appear in header totals too
+    await expect(this.page.getByText(amountRegex).first()).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditTransaction(description: string) {

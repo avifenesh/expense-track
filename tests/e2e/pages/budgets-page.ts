@@ -26,11 +26,11 @@ export class BudgetsPage extends BasePage {
   }
 
   async expectBudgetInList(category: string, planned: string) {
-    // First wait for the category to appear anywhere on the page
-    // This is more reliable than waiting for a specific element structure
-    await expect(this.page.getByText(category)).toBeVisible({ timeout: 20000 })
-    // Also verify the planned amount appears
-    await expect(this.page.getByText(planned)).toBeVisible({ timeout: 10000 })
+    // Wait for the category to appear in the budget list (not the dropdown)
+    // Use .first() to handle strict mode - category appears in both list and dropdown
+    await expect(this.page.getByText(category).first()).toBeVisible({ timeout: 20000 })
+    // Also verify the planned amount appears (use first() as amounts may appear multiple places)
+    await expect(this.page.getByText(planned).first()).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditBudget(category: string) {
@@ -41,7 +41,8 @@ export class BudgetsPage extends BasePage {
 
   async clickDeleteBudget(category: string) {
     // First verify the budget is visible in the list
-    await expect(this.page.getByText(category)).toBeVisible({ timeout: 20000 })
+    // Use .first() to handle strict mode - category appears in both list and dropdown
+    await expect(this.page.getByText(category).first()).toBeVisible({ timeout: 20000 })
     // Use getByRole for the Remove button directly - it's more reliable than nested locators
     // Budget deletion is immediate (no confirmation dialog)
     const removeButton = this.page.getByRole('button', { name: /remove/i }).first()
