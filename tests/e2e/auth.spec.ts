@@ -120,6 +120,7 @@ test.describe('authentication', () => {
       const options2 = await accountSelect2.locator('option').allTextContents()
       expect(options2).toContain(TEST_USER_2.displayName)
       expect(options2).not.toContain(TEST_USER_1.displayName)
+      expect(options2).not.toContain('Joint')
 
       await dashboardPage.clickSignOut()
     })
