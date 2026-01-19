@@ -33,7 +33,7 @@ test.describe('authentication', () => {
       await loginPage.fillPassword(TEST_USER_1.password)
       await loginPage.clickLogin()
 
-      await expect(page.getByText(/email.*required/i)).toBeVisible()
+      await expect(page.getByText(/enter a valid email address/i)).toBeVisible()
     })
 
     test('should show validation error for missing password', async ({ page }) => {
@@ -136,9 +136,9 @@ test.describe('authentication', () => {
       await page.goto('/register')
       await page.getByRole('button', { name: /create account/i }).click()
 
-      await expect(page.getByText(/display name.*required/i)).toBeVisible()
-      await expect(page.getByText(/email.*required/i)).toBeVisible()
-      await expect(page.getByText(/password.*required/i)).toBeVisible()
+      await expect(page.getByText(/display name must be at least/i)).toBeVisible()
+      await expect(page.getByText(/enter a valid email address/i)).toBeVisible()
+      await expect(page.getByText(/password must be at least/i)).toBeVisible()
     })
 
     test('should show validation error for weak password', async ({ page }) => {
