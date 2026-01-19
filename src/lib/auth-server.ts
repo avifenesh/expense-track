@@ -158,7 +158,13 @@ export async function updateSessionAccount(
     return { error: { general: ['Account is not available for this user'] } }
   }
 
+  // Update both session cookie and database activeAccountId
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
+  await prisma.user.update({
+    where: { id: dbUser.id },
+    data: { activeAccountId: accountId },
+  })
+
   return { success: true }
 }
 
@@ -251,7 +257,17 @@ export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | und
   const normalizedEmail = email.toLowerCase()
   const dbUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    include: { accounts: { orderBy: { name: 'asc' } } },
+    include: { accounts: { where: { deletedAt: null }, orderBy: { name: 'asc' } } },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      passwordHash: true,
+      preferredCurrency: true,
+      hasCompletedOnboarding: true,
+      activeAccountId: true,
+      accounts: true,
+    },
   })
 
   if (!dbUser || dbUser.accounts.length === 0) {
@@ -267,6 +283,7 @@ export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | und
     defaultAccountName: dbUser.accounts[0].name,
     preferredCurrency: dbUser.preferredCurrency,
     hasCompletedOnboarding: dbUser.hasCompletedOnboarding,
+    activeAccountId: dbUser.activeAccountId,
   }
 }
 

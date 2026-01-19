@@ -13,6 +13,7 @@ export type AuthUser = {
   defaultAccountName: string
   preferredCurrency: Currency
   hasCompletedOnboarding: boolean
+  activeAccountId: string | null
 }
 
 // Session cookie names
