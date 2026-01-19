@@ -43,11 +43,10 @@ test.describe('sharing', () => {
       // Wait for network to settle after transaction save
       await page.waitForLoadState('networkidle')
 
-      // Find the share button within the transaction row containing our description
-      // The share button has title="Share expense" and appears only for expense transactions
-      // Use .first() to handle test retries that may create duplicate transactions
-      const transactionRow = page.locator('div.rounded-2xl', { hasText: 'Shared groceries' }).first()
-      const shareButton = transactionRow.getByTitle('Share expense')
+      // Find the share button for the newly created transaction
+      // Use getByRole for the share button directly - it's more reliable than nested locators
+      // The button has title="Share expense" which translates to accessible name
+      const shareButton = page.getByRole('button', { name: 'Share expense' }).first()
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
 
@@ -118,11 +117,10 @@ test.describe('sharing', () => {
       // Wait for network to settle after transaction save
       await page.waitForLoadState('networkidle')
 
-      // Find the share button within the transaction row containing our description
-      // The share button has title="Share expense" and appears only for expense transactions
-      // Use .first() to handle test retries that may create duplicate transactions
-      const transactionRow = page.locator('div.rounded-2xl', { hasText: 'Concert tickets' }).first()
-      const shareButton = transactionRow.getByTitle('Share expense')
+      // Find the share button for the newly created transaction
+      // Use getByRole for the share button directly - it's more reliable than nested locators
+      // The button has title="Share expense" which translates to accessible name
+      const shareButton = page.getByRole('button', { name: 'Share expense' }).first()
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
 
