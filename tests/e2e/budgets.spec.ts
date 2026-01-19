@@ -111,8 +111,8 @@ test.describe('budgets', () => {
 
       await budgetsPage.submitBudget()
 
+      // Budget deletion is immediate (no confirmation dialog)
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.ENTERTAINMENT)
-      await budgetsPage.confirmDelete()
 
       await expect(page.getByText(/budget removed/i)).toBeVisible()
 
@@ -147,7 +147,8 @@ test.describe('budgets', () => {
       await expect(typeFilter).toBeVisible()
       await budgetsPage.filterByType('Expense')
       await page.waitForLoadState('networkidle')
-      await budgetsPage.filterByType('All')
+      // The "All" option label is "All types"
+      await budgetsPage.filterByType('All types')
       await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()

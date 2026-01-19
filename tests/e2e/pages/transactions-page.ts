@@ -48,11 +48,8 @@ export class TransactionsPage extends BasePage {
 
   async clickDeleteTransaction(description: string) {
     const item = this.page.locator('div', { hasText: description })
+    // Transaction deletion is immediate (no confirmation dialog)
     await item.getByRole('button', { name: 'Delete' }).first().click()
-  }
-
-  async confirmDelete() {
-    await this.clickButton('Confirm')
   }
 
   async expectNoTransactions() {
@@ -60,15 +57,18 @@ export class TransactionsPage extends BasePage {
   }
 
   async filterByType(type: string) {
-    await this.selectOption('Type filter', type)
+    // Use label matching since types like 'Expense' are labels (values are 'EXPENSE')
+    await this.selectOption('Type filter', { label: type })
   }
 
   async filterByCategory(category: string) {
-    await this.selectOption('Category filter', category)
+    // Use label matching for category names
+    await this.selectOption('Category filter', { label: category })
   }
 
   async filterByAccount(account: string) {
-    await this.selectOption('Account filter', account)
+    // Use label matching for account names
+    await this.selectOption('Account filter', { label: account })
   }
 
   async searchTransactions(query: string) {

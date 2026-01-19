@@ -37,11 +37,8 @@ export class BudgetsPage extends BasePage {
 
   async clickDeleteBudget(category: string) {
     const item = this.page.locator('div', { hasText: category })
+    // Budget deletion is immediate (no confirmation dialog)
     await item.getByRole('button', { name: /remove/i }).first().click()
-  }
-
-  async confirmDelete() {
-    await this.clickButton('Confirm')
   }
 
   async expectNoBudgets() {
@@ -49,11 +46,13 @@ export class BudgetsPage extends BasePage {
   }
 
   async filterByAccount(account: string) {
-    await this.selectOption('Account filter', account)
+    // Use label matching since account names are displayed text, not values
+    await this.selectOption('Account filter', { label: account })
   }
 
   async filterByType(type: string) {
-    await this.selectOption('Type filter', type)
+    // Use label matching since types like 'Expense' are labels (values are 'EXPENSE')
+    await this.selectOption('Type filter', { label: type })
   }
 
   async expectBudgetProgress(category: string, percentage: number) {

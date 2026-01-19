@@ -141,8 +141,8 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
+      // Transaction deletion is immediate (no confirmation dialog)
       await transactionsPage.clickDeleteTransaction('Electric bill')
-      await transactionsPage.confirmDelete()
 
       await expect(page.getByText(/transaction removed/i)).toBeVisible()
 
@@ -167,7 +167,8 @@ test.describe('transactions', () => {
       await transactionsPage.filterByType('Income')
       await page.waitForLoadState('networkidle')
 
-      await transactionsPage.filterByType('All')
+      // The "All" option label is "All types"
+      await transactionsPage.filterByType('All types')
       await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()
