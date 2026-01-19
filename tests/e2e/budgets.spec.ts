@@ -24,7 +24,7 @@ test.describe('budgets', () => {
 
       await budgetsPage.submitBudget()
 
-      await expect(page.getByText(/budget created/i)).toBeVisible()
+      await expect(page.getByText(/budget updated/i)).toBeVisible()
       await budgetsPage.expectBudgetInList(TEST_CATEGORIES.GROCERIES, '500')
 
       await dashboardPage.clickSignOut()
@@ -110,7 +110,7 @@ test.describe('budgets', () => {
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.ENTERTAINMENT)
       await budgetsPage.confirmDelete()
 
-      await expect(page.getByText(/budget deleted/i)).toBeVisible()
+      await expect(page.getByText(/budget removed/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })

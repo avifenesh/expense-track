@@ -26,7 +26,7 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction created/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible()
       await transactionsPage.expectTransactionInList('Weekly groceries', '50.00')
 
       await dashboardPage.clickSignOut()
@@ -48,7 +48,7 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction created/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible()
       await transactionsPage.expectTransactionInList('Monthly salary', '3000.00')
 
       await dashboardPage.clickSignOut()
@@ -140,7 +140,7 @@ test.describe('transactions', () => {
       await transactionsPage.clickDeleteTransaction('Electric bill')
       await transactionsPage.confirmDelete()
 
-      await expect(page.getByText(/transaction deleted/i)).toBeVisible()
+      await expect(page.getByText(/transaction removed/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })
