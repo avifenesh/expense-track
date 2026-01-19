@@ -75,9 +75,9 @@ jobs:
           AUTH_USER1_PASSWORD: TestPassword123!
           AUTH_USER2_EMAIL: e2e-user2@test.local
           AUTH_USER2_PASSWORD: TestPassword123!
-          # App secrets for E2E testing
-          JWT_SECRET: e2e-test-jwt-secret-not-for-production
-          CSRF_SECRET: e2e-test-csrf-secret-not-for-production
+          # App secrets for E2E testing (must be at least 32 chars)
+          JWT_SECRET: e2e-test-jwt-secret-32chars-minimum-for-validation
+          AUTH_SESSION_SECRET: e2e-test-session-secret-32chars-minimum-valid
 
       - name: Upload test results
         if: always()
