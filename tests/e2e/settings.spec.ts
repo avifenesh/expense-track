@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { loginAsUser1 } from './helpers/auth-helpers'
-import { DashboardPage } from './pages/dashboard-page'
 
 test.describe('settings', () => {
   test.beforeEach(async ({ page }) => {
