@@ -28,10 +28,8 @@ export class TransactionsPage extends BasePage {
     if (data.account) {
       await form.locator('#transactionAccount').selectOption({ label: data.account })
     }
-    // Wait for category option to be available before selecting
-    const categorySelect = form.locator('#transactionCategory')
-    await categorySelect.locator(`option:text("${data.category}")`).waitFor({ state: 'attached' })
-    await categorySelect.selectOption({ label: data.category })
+    // Select category (filtered by type, so wait briefly for options to update)
+    await form.locator('#transactionCategory').selectOption({ label: data.category })
     await form.getByLabel('Amount').fill(data.amount)
     await form.getByLabel('Date').fill(data.date)
     if (data.description) {

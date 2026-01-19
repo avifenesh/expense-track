@@ -63,7 +63,7 @@ test.describe('sharing', () => {
       await transactionsPage.navigateToTransactionsTab()
 
       await transactionsPage.fillTransactionForm({
-        category: TEST_CATEGORIES.RENT,
+        category: TEST_CATEGORIES.HOUSING,
         amount: '1000.00',
         date: getToday(),
         description: 'Monthly rent',
@@ -145,12 +145,14 @@ test.describe('sharing', () => {
 
       await sharingPage.navigateToSharingTab()
 
-      // Settlement summary only shows when there are settlement balances
-      // Check if it exists - it may not if no expenses have been shared
-      const settlementSection = page.locator('div', { hasText: /settlement summary/i })
-      const isVisible = await settlementSection.isVisible()
-      if (isVisible) {
-        await expect(settlementSection).toBeVisible()
+      // Settlement summary card shows when there are settlement balances
+      // Use heading role to avoid matching multiple nested divs
+      const settlementHeading = page.getByRole('heading', { name: /settlement summary/i })
+      const headingCount = await settlementHeading.count()
+
+      // Only assert if the heading exists (may not if no expenses have been shared)
+      if (headingCount > 0) {
+        await expect(settlementHeading.first()).toBeVisible()
       }
 
       await dashboardPage.clickSignOut()
