@@ -51,7 +51,8 @@ model User {
   subscription          Subscription?
   sharedExpensesOwned   SharedExpense[]        @relation("SharedExpensesOwned")
   expenseParticipations ExpenseParticipant[]   @relation("ExpenseParticipations")
-  activeAccount         Account?               @relation("ActiveAccount", fields: [activeAccountId], references: [id], onDelete: SetNull)
+  // Note: Not a Prisma relation - just a foreign key reference for flexibility
+  // Multiple users could theoretically share the same activeAccountId in shared account scenarios
 
   @@index([email])
 }
@@ -101,7 +102,6 @@ model Account {
   transactions       Transaction[]
   sentRequests       TransactionRequest[] @relation("SentRequests")
   receivedRequests   TransactionRequest[] @relation("ReceivedRequests")
-  activeFor          User?                @relation("ActiveAccount")
 
   @@unique([userId, name])
   @@index([userId])
