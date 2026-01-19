@@ -348,28 +348,28 @@ export async function getDashboardData({
 
   const stats: MonetaryStat[] = [
     {
-      label: 'Saved so far',
+      label: 'Net this month',
       amount: actualNet,
       variant: actualNet >= 0 ? 'positive' : 'negative',
-      helper: 'Income minus expenses this month',
+      helper: 'Actual income minus actual expenses',
     },
     {
       label: 'On track for',
       amount: projectedNet,
       variant: projectedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Where you\'ll be at month end',
+      helper: 'Projected balance at month end',
     },
     {
       label: 'Left to spend',
       amount: Math.max(remainingExpense, 0),
       variant: remainingExpense <= 0 ? 'neutral' : 'negative',
-      helper: 'Budget not yet used',
+      helper: 'Remaining expense budget',
     },
     {
-      label: 'Monthly goal',
+      label: 'Monthly target',
       amount: plannedNet,
       variant: plannedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Expected income minus budgeted expenses',
+      helper: 'Planned income minus budgeted expenses',
     },
   ]
 

@@ -606,9 +606,9 @@ describe('finance.ts', () => {
 
       expect(result.stats).toHaveLength(4)
 
-      // Saved so far (actual net) = 3000 - 150 = 2850
+      // Net this month (actual net) = 3000 - 150 = 2850
       expect(result.stats[0]).toMatchObject({
-        label: 'Saved so far',
+        label: 'Net this month',
         amount: 2850,
         variant: 'positive',
       })
@@ -626,10 +626,10 @@ describe('finance.ts', () => {
         amount: 350,
       })
 
-      // Monthly goal (planned net) = 3000 - 500 = 2500
+      // Monthly target (planned net) = 3000 - 500 = 2500
       // Falls back to income budget since no recurring templates
       expect(result.stats[3]).toMatchObject({
-        label: 'Monthly goal',
+        label: 'Monthly target',
         amount: 2500,
         variant: 'positive',
       })
@@ -665,10 +665,10 @@ describe('finance.ts', () => {
         accountId: 'acc1',
       })
 
-      // Monthly goal should use recurring income (5000) instead of income budget (3000)
+      // Monthly target should use recurring income (5000) instead of income budget (3000)
       // plannedNet = 5000 - 500 = 4500
       expect(result.stats[3]).toMatchObject({
-        label: 'Monthly goal',
+        label: 'Monthly target',
         amount: 4500,
         variant: 'positive',
       })
@@ -707,7 +707,7 @@ describe('finance.ts', () => {
       // Should fall back to income budget (3000) since recurring is inactive
       // plannedNet = 3000 - 500 = 2500
       expect(result.stats[3]).toMatchObject({
-        label: 'Monthly goal',
+        label: 'Monthly target',
         amount: 2500,
         variant: 'positive',
       })
@@ -754,10 +754,10 @@ describe('finance.ts', () => {
         accountId: 'acc1',
       })
 
-      // Monthly goal should use income goal (7000) instead of recurring (5000)
+      // Monthly target should use income goal (7000) instead of recurring (5000)
       // plannedNet = 7000 - 500 = 6500
       expect(result.stats[3]).toMatchObject({
-        label: 'Monthly goal',
+        label: 'Monthly target',
         amount: 6500,
         variant: 'positive',
       })
@@ -809,10 +809,10 @@ describe('finance.ts', () => {
         accountId: 'acc1',
       })
 
-      // Monthly goal should use account default (6000) instead of recurring (5000)
+      // Monthly target should use account default (6000) instead of recurring (5000)
       // plannedNet = 6000 - 500 = 5500
       expect(result.stats[3]).toMatchObject({
-        label: 'Monthly goal',
+        label: 'Monthly target',
         amount: 5500,
         variant: 'positive',
       })
