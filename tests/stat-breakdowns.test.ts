@@ -363,6 +363,65 @@ describe('Stat breakdowns', () => {
     }
   })
 
+  it('should use different income sources for target vs projected when recurring templates are applied', async () => {
+    // Scenario: Recurring template exists but salary transaction has already been applied this month
+    // Monthly target should show "recurring" (because totalRecurringIncome > 0)
+    // On track for should show "none" (because expectedRecurringIncome = 0, no remaining budget income)
+    const recurringTemplateId = 'rec1'
+
+    vi.mocked(prisma.recurringTemplate.findMany).mockResolvedValueOnce([
+      {
+        id: recurringTemplateId,
+        accountId: 'acc1',
+        categoryId: 'cat2',
+        type: TransactionType.INCOME,
+        amount: new Prisma.Decimal(5000),
+        description: 'Salary',
+        dayOfMonth: 1,
+        isActive: true,
+        startMonth: null,
+        endMonth: null,
+        deletedAt: null,
+        category: mockCategories[1],
+        account: mockAccounts[0],
+      },
+    ] as unknown as (RecurringTemplate & { category: Category; account: Account })[])
+
+    // Transaction with recurringTemplateId means template has been applied
+    const transactionsWithAppliedTemplate = [
+      {
+        ...mockTransactions[0],
+        recurringTemplateId, // Salary transaction linked to recurring template
+      },
+      mockTransactions[1], // Groceries expense
+    ]
+
+    vi.mocked(prisma.transaction.findMany)
+      .mockResolvedValueOnce(transactionsWithAppliedTemplate as unknown as Transaction[])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    const result = await financeLib.getDashboardData({
+      monthKey: '2024-01',
+      accountId: 'acc1',
+    })
+
+    // Monthly target uses totalRecurringIncome (includes applied templates)
+    const monthlyTargetStat = result.stats.find((s) => s.label === 'Monthly target')
+    if (monthlyTargetStat?.breakdown?.type === 'monthly-target') {
+      expect(monthlyTargetStat.breakdown.incomeSource).toBe('recurring')
+      expect(monthlyTargetStat.breakdown.plannedIncome).toBe(5000)
+    }
+
+    // On track for uses expectedRecurringIncome (excludes applied templates)
+    // Since the template is applied, expectedRecurringIncome = 0, falls back to 'none'
+    const onTrackStat = result.stats.find((s) => s.label === 'On track for')
+    if (onTrackStat?.breakdown?.type === 'on-track-for') {
+      expect(onTrackStat.breakdown.incomeSource).toBe('none')
+      expect(onTrackStat.breakdown.expectedRemainingIncome).toBe(0)
+    }
+  })
+
   it('should have all four stats with breakdowns', async () => {
     vi.mocked(prisma.transaction.findMany)
       .mockResolvedValueOnce(mockTransactions as unknown as Transaction[])

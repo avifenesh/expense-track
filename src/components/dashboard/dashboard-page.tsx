@@ -641,28 +641,29 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
         </div>
 
         {/* Stat breakdown panel */}
-        {expandedStat && (
-          <div className="relative z-10 mt-2 rounded-xl border border-white/15 bg-white/5 p-4 backdrop-blur">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-300">
-                {expandedStat} breakdown
-              </p>
-              <button
-                type="button"
-                onClick={() => setExpandedStat(null)}
-                className="text-xs text-slate-400 hover:text-white transition"
-              >
-                Close
-              </button>
-            </div>
-            {data.stats.find((s) => s.label === expandedStat)?.breakdown && (
-              <StatBreakdownPanel
-                breakdown={data.stats.find((s) => s.label === expandedStat)!.breakdown!}
-                currency={preferredCurrency}
-              />
-            )}
-          </div>
-        )}
+        {expandedStat &&
+          (() => {
+            const stat = data.stats.find((s) => s.label === expandedStat)
+            if (!stat?.breakdown) return null
+
+            return (
+              <div className="relative z-10 mt-2 rounded-xl border border-white/15 bg-white/5 p-4 backdrop-blur">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-300">
+                    {expandedStat} breakdown
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedStat(null)}
+                    className="text-xs text-slate-400 hover:text-white transition"
+                  >
+                    Close
+                  </button>
+                </div>
+                <StatBreakdownPanel breakdown={stat.breakdown} currency={preferredCurrency} />
+              </div>
+            )
+          })()}
 
         {/* Exchange rate refresh - compact */}
         {data.exchangeRateLastUpdate && (

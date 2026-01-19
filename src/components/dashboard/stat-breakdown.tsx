@@ -52,7 +52,7 @@ function BreakdownRow({
           isTotal && 'font-semibold',
           variant === 'positive' && 'text-emerald-300',
           variant === 'negative' && 'text-rose-300',
-          !variant && 'text-white',
+          (variant === 'neutral' || !variant) && 'text-white',
         )}
       >
         {variant === 'positive' && '+'}

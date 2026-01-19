@@ -353,8 +353,20 @@ export async function getDashboardData({
     .sort((a, b) => (a.month > b.month ? 1 : -1))
 
   // Determine the income source for breakdowns
-  const incomeSource: IncomeSource =
+  // For "Monthly target", use the source that determines plannedIncomeTarget
+  const incomeSourceForTarget: IncomeSource =
     incomeGoalConverted > 0 ? 'goal' : totalRecurringIncome > 0 ? 'recurring' : plannedIncome > 0 ? 'budget' : 'none'
+
+  // For "On track for", use the source that determines expectedRemainingIncome
+  // This differs from target when recurring templates exist but have all been applied
+  const incomeSourceForProjected: IncomeSource =
+    incomeGoalConverted > 0
+      ? 'goal'
+      : expectedRecurringIncome > 0
+        ? 'recurring'
+        : remainingIncome > 0
+          ? 'budget'
+          : 'none'
 
   // Build expense category breakdown for "Left to spend"
   const expenseCategoryBreakdown = budgetsSummary
@@ -390,7 +402,7 @@ export async function getDashboardData({
         actualExpense,
         expectedRemainingIncome,
         remainingBudgetedExpense: Math.max(remainingExpense, 0),
-        incomeSource,
+        incomeSource: incomeSourceForProjected,
         projected: projectedNet,
       },
     },
@@ -415,7 +427,7 @@ export async function getDashboardData({
       breakdown: {
         type: 'monthly-target',
         plannedIncome: plannedIncomeTarget,
-        incomeSource,
+        incomeSource: incomeSourceForTarget,
         plannedExpense,
         target: plannedNet,
       },
