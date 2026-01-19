@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/DevSkim/main/schemas/devskim.config.schema.json",
+  "ignores": [
+    {
+      "rule_ids": ["DS137138"],
+      "paths": [
+        ".github/workflows/e2e-mobile.yml",
+        "mobile/e2e/**"
+      ],
+      "comment": "Localhost URLs are expected in E2E test configurations - tests run locally against emulator/simulator"
+    },
+    {
+      "rule_ids": ["DS126858"],
+      "paths": [
+        ".github/workflows/e2e-mobile.yml",
+        "mobile/e2e/**"
+      ],
+      "comment": "HTTP URLs without TLS are expected for local E2E testing"
+    }
+  ]
+}
