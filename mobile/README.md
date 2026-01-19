@@ -610,17 +610,18 @@ Manages user accounts and active account selection. Supports switching between a
 import { useAccountsStore } from '@/stores';
 
 function AccountSwitcher() {
-  const { 
-    accounts, 
+  const {
+    accounts,
     activeAccountId,
     setActiveAccount,
     getActiveAccount,
-    isLoading 
+    fetchAccounts,
+    isLoading
   } = useAccountsStore();
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [fetchAccounts]);
 
   const handleAccountSwitch = async (accountId: string) => {
     const success = await setActiveAccount(accountId);
@@ -643,7 +644,7 @@ function AccountSwitcher() {
 
 **Persistence:**
 - Active account ID is persisted in the database via the API
-- Selection restored automatically on app restart
+- On app start, the store defaults to the first account; server-driven restoration requires fetching user's `activeAccountId` from the API
 - Falls back to first account if previous selection no longer exists
 
 See `docs/API_CONTRACTS.md` for detailed API documentation.
