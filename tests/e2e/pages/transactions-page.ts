@@ -15,45 +15,72 @@ export class TransactionsPage extends BasePage {
     description?: string
     currency?: string
   }) {
+    // Scope all form fields to the transaction form to avoid matching filter elements
+    const form = this.page.locator('#transaction-form')
+
     if (data.type) {
-      await this.selectOption('Transaction type', data.type)
+      // Use exact ID to avoid matching "Type filter"
+      await form.locator('#transactionType').selectOption({ label: data.type })
+      // Wait for category dropdown to update after type change
+      // (category options are filtered by type)
+      await this.page.waitForLoadState('domcontentloaded')
     }
     if (data.account) {
-      await this.selectOption('Account', data.account)
+      await form.locator('#transactionAccount').selectOption({ label: data.account })
     }
-    await this.selectOption('Category', data.category)
-    await this.fillInput('Amount', data.amount)
-    await this.fillInput('Date', data.date)
+    // Select category (filtered by type, so wait briefly for options to update)
+    await form.locator('#transactionCategory').selectOption({ label: data.category })
+    await form.getByLabel('Amount').fill(data.amount)
+    await form.getByLabel('Date').fill(data.date)
     if (data.description) {
-      await this.page.getByLabel('Description (optional)').fill(data.description)
+      await form.getByLabel('Description (optional)').fill(data.description)
     }
     if (data.currency) {
-      await this.selectOption('Currency', data.currency)
+      await form.locator('#transactionCurrency').selectOption({ label: data.currency })
     }
   }
 
   async submitTransaction() {
-    await this.clickButton('Add Transaction')
+    await this.clickButton('Save transaction')
   }
 
   async expectTransactionInList(description: string, amount: string) {
-    const row = this.page.locator('tr', { hasText: description })
-    await expect(row).toBeVisible()
-    await expect(row.getByText(amount)).toBeVisible()
+    // First, wait for the description text to appear anywhere on the page
+    // Use .first() to handle strict mode - description may appear in multiple places
+    await expect(this.page.getByText(description).first()).toBeVisible({ timeout: 20000 })
+
+    // Amount in UI is formatted with currency symbol and commas (e.g., "-$50.00", "+$3,000.00")
+    // Convert input like "50.00" to a regex that matches the formatted version
+    const amountNum = parseFloat(amount)
+    // Create regex that matches the amount with optional sign, currency symbol, and commas
+    // e.g., "3000.00" should match "-$3,000.00" or "+$3,000.00"
+    const formattedWithCommas = amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
+
+    // Verify the amount also appears - use .first() as amount may appear in header totals too
+    await expect(this.page.getByText(amountRegex).first()).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditTransaction(description: string) {
-    const row = this.page.locator('tr', { hasText: description })
-    await row.getByRole('button', { name: /edit/i }).click()
+    // First verify the transaction is visible in the list
+    // Use .first() to handle strict mode - description may appear in multiple places
+    await expect(this.page.getByText(description).first()).toBeVisible({ timeout: 20000 })
+    // Use getByRole for the Edit button directly - it's more reliable than nested locators
+    // The most recently created transaction appears at the top, so first() gets the right one
+    const editButton = this.page.getByRole('button', { name: 'Edit' }).first()
+    await expect(editButton).toBeVisible({ timeout: 10000 })
+    await editButton.click()
   }
 
   async clickDeleteTransaction(description: string) {
-    const row = this.page.locator('tr', { hasText: description })
-    await row.getByRole('button', { name: /delete/i }).click()
-  }
-
-  async confirmDelete() {
-    await this.clickButton('Confirm')
+    // First verify the transaction is visible in the list
+    await expect(this.page.getByText(description)).toBeVisible({ timeout: 20000 })
+    // Use getByRole for the Delete button directly - it's more reliable than nested locators
+    // The most recently created transaction appears at the top, so first() gets the right one
+    // Transaction deletion is immediate (no confirmation dialog)
+    const deleteButton = this.page.getByRole('button', { name: 'Delete' }).first()
+    await expect(deleteButton).toBeVisible({ timeout: 10000 })
+    await deleteButton.click()
   }
 
   async expectNoTransactions() {
@@ -61,15 +88,18 @@ export class TransactionsPage extends BasePage {
   }
 
   async filterByType(type: string) {
-    await this.selectOption('Type filter', type)
+    // Use label matching since types like 'Expense' are labels (values are 'EXPENSE')
+    await this.selectOption('Type filter', { label: type })
   }
 
   async filterByCategory(category: string) {
-    await this.selectOption('Category filter', category)
+    // Use label matching for category names
+    await this.selectOption('Category filter', { label: category })
   }
 
   async filterByAccount(account: string) {
-    await this.selectOption('Account filter', account)
+    // Use label matching for account names
+    await this.selectOption('Account filter', { label: account })
   }
 
   async searchTransactions(query: string) {

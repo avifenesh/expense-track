@@ -8,7 +8,8 @@ export class DashboardPage extends BasePage {
   }
 
   async clickSignOut() {
-    const accountButton = this.page.getByRole('button', { name: /account/i })
+    // Account button may have hidden text on mobile, use aria-controls selector
+    const accountButton = this.page.locator('button[aria-controls="settings-menu"]')
     await accountButton.click()
 
     const signOutButton = this.page.getByRole('menuitem', { name: /sign out/i })

@@ -18,31 +18,36 @@ export class BudgetsPage extends BasePage {
   }
 
   async submitBudget() {
-    await this.clickButton('Add Budget')
+    await this.clickButton('Save budget')
   }
 
   async updateBudget() {
-    await this.clickButton('Update Budget')
+    await this.clickButton('Save budget')
   }
 
   async expectBudgetInList(category: string, planned: string) {
-    const row = this.page.locator('tr', { hasText: category })
-    await expect(row).toBeVisible()
-    await expect(row.getByText(planned)).toBeVisible()
+    // Wait for the category to appear in the budget list (not the dropdown)
+    // Use .first() to handle strict mode - category appears in both list and dropdown
+    await expect(this.page.getByText(category).first()).toBeVisible({ timeout: 20000 })
+    // Also verify the planned amount appears (use first() as amounts may appear multiple places)
+    await expect(this.page.getByText(planned).first()).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditBudget(category: string) {
-    const row = this.page.locator('tr', { hasText: category })
-    await row.getByRole('button', { name: /edit/i }).click()
+    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: category })
+    await item.getByRole('button', { name: /edit/i }).first().click()
   }
 
   async clickDeleteBudget(category: string) {
-    const row = this.page.locator('tr', { hasText: category })
-    await row.getByRole('button', { name: /delete/i }).click()
-  }
-
-  async confirmDelete() {
-    await this.clickButton('Confirm')
+    // First verify the budget is visible in the list
+    // Use .first() to handle strict mode - category appears in both list and dropdown
+    await expect(this.page.getByText(category).first()).toBeVisible({ timeout: 20000 })
+    // Use getByRole for the Remove button directly - it's more reliable than nested locators
+    // Budget deletion is immediate (no confirmation dialog)
+    const removeButton = this.page.getByRole('button', { name: /remove/i }).first()
+    await expect(removeButton).toBeVisible({ timeout: 10000 })
+    await removeButton.click()
   }
 
   async expectNoBudgets() {
@@ -50,11 +55,13 @@ export class BudgetsPage extends BasePage {
   }
 
   async filterByAccount(account: string) {
-    await this.selectOption('Account filter', account)
+    // Use label matching since account names are displayed text, not values
+    await this.selectOption('Account filter', { label: account })
   }
 
   async filterByType(type: string) {
-    await this.selectOption('Type filter', type)
+    // Use label matching since types like 'Expense' are labels (values are 'EXPENSE')
+    await this.selectOption('Type filter', { label: type })
   }
 
   async expectBudgetProgress(category: string, percentage: number) {

@@ -19,15 +19,20 @@ export class SharingPage extends BasePage {
     percentages?: number[]
   }) {
     if (data.splitType) {
-      await this.selectOption('Split type', data.splitType)
+      // Use label matching since split type options have labels like 'Split equally'
+      await this.selectOption('Split type', { label: data.splitType })
     }
 
     for (const email of data.participantEmails) {
       const emailInput = this.page.getByPlaceholder('Enter email address')
       await emailInput.fill(email)
-      const addButton = this.page.getByRole('button', { name: 'Add participant' })
+      // Button has aria-label="Add participant", not visible text
+      const addButton = this.page.getByLabel('Add participant')
       await addButton.click()
-      await expect(this.getByText(email)).toBeVisible()
+      // Wait for participant lookup (async server action) to complete
+      await this.page.waitForLoadState('networkidle')
+      // Participant card shows email, allow longer timeout for async lookup
+      await expect(this.getByText(email)).toBeVisible({ timeout: 20000 })
     }
 
     if (data.description) {
@@ -48,12 +53,15 @@ export class SharingPage extends BasePage {
   }
 
   async submitShareExpense() {
-    await this.clickButton('Share Expense')
+    // Use type="submit" to distinguish from icon buttons with title="Share expense"
+    const submitButton = this.page.locator('button[type="submit"]', { hasText: 'Share expense' })
+    await submitButton.click()
   }
 
   async removeParticipant(email: string) {
     const participantRow = this.page.locator('div', { hasText: email })
-    await participantRow.getByRole('button', { name: 'Remove participant' }).click()
+    // Button has aria-label="Remove participant"
+    await participantRow.getByLabel('Remove participant').click()
   }
 
   async expectSharedExpenseInList(description: string, amount: string) {
@@ -83,6 +91,7 @@ export class SharingPage extends BasePage {
   }
 
   async expectParticipantAdded(email: string) {
-    await expect(this.getByText(email)).toBeVisible()
+    // Participant lookup is async (server action), allow longer timeout
+    await expect(this.getByText(email)).toBeVisible({ timeout: 20000 })
   }
 }

@@ -25,10 +25,10 @@ export const TEST_ACCOUNTS = {
   JOINT: 'Joint',
 } as const
 
-// Test categories (these should exist in seed data)
+// Test categories (these must match DEFAULT_EXPENSE_CATEGORIES and DEFAULT_INCOME_CATEGORIES)
 export const TEST_CATEGORIES = {
   GROCERIES: 'Groceries',
-  RENT: 'Rent',
+  HOUSING: 'Housing', // Was 'Rent', but default categories use 'Housing'
   SALARY: 'Salary',
   ENTERTAINMENT: 'Entertainment',
   UTILITIES: 'Utilities',
