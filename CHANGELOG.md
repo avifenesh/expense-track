@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Web: Comprehensive E2E test suite with Playwright (#261)
+  - 45 web E2E tests covering authentication, onboarding, transactions, budgets, sharing, dashboard, settings, subscription
+  - Page Object Model pattern for test organization
+  - Auth helpers and test fixtures for reusable flows
+  - E2E database seeding script with test data
+  - GitHub Actions CI workflow for automated testing
+  - Comprehensive E2E documentation at tests/e2e/README.md
 - Mobile: MonthSelector component for month navigation (#223)
   - Previous/next arrow buttons for month navigation
   - Tap on month label opens modal picker
