@@ -23,13 +23,15 @@ export class SharingPage extends BasePage {
     }
 
     for (const email of data.participantEmails) {
-      await this.fillInput('Participant email', email)
-      await this.clickButton('Add Participant')
+      const emailInput = this.page.getByPlaceholder('Enter email address')
+      await emailInput.fill(email)
+      const addButton = this.page.getByRole('button').filter({ has: this.page.locator('svg.lucide-plus') })
+      await addButton.click()
       await expect(this.getByText(email)).toBeVisible()
     }
 
     if (data.description) {
-      await this.fillInput('Description', data.description)
+      await this.fillInput('Note (optional)', data.description)
     }
 
     if (data.amounts) {
