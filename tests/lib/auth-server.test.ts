@@ -13,6 +13,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn().mockResolvedValue(null), // By default, no DB user found (legacy users only)
+      update: vi.fn().mockResolvedValue({}), // For activeAccountId updates
     },
   },
 }))
