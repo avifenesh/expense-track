@@ -65,11 +65,11 @@ jobs:
           # E2E test users - not sensitive, created for automated testing only
           AUTH_USER1_EMAIL: e2e-user1@test.local
           AUTH_USER1_DISPLAY_NAME: TestUserOne
-          # bcrypt hash of 'TestPassword123!'
-          AUTH_USER1_PASSWORD_HASH: $2a$10$XQxBtJXKQkPbFvGqN8e5/.1YL5PZE/EKuPPYXIJAJMN7Y1cDrJvHe
+          # bcrypt hash of 'TestPassword123!' - quotes prevent $ interpolation
+          AUTH_USER1_PASSWORD_HASH: '$2a$10$XQxBtJXKQkPbFvGqN8e5/.1YL5PZE/EKuPPYXIJAJMN7Y1cDrJvHe'
           AUTH_USER2_EMAIL: e2e-user2@test.local
           AUTH_USER2_DISPLAY_NAME: TestUserTwo
-          AUTH_USER2_PASSWORD_HASH: $2a$10$XQxBtJXKQkPbFvGqN8e5/.1YL5PZE/EKuPPYXIJAJMN7Y1cDrJvHe
+          AUTH_USER2_PASSWORD_HASH: '$2a$10$XQxBtJXKQkPbFvGqN8e5/.1YL5PZE/EKuPPYXIJAJMN7Y1cDrJvHe'
 
       - name: Run E2E tests
         run: npm run test:e2e
