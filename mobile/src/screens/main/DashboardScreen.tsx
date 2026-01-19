@@ -34,7 +34,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
 
   const {
     accounts,
-    selectedAccountId,
+    activeAccountId,
     isLoading: accountsLoading,
     error: accountsError,
     fetchAccounts,
@@ -57,7 +57,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     fetchBudgets,
   } = useBudgetsStore();
 
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
   // Calculate totals from transactions (memoized for performance)
@@ -90,15 +90,15 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   // When account or month changes, update filters and fetch data in one effect
   // This prevents race conditions between setting filters and fetching data
   useEffect(() => {
-    if (selectedAccountId) {
-      setTransactionFilters({ accountId: selectedAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: selectedAccountId });
+    if (activeAccountId) {
+      setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
+      setBudgetFilters({ accountId: activeAccountId });
       setBudgetSelectedMonth(selectedMonth);
       fetchTransactions();
       fetchBudgets();
     }
   }, [
-    selectedAccountId,
+    activeAccountId,
     selectedMonth,
     setTransactionFilters,
     setBudgetFilters,
@@ -110,11 +110,11 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await fetchAccounts();
-    if (selectedAccountId) {
+    if (activeAccountId) {
       await Promise.all([fetchTransactions(), fetchBudgets()]);
     }
     setIsRefreshing(false);
-  }, [fetchAccounts, fetchTransactions, fetchBudgets, selectedAccountId]);
+  }, [fetchAccounts, fetchTransactions, fetchBudgets, activeAccountId]);
 
   const handleMonthChange = useCallback((month: string) => {
     setSelectedMonth(month);
@@ -129,7 +129,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   }, [navigation]);
 
   const isLoading =
-    accountsLoading || (selectedAccountId && (transactionsLoading || budgetsLoading));
+    accountsLoading || (activeAccountId && (transactionsLoading || budgetsLoading));
   const error = accountsError || transactionsError || budgetsError;
 
   // Loading state (initial load only)
@@ -160,7 +160,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   }
 
   // No accounts state
-  if (!selectedAccountId && accounts.length === 0 && !accountsLoading) {
+  if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centerContainer}>

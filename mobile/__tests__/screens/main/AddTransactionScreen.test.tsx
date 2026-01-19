@@ -91,11 +91,11 @@ function renderAddTransactionScreen() {
 describe('AddTransactionScreen', () => {
   const defaultAccountsState = {
     accounts: [mockAccount],
-    selectedAccountId: 'acc-1',
+    activeAccountId: 'acc-1',
     isLoading: false,
     error: null,
     fetchAccounts: jest.fn().mockResolvedValue(true),
-    setSelectedAccount: jest.fn(),
+    setActiveAccount: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
   };
@@ -686,7 +686,7 @@ describe('AddTransactionScreen', () => {
     it('shows error when no account is selected', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
-        selectedAccountId: null,
+        activeAccountId: null,
       });
 
       renderAddTransactionScreen();

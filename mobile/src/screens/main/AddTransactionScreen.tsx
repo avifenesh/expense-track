@@ -86,7 +86,7 @@ function formatDateToLocalISO(date: Date): string {
 export function AddTransactionScreen({
   navigation,
 }: AppStackScreenProps<'CreateTransaction'>) {
-  const { accounts, selectedAccountId } = useAccountsStore();
+  const { accounts, activeAccountId } = useAccountsStore();
   const { createTransaction } = useTransactionsStore();
   const {
     categories,
@@ -94,7 +94,7 @@ export function AddTransactionScreen({
     fetchCategories,
   } = useCategoriesStore();
 
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
   const [type, setType] = useState<TransactionType>('EXPENSE');
@@ -184,7 +184,7 @@ export function AddTransactionScreen({
       return;
     }
 
-    if (!selectedAccountId) {
+    if (!activeAccountId) {
       setErrors((prev) => ({ ...prev, general: 'No account selected' }));
       return;
     }
@@ -194,7 +194,7 @@ export function AddTransactionScreen({
 
     try {
       await createTransaction({
-        accountId: selectedAccountId,
+        accountId: activeAccountId,
         categoryId: categoryId!,
         type,
         amount: parseFloat(amount),
@@ -214,7 +214,7 @@ export function AddTransactionScreen({
     }
   }, [
     validateForm,
-    selectedAccountId,
+    activeAccountId,
     categoryId,
     type,
     amount,

@@ -119,11 +119,11 @@ function renderBudgetsScreen() {
 describe('BudgetsScreen', () => {
   const defaultAccountsState = {
     accounts: [mockAccount],
-    selectedAccountId: 'acc-1',
+    activeAccountId: 'acc-1',
     isLoading: false,
     error: null,
     fetchAccounts: jest.fn().mockResolvedValue(true),
-    setSelectedAccount: jest.fn(),
+    setActiveAccount: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
   };
@@ -223,7 +223,7 @@ describe('BudgetsScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: true,
       });
 
@@ -240,7 +240,7 @@ describe('BudgetsScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
         error: 'Failed to load accounts',
       });
@@ -271,7 +271,7 @@ describe('BudgetsScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
         error: 'Network error',
       });
@@ -288,7 +288,7 @@ describe('BudgetsScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
         error: 'Network error',
         fetchAccounts,
@@ -313,7 +313,7 @@ describe('BudgetsScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
         isLoading: false,
       });
 

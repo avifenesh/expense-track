@@ -94,7 +94,7 @@ export function EditTransactionScreen({
 }: AppStackScreenProps<'EditTransaction'>) {
   const { transactionId } = route.params;
 
-  const { accounts, selectedAccountId } = useAccountsStore();
+  const { accounts, activeAccountId } = useAccountsStore();
   const { transactions, updateTransaction, deleteTransaction } = useTransactionsStore();
   const {
     categories,
@@ -107,7 +107,7 @@ export function EditTransactionScreen({
     [transactions, transactionId]
   );
 
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
   const [type, setType] = useState<TransactionType>('EXPENSE');
@@ -211,7 +211,7 @@ export function EditTransactionScreen({
       return;
     }
 
-    if (!selectedAccountId) {
+    if (!activeAccountId) {
       setErrors((prev) => ({ ...prev, general: 'No account selected' }));
       return;
     }
@@ -240,7 +240,7 @@ export function EditTransactionScreen({
     }
   }, [
     validateForm,
-    selectedAccountId,
+    activeAccountId,
     transactionId,
     categoryId,
     type,

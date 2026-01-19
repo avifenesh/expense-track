@@ -32,7 +32,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
 
   const {
     accounts,
-    selectedAccountId,
+    activeAccountId,
     isLoading: accountsLoading,
     error: accountsError,
     fetchAccounts,
@@ -62,7 +62,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
     fetchCategories,
   } = useCategoriesStore();
 
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
 
   const spentByCategory = useMemo(() => {
@@ -103,9 +103,9 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   }, [fetchAccounts]);
 
   useEffect(() => {
-    if (selectedAccountId) {
-      setTransactionFilters({ accountId: selectedAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: selectedAccountId });
+    if (activeAccountId) {
+      setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
+      setBudgetFilters({ accountId: activeAccountId });
       setBudgetSelectedMonth(selectedMonth);
 
       fetchCategories('EXPENSE');
@@ -113,7 +113,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
       fetchTransactions();
     }
   }, [
-    selectedAccountId,
+    activeAccountId,
     selectedMonth,
     setTransactionFilters,
     setBudgetFilters,
@@ -126,7 +126,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await fetchAccounts();
-    const currentAccountId = useAccountsStore.getState().selectedAccountId;
+    const currentAccountId = useAccountsStore.getState().activeAccountId;
 
     if (currentAccountId) {
       setTransactionFilters({ accountId: currentAccountId, month: selectedMonth });
@@ -157,7 +157,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
 
   const isLoading =
     accountsLoading ||
-    (selectedAccountId && (transactionsLoading || budgetsLoading || categoriesLoading));
+    (activeAccountId && (transactionsLoading || budgetsLoading || categoriesLoading));
   const error = accountsError || transactionsError || budgetsError || categoriesError;
 
   // Loading state (initial load only)
@@ -188,7 +188,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   }
 
   // No accounts state
-  if (!selectedAccountId && accounts.length === 0 && !accountsLoading) {
+  if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centerContainer}>

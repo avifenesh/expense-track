@@ -78,11 +78,11 @@ function renderTransactionsScreen() {
 describe('TransactionsScreen', () => {
   const defaultAccountsState = {
     accounts: [mockAccount],
-    selectedAccountId: 'acc-1',
+    activeAccountId: 'acc-1',
     isLoading: false,
     error: null,
     fetchAccounts: jest.fn().mockResolvedValue(true),
-    setSelectedAccount: jest.fn(),
+    setActiveAccount: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
   };
@@ -186,7 +186,7 @@ describe('TransactionsScreen', () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [],
-        selectedAccountId: null,
+        activeAccountId: null,
       });
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
