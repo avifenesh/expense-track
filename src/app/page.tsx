@@ -127,8 +127,12 @@ export default async function Page({ searchParams }: PageProps) {
       trialEndsAt: subState.trialEndsAt?.toISOString() ?? null,
       currentPeriodEnd: subState.currentPeriodEnd?.toISOString() ?? null,
     }
-  } catch {
+  } catch (error) {
     // If subscription check fails, don't block the dashboard
+    serverLogger.info('Subscription check failed (non-blocking)', {
+      userId: authUser.id,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    })
     subscription = null
   }
 
