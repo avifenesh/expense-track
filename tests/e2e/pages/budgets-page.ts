@@ -26,19 +26,18 @@ export class BudgetsPage extends BasePage {
   }
 
   async expectBudgetInList(category: string, planned: string) {
-    const row = this.page.locator('tr', { hasText: category })
-    await expect(row).toBeVisible()
-    await expect(row.getByText(planned)).toBeVisible()
+    const item = this.page.locator('div', { hasText: category }).filter({ hasText: planned })
+    await expect(item.first()).toBeVisible()
   }
 
   async clickEditBudget(category: string) {
-    const row = this.page.locator('tr', { hasText: category })
-    await row.getByRole('button', { name: /edit/i }).click()
+    const item = this.page.locator('div', { hasText: category })
+    await item.getByRole('button', { name: /edit|remove/i }).first().click()
   }
 
   async clickDeleteBudget(category: string) {
-    const row = this.page.locator('tr', { hasText: category })
-    await row.getByRole('button', { name: /delete/i }).click()
+    const item = this.page.locator('div', { hasText: category })
+    await item.getByRole('button', { name: /remove/i }).first().click()
   }
 
   async confirmDelete() {

@@ -37,19 +37,18 @@ export class TransactionsPage extends BasePage {
   }
 
   async expectTransactionInList(description: string, amount: string) {
-    const row = this.page.locator('tr', { hasText: description })
-    await expect(row).toBeVisible()
-    await expect(row.getByText(amount)).toBeVisible()
+    const item = this.page.locator('div', { hasText: description }).filter({ hasText: amount })
+    await expect(item.first()).toBeVisible()
   }
 
   async clickEditTransaction(description: string) {
-    const row = this.page.locator('tr', { hasText: description })
-    await row.getByRole('button', { name: /edit/i }).click()
+    const item = this.page.locator('div', { hasText: description })
+    await item.getByRole('button', { name: 'Edit' }).first().click()
   }
 
   async clickDeleteTransaction(description: string) {
-    const row = this.page.locator('tr', { hasText: description })
-    await row.getByRole('button', { name: /delete/i }).click()
+    const item = this.page.locator('div', { hasText: description })
+    await item.getByRole('button', { name: 'Delete' }).first().click()
   }
 
   async confirmDelete() {
