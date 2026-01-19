@@ -7,85 +7,108 @@ test.describe('settings', () => {
     await loginAsUser1(page)
   })
 
-  test.describe('settings access', () => {
-    test('should access settings page', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+  test.describe('settings menu access', () => {
+    test('should open settings menu via Account button', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await expect(accountButton).toBeVisible()
 
-      const settingsLink = page.getByRole('link', { name: /settings/i })
-      await expect(settingsLink).toBeVisible()
-      await settingsLink.click()
-      await expect(page).toHaveURL(/\/settings/)
-      await expect(page.getByRole('heading', { name: /settings/i })).toBeVisible()
+      await accountButton.click()
 
-      await dashboardPage.clickSignOut()
+      const settingsMenu = page.getByRole('menu', { name: /account settings/i })
+      await expect(settingsMenu).toBeVisible()
+
+      await expect(page.getByRole('menuitem', { name: /export my data/i })).toBeVisible()
+      await expect(page.getByRole('menuitem', { name: /sign out/i })).toBeVisible()
+      await expect(page.getByRole('menuitem', { name: /delete account/i })).toBeVisible()
     })
 
-    test('should show profile section', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+    test('should close settings menu on backdrop click', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
 
-      const settingsLink = page.getByRole('link', { name: /settings/i })
-      await expect(settingsLink).toBeVisible()
-      await settingsLink.click()
-      await expect(page.getByText(/profile/i)).toBeVisible()
-      await expect(page.getByText(/display name/i)).toBeVisible()
+      const settingsMenu = page.getByRole('menu', { name: /account settings/i })
+      await expect(settingsMenu).toBeVisible()
 
-      await dashboardPage.clickSignOut()
+      await page.click('body', { position: { x: 10, y: 10 } })
+
+      await expect(settingsMenu).not.toBeVisible()
     })
 
-    test('should show currency preference', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+    test('should close settings menu when selecting an option', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
 
-      const settingsLink = page.getByRole('link', { name: /settings/i })
-      await expect(settingsLink).toBeVisible()
-      await settingsLink.click()
-      await expect(page.getByText(/currency/i)).toBeVisible()
+      const settingsMenu = page.getByRole('menu', { name: /account settings/i })
+      await expect(settingsMenu).toBeVisible()
 
-      await dashboardPage.clickSignOut()
-    })
-  })
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
 
-  test.describe('profile management', () => {
-    test('should update display name', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
-
-      const settingsLink = page.getByRole('link', { name: /settings/i })
-      await expect(settingsLink).toBeVisible()
-      await settingsLink.click()
-
-      const displayNameInput = page.getByLabel(/display name/i)
-      await expect(displayNameInput).toBeVisible()
-
-      await displayNameInput.clear()
-      await displayNameInput.fill('Test User Updated')
-
-      const saveButton = page.getByRole('button', { name: /save|update/i })
-      await saveButton.click()
-
-      await expect(page.getByText(/saved|updated/i)).toBeVisible()
-
-      await dashboardPage.clickSignOut()
+      await expect(settingsMenu).not.toBeVisible()
     })
   })
 
-  test.describe('currency management', () => {
-    test('should change currency preference', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+  test.describe('export data functionality', () => {
+    test('should open export data dialog from settings menu', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
 
-      const settingsLink = page.getByRole('link', { name: /settings/i })
-      await expect(settingsLink).toBeVisible()
-      await settingsLink.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
 
-      const currencySelect = page.getByLabel(/currency/i)
-      await expect(currencySelect).toBeVisible()
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+      await expect(page.getByText(/download.*data/i)).toBeVisible()
+    })
 
-      await currencySelect.selectOption('EUR')
+    test('should close export dialog', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
 
-      const saveButton = page.getByRole('button', { name: /save|update/i })
-      await saveButton.click()
+      const exportDialog = page.getByRole('heading', { name: /export/i })
+      await expect(exportDialog).toBeVisible()
 
-      await expect(page.getByText(/saved|updated/i)).toBeVisible()
+      const closeButton = page.getByRole('button', { name: /cancel|close/i }).first()
+      await closeButton.click()
 
-      await dashboardPage.clickSignOut()
+      await expect(exportDialog).not.toBeVisible()
+    })
+  })
+
+  test.describe('sign out functionality', () => {
+    test('should sign out from settings menu', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+
+      await page.getByRole('menuitem', { name: /sign out/i }).click()
+
+      await page.waitForLoadState('networkidle')
+
+      await expect(page).toHaveURL(/\/login/)
+    })
+  })
+
+  test.describe('delete account functionality', () => {
+    test('should open delete account dialog from settings menu', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+
+      await page.getByRole('menuitem', { name: /delete account/i }).click()
+
+      await expect(page.getByRole('heading', { name: /delete.*account/i })).toBeVisible()
+      await expect(page.getByText(/this action.*permanent/i)).toBeVisible()
+    })
+
+    test('should close delete account dialog', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /delete account/i }).click()
+
+      const deleteDialog = page.getByRole('heading', { name: /delete.*account/i })
+      await expect(deleteDialog).toBeVisible()
+
+      const cancelButton = page.getByRole('button', { name: /cancel/i })
+      await cancelButton.click()
+
+      await expect(deleteDialog).not.toBeVisible()
     })
   })
 })
