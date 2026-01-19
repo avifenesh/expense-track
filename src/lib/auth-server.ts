@@ -256,7 +256,6 @@ export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | und
   const normalizedEmail = email.toLowerCase()
   const dbUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    include: { accounts: { where: { deletedAt: null }, orderBy: { name: 'asc' } } },
     select: {
       id: true,
       email: true,
@@ -265,7 +264,10 @@ export async function getDbUserAsAuthUser(email: string): Promise<AuthUser | und
       preferredCurrency: true,
       hasCompletedOnboarding: true,
       activeAccountId: true,
-      accounts: true,
+      accounts: {
+        where: { deletedAt: null },
+        orderBy: { name: 'asc' },
+      },
     },
   })
 
