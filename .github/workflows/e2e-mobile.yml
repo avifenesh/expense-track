@@ -87,8 +87,7 @@ jobs:
         working-directory: mobile
         run: npm run e2e:test:ios -- --cleanup --headless
         env:
-          # DevSkim: ignore DS137138,DS162092,DS126858 - localhost expected for local E2E testing
-          E2E_API_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload iOS test artifacts
         if: failure()
@@ -196,9 +195,8 @@ jobs:
           working-directory: mobile
           script: npm run e2e:test:android -- --cleanup --headless
         env:
-          # DevSkim: ignore DS137138,DS162092,DS126858 - localhost expected for local E2E testing
           # 10.0.2.2 is Android emulator's alias for host localhost
-          E2E_API_URL: http://10.0.2.2:3000
+          E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload Android test artifacts
         if: failure()
