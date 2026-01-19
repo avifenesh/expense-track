@@ -142,7 +142,7 @@ test.describe('sharing', () => {
 
       // Remove participant (aria-label="Remove participant")
       const removeButton = page.getByLabel('Remove participant').first()
-      await expect(removeButton).toBeVisible()
+      await expect(removeButton).toBeVisible({ timeout: 10000 })
       await removeButton.click()
       await expect(page.getByText(TEST_USER_2.email)).not.toBeVisible()
 

@@ -63,7 +63,8 @@ export class TransactionsPage extends BasePage {
 
   async clickEditTransaction(description: string) {
     // First verify the transaction is visible in the list
-    await expect(this.page.getByText(description)).toBeVisible({ timeout: 20000 })
+    // Use .first() to handle strict mode - description may appear in multiple places
+    await expect(this.page.getByText(description).first()).toBeVisible({ timeout: 20000 })
     // Use getByRole for the Edit button directly - it's more reliable than nested locators
     // The most recently created transaction appears at the top, so first() gets the right one
     const editButton = this.page.getByRole('button', { name: 'Edit' }).first()

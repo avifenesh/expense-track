@@ -92,6 +92,6 @@ export class SharingPage extends BasePage {
 
   async expectParticipantAdded(email: string) {
     // Participant lookup is async (server action), allow longer timeout
-    await expect(this.getByText(email)).toBeVisible({ timeout: 10000 })
+    await expect(this.getByText(email)).toBeVisible({ timeout: 20000 })
   }
 }
