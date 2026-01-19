@@ -45,8 +45,8 @@ test.describe('sharing', () => {
 
       // Find the share button within the transaction row containing our description
       // The share button has title="Share expense" and appears only for expense transactions
-      // Use the rounded-2xl class to target the transaction row specifically (not parent containers)
-      const transactionRow = page.locator('div.rounded-2xl', { hasText: 'Shared groceries' })
+      // Use .first() to handle test retries that may create duplicate transactions
+      const transactionRow = page.locator('div.rounded-2xl', { hasText: 'Shared groceries' }).first()
       const shareButton = transactionRow.getByTitle('Share expense')
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
@@ -120,8 +120,8 @@ test.describe('sharing', () => {
 
       // Find the share button within the transaction row containing our description
       // The share button has title="Share expense" and appears only for expense transactions
-      // Use the rounded-2xl class to target the transaction row specifically (not parent containers)
-      const transactionRow = page.locator('div.rounded-2xl', { hasText: 'Concert tickets' })
+      // Use .first() to handle test retries that may create duplicate transactions
+      const transactionRow = page.locator('div.rounded-2xl', { hasText: 'Concert tickets' }).first()
       const shareButton = transactionRow.getByTitle('Share expense')
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
