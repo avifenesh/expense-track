@@ -34,7 +34,6 @@ import { Sparkline } from '@/components/dashboard/sparkline'
 import { StatBreakdownPanel } from '@/components/dashboard/stat-breakdown'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { DashboardData } from '@/lib/finance'
 import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
@@ -134,27 +133,6 @@ const STAT_VARIANT_STYLES: Record<
     icon: 'text-slate-200',
   },
 }
-
-const STAT_TOOLTIPS: Record<string, string> = {
-  'Net this month': `Actual income minus actual expenses.
-
-This is your real position this month based on recorded transactions.`,
-
-  'On track for': `Projected balance at month end.
-
-Calculated from actual income plus remaining expected income, minus remaining budgeted expenses.`,
-
-  'Left to spend': `How much of your expense budget you haven't used yet.
-
-Zero means you've hit your spending plan exactly. Negative if you've overspent.`,
-
-  'Monthly target': `Your planned savings target for this month.
-
-Calculated as: planned income (from income goal, recurring templates, or budgets) minus budgeted expenses.
-If negative, your planned expenses exceed planned income.`,
-}
-
-const DEFAULT_STAT_TOOLTIP = 'Monitors this monthly metric based on your recorded data and budgets.'
 
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
