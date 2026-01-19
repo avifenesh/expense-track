@@ -1,4 +1,4 @@
-import { device, by, element, expect, waitFor } from 'detox';
+import { by, element, expect, waitFor } from 'detox';
 import { TEST_USERS } from './fixtures';
 
 /**
