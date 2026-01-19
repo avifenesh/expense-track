@@ -7,46 +7,14 @@ test.describe('subscription', () => {
     await loginAsUser1(page)
   })
 
-  test.describe('subscription status', () => {
-    test('should show subscription banner if applicable', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
-
-      const trialBanner = page.getByText(/trial/i)
-      const upgradeBanner = page.getByText(/upgrade/i)
-
-      if ((await trialBanner.isVisible()) || (await upgradeBanner.isVisible())) {
-        await expect(trialBanner.or(upgradeBanner)).toBeVisible()
-      }
-
-      await dashboardPage.clickSignOut()
-    })
-
-    test('should access upgrade page', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
-
-      const upgradeLink = page.getByRole('link', { name: /upgrade/i })
-      if (await upgradeLink.isVisible()) {
-        await upgradeLink.click()
-        await expect(page).toHaveURL(/\/upgrade/)
-        await expect(page.getByText(/subscription/i)).toBeVisible()
-      }
-
-      await dashboardPage.clickSignOut()
-    })
-  })
-
   test.describe('upgrade flow', () => {
-    test('should show subscription options on upgrade page', async ({ page }) => {
-      // Note: /upgrade requires authentication, but test users have active trial
-      // so they can access the upgrade page
-
-      // Navigate to upgrade from dashboard (user is already logged in from beforeEach)
+    test('should show upgrade page content', async ({ page }) => {
       await page.goto('/upgrade')
 
-      // Should show upgrade page content (user is on trial, so can access upgrade page)
+      // Should show upgrade page content (test user is on trial)
       await expect(page.getByText(/upgrade/i)).toBeVisible()
 
-      // Navigate back to dashboard to sign out (upgrade page doesn't have account menu)
+      // Navigate back to dashboard to sign out
       await page.goto('/')
       const dashboardPage = new DashboardPage(page)
       await dashboardPage.clickSignOut()

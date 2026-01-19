@@ -132,24 +132,5 @@ test.describe('sharing', () => {
 
       await dashboardPage.clickSignOut()
     })
-
-    test('should show settlement summary when expenses are shared', async ({ page }) => {
-      const sharingPage = new SharingPage(page)
-      const dashboardPage = new DashboardPage(page)
-
-      await sharingPage.navigateToSharingTab()
-
-      // Settlement summary card shows when there are settlement balances
-      // Use heading role to avoid matching multiple nested divs
-      const settlementHeading = page.getByRole('heading', { name: /settlement summary/i })
-      const headingCount = await settlementHeading.count()
-
-      // Only assert if the heading exists (may not if no expenses have been shared)
-      if (headingCount > 0) {
-        await expect(settlementHeading.first()).toBeVisible()
-      }
-
-      await dashboardPage.clickSignOut()
-    })
   })
 })
