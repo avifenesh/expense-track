@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { loginAsUser1, loginAsUser2 } from './helpers/auth-helpers'
+import { loginAsUser1 } from './helpers/auth-helpers'
 import { DashboardPage } from './pages/dashboard-page'
 import { SharingPage } from './pages/sharing-page'
 import { TransactionsPage } from './pages/transactions-page'
