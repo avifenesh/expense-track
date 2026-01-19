@@ -66,16 +66,6 @@ export class SharingPage extends BasePage {
     await expect(card.getByText(amount)).toBeVisible()
   }
 
-  async acceptExpenseRequest(description: string) {
-    const card = this.page.locator('div', { hasText: description })
-    await card.getByRole('button', { name: /accept/i }).click()
-  }
-
-  async rejectExpenseRequest(description: string) {
-    const card = this.page.locator('div', { hasText: description })
-    await card.getByRole('button', { name: /reject/i }).click()
-  }
-
   async expectSettlementBalance(person: string, amount: string) {
     const balanceSection = this.page.locator('div', { hasText: 'Settlement Summary' })
     await expect(balanceSection.getByText(person)).toBeVisible()

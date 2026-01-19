@@ -39,18 +39,17 @@ test.describe('sharing', () => {
       await transactionsPage.submitTransaction()
 
       const shareButton = page.getByRole('button', { name: /share/i }).first()
-      if (await shareButton.isVisible()) {
-        await shareButton.click()
+      await expect(shareButton).toBeVisible()
+      await shareButton.click()
 
-        await sharingPage.fillShareExpenseForm({
-          splitType: 'Split equally',
-          participantEmails: [TEST_USER_2.email],
-        })
+      await sharingPage.fillShareExpenseForm({
+        splitType: 'Split equally',
+        participantEmails: [TEST_USER_2.email],
+      })
 
-        await sharingPage.submitShareExpense()
+      await sharingPage.submitShareExpense()
 
-        await expect(page.getByText(/expense shared/i)).toBeVisible()
-      }
+      await expect(page.getByText(/expense shared/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })
@@ -71,14 +70,13 @@ test.describe('sharing', () => {
       await transactionsPage.submitTransaction()
 
       const shareButton = page.getByRole('button', { name: /share/i }).first()
-      if (await shareButton.isVisible()) {
-        await shareButton.click()
+      await expect(shareButton).toBeVisible()
+      await shareButton.click()
 
-        const submitButton = page.getByRole('button', { name: /share expense/i })
-        await submitButton.click()
+      const submitButton = page.getByRole('button', { name: /share expense/i })
+      await submitButton.click()
 
-        await expect(page.getByText(/add.*participant/i)).toBeVisible()
-      }
+      await expect(page.getByText(/add.*participant/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })
@@ -100,20 +98,18 @@ test.describe('sharing', () => {
       await transactionsPage.submitTransaction()
 
       const shareButton = page.getByRole('button', { name: /share/i }).first()
-      if (await shareButton.isVisible()) {
-        await shareButton.click()
+      await expect(shareButton).toBeVisible()
+      await shareButton.click()
 
-        await page.getByLabel('Participant email').fill(TEST_USER_2.email)
-        await page.getByRole('button', { name: /add participant/i }).click()
+      await page.getByLabel('Participant email').fill(TEST_USER_2.email)
+      await page.getByRole('button', { name: /add participant/i }).click()
 
-        await sharingPage.expectParticipantAdded(TEST_USER_2.email)
+      await sharingPage.expectParticipantAdded(TEST_USER_2.email)
 
-        const removeButton = page.getByRole('button', { name: /remove/i }).first()
-        if (await removeButton.isVisible()) {
-          await removeButton.click()
-          await expect(page.getByText(TEST_USER_2.email)).not.toBeVisible()
-        }
-      }
+      const removeButton = page.getByRole('button', { name: /remove/i }).first()
+      await expect(removeButton).toBeVisible()
+      await removeButton.click()
+      await expect(page.getByText(TEST_USER_2.email)).not.toBeVisible()
 
       await dashboardPage.clickSignOut()
     })

@@ -46,11 +46,8 @@ test.describe('dashboard', () => {
       const monthSelect = page.getByLabel('Filter by month')
       await expect(monthSelect).toBeVisible()
 
-      const firstOption = await monthSelect.locator('option').first().textContent()
-      if (firstOption) {
-        await monthSelect.selectOption({ index: 0 })
-        await page.waitForTimeout(500)
-      }
+      await monthSelect.selectOption({ index: 0 })
+      await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()
     })
@@ -61,14 +58,13 @@ test.describe('dashboard', () => {
       const monthSelect = page.getByLabel('Filter by month')
       const options = await monthSelect.locator('option').all()
 
-      if (options.length > 1) {
-        const monthValue = await options[1].getAttribute('value')
-        if (monthValue) {
-          await monthSelect.selectOption({ value: monthValue })
-          await page.waitForTimeout(500)
-          expect(page.url()).toContain(`month=${monthValue}`)
-        }
-      }
+      expect(options.length).toBeGreaterThan(1)
+      const monthValue = await options[1].getAttribute('value')
+      expect(monthValue).toBeTruthy()
+
+      await monthSelect.selectOption({ value: monthValue! })
+      await page.waitForLoadState('networkidle')
+      expect(page.url()).toContain(`month=${monthValue}`)
 
       await dashboardPage.clickSignOut()
     })
@@ -91,7 +87,7 @@ test.describe('dashboard', () => {
       const dashboardPage = new DashboardPage(page)
 
       await dashboardPage.selectAccount('Joint')
-      await page.waitForTimeout(500)
+      await page.waitForLoadState('networkidle')
 
       expect(page.url()).toContain('account=')
 

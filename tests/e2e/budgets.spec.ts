@@ -124,10 +124,9 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
 
       const accountFilter = page.getByLabel('Filter by account')
-      if (await accountFilter.isVisible()) {
-        await budgetsPage.filterByAccount('TestUserOne')
-        await page.waitForTimeout(500)
-      }
+      await expect(accountFilter).toBeVisible()
+      await budgetsPage.filterByAccount('TestUserOne')
+      await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()
     })
@@ -139,11 +138,11 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
 
       const typeFilter = page.getByLabel('Filter by type')
-      if (await typeFilter.isVisible()) {
-        await budgetsPage.filterByType('Expense')
-        await page.waitForTimeout(500)
-        await budgetsPage.filterByType('All')
-      }
+      await expect(typeFilter).toBeVisible()
+      await budgetsPage.filterByType('Expense')
+      await page.waitForLoadState('networkidle')
+      await budgetsPage.filterByType('All')
+      await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()
     })

@@ -154,15 +154,16 @@ test.describe('transactions', () => {
       await transactionsPage.navigateToTransactionsTab()
 
       const filterSelect = page.getByLabel('Filter by type')
-      if (await filterSelect.isVisible()) {
-        await transactionsPage.filterByType('Expense')
-        await page.waitForTimeout(500)
+      await expect(filterSelect).toBeVisible()
 
-        await transactionsPage.filterByType('Income')
-        await page.waitForTimeout(500)
+      await transactionsPage.filterByType('Expense')
+      await page.waitForLoadState('networkidle')
 
-        await transactionsPage.filterByType('All')
-      }
+      await transactionsPage.filterByType('Income')
+      await page.waitForLoadState('networkidle')
+
+      await transactionsPage.filterByType('All')
+      await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()
     })
@@ -174,10 +175,9 @@ test.describe('transactions', () => {
       await transactionsPage.navigateToTransactionsTab()
 
       const searchInput = page.getByLabel('Search transactions')
-      if (await searchInput.isVisible()) {
-        await transactionsPage.searchTransactions('grocery')
-        await page.waitForTimeout(500)
-      }
+      await expect(searchInput).toBeVisible()
+      await transactionsPage.searchTransactions('grocery')
+      await page.waitForLoadState('networkidle')
 
       await dashboardPage.clickSignOut()
     })
