@@ -26,17 +26,20 @@ export class BudgetsPage extends BasePage {
   }
 
   async expectBudgetInList(category: string, planned: string) {
-    const item = this.page.locator('div', { hasText: category }).filter({ hasText: planned })
+    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: category }).filter({ hasText: planned })
     await expect(item.first()).toBeVisible()
   }
 
   async clickEditBudget(category: string) {
-    const item = this.page.locator('div', { hasText: category })
+    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: category })
     await item.getByRole('button', { name: /edit/i }).first().click()
   }
 
   async clickDeleteBudget(category: string) {
-    const item = this.page.locator('div', { hasText: category })
+    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: category })
     // Budget deletion is immediate (no confirmation dialog)
     await item.getByRole('button', { name: /remove/i }).first().click()
   }

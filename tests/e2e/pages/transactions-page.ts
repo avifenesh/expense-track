@@ -53,17 +53,20 @@ export class TransactionsPage extends BasePage {
     const formattedWithCommas = amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
 
-    const item = this.page.locator('div', { hasText: description }).filter({ hasText: amountRegex })
+    // Use rounded-2xl class to target transaction row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: description }).filter({ hasText: amountRegex })
     await expect(item.first()).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditTransaction(description: string) {
-    const item = this.page.locator('div', { hasText: description })
+    // Use rounded-2xl class to target transaction row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: description })
     await item.getByRole('button', { name: 'Edit' }).first().click()
   }
 
   async clickDeleteTransaction(description: string) {
-    const item = this.page.locator('div', { hasText: description })
+    // Use rounded-2xl class to target transaction row divs specifically (not parent containers)
+    const item = this.page.locator('div.rounded-2xl', { hasText: description })
     // Transaction deletion is immediate (no confirmation dialog)
     await item.getByRole('button', { name: 'Delete' }).first().click()
   }
