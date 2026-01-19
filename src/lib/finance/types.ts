@@ -64,6 +64,7 @@ export type LeftToSpendBreakdown = {
   totalActual: number
   totalRemaining: number
   categories: Array<{
+    id: string
     name: string
     planned: number
     actual: number

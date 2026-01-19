@@ -372,6 +372,7 @@ export async function getDashboardData({
   const expenseCategoryBreakdown = budgetsSummary
     .filter((b) => b.categoryType === TransactionType.EXPENSE)
     .map((b) => ({
+      id: b.categoryId,
       name: b.categoryName,
       planned: b.planned,
       actual: b.actual,

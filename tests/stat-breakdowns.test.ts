@@ -254,12 +254,14 @@ describe('Stat breakdowns', () => {
 
       const groceriesCat = leftToSpendStat.breakdown.categories.find((c) => c.name === 'Groceries')
       expect(groceriesCat).toBeDefined()
+      expect(groceriesCat?.id).toBe('cat1')
       expect(groceriesCat?.planned).toBe(500)
       expect(groceriesCat?.actual).toBe(150)
       expect(groceriesCat?.remaining).toBe(350)
 
       const utilitiesCat = leftToSpendStat.breakdown.categories.find((c) => c.name === 'Utilities')
       expect(utilitiesCat).toBeDefined()
+      expect(utilitiesCat?.id).toBe('cat3')
       expect(utilitiesCat?.planned).toBe(200)
       expect(utilitiesCat?.actual).toBe(0)
       expect(utilitiesCat?.remaining).toBe(200)

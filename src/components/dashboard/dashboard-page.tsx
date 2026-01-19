@@ -656,6 +656,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                     type="button"
                     onClick={() => setExpandedStat(null)}
                     className="text-xs text-slate-400 hover:text-white transition"
+                    aria-label="Close breakdown"
                   >
                     Close
                   </button>

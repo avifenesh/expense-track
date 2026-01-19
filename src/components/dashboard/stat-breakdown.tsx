@@ -124,7 +124,7 @@ function LeftToSpendBreakdownView({ data, currency }: { data: LeftToSpendBreakdo
         <div className="mt-3 space-y-1.5">
           <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">By category</p>
           {data.categories.map((cat) => (
-            <div key={cat.name} className="flex items-center justify-between gap-2">
+            <div key={cat.id} className="flex items-center justify-between gap-2">
               <span className="truncate text-xs text-slate-300">{cat.name}</span>
               <span
                 className={cn(
