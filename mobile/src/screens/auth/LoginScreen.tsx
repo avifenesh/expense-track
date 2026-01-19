@@ -110,7 +110,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
     biometricCapability?.isAvailable && isBiometricEnabled;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="login.screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -118,20 +118,21 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          testID="login.scrollView"
         >
-          <View style={styles.content}>
-            <Text style={styles.title}>Sign In</Text>
-            <Text style={styles.subtitle}>Welcome back to Balance Beacon</Text>
+          <View style={styles.content} testID="login.content">
+            <Text style={styles.title} testID="login.title">Sign In</Text>
+            <Text style={styles.subtitle} testID="login.subtitle">Welcome back to Balance Beacon</Text>
 
             {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+              <View style={styles.errorContainer} testID="login.errorContainer">
+                <Text style={styles.errorText} testID="login.errorText">{error}</Text>
               </View>
             )}
 
-            <View style={styles.form}>
+            <View style={styles.form} testID="login.form">
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label} testID="login.emailLabel">Email</Text>
                 <TextInput
                   style={[styles.input, emailError && styles.inputError]}
                   value={email}
@@ -143,14 +144,15 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
                   autoComplete="email"
                   autoCorrect={false}
                   editable={!isLoading}
+                  testID="login.emailInput"
                 />
                 {emailError && (
-                  <Text style={styles.fieldError}>{emailError}</Text>
+                  <Text style={styles.fieldError} testID="login.emailInput-error">{emailError}</Text>
                 )}
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label} testID="login.passwordLabel">Password</Text>
                 <TextInput
                   style={styles.input}
                   value={password}
@@ -161,6 +163,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
                   autoCapitalize="none"
                   autoComplete="password"
                   editable={!isLoading}
+                  testID="login.passwordInput"
                 />
               </View>
 
@@ -168,10 +171,10 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
                 style={[styles.button, isLoading && styles.buttonDisabled]}
                 onPress={handleLogin}
                 disabled={isLoading}
-                testID="login-button"
+                testID="login.submitButton"
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#0f172a" />
+                  <ActivityIndicator color="#0f172a" testID="login.submitButton-loading" />
                 ) : (
                   <Text style={styles.buttonText}>Sign In</Text>
                 )}
@@ -182,7 +185,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
                   style={[styles.biometricButton, isLoading && styles.buttonDisabled]}
                   onPress={handleBiometricLogin}
                   disabled={isLoading}
-                  testID="biometric-login-button"
+                  testID="login.biometricButton"
                 >
                   <Text style={styles.biometricIcon}>
                     {biometricCapability?.biometricType === 'faceId' ? '👤' : '👆'}
@@ -198,6 +201,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
               style={styles.link}
               onPress={() => navigation.navigate('Register')}
               disabled={isLoading}
+              testID="login.registerLink"
             >
               <Text style={styles.linkText}>
                 Don&apos;t have an account? Register
@@ -208,6 +212,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
               style={styles.link}
               onPress={() => navigation.navigate('ResetPassword', {})}
               disabled={isLoading}
+              testID="login.resetPasswordLink"
             >
               <Text style={styles.linkText}>Forgot password?</Text>
             </Pressable>

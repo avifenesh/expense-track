@@ -52,6 +52,7 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon label="Home" focused={focused} />
           ),
+          tabBarTestID: 'tab.dashboard',
         }}
       />
       <Tab.Screen
@@ -62,6 +63,7 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon label="Transactions" focused={focused} />
           ),
+          tabBarTestID: 'tab.transactions',
         }}
       />
       <Tab.Screen
@@ -72,6 +74,7 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon label="Budgets" focused={focused} />
           ),
+          tabBarTestID: 'tab.budgets',
         }}
       />
       <Tab.Screen
@@ -82,6 +85,7 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon label="Sharing" focused={focused} />
           ),
+          tabBarTestID: 'tab.sharing',
         }}
       />
       <Tab.Screen
@@ -92,6 +96,7 @@ export function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon label="Settings" focused={focused} />
           ),
+          tabBarTestID: 'tab.settings',
         }}
       />
     </Tab.Navigator>

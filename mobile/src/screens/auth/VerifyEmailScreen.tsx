@@ -61,33 +61,33 @@ export function VerifyEmailScreen({
   }, [email, cooldownSeconds, isResending]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="verifyEmail.screen">
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
+        <View style={styles.iconContainer} testID="verifyEmail.icon">
           <Text style={styles.icon}>@</Text>
         </View>
 
-        <Text style={styles.title}>Check Your Email</Text>
-        <Text style={styles.subtitle}>
+        <Text style={styles.title} testID="verifyEmail.title">Check Your Email</Text>
+        <Text style={styles.subtitle} testID="verifyEmail.subtitle">
           We sent a verification link to{'\n'}
-          <Text style={styles.email}>{email}</Text>
+          <Text style={styles.email} testID="verifyEmail.email">{email}</Text>
         </Text>
 
-        <View style={styles.instructionsContainer}>
+        <View style={styles.instructionsContainer} testID="verifyEmail.instructions">
           <Text style={styles.instructionsText}>
             Click the link in the email to verify your account. If you don&apos;t see it, check your spam folder.
           </Text>
         </View>
 
         {resendMessage && (
-          <View style={styles.successContainer}>
-            <Text style={styles.successText}>{resendMessage}</Text>
+          <View style={styles.successContainer} testID="verifyEmail.successContainer">
+            <Text style={styles.successText} testID="verifyEmail.successText">{resendMessage}</Text>
           </View>
         )}
 
         {resendError && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{resendError}</Text>
+          <View style={styles.errorContainer} testID="verifyEmail.errorContainer">
+            <Text style={styles.errorText} testID="verifyEmail.errorText">{resendError}</Text>
           </View>
         )}
 
@@ -98,11 +98,12 @@ export function VerifyEmailScreen({
           ]}
           onPress={handleResendEmail}
           disabled={isResending || cooldownSeconds > 0}
+          testID="verifyEmail.resendButton"
         >
           {isResending ? (
-            <ActivityIndicator color="#38bdf8" />
+            <ActivityIndicator color="#38bdf8" testID="verifyEmail.resendButton-loading" />
           ) : cooldownSeconds > 0 ? (
-            <Text style={styles.resendButtonTextDisabled}>
+            <Text style={styles.resendButtonTextDisabled} testID="verifyEmail.resendCooldown">
               Resend in {cooldownSeconds}s
             </Text>
           ) : (
@@ -113,6 +114,7 @@ export function VerifyEmailScreen({
         <Pressable
           style={styles.link}
           onPress={() => navigation.navigate('Login')}
+          testID="verifyEmail.backButton"
         >
           <Text style={styles.linkText}>Back to Sign In</Text>
         </Pressable>

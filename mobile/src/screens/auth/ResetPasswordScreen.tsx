@@ -137,18 +137,19 @@ export function ResetPasswordScreen({
 
   if (resetComplete) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="resetPassword.completeScreen">
         <View style={styles.centerContent}>
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>*</Text>
           </View>
-          <Text style={styles.title}>Password Reset</Text>
-          <Text style={styles.subtitle}>
+          <Text style={styles.title} testID="resetPassword.completeTitle">Password Reset</Text>
+          <Text style={styles.subtitle} testID="resetPassword.completeSubtitle">
             Your password has been reset successfully.
           </Text>
           <Pressable
             style={styles.button}
             onPress={() => navigation.navigate('Login')}
+            testID="resetPassword.completeSignInButton"
           >
             <Text style={styles.buttonText}>Sign In</Text>
           </Pressable>
@@ -159,18 +160,19 @@ export function ResetPasswordScreen({
 
   if (requestSent) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="resetPassword.sentScreen">
         <View style={styles.centerContent}>
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>@</Text>
           </View>
-          <Text style={styles.title}>Check Your Email</Text>
-          <Text style={styles.subtitle}>
+          <Text style={styles.title} testID="resetPassword.sentTitle">Check Your Email</Text>
+          <Text style={styles.subtitle} testID="resetPassword.sentSubtitle">
             If an account exists with {email}, you will receive a password reset link.
           </Text>
           <Pressable
             style={styles.link}
             onPress={() => navigation.navigate('Login')}
+            testID="resetPassword.sentBackButton"
           >
             <Text style={styles.linkText}>Back to Sign In</Text>
           </Pressable>
@@ -181,7 +183,7 @@ export function ResetPasswordScreen({
 
   if (hasToken) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="resetPassword.newPasswordScreen">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -189,22 +191,23 @@ export function ResetPasswordScreen({
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            testID="resetPassword.newPasswordScrollView"
           >
             <View style={styles.content}>
-              <Text style={styles.title}>Create New Password</Text>
-              <Text style={styles.subtitle}>
+              <Text style={styles.title} testID="resetPassword.newPasswordTitle">Create New Password</Text>
+              <Text style={styles.subtitle} testID="resetPassword.newPasswordSubtitle">
                 Enter your new password below
               </Text>
 
               {error && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{error}</Text>
+                <View style={styles.errorContainer} testID="resetPassword.newPasswordErrorContainer">
+                  <Text style={styles.errorText} testID="resetPassword.newPasswordErrorText">{error}</Text>
                 </View>
               )}
 
-              <View style={styles.form}>
+              <View style={styles.form} testID="resetPassword.newPasswordForm">
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>New Password</Text>
+                  <Text style={styles.label} testID="resetPassword.newPasswordLabel">New Password</Text>
                   <TextInput
                     style={[
                       styles.input,
@@ -220,9 +223,10 @@ export function ResetPasswordScreen({
                     autoCapitalize="none"
                     autoComplete="password-new"
                     editable={!isLoading}
+                    testID="resetPassword.newPasswordInput"
                   />
                   {(showPasswordRequirements || newPassword.length > 0) && (
-                    <View style={styles.requirementsContainer}>
+                    <View style={styles.requirementsContainer} testID="resetPassword.passwordRequirements">
                       {passwordRequirements.map((req, index) => (
                         <View key={index} style={styles.requirement}>
                           <Text
@@ -230,6 +234,7 @@ export function ResetPasswordScreen({
                               styles.requirementText,
                               req.met && styles.requirementMet,
                             ]}
+                            testID={`resetPassword.passwordRequirement.${index}`}
                           >
                             {req.met ? '\u2713' : '\u2022'} {req.label}
                           </Text>
@@ -240,7 +245,7 @@ export function ResetPasswordScreen({
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Confirm Password</Text>
+                  <Text style={styles.label} testID="resetPassword.confirmPasswordLabel">Confirm Password</Text>
                   <TextInput
                     style={[
                       styles.input,
@@ -254,9 +259,10 @@ export function ResetPasswordScreen({
                     autoCapitalize="none"
                     autoComplete="password-new"
                     editable={!isLoading}
+                    testID="resetPassword.confirmPasswordInput"
                   />
                   {confirmPasswordError && (
-                    <Text style={styles.fieldError}>{confirmPasswordError}</Text>
+                    <Text style={styles.fieldError} testID="resetPassword.confirmPasswordInput-error">{confirmPasswordError}</Text>
                   )}
                 </View>
 
@@ -264,9 +270,10 @@ export function ResetPasswordScreen({
                   style={[styles.button, isLoading && styles.buttonDisabled]}
                   onPress={handleResetPassword}
                   disabled={isLoading}
+                  testID="resetPassword.submitButton"
                 >
                   {isLoading ? (
-                    <ActivityIndicator color="#0f172a" />
+                    <ActivityIndicator color="#0f172a" testID="resetPassword.submitButton-loading" />
                   ) : (
                     <Text style={styles.buttonText}>Reset Password</Text>
                   )}
@@ -277,6 +284,7 @@ export function ResetPasswordScreen({
                 style={styles.link}
                 onPress={() => navigation.navigate('Login')}
                 disabled={isLoading}
+                testID="resetPassword.newPasswordBackButton"
               >
                 <Text style={styles.linkText}>Back to Sign In</Text>
               </Pressable>
@@ -288,7 +296,7 @@ export function ResetPasswordScreen({
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="resetPassword.screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -296,22 +304,23 @@ export function ResetPasswordScreen({
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          testID="resetPassword.scrollView"
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Reset Password</Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.title} testID="resetPassword.title">Reset Password</Text>
+            <Text style={styles.subtitle} testID="resetPassword.subtitle">
               Enter your email to receive a reset link
             </Text>
 
             {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+              <View style={styles.errorContainer} testID="resetPassword.errorContainer">
+                <Text style={styles.errorText} testID="resetPassword.errorText">{error}</Text>
               </View>
             )}
 
-            <View style={styles.form}>
+            <View style={styles.form} testID="resetPassword.form">
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label} testID="resetPassword.emailLabel">Email</Text>
                 <TextInput
                   style={[styles.input, emailError && styles.inputError]}
                   value={email}
@@ -323,9 +332,10 @@ export function ResetPasswordScreen({
                   autoComplete="email"
                   autoCorrect={false}
                   editable={!isLoading}
+                  testID="resetPassword.emailInput"
                 />
                 {emailError && (
-                  <Text style={styles.fieldError}>{emailError}</Text>
+                  <Text style={styles.fieldError} testID="resetPassword.emailInput-error">{emailError}</Text>
                 )}
               </View>
 
@@ -333,9 +343,10 @@ export function ResetPasswordScreen({
                 style={[styles.button, isLoading && styles.buttonDisabled]}
                 onPress={handleRequestReset}
                 disabled={isLoading}
+                testID="resetPassword.requestButton"
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#0f172a" />
+                  <ActivityIndicator color="#0f172a" testID="resetPassword.requestButton-loading" />
                 ) : (
                   <Text style={styles.buttonText}>Send Reset Link</Text>
                 )}
@@ -346,6 +357,7 @@ export function ResetPasswordScreen({
               style={styles.link}
               onPress={() => navigation.navigate('Login')}
               disabled={isLoading}
+              testID="resetPassword.backButton"
             >
               <Text style={styles.linkText}>Back to Sign In</Text>
             </Pressable>
