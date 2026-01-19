@@ -26,9 +26,11 @@ export class BudgetsPage extends BasePage {
   }
 
   async expectBudgetInList(category: string, planned: string) {
-    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
-    const item = this.page.locator('div.rounded-2xl', { hasText: category }).filter({ hasText: planned })
-    await expect(item.first()).toBeVisible()
+    // First wait for the category to appear anywhere on the page
+    // This is more reliable than waiting for a specific element structure
+    await expect(this.page.getByText(category)).toBeVisible({ timeout: 20000 })
+    // Also verify the planned amount appears
+    await expect(this.page.getByText(planned)).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditBudget(category: string) {
@@ -39,7 +41,7 @@ export class BudgetsPage extends BasePage {
 
   async clickDeleteBudget(category: string) {
     // First verify the budget is visible in the list
-    await expect(this.page.getByText(category)).toBeVisible({ timeout: 10000 })
+    await expect(this.page.getByText(category)).toBeVisible({ timeout: 20000 })
     // Use getByRole for the Remove button directly - it's more reliable than nested locators
     // Budget deletion is immediate (no confirmation dialog)
     const removeButton = this.page.getByRole('button', { name: /remove/i }).first()

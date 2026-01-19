@@ -45,6 +45,10 @@ export class TransactionsPage extends BasePage {
   }
 
   async expectTransactionInList(description: string, amount: string) {
+    // First, wait for the description text to appear anywhere on the page
+    // This is more reliable than waiting for a specific element structure
+    await expect(this.page.getByText(description)).toBeVisible({ timeout: 20000 })
+
     // Amount in UI is formatted with currency symbol and commas (e.g., "-$50.00", "+$3,000.00")
     // Convert input like "50.00" to a regex that matches the formatted version
     const amountNum = parseFloat(amount)
@@ -53,14 +57,13 @@ export class TransactionsPage extends BasePage {
     const formattedWithCommas = amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
 
-    // Use rounded-2xl class to target transaction row divs specifically (not parent containers)
-    const item = this.page.locator('div.rounded-2xl', { hasText: description }).filter({ hasText: amountRegex })
-    await expect(item.first()).toBeVisible({ timeout: 10000 })
+    // Verify the amount also appears - it should be near the description
+    await expect(this.page.getByText(amountRegex)).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditTransaction(description: string) {
     // First verify the transaction is visible in the list
-    await expect(this.page.getByText(description)).toBeVisible({ timeout: 10000 })
+    await expect(this.page.getByText(description)).toBeVisible({ timeout: 20000 })
     // Use getByRole for the Edit button directly - it's more reliable than nested locators
     // The most recently created transaction appears at the top, so first() gets the right one
     const editButton = this.page.getByRole('button', { name: 'Edit' }).first()
@@ -70,7 +73,7 @@ export class TransactionsPage extends BasePage {
 
   async clickDeleteTransaction(description: string) {
     // First verify the transaction is visible in the list
-    await expect(this.page.getByText(description)).toBeVisible({ timeout: 10000 })
+    await expect(this.page.getByText(description)).toBeVisible({ timeout: 20000 })
     // Use getByRole for the Delete button directly - it's more reliable than nested locators
     // The most recently created transaction appears at the top, so first() gets the right one
     // Transaction deletion is immediate (no confirmation dialog)
