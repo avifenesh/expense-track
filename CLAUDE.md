@@ -57,7 +57,8 @@ npm run dev              # Start dev server
 npm run setup:local      # First-time setup (Docker Postgres + seed)
 npm run db:push          # Push schema changes (dev)
 npm run db:migrate       # Apply migrations (prod)
-npm test                 # Vitest
+npm test                 # Vitest unit tests
+npm run test:e2e         # Playwright E2E tests (see tests/e2e/README.md)
 npm run check-types      # TypeScript check
 npm run build            # Build production bundle
 
@@ -87,7 +88,8 @@ npm test                 # Run mobile tests
 - `src/lib/server-logger.ts` - Logging utility (use instead of console.\*)
 - `src/utils/date.ts` - Use `getMonthStart()` for month normalization
 - `prisma/schema.prisma` - Models: User, Account, Category, Transaction, Budget, RecurringTemplate, Holding
-- `tests/` - Vitest test files
+- `tests/` - Vitest unit tests
+- `tests/e2e/` - Playwright E2E tests (see `tests/e2e/README.md`)
 - `mobile/` - React Native mobile app (Expo)
   - See `mobile/README.md` for setup instructions
 
@@ -189,6 +191,13 @@ Only for small fixes, typos, docs, or emergency hotfixes. Everything else goes t
 ## Testing
 
 Write tests to find bugs, not just pass coverage. Verify real behavior and edge cases, not just happy paths.
+
+**Test suites:**
+- `tests/` - Unit tests (Vitest) for actions, schemas, lib functions
+- `tests/e2e/` - End-to-end tests (Playwright) for web UI flows
+- `tests/security/` - XSS attack payload tests
+
+See `tests/e2e/README.md` for E2E test documentation.
 
 ## Style
 

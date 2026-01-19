@@ -1,57 +1,209 @@
 import { test, expect } from '@playwright/test'
+import { LoginPage } from './pages/login-page'
+import { DashboardPage } from './pages/dashboard-page'
+import { TEST_USER_1, TEST_USER_2 } from './helpers/fixtures'
 
-// E2E test users (must match .env.e2e configuration)
-const USER1_EMAIL = 'e2e-user1@test.example.com'
-const USER1_PASSWORD = 'Af!@#$56789'
-const USER1_DISPLAY_NAME = 'TestUserOne'
+test.describe('authentication', () => {
+  test.describe('login', () => {
+    test('should successfully login with valid credentials', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      const dashboardPage = new DashboardPage(page)
 
-const USER2_EMAIL = 'e2e-user2@test.example.com'
-const USER2_PASSWORD = 'A76v38i61_7'
-const USER2_DISPLAY_NAME = 'TestUserTwo'
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
 
-test.describe('authentication experience', () => {
-  test('User 1 can switch between personal and joint accounts', async ({ page }) => {
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/login$/)
+      await dashboardPage.expectAccountOption(TEST_USER_1.displayName)
+      await dashboardPage.clickSignOut()
+      await loginPage.expectLoginPage()
+    })
 
-    await page.getByLabel('Email').fill(USER1_EMAIL)
-    await page.getByLabel('Password').fill(USER1_PASSWORD)
+    test('should show error message with invalid credentials', async ({ page }) => {
+      const loginPage = new LoginPage(page)
 
-    await page.getByRole('button', { name: 'Enter Balance Beacon' }).click()
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_1.email, 'WrongPassword!')
 
-    await expect(page).toHaveURL(/\/?account=/)
-    const dashboardAccountSelect = page.getByLabel('Filter by account')
-    await expect(dashboardAccountSelect.locator('option', { hasText: USER1_DISPLAY_NAME })).toHaveCount(1)
-    await expect(dashboardAccountSelect.locator('option', { hasText: 'Joint' })).toHaveCount(1)
-    await expect(dashboardAccountSelect.locator('option', { hasText: USER2_DISPLAY_NAME })).toHaveCount(0)
+      await loginPage.expectInvalidCredentialsError()
+    })
 
-    await expect(dashboardAccountSelect.locator('option:checked')).toHaveText(USER1_DISPLAY_NAME)
+    test('should show validation error for missing email', async ({ page }) => {
+      const loginPage = new LoginPage(page)
 
-    await dashboardAccountSelect.selectOption({ label: 'Joint' })
-    await expect(page.getByText('Joint will open by default next time.')).toBeVisible()
+      await loginPage.navigateToLogin()
+      await loginPage.fillPassword(TEST_USER_1.password)
+      await loginPage.clickLogin()
 
-    await page.getByRole('button', { name: 'Sign out' }).click()
-    await expect(page).toHaveURL(/\/login$/)
+      await expect(page.getByText(/email.*required/i)).toBeVisible()
+    })
+
+    test('should show validation error for missing password', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+
+      await loginPage.navigateToLogin()
+      await loginPage.fillEmail(TEST_USER_1.email)
+      await loginPage.clickLogin()
+
+      await expect(page.getByText(/password.*required/i)).toBeVisible()
+    })
+
+    test('should show validation error for invalid email format', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+
+      await loginPage.navigateToLogin()
+      await loginPage.fillEmail('not-an-email')
+      await loginPage.fillPassword(TEST_USER_1.password)
+      await loginPage.clickLogin()
+
+      await expect(page.getByText(/valid.*email/i)).toBeVisible()
+    })
+
+    test('should redirect to dashboard if already logged in', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
+      await dashboardPage.waitForUrl(/\/?account=/)
+
+      await loginPage.navigateToLogin()
+      await dashboardPage.waitForUrl(/\/?account=/)
+
+      await dashboardPage.clickSignOut()
+    })
   })
 
-  test('User 2 sees only their accounts and invalid logins show a message', async ({ page }) => {
-    await page.goto('/login')
+  test.describe('account switching', () => {
+    test('User 1 can switch between personal and joint accounts', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      const dashboardPage = new DashboardPage(page)
 
-    await page.getByLabel('Email').fill(USER2_EMAIL)
-    await page.getByLabel('Password').fill('WrongPassword!')
-    await page.getByRole('button', { name: 'Enter Balance Beacon' }).click()
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
 
-    await expect(page.getByText('Invalid username or password')).toBeVisible()
+      await dashboardPage.expectAccountOption(TEST_USER_1.displayName)
+      await dashboardPage.expectAccountOption('Joint')
+      await dashboardPage.expectAccountOption(TEST_USER_2.displayName, false)
 
-    await page.getByLabel('Email').fill(USER2_EMAIL)
-    await page.getByLabel('Password').fill(USER2_PASSWORD)
-    await page.getByRole('button', { name: 'Enter Balance Beacon' }).click()
+      await dashboardPage.expectSelectedAccount(TEST_USER_1.displayName)
 
-    const accountSelect = page.getByLabel('Filter by account')
-    await expect(accountSelect.locator('option', { hasText: USER2_DISPLAY_NAME })).toHaveCount(1)
-    await expect(accountSelect.locator('option', { hasText: 'Joint' })).toHaveCount(1)
-    await expect(accountSelect.locator('option', { hasText: USER1_DISPLAY_NAME })).toHaveCount(0)
+      await dashboardPage.selectAccount('Joint')
+      await dashboardPage.expectAccountSwitchMessage('Joint')
 
-    await page.getByRole('button', { name: 'Sign out' }).click()
+      await dashboardPage.clickSignOut()
+      await loginPage.expectLoginPage()
+    })
+
+    test('User 2 sees only their accounts', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_2.email, TEST_USER_2.password)
+
+      await dashboardPage.expectAccountOption(TEST_USER_2.displayName)
+      await dashboardPage.expectAccountOption('Joint')
+      await dashboardPage.expectAccountOption(TEST_USER_1.displayName, false)
+
+      await dashboardPage.clickSignOut()
+    })
+  })
+
+  test.describe('registration', () => {
+    test('should show registration form', async ({ page }) => {
+      await page.goto('/register')
+
+      await expect(page.getByRole('heading', { name: /join balance beacon/i })).toBeVisible()
+      await expect(page.getByLabel('Display name')).toBeVisible()
+      await expect(page.getByLabel('Email')).toBeVisible()
+      await expect(page.getByLabel('Password')).toBeVisible()
+      await expect(page.getByRole('button', { name: /create account/i })).toBeVisible()
+    })
+
+    test('should show validation error for missing fields', async ({ page }) => {
+      await page.goto('/register')
+      await page.getByRole('button', { name: /create account/i }).click()
+
+      await expect(page.getByText(/display name.*required/i)).toBeVisible()
+      await expect(page.getByText(/email.*required/i)).toBeVisible()
+      await expect(page.getByText(/password.*required/i)).toBeVisible()
+    })
+
+    test('should show validation error for weak password', async ({ page }) => {
+      await page.goto('/register')
+
+      await page.getByLabel('Display name').fill('Test User')
+      await page.getByLabel('Email').fill('test@example.com')
+      await page.getByLabel('Password').fill('weak')
+      await page.getByRole('button', { name: /create account/i }).click()
+
+      await expect(page.getByText(/password.*at least/i)).toBeVisible()
+    })
+
+    test('should show link to login page', async ({ page }) => {
+      await page.goto('/register')
+
+      const loginLink = page.getByRole('link', { name: /sign in/i })
+      await expect(loginLink).toBeVisible()
+      await loginLink.click()
+
+      await expect(page).toHaveURL(/\/login$/)
+    })
+  })
+
+  test.describe('password reset', () => {
+    test('should show forgot password link on login page', async ({ page }) => {
+      await page.goto('/login')
+
+      const forgotLink = page.getByRole('link', { name: /forgot.*password/i })
+      await expect(forgotLink).toBeVisible()
+    })
+
+    test('should show missing token message without token', async ({ page }) => {
+      await page.goto('/reset-password')
+
+      await expect(page.getByRole('heading', { name: /missing reset token/i })).toBeVisible()
+      await expect(page.getByText(/no reset token provided/i)).toBeVisible()
+      await expect(page.getByRole('link', { name: /go to sign in/i })).toBeVisible()
+    })
+
+    test('should show reset form with valid token', async ({ page }) => {
+      await page.goto('/reset-password?token=fake-token-for-ui-test')
+
+      await expect(page.getByRole('heading', { name: /set a new password/i })).toBeVisible()
+      await expect(page.getByLabel(/new password/i)).toBeVisible()
+      await expect(page.getByRole('button', { name: /reset password/i })).toBeVisible()
+    })
+  })
+
+  test.describe('session management', () => {
+    test('should logout and clear session', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
+      await dashboardPage.waitForUrl(/\/?account=/)
+
+      await dashboardPage.clickSignOut()
+      await loginPage.expectLoginPage()
+
+      await page.goto('/')
+      await loginPage.expectLoginPage()
+    })
+
+    test('should persist session across page reloads', async ({ page }) => {
+      const loginPage = new LoginPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await loginPage.navigateToLogin()
+      await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
+      await dashboardPage.waitForUrl(/\/?account=/)
+
+      await page.reload()
+      await dashboardPage.waitForUrl(/\/?account=/)
+      await dashboardPage.expectAccountOption(TEST_USER_1.displayName)
+
+      await dashboardPage.clickSignOut()
+    })
   })
 })
