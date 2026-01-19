@@ -40,9 +40,8 @@ test.describe('sharing', () => {
 
       // Wait for transaction saved toast before looking for share button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for UI to update and list to refresh
+      // Wait for network to settle after transaction save
       await page.waitForLoadState('networkidle')
-      await page.waitForTimeout(500)
 
       // Find the share button within the transaction row containing our description
       // The share button has title="Share expense" and appears only for expense transactions
@@ -116,9 +115,8 @@ test.describe('sharing', () => {
 
       // Wait for transaction saved toast before looking for share button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for UI to update and list to refresh
+      // Wait for network to settle after transaction save
       await page.waitForLoadState('networkidle')
-      await page.waitForTimeout(500)
 
       // Find the share button within the transaction row containing our description
       // The share button has title="Share expense" and appears only for expense transactions
