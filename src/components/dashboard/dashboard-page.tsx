@@ -633,6 +633,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                 onClick={() => setExpandedStat(isExpanded ? null : stat.label)}
                 className={cn(cardClassName, 'cursor-pointer hover:bg-white/10 text-left')}
                 aria-expanded={isExpanded}
+                aria-label={`View ${stat.label} breakdown`}
               >
                 {cardContent}
               </button>
