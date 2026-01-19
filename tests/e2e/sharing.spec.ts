@@ -40,8 +40,11 @@ test.describe('sharing', () => {
 
       // Wait for transaction saved toast before looking for share button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for network to settle after transaction save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to transactions tab after reload
+      await transactionsPage.navigateToTransactionsTab()
 
       // Find the share button for the newly created transaction
       // Use getByRole for the share button directly - it's more reliable than nested locators
@@ -114,8 +117,11 @@ test.describe('sharing', () => {
 
       // Wait for transaction saved toast before looking for share button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
-      // Wait for network to settle after transaction save
+      // Reload page to ensure fresh data (optimistic updates can cause timing issues)
+      await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to transactions tab after reload
+      await transactionsPage.navigateToTransactionsTab()
 
       // Find the share button for the newly created transaction
       // Use getByRole for the share button directly - it's more reliable than nested locators
