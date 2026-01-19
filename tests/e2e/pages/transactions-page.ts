@@ -61,15 +61,19 @@ export class TransactionsPage extends BasePage {
   }
 
   async filterByType(type: string) {
-    await this.selectOption('Filter by type', type)
+    await this.selectOption('Type filter', type)
   }
 
   async filterByCategory(category: string) {
-    await this.selectOption('Filter by category', category)
+    await this.selectOption('Category filter', category)
+  }
+
+  async filterByAccount(account: string) {
+    await this.selectOption('Account filter', account)
   }
 
   async searchTransactions(query: string) {
-    await this.fillInput('Search transactions', query)
+    await this.fillInput('Search', query)
   }
 
   async expectTransactionCount(count: number) {

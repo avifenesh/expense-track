@@ -101,12 +101,14 @@ test.describe('sharing', () => {
       await expect(shareButton).toBeVisible()
       await shareButton.click()
 
-      await page.getByLabel('Participant email').fill(TEST_USER_2.email)
-      await page.getByRole('button', { name: /add participant/i }).click()
+      const emailInput = page.getByPlaceholder('Enter email address')
+      await emailInput.fill(TEST_USER_2.email)
+      const addButton = page.getByRole('button', { name: 'Add participant' })
+      await addButton.click()
 
       await sharingPage.expectParticipantAdded(TEST_USER_2.email)
 
-      const removeButton = page.getByRole('button', { name: /remove/i }).first()
+      const removeButton = page.getByRole('button', { name: 'Remove participant' }).first()
       await expect(removeButton).toBeVisible()
       await removeButton.click()
       await expect(page.getByText(TEST_USER_2.email)).not.toBeVisible()

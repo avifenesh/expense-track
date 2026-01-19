@@ -5,16 +5,16 @@ Comprehensive end-to-end test suite for Balance Beacon web application using Pla
 ## Overview
 
 This test suite covers:
-- **Authentication** (16 tests): Login, registration, password reset, session management
-- **Onboarding** (6 tests): Wizard flow, step navigation, redirects
-- **Transactions** (7 tests): Create, edit, delete, filter transactions
-- **Budgets** (6 tests): Create, edit, delete, filter budgets
-- **Sharing** (5 tests): Expense sharing, participants, settlement balances
-- **Dashboard** (5 tests): Layout, month navigation, account switching, tabs
-- **Settings** (3 tests): Settings page access, profile, currency preference
-- **Subscription** (3 tests): Subscription banner, upgrade page, pricing
+- **Authentication** (17 tests): Login, registration, password reset, session management
+- **Onboarding** (8 tests): Wizard flow, step navigation, redirects
+- **Transactions** (8 tests): Create, edit, delete, filter transactions
+- **Budgets** (7 tests): Create, edit, delete, filter budgets
+- **Sharing** (6 tests): Expense sharing, participants, settlement balances
+- **Dashboard** (9 tests): Layout, month navigation, account switching, tabs
+- **Settings** (8 tests): Account menu dropdown, export data, sign out, delete account
+- **Subscription** (5 tests): Subscription banner, upgrade page, pricing
 
-**Total: 45 web E2E tests**
+**Total: 68 web E2E tests**
 
 ## Setup
 
@@ -161,6 +161,15 @@ test.describe('transactions', () => {
 4. **Test Isolation**: Each test should be independent
 5. **Clean Up**: Always logout after tests that require authentication
 6. **Descriptive Names**: Use clear, descriptive test names
+7. **Proper Waits**: Use explicit waits (`waitForSelector`, `waitForLoadState`) instead of arbitrary timeouts (`waitForTimeout`)
+
+### Architecture Notes
+
+**Settings UI**: The settings functionality is implemented as a dropdown menu triggered by an "Account" button in the header, not as a dedicated `/settings` page route. Tests should use:
+- `page.getByRole('button', { name: /account/i })` to open the menu
+- `page.getByRole('menu', { name: /account settings/i })` to interact with the dropdown
+- `page.getByRole('menuitem', { name: /.../ })` for menu options
+
 
 ## CI/CD
 

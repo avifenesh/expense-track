@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Web: E2E test locator fixes and improvements (#263)
+  - Fixed 45+ flaky test locators across 8 spec files
+  - Settings tests refactored to use account dropdown menu (not /settings page)
+  - Replaced all `waitForTimeout` calls with proper explicit waits
+  - Re-enabled E2E CI workflow for pull requests
+  - Updated test counts: 68 total tests (was 45)
+  - Added architecture notes to E2E documentation
+
+
 ### Added
 - Web: Comprehensive E2E test suite with Playwright (#261)
   - 45 web E2E tests covering authentication, onboarding, transactions, budgets, sharing, dashboard, settings, subscription

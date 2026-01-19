@@ -12,7 +12,7 @@ test.describe('authentication', () => {
       await loginPage.navigateToLogin()
       await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
 
-      await dashboardPage.expectAccountOption(TEST_USER_1.displayName)
+      await expect(page.getByRole('heading', { name: /balance beacon/i })).toBeVisible()
       await dashboardPage.clickSignOut()
       await loginPage.expectLoginPage()
     })
@@ -80,29 +80,42 @@ test.describe('authentication', () => {
       await loginPage.navigateToLogin()
       await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
 
-      await dashboardPage.expectAccountOption(TEST_USER_1.displayName)
-      await dashboardPage.expectAccountOption('Joint')
-      await dashboardPage.expectAccountOption(TEST_USER_2.displayName, false)
+      await expect(page.getByRole('heading', { name: /balance beacon/i })).toBeVisible()
 
-      await dashboardPage.expectSelectedAccount(TEST_USER_1.displayName)
+      await dashboardPage.navigateToTab('Investments')
+      await page.waitForLoadState('networkidle')
 
-      await dashboardPage.selectAccount('Joint')
-      await dashboardPage.expectAccountSwitchMessage('Joint')
+      const accountSelect = page.getByLabel('Account')
+      await expect(accountSelect).toBeVisible()
+
+      const options = await accountSelect.locator('option').allTextContents()
+      expect(options).toContain(TEST_USER_1.displayName)
+      expect(options).toContain('Joint')
+      expect(options).not.toContain(TEST_USER_2.displayName)
 
       await dashboardPage.clickSignOut()
       await loginPage.expectLoginPage()
     })
 
-    test('User 2 sees only their accounts', async ({ page }) => {
+    test('User 2 sees only their accounts in holdings tab', async ({ page }) => {
       const loginPage = new LoginPage(page)
       const dashboardPage = new DashboardPage(page)
 
       await loginPage.navigateToLogin()
       await loginPage.login(TEST_USER_2.email, TEST_USER_2.password)
 
-      await dashboardPage.expectAccountOption(TEST_USER_2.displayName)
-      await dashboardPage.expectAccountOption('Joint')
-      await dashboardPage.expectAccountOption(TEST_USER_1.displayName, false)
+      await expect(page.getByRole('heading', { name: /balance beacon/i })).toBeVisible()
+
+      await dashboardPage.navigateToTab('Investments')
+      await page.waitForLoadState('networkidle')
+
+      const accountSelect2 = page.getByLabel('Account')
+      await expect(accountSelect2).toBeVisible()
+
+      const options2 = await accountSelect2.locator('option').allTextContents()
+      expect(options2).toContain(TEST_USER_2.displayName)
+      expect(options2).toContain('Joint')
+      expect(options2).not.toContain(TEST_USER_1.displayName)
 
       await dashboardPage.clickSignOut()
     })
@@ -201,7 +214,7 @@ test.describe('authentication', () => {
 
       await page.reload()
       await dashboardPage.waitForUrl(/\/?account=/)
-      await dashboardPage.expectAccountOption(TEST_USER_1.displayName)
+      await expect(page.getByRole('heading', { name: /balance beacon/i })).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })

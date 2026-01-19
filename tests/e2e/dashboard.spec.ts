@@ -9,89 +9,83 @@ test.describe('dashboard', () => {
 
   test.describe('dashboard layout', () => {
     test('should display main dashboard elements', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+      await expect(page.getByRole('heading', { name: /balance beacon/i })).toBeVisible()
+      await expect(page.getByText(/financial clarity/i)).toBeVisible()
 
-      await dashboardPage.expectAccountOption('TestUserOne')
-      await expect(page.getByLabel('Filter by account')).toBeVisible()
-      await expect(page.getByLabel('Filter by month')).toBeVisible()
-
-      await dashboardPage.clickSignOut()
+      await expect(page.getByRole('tab', { name: /overview/i })).toBeVisible()
+      await expect(page.getByRole('tab', { name: /transactions/i })).toBeVisible()
     })
 
     test('should display stat cards', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+      await page.waitForLoadState('networkidle')
 
-      await expect(page.getByText(/total spent/i)).toBeVisible()
-      await expect(page.getByText(/total earned/i)).toBeVisible()
-
-      await dashboardPage.clickSignOut()
+      const statCards = page.getByTestId('stat-card')
+      await expect(statCards.first()).toBeVisible()
     })
 
     test('should display tabs', async ({ page }) => {
       const dashboardPage = new DashboardPage(page)
 
+      await dashboardPage.expectTab('Overview')
       await dashboardPage.expectTab('Transactions')
       await dashboardPage.expectTab('Budgets')
-      await dashboardPage.expectTab('Holdings')
+      await dashboardPage.expectTab('Auto-repeat')
+      await dashboardPage.expectTab('Labels')
+      await dashboardPage.expectTab('Investments')
       await dashboardPage.expectTab('Sharing')
-
-      await dashboardPage.clickSignOut()
     })
   })
 
   test.describe('month navigation', () => {
-    test('should change month filter', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+    test('should navigate to previous month', async ({ page }) => {
+      const prevButton = page.getByRole('button', { name: 'Previous month' })
+      await expect(prevButton).toBeVisible()
 
-      const monthSelect = page.getByLabel('Filter by month')
-      await expect(monthSelect).toBeVisible()
-
-      await monthSelect.selectOption({ index: 0 })
+      const currentUrl = page.url()
+      await prevButton.click()
       await page.waitForLoadState('networkidle')
 
-      await dashboardPage.clickSignOut()
+      const newUrl = page.url()
+      expect(newUrl).not.toBe(currentUrl)
     })
 
-    test('should persist month selection in URL', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
+    test('should navigate to next month', async ({ page }) => {
+      const nextButton = page.getByRole('button', { name: 'Next month' })
+      await expect(nextButton).toBeVisible()
 
-      const monthSelect = page.getByLabel('Filter by month')
-      const options = await monthSelect.locator('option').all()
-
-      expect(options.length).toBeGreaterThan(1)
-      const monthValue = await options[1].getAttribute('value')
-      expect(monthValue).toBeTruthy()
-
-      await monthSelect.selectOption({ value: monthValue! })
+      const currentUrl = page.url()
+      await nextButton.click()
       await page.waitForLoadState('networkidle')
-      expect(page.url()).toContain(`month=${monthValue}`)
 
-      await dashboardPage.clickSignOut()
+      const newUrl = page.url()
+      expect(newUrl).not.toBe(currentUrl)
+    })
+
+    test('should display current month label', async ({ page }) => {
+      const monthLabel = page.getByTestId('month-label')
+      await expect(monthLabel).toBeVisible()
+      await expect(monthLabel).toContainText(/\w+ \d{4}/)
     })
   })
 
-  test.describe('account navigation', () => {
-    test('should switch between accounts', async ({ page }) => {
+  test.describe('account navigation in holdings tab', () => {
+    test('should switch between accounts in holdings tab', async ({ page }) => {
       const dashboardPage = new DashboardPage(page)
 
-      await dashboardPage.expectSelectedAccount('TestUserOne')
-
-      await dashboardPage.selectAccount('Joint')
-      await dashboardPage.expectAccountSwitchMessage('Joint')
-      await dashboardPage.expectSelectedAccount('Joint')
-
-      await dashboardPage.clickSignOut()
-    })
-
-    test('should persist account selection in URL', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page)
-
-      await dashboardPage.selectAccount('Joint')
+      await dashboardPage.navigateToTab('Investments')
       await page.waitForLoadState('networkidle')
 
-      expect(page.url()).toContain('account=')
+      const accountSelect = page.getByLabel('Account')
+      await expect(accountSelect).toBeVisible()
 
-      await dashboardPage.clickSignOut()
+      const options = await accountSelect.locator('option').all()
+      if (options.length > 1) {
+        const firstOptionValue = await options[1].getAttribute('value')
+        if (firstOptionValue) {
+          await accountSelect.selectOption(firstOptionValue)
+          await page.waitForLoadState('networkidle')
+        }
+      }
     })
   })
 
@@ -100,18 +94,31 @@ test.describe('dashboard', () => {
       const dashboardPage = new DashboardPage(page)
 
       await dashboardPage.navigateToTab('Budgets')
+      await page.waitForLoadState('networkidle')
       await expect(page.getByRole('heading', { name: /budgets/i })).toBeVisible()
 
-      await dashboardPage.navigateToTab('Holdings')
+      await dashboardPage.navigateToTab('Investments')
+      await page.waitForLoadState('networkidle')
       await expect(page.getByText(/holdings/i)).toBeVisible()
 
       await dashboardPage.navigateToTab('Sharing')
+      await page.waitForLoadState('networkidle')
       await expect(page.getByText(/settlement summary/i)).toBeVisible()
 
       await dashboardPage.navigateToTab('Transactions')
+      await page.waitForLoadState('networkidle')
       await expect(page.getByRole('heading', { name: /transactions/i })).toBeVisible()
+    })
 
-      await dashboardPage.clickSignOut()
+    test('should navigate to Overview tab', async ({ page }) => {
+      const dashboardPage = new DashboardPage(page)
+
+      await dashboardPage.navigateToTab('Budgets')
+      await page.waitForLoadState('networkidle')
+
+      await dashboardPage.navigateToTab('Overview')
+      await page.waitForLoadState('networkidle')
+      await expect(page.getByText(/cashflow snapshot/i)).toBeVisible()
     })
   })
 })

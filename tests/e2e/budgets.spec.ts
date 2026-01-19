@@ -122,8 +122,9 @@ test.describe('budgets', () => {
       const dashboardPage = new DashboardPage(page)
 
       await budgetsPage.navigateToBudgetsTab()
+      await page.waitForLoadState('networkidle')
 
-      const accountFilter = page.getByLabel('Filter by account')
+      const accountFilter = page.getByLabel('Account filter')
       await expect(accountFilter).toBeVisible()
       await budgetsPage.filterByAccount('TestUserOne')
       await page.waitForLoadState('networkidle')
@@ -136,8 +137,9 @@ test.describe('budgets', () => {
       const dashboardPage = new DashboardPage(page)
 
       await budgetsPage.navigateToBudgetsTab()
+      await page.waitForLoadState('networkidle')
 
-      const typeFilter = page.getByLabel('Filter by type')
+      const typeFilter = page.getByLabel('Type filter')
       await expect(typeFilter).toBeVisible()
       await budgetsPage.filterByType('Expense')
       await page.waitForLoadState('networkidle')

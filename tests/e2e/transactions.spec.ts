@@ -152,8 +152,9 @@ test.describe('transactions', () => {
       const dashboardPage = new DashboardPage(page)
 
       await transactionsPage.navigateToTransactionsTab()
+      await page.waitForLoadState('networkidle')
 
-      const filterSelect = page.getByLabel('Filter by type')
+      const filterSelect = page.getByLabel('Type filter')
       await expect(filterSelect).toBeVisible()
 
       await transactionsPage.filterByType('Expense')
@@ -173,8 +174,9 @@ test.describe('transactions', () => {
       const dashboardPage = new DashboardPage(page)
 
       await transactionsPage.navigateToTransactionsTab()
+      await page.waitForLoadState('networkidle')
 
-      const searchInput = page.getByLabel('Search transactions')
+      const searchInput = page.getByLabel('Search')
       await expect(searchInput).toBeVisible()
       await transactionsPage.searchTransactions('grocery')
       await page.waitForLoadState('networkidle')
