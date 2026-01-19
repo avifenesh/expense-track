@@ -171,6 +171,8 @@ describe('buildFinancialContext', () => {
         icon: null,
         deletedAt: null,
         deletedBy: null,
+        defaultIncomeGoal: null,
+        defaultIncomeGoalCurrency: null,
       },
       {
         id: 'a2',
@@ -185,6 +187,8 @@ describe('buildFinancialContext', () => {
         icon: null,
         deletedAt: null,
         deletedBy: null,
+        defaultIncomeGoal: null,
+        defaultIncomeGoalCurrency: null,
       },
     ],
     categories: [

@@ -25,6 +25,7 @@ export type {
   PaginatedResult,
   SharedExpensePaginationOptions,
   SharedExpenseStatusFilter,
+  MonthlyIncomeGoalSummary,
 } from './types'
 
 export { DEFAULT_PAGINATION_LIMIT } from './types'
@@ -36,7 +37,7 @@ export { getAccounts, getCategories, getTransactionRequests } from './accounts'
 export { getTransactionsForMonth } from './transactions'
 
 // Budget operations
-export { getBudgetsForMonth } from './budgets'
+export { getBudgetsForMonth, getMonthlyIncomeGoal } from './budgets'
 
 // Recurring template operations
 export { getRecurringTemplates } from './recurring'

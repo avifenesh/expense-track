@@ -4,10 +4,10 @@ import { subMonths } from 'date-fns'
 import { prisma } from '@/lib/prisma'
 import { getMonthKey, getMonthStartFromKey } from '@/utils/date'
 import { getLastUpdateTime, batchLoadExchangeRates } from '@/lib/currency'
-import { decimalToNumber, sumByType, convertTransactionAmountSync, buildAccountScopedWhere } from './utils'
+import { sumByType, convertTransactionAmountSync, buildAccountScopedWhere } from './utils'
 import { getAccounts, getCategories, getTransactionRequests } from './accounts'
 import { getTransactionsForMonth } from './transactions'
-import { getBudgetsForMonth } from './budgets'
+import { getBudgetsForMonth, getMonthlyIncomeGoal } from './budgets'
 import { getRecurringTemplates } from './recurring'
 import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance } from './expense-sharing'
 import type { DashboardData, CategoryBudgetSummary, MonetaryStat, MonthlyHistoryPoint } from './types'
@@ -35,6 +35,7 @@ export async function getDashboardData({
     transactions,
     transactionRequests,
     recurringTemplates,
+    monthlyIncomeGoal,
     previousTransactionsRaw,
     historyTransactionsRaw,
     exchangeRateLastUpdate,
@@ -51,6 +52,7 @@ export async function getDashboardData({
     }),
     getTransactionRequests({ accountId, status: 'PENDING' }),
     getRecurringTemplates({ accountId }),
+    getMonthlyIncomeGoal({ monthKey, accountId }),
     prisma.transaction.findMany({
       where: buildAccountScopedWhere(
         {
@@ -121,38 +123,7 @@ export async function getDashboardData({
     map.set(transaction.categoryId, current + transaction.convertedAmount)
   })
 
-  // Calculate planned and remaining amounts per-budget (only counting transactions in budgeted categories)
-  const { plannedIncome, remainingIncome } = budgets
-    .filter((budget) => budget.category.type === TransactionType.INCOME)
-    .reduce(
-      (acc, budget) => {
-        const planned = decimalToNumber(budget.planned)
-        const actual = incomeByCategory.get(budget.categoryId) ?? 0
-        return {
-          plannedIncome: acc.plannedIncome + planned,
-          remainingIncome: acc.remainingIncome + (planned - actual),
-        }
-      },
-      { plannedIncome: 0, remainingIncome: 0 },
-    )
-
-  const { plannedExpense, remainingExpense } = budgets
-    .filter((budget) => budget.category.type === TransactionType.EXPENSE)
-    .reduce(
-      (acc, budget) => {
-        const planned = decimalToNumber(budget.planned)
-        const actual = expensesByCategory.get(budget.categoryId) ?? 0
-        return {
-          plannedExpense: acc.plannedExpense + planned,
-          remainingExpense: acc.remainingExpense + (planned - actual),
-        }
-      },
-      { plannedExpense: 0, remainingExpense: 0 },
-    )
-
-  const projectedNet = actualIncome + Math.max(remainingIncome, 0) - (actualExpense + Math.max(remainingExpense, 0))
   const actualNet = actualIncome - actualExpense
-  const plannedNet = plannedIncome - plannedExpense
 
   // Load exchange rates per-month for historical accuracy (fixes N+1 query pattern)
   // Each month uses the exchange rate from the first day of that month, providing
@@ -177,11 +148,84 @@ export async function getDashboardData({
   // If no rates are available at all (unlikely but possible), returns empty Map which
   // convertTransactionAmountSync handles gracefully by returning original amount
   const currentMonthKey = getMonthKey(monthStart)
-  const currentMonthRates = monthRates.get(currentMonthKey)
+  const currentMonthRates = monthRates.get(currentMonthKey) ?? new Map()
   const getRatesForMonth = (month: Date) => {
     const key = getMonthKey(month)
-    return monthRates.get(key) ?? currentMonthRates ?? new Map()
+    return monthRates.get(key) ?? currentMonthRates
   }
+
+  // Calculate planned and remaining amounts per-budget with currency conversion
+  // Budgets are converted to preferred currency to match transaction amounts
+  const { plannedIncome, remainingIncome } = budgets
+    .filter((budget) => budget.category.type === TransactionType.INCOME)
+    .reduce(
+      (acc, budget) => {
+        const planned = convertTransactionAmountSync(
+          budget.planned,
+          budget.currency,
+          preferredCurrency,
+          currentMonthRates,
+        )
+        const actual = incomeByCategory.get(budget.categoryId) ?? 0
+        return {
+          plannedIncome: acc.plannedIncome + planned,
+          remainingIncome: acc.remainingIncome + (planned - actual),
+        }
+      },
+      { plannedIncome: 0, remainingIncome: 0 },
+    )
+
+  const { plannedExpense, remainingExpense } = budgets
+    .filter((budget) => budget.category.type === TransactionType.EXPENSE)
+    .reduce(
+      (acc, budget) => {
+        const planned = convertTransactionAmountSync(
+          budget.planned,
+          budget.currency,
+          preferredCurrency,
+          currentMonthRates,
+        )
+        const actual = expensesByCategory.get(budget.categoryId) ?? 0
+        return {
+          plannedExpense: acc.plannedExpense + planned,
+          remainingExpense: acc.remainingExpense + (planned - actual),
+        }
+      },
+      { plannedExpense: 0, remainingExpense: 0 },
+    )
+
+  const projectedNet = actualIncome + Math.max(remainingIncome, 0) - (actualExpense + Math.max(remainingExpense, 0))
+
+  // Calculate expected income from active recurring income templates for this month
+  const expectedRecurringIncome = recurringTemplates
+    .filter((template) => {
+      if (template.type !== TransactionType.INCOME || !template.isActive) return false
+      // Check if template is active for this month (within start/end range)
+      if (template.startMonthKey && template.startMonthKey > monthKey) return false
+      if (template.endMonthKey && template.endMonthKey < monthKey) return false
+      return true
+    })
+    .reduce((sum, template) => sum + template.amount, 0)
+
+  // Calculate expected income with priority: income goal → recurring templates → budgets
+  // Convert income goal to preferred currency if set
+  const incomeGoalConverted = monthlyIncomeGoal
+    ? convertTransactionAmountSync(
+        monthlyIncomeGoal.amount,
+        monthlyIncomeGoal.currency as Currency,
+        preferredCurrency,
+        currentMonthRates,
+      )
+    : 0
+
+  // Priority: income goal (month-specific or default) → recurring → budgets
+  const expectedIncome =
+    incomeGoalConverted > 0
+      ? incomeGoalConverted
+      : expectedRecurringIncome > 0
+        ? expectedRecurringIncome
+        : plannedIncome
+  const plannedNet = expectedIncome - plannedExpense
 
   // Convert previous month's transactions using that month's exchange rates
   const previousTransactionsConverted = previousTransactionsRaw.map((transaction) => ({
@@ -201,7 +245,13 @@ export async function getDashboardData({
   const change = actualNet - previousNet
 
   const budgetsSummary: CategoryBudgetSummary[] = budgets.map((budget) => {
-    const planned = decimalToNumber(budget.planned)
+    // Convert budget amount to preferred currency to match transaction amounts
+    const planned = convertTransactionAmountSync(
+      budget.planned,
+      budget.currency,
+      preferredCurrency,
+      currentMonthRates,
+    )
     const actual =
       budget.category.type === TransactionType.EXPENSE
         ? (expensesByCategory.get(budget.categoryId) ?? 0)
@@ -284,9 +334,22 @@ export async function getDashboardData({
       label: 'Monthly goal',
       amount: plannedNet,
       variant: plannedNet >= 0 ? 'positive' : 'negative',
-      helper: 'Your target for the month',
+      helper: 'Expected income minus budgeted expenses',
     },
   ]
+
+  // Convert monthly income goal amount to preferred currency for UI display
+  const monthlyIncomeGoalConverted = monthlyIncomeGoal
+    ? {
+        ...monthlyIncomeGoal,
+        amount: convertTransactionAmountSync(
+          monthlyIncomeGoal.amount,
+          monthlyIncomeGoal.currency as Currency,
+          preferredCurrency,
+          currentMonthRates,
+        ),
+      }
+    : null
 
   return {
     month: monthKey,
@@ -306,6 +369,8 @@ export async function getDashboardData({
     history,
     exchangeRateLastUpdate,
     preferredCurrency,
+    monthlyIncomeGoal: monthlyIncomeGoalConverted,
+    actualIncome,
     sharedExpenses,
     expensesSharedWithMe,
     settlementBalances,

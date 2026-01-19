@@ -682,6 +682,8 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             activeAccount={activeAccount}
             monthKey={monthKey}
             preferredCurrency={preferredCurrency}
+            monthlyIncomeGoal={data.monthlyIncomeGoal}
+            actualIncome={data.actualIncome}
           />
         )}
 

@@ -650,6 +650,8 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         })
 
         // Mock user with access to the account
@@ -720,6 +722,8 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         })
 
         // Mock user without access to acc-account2
@@ -755,6 +759,8 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         })
 
         // Mock user with access to the shared account
@@ -788,6 +794,8 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         })
 
         // Mock user2 with access to the shared account
@@ -822,6 +830,8 @@ describe('auth-server.ts', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         })
 
         // Mock user without access to acc-wrong-case
@@ -912,6 +922,8 @@ describe('auth-server.ts', () => {
         updatedAt: new Date(),
         deletedAt: null,
         deletedBy: null,
+        defaultIncomeGoal: null,
+        defaultIncomeGoalCurrency: null,
       })
 
       // Mock user with access to the shared account

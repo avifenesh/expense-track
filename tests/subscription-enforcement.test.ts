@@ -85,6 +85,8 @@ function createMockAccount(userId: string = 'user-1') {
     updatedAt: new Date(),
     deletedAt: null,
     deletedBy: null,
+    defaultIncomeGoal: null,
+    defaultIncomeGoalCurrency: null,
   }
 }
 

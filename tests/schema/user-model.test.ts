@@ -141,6 +141,8 @@ describe('User Model Schema', () => {
         updatedAt: new Date(),
         deletedAt: null,
         deletedBy: null,
+        defaultIncomeGoal: null,
+        defaultIncomeGoalCurrency: null,
       }
 
       vi.mocked(prisma.account.create).mockResolvedValue(mockAccount)
@@ -173,6 +175,8 @@ describe('User Model Schema', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         },
         {
           id: 'account-2',
@@ -187,6 +191,8 @@ describe('User Model Schema', () => {
           updatedAt: new Date(),
           deletedAt: null,
           deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
         },
       ]
 
@@ -215,6 +221,8 @@ describe('User Model Schema', () => {
         updatedAt: new Date(),
         deletedAt: null,
         deletedBy: null,
+        defaultIncomeGoal: null,
+        defaultIncomeGoalCurrency: null,
       }
 
       // User 2's "Main" account - same name, different user
@@ -231,6 +239,8 @@ describe('User Model Schema', () => {
         updatedAt: new Date(),
         deletedAt: null,
         deletedBy: null,
+        defaultIncomeGoal: null,
+        defaultIncomeGoalCurrency: null,
       }
 
       vi.mocked(prisma.account.create).mockResolvedValueOnce(account1).mockResolvedValueOnce(account2)

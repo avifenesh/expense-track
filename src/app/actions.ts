@@ -13,7 +13,12 @@ export {
 } from './actions/transactions'
 
 // Budget actions
-export { upsertBudgetAction, deleteBudgetAction } from './actions/budgets'
+export {
+  upsertBudgetAction,
+  deleteBudgetAction,
+  upsertMonthlyIncomeGoalAction,
+  deleteMonthlyIncomeGoalAction,
+} from './actions/budgets'
 
 // Recurring template actions
 export {
