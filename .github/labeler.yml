@@ -66,7 +66,6 @@ security:
       - any-glob-to-any-file:
           - 'src/lib/csrf.ts'
           - 'src/lib/auth*.ts'
-          - 'src/app/api/auth/**'
           - 'src/app/actions/auth/**'
           - 'tests/security/**'
           - 'docs/XSS_DEFENSE.md'
