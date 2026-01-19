@@ -64,6 +64,7 @@ test.describe('sharing', () => {
     // but the disabled button prevents submission. The UI correctly prevents this invalid state.
     test.skip('should show validation error for empty participants', async ({ page }) => {
       const transactionsPage = new TransactionsPage(page)
+      const sharingPage = new SharingPage(page)
       const dashboardPage = new DashboardPage(page)
 
       await transactionsPage.navigateToTransactionsTab()
@@ -83,9 +84,8 @@ test.describe('sharing', () => {
       await expect(shareButton).toBeVisible()
       await shareButton.click()
 
-      // Click submit without adding participants - use type="submit" to be specific
-      const submitButton = page.locator('button[type="submit"]', { hasText: /share expense/i })
-      await submitButton.click()
+      // Click submit without adding participants
+      await sharingPage.submitShareExpense()
 
       // Validation message is "Add at least one person to share with"
       await expect(page.getByText(/add at least one person/i)).toBeVisible()
