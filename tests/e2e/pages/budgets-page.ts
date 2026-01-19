@@ -50,11 +50,11 @@ export class BudgetsPage extends BasePage {
   }
 
   async filterByAccount(account: string) {
-    await this.selectOption('Filter by account', account)
+    await this.selectOption('Account filter', account)
   }
 
   async filterByType(type: string) {
-    await this.selectOption('Filter by type', type)
+    await this.selectOption('Type filter', type)
   }
 
   async expectBudgetProgress(category: string, percentage: number) {
