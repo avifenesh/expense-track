@@ -74,7 +74,6 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
 
       const { activeAccountId } = get();
 
-      // Auto-select first account if none selected
       const newActiveId =
         activeAccountId && accounts.some((a) => a.id === activeAccountId)
           ? activeAccountId

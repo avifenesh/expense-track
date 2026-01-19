@@ -14,7 +14,6 @@ import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: accountId } = await params
 
-  // 1. Authenticate
   let user
   try {
     user = requireJwtAuth(request)
@@ -22,18 +21,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 
-  // 1.5 Rate limit check
   const rateLimit = checkRateLimit(user.userId)
   if (!rateLimit.allowed) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
 
-  // 1.6 Subscription check
   const subscriptionError = await checkSubscription(user.userId)
   if (subscriptionError) return subscriptionError
 
-  // 2. Verify account exists, belongs to user, and is not deleted
   const account = await prisma.account.findFirst({
     where: {
       id: accountId,
@@ -46,7 +42,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return notFoundError('Account not found')
   }
 
-  // 3. Update user's activeAccountId
   try {
     await prisma.user.update({
       where: { id: user.userId },

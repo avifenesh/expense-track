@@ -158,7 +158,6 @@ export async function updateSessionAccount(
     return { error: { general: ['Account is not available for this user'] } }
   }
 
-  // Update both session cookie and database activeAccountId
   cookieStore.set(ACCOUNT_COOKIE, accountId, baseCookieConfig)
   await prisma.user.update({
     where: { id: dbUser.id },
