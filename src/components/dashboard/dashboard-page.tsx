@@ -514,10 +514,14 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                   variant="ghost"
                   className="h-6 w-6 rounded-full text-white/90 transition hover:bg-white/20"
                   onClick={() => handleMonthChange(-1)}
+                  aria-label="Previous month"
                 >
                   <ArrowLeft className="h-3 w-3" />
                 </Button>
-                <div className="flex items-center gap-1 px-1.5 text-xs font-medium text-white">
+                <div
+                  className="flex items-center gap-1 px-1.5 text-xs font-medium text-white"
+                  data-testid="month-label"
+                >
                   <CalendarRange className="h-3 w-3" />
                   {formatMonthLabel(monthKey)}
                 </div>
@@ -526,6 +530,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                   variant="ghost"
                   className="h-6 w-6 rounded-full text-white/90 transition hover:bg-white/20"
                   onClick={() => handleMonthChange(1)}
+                  aria-label="Next month"
                 >
                   <ArrowRight className="h-3 w-3" />
                 </Button>
@@ -634,11 +639,12 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                 className={cn(cardClassName, 'cursor-pointer hover:bg-white/10 text-left')}
                 aria-expanded={isExpanded}
                 aria-label={`View ${stat.label} breakdown`}
+                data-testid="stat-card"
               >
                 {cardContent}
               </button>
             ) : (
-              <div key={stat.label} className={cardClassName}>
+              <div key={stat.label} className={cardClassName} data-testid="stat-card">
                 {cardContent}
               </div>
             )

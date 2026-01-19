@@ -25,7 +25,7 @@ export class SharingPage extends BasePage {
     for (const email of data.participantEmails) {
       const emailInput = this.page.getByPlaceholder('Enter email address')
       await emailInput.fill(email)
-      const addButton = this.page.getByRole('button').filter({ has: this.page.locator('svg.lucide-plus') })
+      const addButton = this.page.getByRole('button', { name: 'Add participant' })
       await addButton.click()
       await expect(this.getByText(email)).toBeVisible()
     }
@@ -53,7 +53,7 @@ export class SharingPage extends BasePage {
 
   async removeParticipant(email: string) {
     const participantRow = this.page.locator('div', { hasText: email })
-    await participantRow.getByRole('button', { name: /remove/i }).click()
+    await participantRow.getByRole('button', { name: 'Remove participant' }).click()
   }
 
   async expectSharedExpenseInList(description: string, amount: string) {

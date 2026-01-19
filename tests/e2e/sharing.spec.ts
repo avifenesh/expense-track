@@ -103,12 +103,12 @@ test.describe('sharing', () => {
 
       const emailInput = page.getByPlaceholder('Enter email address')
       await emailInput.fill(TEST_USER_2.email)
-      const addButton = page.getByRole('button').filter({ has: page.locator('svg.lucide-plus') })
+      const addButton = page.getByRole('button', { name: 'Add participant' })
       await addButton.click()
 
       await sharingPage.expectParticipantAdded(TEST_USER_2.email)
 
-      const removeButton = page.getByRole('button').filter({ has: page.locator('svg.lucide-trash-2') }).first()
+      const removeButton = page.getByRole('button', { name: 'Remove participant' }).first()
       await expect(removeButton).toBeVisible()
       await removeButton.click()
       await expect(page.getByText(TEST_USER_2.email)).not.toBeVisible()

@@ -19,10 +19,7 @@ test.describe('dashboard', () => {
     test('should display stat cards', async ({ page }) => {
       await page.waitForLoadState('networkidle')
 
-      const statCards = page.locator('button[aria-label*="breakdown"], div').filter({
-        has: page.locator('p.uppercase.tracking-wide'),
-      })
-
+      const statCards = page.getByTestId('stat-card')
       await expect(statCards.first()).toBeVisible()
     })
 
@@ -41,7 +38,7 @@ test.describe('dashboard', () => {
 
   test.describe('month navigation', () => {
     test('should navigate to previous month', async ({ page }) => {
-      const prevButton = page.getByRole('button').filter({ has: page.locator('svg.lucide-arrow-left') })
+      const prevButton = page.getByRole('button', { name: 'Previous month' })
       await expect(prevButton).toBeVisible()
 
       const currentUrl = page.url()
@@ -53,7 +50,7 @@ test.describe('dashboard', () => {
     })
 
     test('should navigate to next month', async ({ page }) => {
-      const nextButton = page.getByRole('button').filter({ has: page.locator('svg.lucide-arrow-right') })
+      const nextButton = page.getByRole('button', { name: 'Next month' })
       await expect(nextButton).toBeVisible()
 
       const currentUrl = page.url()
@@ -65,7 +62,7 @@ test.describe('dashboard', () => {
     })
 
     test('should display current month label', async ({ page }) => {
-      const monthLabel = page.locator('.lucide-calendar-range').locator('..')
+      const monthLabel = page.getByTestId('month-label')
       await expect(monthLabel).toBeVisible()
       await expect(monthLabel).toContainText(/\w+ \d{4}/)
     })
