@@ -627,29 +627,6 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           })}
         </div>
 
-        {/* Debug: Monthly target breakdown */}
-        {data.plannedIncomeBreakdown && (
-          <details className="relative z-10 mt-3 rounded-lg bg-slate-800/50 p-3 text-xs text-slate-300">
-            <summary className="cursor-pointer font-medium">Monthly Target Breakdown (Debug)</summary>
-            <div className="mt-2 space-y-1 font-mono">
-              <p>Income templates found: {data.plannedIncomeBreakdown.totalRecurringIncomeTemplates}</p>
-              <p>From income goal: {formatCurrency(data.plannedIncomeBreakdown.fromIncomeGoal, preferredCurrency)}</p>
-              <p>From recurring templates: {formatCurrency(data.plannedIncomeBreakdown.fromRecurringTemplates, preferredCurrency)}</p>
-              <p>From budgets: {formatCurrency(data.plannedIncomeBreakdown.fromBudgets, preferredCurrency)}</p>
-              <p>Planned expense: {formatCurrency(data.plannedIncomeBreakdown.plannedExpense, preferredCurrency)}</p>
-              <p className="border-t border-slate-600 pt-1">
-                <strong>Monthly target = </strong>
-                {data.plannedIncomeBreakdown.fromIncomeGoal > 0
-                  ? `income goal (${formatCurrency(data.plannedIncomeBreakdown.fromIncomeGoal, preferredCurrency)})`
-                  : data.plannedIncomeBreakdown.fromRecurringTemplates > 0
-                    ? `recurring (${formatCurrency(data.plannedIncomeBreakdown.fromRecurringTemplates, preferredCurrency)})`
-                    : `budgets (${formatCurrency(data.plannedIncomeBreakdown.fromBudgets, preferredCurrency)})`}{' '}
-                - {formatCurrency(data.plannedIncomeBreakdown.plannedExpense, preferredCurrency)}
-              </p>
-            </div>
-          </details>
-        )}
-
         {/* Exchange rate refresh - compact */}
         {data.exchangeRateLastUpdate && (
           <div className="relative z-10 mt-3 flex items-center justify-end gap-2 text-xs text-slate-400">
