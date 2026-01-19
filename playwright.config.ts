@@ -64,6 +64,7 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   use: {
+    // devskim-ignore: DS162092 - localhost expected for local E2E tests
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:4300',
     trace: 'on-first-retry',
     video: 'on-first-retry',
@@ -78,6 +79,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node scripts/playwright-dev-server.js',
+    // devskim-ignore: DS162092 - localhost expected for local E2E tests
     url: 'http://127.0.0.1:4300',
     env,
     reuseExistingServer: !process.env.CI,

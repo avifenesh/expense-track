@@ -3,6 +3,7 @@
 const { spawn } = require('node:child_process')
 const process = require('node:process')
 
+// devskim-ignore: DS162092 - localhost expected for local dev server
 const HOSTNAME = process.env.PLAYWRIGHT_HOSTNAME ?? '127.0.0.1'
 const PORT = process.env.PLAYWRIGHT_PORT ?? '4300'
 const command = 'npm run dev'
