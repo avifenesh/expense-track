@@ -1,6 +1,6 @@
 const { withSentryConfig } = require('@sentry/nextjs')
 
-// devskim-ignore: DS162092 - localhost is expected for local development origins
+// DevSkim: ignore DS162092 - localhost is expected for local development origins
 const ALLOWED_DEV_ORIGINS = ['127.0.0.1']
 
 /** @type {import('next').NextConfig} */

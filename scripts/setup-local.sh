@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-# devskim-ignore: DS162092 - localhost expected for local database setup
+# DevSkim: ignore DS162092,DS126858 - localhost expected for local database setup
 LOCAL_DB_URL='postgresql://postgres:postgres@localhost:5432/expense_track?schema=public'
-# devskim-ignore: DS162092 - localhost expected for local app URL
+# DevSkim: ignore DS162092,DS126858 - localhost expected for local app URL
 LOCAL_APP_URL='http://localhost:3000'
 
 # Ensure dependencies are installed (skip if node_modules present)

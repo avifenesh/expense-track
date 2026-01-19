@@ -92,6 +92,7 @@ export const API_CONFIG = {
   // Note: In CI, tests may run without a backend (mocked or using EXPO_PUBLIC_API_URL)
   // The E2E_API_URL env var is used for reference but tests should not require
   // a live backend for basic smoke tests
+  // DevSkim: ignore DS162092,DS126858 - localhost expected for local E2E testing
   baseUrl: process.env.E2E_API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
   timeout: 10000,
 } as const;

@@ -1,4 +1,4 @@
-// DevSkim: ignore DS162092 - localhost URLs are expected throughout this test file for NextRequest mocks
+// DevSkim: ignore DS162092,DS126858 - localhost URLs are expected throughout this test file for NextRequest mocks
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
