@@ -92,7 +92,7 @@ async function main() {
           displayName: userData.displayName,
           passwordHash: userData.passwordHash,
           preferredCurrency: userData.preferredCurrency,
-          isEmailVerified: true,
+          emailVerified: true,
           hasCompletedOnboarding: true,
         },
         create: {
@@ -100,7 +100,7 @@ async function main() {
           displayName: userData.displayName,
           passwordHash: userData.passwordHash,
           preferredCurrency: userData.preferredCurrency,
-          isEmailVerified: true,
+          emailVerified: true,
           hasCompletedOnboarding: true,
         },
       })
@@ -112,12 +112,12 @@ async function main() {
       await prisma.subscription.upsert({
         where: { userId: user.id },
         update: {
-          status: SubscriptionStatus.TRIAL,
+          status: SubscriptionStatus.TRIALING,
           trialEndsAt,
         },
         create: {
           userId: user.id,
-          status: SubscriptionStatus.TRIAL,
+          status: SubscriptionStatus.TRIALING,
           trialEndsAt,
         },
       })
@@ -130,11 +130,16 @@ async function main() {
             name: userData.displayName,
           },
         },
-        update: {},
+        update: {
+          type: AccountType.SELF,
+          preferredCurrency: userData.preferredCurrency,
+          color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length],
+        },
         create: {
           userId: user.id,
           name: userData.displayName,
-          type: AccountType.PERSONAL,
+          type: AccountType.SELF,
+          preferredCurrency: userData.preferredCurrency,
           color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length],
         },
       })
@@ -146,31 +151,39 @@ async function main() {
       })
 
       // Create default categories for each user
-      const categoryData = [
-        ...DEFAULT_EXPENSE_CATEGORIES.map((cat) => ({
-          userId: user.id,
-          name: cat.name,
-          type: TransactionType.EXPENSE,
-          icon: cat.icon,
-          isArchived: false,
-        })),
-        ...DEFAULT_INCOME_CATEGORIES.map((cat) => ({
-          userId: user.id,
-          name: cat.name,
-          type: TransactionType.INCOME,
-          icon: cat.icon,
-          isArchived: false,
-        })),
-        ...DEFAULT_HOLDING_CATEGORIES.map((cat) => ({
-          userId: user.id,
-          name: cat.name,
-          type: TransactionType.HOLDING,
-          icon: cat.icon,
-          isArchived: false,
-        })),
-      ]
+      // Expense categories
+      const expenseCategories = DEFAULT_EXPENSE_CATEGORIES.map((cat) => ({
+        userId: user.id,
+        name: cat.name,
+        color: cat.color,
+        type: TransactionType.EXPENSE,
+        isHolding: false,
+        isArchived: false,
+      }))
 
-      for (const category of categoryData) {
+      // Income categories
+      const incomeCategories = DEFAULT_INCOME_CATEGORIES.map((cat) => ({
+        userId: user.id,
+        name: cat.name,
+        color: cat.color,
+        type: TransactionType.INCOME,
+        isHolding: false,
+        isArchived: false,
+      }))
+
+      // Holding categories (used for investments/savings tracking)
+      const holdingCategories = DEFAULT_HOLDING_CATEGORIES.map((cat) => ({
+        userId: user.id,
+        name: cat.name,
+        color: cat.color,
+        type: TransactionType.EXPENSE,
+        isHolding: true,
+        isArchived: false,
+      }))
+
+      const allCategories = [...expenseCategories, ...incomeCategories, ...holdingCategories]
+
+      for (const category of allCategories) {
         await prisma.category.upsert({
           where: {
             userId_name_type: {
@@ -179,7 +192,7 @@ async function main() {
               type: category.type,
             },
           },
-          update: {},
+          update: { color: category.color, isHolding: category.isHolding },
           create: category,
         })
       }
@@ -190,7 +203,7 @@ async function main() {
     }),
   )
 
-  // Create joint account shared between users
+  // Create a joint account owned by the first user, shared with the second
   if (createdUsers.length >= 2) {
     console.log('Creating joint account...')
 
@@ -201,33 +214,19 @@ async function main() {
           name: 'Joint',
         },
       },
-      update: {},
+      update: {
+        type: AccountType.PARTNER,
+        color: '#10b981',
+      },
       create: {
         userId: createdUsers[0].user.id,
         name: 'Joint',
-        type: AccountType.JOINT,
+        type: AccountType.PARTNER,
         color: '#10b981',
       },
     })
 
-    // Add sharing relationships for all users
-    for (const { user } of createdUsers) {
-      await prisma.accountShare.upsert({
-        where: {
-          accountId_userId: {
-            accountId: jointAccount.id,
-            userId: user.id,
-          },
-        },
-        update: {},
-        create: {
-          accountId: jointAccount.id,
-          userId: user.id,
-        },
-      })
-    }
-
-    console.log('Created joint account shared by all test users')
+    console.log(`Created joint account: ${jointAccount.id}`)
   }
 
   console.log('E2E database seed complete!')

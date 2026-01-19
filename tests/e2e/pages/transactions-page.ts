@@ -81,7 +81,7 @@ export class TransactionsPage extends BasePage {
     await this.clickButton('Export')
   }
 
-  async expectValidationError(message: string) {
+  async expectValidationError(message: string | RegExp) {
     await expect(this.getByText(message)).toBeVisible()
   }
 

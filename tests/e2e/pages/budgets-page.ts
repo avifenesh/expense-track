@@ -78,7 +78,7 @@ export class BudgetsPage extends BasePage {
     await expect(this.getByText(`${percentage}%`)).toBeVisible()
   }
 
-  async expectValidationError(message: string) {
+  async expectValidationError(message: string | RegExp) {
     await expect(this.getByText(message)).toBeVisible()
   }
 
