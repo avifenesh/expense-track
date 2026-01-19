@@ -49,6 +49,7 @@ describe('POST /api/v1/auth/register', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -80,6 +81,7 @@ describe('POST /api/v1/auth/register', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -115,6 +117,7 @@ describe('POST /api/v1/auth/register', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -268,6 +271,7 @@ describe('POST /api/v1/auth/register', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -310,6 +314,7 @@ describe('POST /api/v1/auth/register', () => {
         passwordResetExpires: null,
         preferredCurrency: 'USD',
         hasCompletedOnboarding: false,
+    activeAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

@@ -327,6 +327,7 @@ describe('GET /api/v1/users/me', () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         ...mockUser,
         hasCompletedOnboarding: false,
+    activeAccountId: null,
       })
       vi.mocked(getSubscriptionState).mockResolvedValue(mockSubscriptionState)
 

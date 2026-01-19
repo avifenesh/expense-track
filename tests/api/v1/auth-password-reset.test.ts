@@ -53,6 +53,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: null,
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -68,6 +69,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: new Date(),
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -136,6 +138,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: null,
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -151,6 +154,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: new Date(),
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -192,6 +196,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: futureDate,
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -207,6 +212,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: null,
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -260,6 +266,7 @@ describe('Password Reset Flow', () => {
           passwordResetExpires: pastDate,
           preferredCurrency: 'USD',
           hasCompletedOnboarding: false,
+    activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
