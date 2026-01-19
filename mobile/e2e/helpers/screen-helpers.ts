@@ -27,9 +27,10 @@ export async function navigateToTab(
 
 /**
  * Pull to refresh on a screen
+ * Uses scroll with valid numeric parameters (not NaN)
  */
 export async function pullToRefresh(scrollViewId: string): Promise<void> {
-  await element(by.id(scrollViewId)).scroll(100, 'down', NaN, NaN, 0.85);
+  await element(by.id(scrollViewId)).scroll(100, 'down', 0.5, 0.5, 0.85);
 }
 
 /**
@@ -129,14 +130,14 @@ export async function waitForLoadingToFinish(loadingId = 'loading.indicator'): P
 
 /**
  * Dismiss keyboard if open
+ * Note: device.pressBack() only works on Android
  */
 export async function dismissKeyboard(): Promise<void> {
-  // Try different methods to dismiss keyboard
-  try {
+  if (device.getPlatform() === 'android') {
     await device.pressBack();
-  } catch {
-    // On iOS, tapping outside may work
   }
+  // On iOS, keyboard dismissal should be handled by the specific test
+  // (e.g., tapping a background element or using tapReturnKey)
 }
 
 /**

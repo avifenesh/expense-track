@@ -13,6 +13,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Limit permissions for security
+permissions:
+  contents: read
+
 jobs:
   e2e-ios:
     name: iOS E2E Tests
@@ -32,7 +36,7 @@ jobs:
 
       - name: Install mobile dependencies
         working-directory: mobile
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Install Detox CLI
         run: npm install -g detox-cli
@@ -71,7 +75,10 @@ jobs:
         working-directory: mobile
         run: npm run e2e:test:ios -- --cleanup --headless
         env:
-          E2E_API_URL: http://localhost:3000
+          # Note: Current smoke tests don't require a live backend.
+          # Tests that require API calls should mock responses or use a test server.
+          # This env var is for reference when backend integration tests are added.
+          E2E_API_URL: http://10.0.2.2:3000
 
       - name: Upload iOS test artifacts
         if: failure()
@@ -99,7 +106,7 @@ jobs:
 
       - name: Install mobile dependencies
         working-directory: mobile
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Install Detox CLI
         run: npm install -g detox-cli
@@ -138,7 +145,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31
+          key: avd-31-pixel_5-${{ hashFiles('mobile/detox.config.*') }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -166,7 +173,10 @@ jobs:
           working-directory: mobile
           script: npm run e2e:test:android -- --cleanup --headless
         env:
-          E2E_API_URL: http://localhost:3000
+          # Note: Current smoke tests don't require a live backend.
+          # Tests that require API calls should mock responses or use a test server.
+          # 10.0.2.2 is Android emulator's alias for host localhost.
+          E2E_API_URL: http://10.0.2.2:3000
 
       - name: Upload Android test artifacts
         if: failure()

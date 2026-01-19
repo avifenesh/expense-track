@@ -1,10 +1,13 @@
-import { by, element, expect, waitFor } from 'detox';
+import { device, by, element, expect, waitFor } from 'detox';
 import { TEST_USERS } from './fixtures';
 
 /**
  * Authentication Helpers for E2E Tests
  *
  * Common authentication flows used across multiple test suites.
+ * Note: These helpers reference testIDs that may not yet exist in the codebase.
+ * As more screens are updated with testIDs (e.g., onboarding, settings),
+ * these helpers will become functional.
  */
 
 /**
@@ -45,13 +48,21 @@ export async function login(email: string, password: string): Promise<void> {
   await element(by.id('login.submitButton')).tap();
 
   // Wait for navigation to dashboard or onboarding
-  await waitFor(element(by.id('dashboard.screen')).or(element(by.id('onboarding.welcome.screen'))))
-    .toBeVisible()
-    .withTimeout(15000);
+  // Note: Detox doesn't have .or() method - use try-catch pattern
+  try {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(15000);
+  } catch {
+    await waitFor(element(by.id('onboarding.welcome.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  }
 }
 
 /**
  * Logout from the app
+ * Note: Requires settings screen to have testIDs (to be added in future PR)
  */
 export async function logout(): Promise<void> {
   // Navigate to settings
@@ -63,13 +74,18 @@ export async function logout(): Promise<void> {
     .withTimeout(5000);
 
   // Scroll to logout button if needed
-  await element(by.id('settings.scrollView')).scrollTo('bottom');
+  // Use scroll(pixels, direction) instead of scrollTo
+  await element(by.id('settings.scrollView')).scroll(300, 'down');
 
   // Tap logout
   await element(by.id('settings.logoutButton')).tap();
 
   // Confirm logout if dialog appears
+  // Use explicit visibility check instead of try-catch on tap
   try {
+    await waitFor(element(by.id('dialog.confirmButton')))
+      .toBeVisible()
+      .withTimeout(2000);
     await element(by.id('dialog.confirmButton')).tap();
   } catch {
     // No confirmation dialog, continue
@@ -83,11 +99,12 @@ export async function logout(): Promise<void> {
 
 /**
  * Register a new user account
+ * Note: RegisterScreen only has displayName, email, password - no confirm password field
  */
 export async function registerUser(
+  displayName: string,
   email: string,
-  password: string,
-  confirmPassword?: string
+  password: string
 ): Promise<void> {
   // Navigate to register screen from login
   await element(by.id('login.registerLink')).tap();
@@ -98,25 +115,30 @@ export async function registerUser(
     .withTimeout(5000);
 
   // Fill registration form
+  await element(by.id('register.displayNameInput')).tap();
+  await element(by.id('register.displayNameInput')).typeText(displayName);
+
   await element(by.id('register.emailInput')).tap();
   await element(by.id('register.emailInput')).typeText(email);
 
   await element(by.id('register.passwordInput')).tap();
   await element(by.id('register.passwordInput')).typeText(password);
-
-  await element(by.id('register.confirmPasswordInput')).tap();
-  await element(by.id('register.confirmPasswordInput')).typeText(confirmPassword || password);
-  await element(by.id('register.confirmPasswordInput')).tapReturnKey();
+  await element(by.id('register.passwordInput')).tapReturnKey();
 
   // Submit registration
   await element(by.id('register.submitButton')).tap();
 
   // Wait for verification screen or onboarding
-  await waitFor(
-    element(by.id('verifyEmail.screen')).or(element(by.id('onboarding.welcome.screen')))
-  )
-    .toBeVisible()
-    .withTimeout(15000);
+  // Note: Detox doesn't have .or() method - use try-catch pattern
+  try {
+    await waitFor(element(by.id('verifyEmail.screen')))
+      .toBeVisible()
+      .withTimeout(15000);
+  } catch {
+    await waitFor(element(by.id('onboarding.welcome.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  }
 }
 
 /**
@@ -143,6 +165,7 @@ export async function ensureLoggedOut(): Promise<void> {
 
 /**
  * Complete onboarding wizard with default selections
+ * Note: Requires onboarding screens to have testIDs (to be added in future PR)
  */
 export async function completeOnboarding(): Promise<void> {
   // Welcome screen

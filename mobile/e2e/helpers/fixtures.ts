@@ -6,17 +6,18 @@
  */
 
 export const TEST_USERS = {
-  // Primary test user with complete account setup
+  // Primary test user - matches web E2E test user setup
+  // Note: These credentials should match users seeded in CI workflow
   primary: {
-    email: 'e2e-test@balancebeacon.app',
-    password: 'TestPassword123!',
+    email: 'e2e-user1@test.local',
+    password: 'E2ETestPassword123!',
     name: 'E2E Test User',
   },
 
   // Secondary test user for multi-user scenarios
   secondary: {
-    email: 'e2e-test-2@balancebeacon.app',
-    password: 'TestPassword123!',
+    email: 'e2e-user2@test.local',
+    password: 'E2ETestPassword123!',
     name: 'E2E Test User 2',
   },
 
@@ -88,6 +89,9 @@ export const TEST_CATEGORIES = {
 } as const;
 
 export const API_CONFIG = {
-  baseUrl: process.env.E2E_API_URL || 'http://localhost:3000',
+  // Note: In CI, tests may run without a backend (mocked or using EXPO_PUBLIC_API_URL)
+  // The E2E_API_URL env var is used for reference but tests should not require
+  // a live backend for basic smoke tests
+  baseUrl: process.env.E2E_API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
   timeout: 10000,
 } as const;

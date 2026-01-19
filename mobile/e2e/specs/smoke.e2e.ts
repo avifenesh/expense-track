@@ -1,4 +1,4 @@
-import { device, element, by, expect } from 'detox';
+import { device, element, by, expect, waitFor } from 'detox';
 
 /**
  * Smoke Test Suite
@@ -19,9 +19,12 @@ describe('Smoke Tests', () => {
   it('should launch the app successfully', async () => {
     // App should launch and show either login screen or dashboard
     // depending on auth state
-    await expect(
-      element(by.id('login.screen')).or(element(by.id('dashboard.screen')))
-    ).toBeVisible();
+    // Note: Detox doesn't have .or() method - use try-catch pattern
+    try {
+      await expect(element(by.id('login.screen'))).toBeVisible();
+    } catch {
+      await expect(element(by.id('dashboard.screen'))).toBeVisible();
+    }
   });
 
   it('should show login screen for unauthenticated users', async () => {
@@ -44,8 +47,7 @@ describe('Smoke Tests', () => {
   });
 
   it('should have working reset password link', async () => {
-    // Go back to login first
-    await device.reloadReactNative();
+    // beforeEach already reloads, no need for redundant reload
 
     // Verify reset password link exists and is tappable
     await expect(element(by.id('login.resetPasswordLink'))).toBeVisible();
@@ -57,7 +59,7 @@ describe('Smoke Tests', () => {
   });
 
   it('should validate email format on login', async () => {
-    await device.reloadReactNative();
+    // beforeEach already reloads, no need for redundant reload
 
     // Enter invalid email
     await element(by.id('login.emailInput')).tap();
@@ -67,11 +69,13 @@ describe('Smoke Tests', () => {
     await element(by.id('login.submitButton')).tap();
 
     // Should show email error
-    await expect(element(by.id('login.emailInput-error'))).toBeVisible();
+    await waitFor(element(by.id('login.emailInput-error')))
+      .toBeVisible()
+      .withTimeout(5000);
   });
 
   it('should require password on login', async () => {
-    await device.reloadReactNative();
+    // beforeEach already reloads, no need for redundant reload
 
     // Enter valid email but no password
     await element(by.id('login.emailInput')).tap();
@@ -79,6 +83,8 @@ describe('Smoke Tests', () => {
     await element(by.id('login.submitButton')).tap();
 
     // Should show error (password required)
-    await expect(element(by.id('login.errorContainer'))).toBeVisible();
+    await waitFor(element(by.id('login.errorContainer')))
+      .toBeVisible()
+      .withTimeout(5000);
   });
 });
