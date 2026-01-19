@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { apiPost, apiPatch, apiGet } from '../services/api';
 import { ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
+import { registerStoreReset } from './storeRegistry';
 
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 export type Currency = 'USD' | 'EUR' | 'ILS';
@@ -178,3 +179,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     set({ ...initialState });
   },
 }));
+
+// Register for cleanup on logout
+registerStoreReset(() => useOnboardingStore.getState().reset());

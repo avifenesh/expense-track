@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
+import { registerStoreReset } from './storeRegistry';
 import type { Currency } from '../types';
 
 export type SplitType = 'EQUAL' | 'PERCENTAGE' | 'FIXED';
@@ -286,3 +287,6 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
     set({ ...initialState });
   },
 }));
+
+// Register for cleanup on logout
+registerStoreReset(() => useSharingStore.getState().reset());

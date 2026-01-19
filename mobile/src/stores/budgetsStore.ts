@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { apiGet, apiPost, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
+import { registerStoreReset } from './storeRegistry';
 import type { Currency } from '../types';
 import type { Category } from './categoriesStore';
 
@@ -198,3 +199,6 @@ export const useBudgetsStore = create<BudgetsStore>((set, get) => ({
     set({ ...initialState });
   },
 }));
+
+// Register for cleanup on logout
+registerStoreReset(() => useBudgetsStore.getState().reset());

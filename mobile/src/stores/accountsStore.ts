@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { apiGet, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
+import { registerStoreReset } from './storeRegistry';
 import type { Currency } from '../types';
 
 export type AccountType = 'PERSONAL' | 'SHARED';
@@ -91,3 +92,6 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
     set({ ...initialState });
   },
 }));
+
+// Register for cleanup on logout
+registerStoreReset(() => useAccountsStore.getState().reset());

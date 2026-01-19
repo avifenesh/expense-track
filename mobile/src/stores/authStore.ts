@@ -3,12 +3,7 @@ import * as authService from '../services/auth';
 import * as biometricService from '../services/biometric';
 import { ApiError } from '../services/api';
 import type { BiometricCapability } from '../services/biometric';
-import { useTransactionsStore } from './transactionsStore';
-import { useBudgetsStore } from './budgetsStore';
-// NOTE: Circular dependency with sharingStore (and other stores) is safe here
-// because imports are only accessed at runtime in logout(), not during module init.
-// This pattern is consistent across all stores that need cleanup on logout.
-import { useSharingStore } from './sharingStore';
+import { resetAllStores } from './storeRegistry';
 
 export interface User {
   id: string | null;
@@ -104,9 +99,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } finally {
       await biometricService.clearStoredCredentials();
       // Reset all stores to clear user data
-      useTransactionsStore.getState().reset();
-      useBudgetsStore.getState().reset();
-      useSharingStore.getState().reset();
+      resetAllStores();
       set({
         ...initialState,
         isLoading: false,
