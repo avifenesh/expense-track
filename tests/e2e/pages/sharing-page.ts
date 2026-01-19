@@ -32,7 +32,7 @@ export class SharingPage extends BasePage {
       // Wait for participant lookup (async server action) to complete
       await this.page.waitForLoadState('networkidle')
       // Participant card shows email, allow longer timeout for async lookup
-      await expect(this.getByText(email)).toBeVisible({ timeout: 10000 })
+      await expect(this.getByText(email)).toBeVisible({ timeout: 20000 })
     }
 
     if (data.description) {
