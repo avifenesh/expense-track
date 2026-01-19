@@ -104,14 +104,16 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
       return true;
     }
 
+    set({ isLoading: true, error: null });
+
     try {
       await apiPatch(`/accounts/${accountId}/activate`, {}, accessToken);
-      set({ activeAccountId: accountId });
+      set({ activeAccountId: accountId, isLoading: false });
       return true;
     } catch (error) {
       const message =
         error instanceof ApiError ? error.message : 'Failed to activate account';
-      set({ error: message });
+      set({ error: message, isLoading: false });
       return false;
     }
   },

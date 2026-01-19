@@ -10,6 +10,7 @@ import {
   checkSubscription,
 } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { serverLogger } from '@/lib/server-logger'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: accountId } = await params
@@ -30,6 +31,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const subscriptionError = await checkSubscription(user.userId)
   if (subscriptionError) return subscriptionError
 
+  // Security: Verify account ownership by including userId in WHERE clause
+  // This prevents users from activating accounts they don't own
   const account = await prisma.account.findFirst({
     where: {
       id: accountId,
@@ -49,7 +52,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     })
 
     return successResponse({ activeAccountId: accountId })
-  } catch {
+  } catch (error) {
+    serverLogger.error('Failed to update activeAccountId', {
+      action: 'PATCH /api/v1/accounts/[id]/activate',
+      userId: user.userId,
+      accountId,
+    }, error)
     return serverError('Unable to activate account')
   }
 }
