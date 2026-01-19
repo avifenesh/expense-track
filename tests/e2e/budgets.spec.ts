@@ -121,7 +121,8 @@ test.describe('budgets', () => {
       await budgetsPage.submitBudget()
 
       // Wait for budget saved toast before looking for remove button
-      await expect(page.getByText(/budget updated/i)).toBeVisible({ timeout: 10000 })
+      // Toast may say "Budget saved" or "Budget updated" depending on whether it's new or existing
+      await expect(page.getByText(/budget (saved|updated)/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
