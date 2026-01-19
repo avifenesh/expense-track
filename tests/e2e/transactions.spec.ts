@@ -117,6 +117,11 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
+      // Wait for transaction saved toast before looking for edit button
+      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      // Wait for network to settle after transaction save
+      await page.waitForLoadState('networkidle')
+
       await transactionsPage.clickEditTransaction('Movie tickets')
 
       await page.getByLabel('Amount').fill('30.00')
@@ -144,6 +149,11 @@ test.describe('transactions', () => {
       })
 
       await transactionsPage.submitTransaction()
+
+      // Wait for transaction saved toast before looking for delete button
+      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      // Wait for network to settle after transaction save
+      await page.waitForLoadState('networkidle')
 
       // Transaction deletion is immediate (no confirmation dialog)
       await transactionsPage.clickDeleteTransaction('Electric bill')

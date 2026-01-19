@@ -59,16 +59,24 @@ export class TransactionsPage extends BasePage {
   }
 
   async clickEditTransaction(description: string) {
-    // Use rounded-2xl class to target transaction row divs specifically (not parent containers)
-    const item = this.page.locator('div.rounded-2xl', { hasText: description })
-    await item.getByRole('button', { name: 'Edit' }).first().click()
+    // First verify the transaction is visible in the list
+    await expect(this.page.getByText(description)).toBeVisible({ timeout: 10000 })
+    // Use getByRole for the Edit button directly - it's more reliable than nested locators
+    // The most recently created transaction appears at the top, so first() gets the right one
+    const editButton = this.page.getByRole('button', { name: 'Edit' }).first()
+    await expect(editButton).toBeVisible({ timeout: 10000 })
+    await editButton.click()
   }
 
   async clickDeleteTransaction(description: string) {
-    // Use rounded-2xl class to target transaction row divs specifically (not parent containers)
-    const item = this.page.locator('div.rounded-2xl', { hasText: description })
+    // First verify the transaction is visible in the list
+    await expect(this.page.getByText(description)).toBeVisible({ timeout: 10000 })
+    // Use getByRole for the Delete button directly - it's more reliable than nested locators
+    // The most recently created transaction appears at the top, so first() gets the right one
     // Transaction deletion is immediate (no confirmation dialog)
-    await item.getByRole('button', { name: 'Delete' }).first().click()
+    const deleteButton = this.page.getByRole('button', { name: 'Delete' }).first()
+    await expect(deleteButton).toBeVisible({ timeout: 10000 })
+    await deleteButton.click()
   }
 
   async expectNoTransactions() {

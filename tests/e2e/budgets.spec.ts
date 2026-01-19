@@ -115,6 +115,11 @@ test.describe('budgets', () => {
 
       await budgetsPage.submitBudget()
 
+      // Wait for budget saved toast before looking for remove button
+      await expect(page.getByText(/budget updated/i)).toBeVisible()
+      // Wait for network to settle after budget save
+      await page.waitForLoadState('networkidle')
+
       // Budget deletion is immediate (no confirmation dialog)
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.ENTERTAINMENT)
 
