@@ -24,7 +24,7 @@ test.describe('budgets', () => {
 
       await budgetsPage.submitBudget()
 
-      await expect(page.getByText(/budget updated/i)).toBeVisible()
+      await expect(page.getByText(/budget created/i)).toBeVisible()
       await budgetsPage.expectBudgetInList(TEST_CATEGORIES.GROCERIES, '500')
 
       await dashboardPage.clickSignOut()
