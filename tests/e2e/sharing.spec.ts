@@ -40,10 +40,14 @@ test.describe('sharing', () => {
 
       // Wait for transaction saved toast before looking for share button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      // Wait for UI to update and list to refresh
       await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(500)
 
-      // Find the share button (icon button with title)
-      const shareButton = page.getByTitle('Share expense').first()
+      // Find the share button within the transaction row containing our description
+      // The share button has title="Share expense" and appears only for expense transactions
+      const transactionRow = page.locator('div', { hasText: 'Shared groceries' }).first()
+      const shareButton = transactionRow.getByTitle('Share expense')
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
 
@@ -111,10 +115,14 @@ test.describe('sharing', () => {
 
       // Wait for transaction saved toast before looking for share button
       await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      // Wait for UI to update and list to refresh
       await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(500)
 
-      // Find the share button (icon button with title)
-      const shareButton = page.getByTitle('Share expense').first()
+      // Find the share button within the transaction row containing our description
+      // The share button has title="Share expense" and appears only for expense transactions
+      const transactionRow = page.locator('div', { hasText: 'Concert tickets' }).first()
+      const shareButton = transactionRow.getByTitle('Share expense')
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
 

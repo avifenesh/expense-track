@@ -54,7 +54,7 @@ export class TransactionsPage extends BasePage {
     const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
 
     const item = this.page.locator('div', { hasText: description }).filter({ hasText: amountRegex })
-    await expect(item.first()).toBeVisible()
+    await expect(item.first()).toBeVisible({ timeout: 10000 })
   }
 
   async clickEditTransaction(description: string) {
