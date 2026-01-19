@@ -30,6 +30,8 @@ test.describe('transactions', () => {
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to transactions tab after reload
+      await transactionsPage.navigateToTransactionsTab()
       await transactionsPage.expectTransactionInList('Weekly groceries', '50.00')
 
       await dashboardPage.clickSignOut()
@@ -55,6 +57,8 @@ test.describe('transactions', () => {
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to transactions tab after reload
+      await transactionsPage.navigateToTransactionsTab()
       await transactionsPage.expectTransactionInList('Monthly salary', '3000.00')
 
       await dashboardPage.clickSignOut()
@@ -124,6 +128,8 @@ test.describe('transactions', () => {
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to transactions tab after reload
+      await transactionsPage.navigateToTransactionsTab()
 
       await transactionsPage.clickEditTransaction('Movie tickets')
 
@@ -158,6 +164,8 @@ test.describe('transactions', () => {
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to transactions tab after reload
+      await transactionsPage.navigateToTransactionsTab()
 
       // Transaction deletion is immediate (no confirmation dialog)
       await transactionsPage.clickDeleteTransaction('Electric bill')

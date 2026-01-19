@@ -28,6 +28,8 @@ test.describe('budgets', () => {
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to budgets tab after reload
+      await budgetsPage.navigateToBudgetsTab()
       await budgetsPage.expectBudgetInList(TEST_CATEGORIES.GROCERIES, '500')
 
       await dashboardPage.clickSignOut()
@@ -123,6 +125,8 @@ test.describe('budgets', () => {
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
+      // Navigate back to budgets tab after reload
+      await budgetsPage.navigateToBudgetsTab()
 
       // Budget deletion is immediate (no confirmation dialog)
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.ENTERTAINMENT)
