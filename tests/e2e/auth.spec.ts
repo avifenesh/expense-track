@@ -33,7 +33,7 @@ test.describe('authentication', () => {
       await loginPage.fillPassword(TEST_USER_1.password)
       await loginPage.clickLogin()
 
-      await expect(page.getByText(/enter a valid email address/i)).toBeVisible()
+      await expect(page.getByText(/email.*required/i)).toBeVisible()
     })
 
     test('should show validation error for missing password', async ({ page }) => {
@@ -65,8 +65,7 @@ test.describe('authentication', () => {
       await loginPage.login(TEST_USER_1.email, TEST_USER_1.password)
       await dashboardPage.waitForUrl(/\/?account=/)
 
-      // Navigate to login page again - should redirect back to dashboard since already logged in
-      await page.goto('/login')
+      await loginPage.navigateToLogin()
       await dashboardPage.waitForUrl(/\/?account=/)
 
       await dashboardPage.clickSignOut()
@@ -113,10 +112,9 @@ test.describe('authentication', () => {
       const accountSelect2 = page.getByLabel('Account')
       await expect(accountSelect2).toBeVisible()
 
-      // User2 should see their personal account but NOT User1's accounts
-      // Note: Joint account is owned by User1 and not shared with User2 in seed data
       const options2 = await accountSelect2.locator('option').allTextContents()
       expect(options2).toContain(TEST_USER_2.displayName)
+      expect(options2).toContain('Joint')
       expect(options2).not.toContain(TEST_USER_1.displayName)
 
       await dashboardPage.clickSignOut()
@@ -138,9 +136,9 @@ test.describe('authentication', () => {
       await page.goto('/register')
       await page.getByRole('button', { name: /create account/i }).click()
 
-      await expect(page.getByText(/display name must be at least/i)).toBeVisible()
-      await expect(page.getByText(/enter a valid email address/i)).toBeVisible()
-      await expect(page.getByText(/password must be at least/i)).toBeVisible()
+      await expect(page.getByText(/display name.*required/i)).toBeVisible()
+      await expect(page.getByText(/email.*required/i)).toBeVisible()
+      await expect(page.getByText(/password.*required/i)).toBeVisible()
     })
 
     test('should show validation error for weak password', async ({ page }) => {
@@ -166,12 +164,11 @@ test.describe('authentication', () => {
   })
 
   test.describe('password reset', () => {
-    test('should show forgot password option on login page', async ({ page }) => {
+    test('should show forgot password link on login page', async ({ page }) => {
       await page.goto('/login')
 
-      // The login page has a "Forgot password" tab button (not a link)
-      const forgotButton = page.getByRole('button', { name: /forgot.*password/i })
-      await expect(forgotButton).toBeVisible()
+      const forgotLink = page.getByRole('link', { name: /forgot.*password/i })
+      await expect(forgotLink).toBeVisible()
     })
 
     test('should show missing token message without token', async ({ page }) => {

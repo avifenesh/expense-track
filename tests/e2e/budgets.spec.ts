@@ -30,16 +30,12 @@ test.describe('budgets', () => {
       await dashboardPage.clickSignOut()
     })
 
-    // Note: This test cannot work as designed because the category dropdown
-    // auto-selects the first category on load (no empty placeholder option).
-    // The test would need UI changes to add a placeholder option.
-    test.skip('should show validation error for missing category', async ({ page }) => {
+    test('should show validation error for missing category', async ({ page }) => {
       const budgetsPage = new BudgetsPage(page)
       const dashboardPage = new DashboardPage(page)
 
       await budgetsPage.navigateToBudgetsTab()
 
-      // Category field has no empty option, so can't test missing category
       await budgetsPage.fillBudgetForm({
         category: '',
         planned: '500.00',
@@ -114,7 +110,7 @@ test.describe('budgets', () => {
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.ENTERTAINMENT)
       await budgetsPage.confirmDelete()
 
-      await expect(page.getByText(/budget removed/i)).toBeVisible()
+      await expect(page.getByText(/budget deleted/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })

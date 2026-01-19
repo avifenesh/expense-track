@@ -16,7 +16,7 @@ export class TransactionsPage extends BasePage {
     currency?: string
   }) {
     if (data.type) {
-      await this.selectOption('Type', data.type)
+      await this.selectOption('Transaction type', data.type)
     }
     if (data.account) {
       await this.selectOption('Account', data.account)
@@ -33,22 +33,23 @@ export class TransactionsPage extends BasePage {
   }
 
   async submitTransaction() {
-    await this.clickButton('Save transaction')
+    await this.clickButton('Add Transaction')
   }
 
   async expectTransactionInList(description: string, amount: string) {
-    const item = this.page.locator('div', { hasText: description }).filter({ hasText: amount })
-    await expect(item.first()).toBeVisible()
+    const row = this.page.locator('tr', { hasText: description })
+    await expect(row).toBeVisible()
+    await expect(row.getByText(amount)).toBeVisible()
   }
 
   async clickEditTransaction(description: string) {
-    const item = this.page.locator('div', { hasText: description })
-    await item.getByRole('button', { name: 'Edit' }).first().click()
+    const row = this.page.locator('tr', { hasText: description })
+    await row.getByRole('button', { name: /edit/i }).click()
   }
 
   async clickDeleteTransaction(description: string) {
-    const item = this.page.locator('div', { hasText: description })
-    await item.getByRole('button', { name: 'Delete' }).first().click()
+    const row = this.page.locator('tr', { hasText: description })
+    await row.getByRole('button', { name: /delete/i }).click()
   }
 
   async confirmDelete() {

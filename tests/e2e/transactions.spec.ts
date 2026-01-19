@@ -26,7 +26,7 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction created/i)).toBeVisible()
       await transactionsPage.expectTransactionInList('Weekly groceries', '50.00')
 
       await dashboardPage.clickSignOut()
@@ -48,22 +48,18 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction created/i)).toBeVisible()
       await transactionsPage.expectTransactionInList('Monthly salary', '3000.00')
 
       await dashboardPage.clickSignOut()
     })
 
-    // Note: This test cannot work as designed because the category dropdown
-    // auto-selects the first category on load (no empty placeholder option).
-    // The test would need UI changes to add a placeholder option.
-    test.skip('should show validation error for missing category', async ({ page }) => {
+    test('should show validation error for missing category', async ({ page }) => {
       const transactionsPage = new TransactionsPage(page)
       const dashboardPage = new DashboardPage(page)
 
       await transactionsPage.navigateToTransactionsTab()
 
-      // Category field has no empty option, so can't test missing category
       await transactionsPage.fillTransactionForm({
         category: '',
         amount: '50.00',
@@ -144,7 +140,7 @@ test.describe('transactions', () => {
       await transactionsPage.clickDeleteTransaction('Electric bill')
       await transactionsPage.confirmDelete()
 
-      await expect(page.getByText(/transaction removed/i)).toBeVisible()
+      await expect(page.getByText(/transaction deleted/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
     })

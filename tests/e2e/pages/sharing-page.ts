@@ -25,8 +25,7 @@ export class SharingPage extends BasePage {
     for (const email of data.participantEmails) {
       const emailInput = this.page.getByPlaceholder('Enter email address')
       await emailInput.fill(email)
-      // Button has aria-label="Add participant", not visible text
-      const addButton = this.page.getByLabel('Add participant')
+      const addButton = this.page.getByRole('button', { name: 'Add participant' })
       await addButton.click()
       await expect(this.getByText(email)).toBeVisible()
     }
@@ -49,14 +48,12 @@ export class SharingPage extends BasePage {
   }
 
   async submitShareExpense() {
-    // Button text is lowercase "Share expense"
-    await this.clickButton('Share expense')
+    await this.clickButton('Share Expense')
   }
 
   async removeParticipant(email: string) {
     const participantRow = this.page.locator('div', { hasText: email })
-    // Button has aria-label="Remove participant"
-    await participantRow.getByLabel('Remove participant').click()
+    await participantRow.getByRole('button', { name: 'Remove participant' }).click()
   }
 
   async expectSharedExpenseInList(description: string, amount: string) {

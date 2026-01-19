@@ -103,7 +103,7 @@ test.describe('dashboard', () => {
 
       await dashboardPage.navigateToTab('Sharing')
       await page.waitForLoadState('networkidle')
-      await expect(page.getByText(/expenses you shared/i)).toBeVisible()
+      await expect(page.getByText(/settlement summary/i)).toBeVisible()
 
       await dashboardPage.navigateToTab('Transactions')
       await page.waitForLoadState('networkidle')
