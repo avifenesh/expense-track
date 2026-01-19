@@ -31,9 +31,9 @@ import {
 import { logoutAction, persistActiveAccountAction, refreshExchangeRatesAction } from '@/app/actions'
 import { BalanceForm } from '@/components/dashboard/balance-form'
 import { Sparkline } from '@/components/dashboard/sparkline'
+import { StatBreakdownPanel } from '@/components/dashboard/stat-breakdown'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { DashboardData } from '@/lib/finance'
 import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
@@ -134,27 +134,6 @@ const STAT_VARIANT_STYLES: Record<
   },
 }
 
-const STAT_TOOLTIPS: Record<string, string> = {
-  'Net this month': `Actual income minus actual expenses.
-
-This is your real position this month based on recorded transactions.`,
-
-  'On track for': `Projected balance at month end.
-
-Calculated from actual income plus remaining expected income, minus remaining budgeted expenses.`,
-
-  'Left to spend': `How much of your expense budget you haven't used yet.
-
-Zero means you've hit your spending plan exactly. Negative if you've overspent.`,
-
-  'Monthly target': `Your planned savings target for this month.
-
-Calculated as: planned income (from income goal, recurring templates, or budgets) minus budgeted expenses.
-If negative, your planned expenses exceed planned income.`,
-}
-
-const DEFAULT_STAT_TOOLTIP = 'Monitors this monthly metric based on your recorded data and budgets.'
-
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
   if (normalized.includes('net') || normalized.includes('saved') || normalized.includes('income') || normalized.includes('inflow')) {
@@ -183,6 +162,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const [accountFeedback, setAccountFeedback] = useState<Feedback | null>(null)
   const [showBalanceForm, setShowBalanceForm] = useState(false)
   const [activeTab, setActiveTab] = useState<TabValue>('overview')
+  const [expandedStat, setExpandedStat] = useState<string | null>(null)
 
   const [, startPersistAccount] = useTransition()
   const [isPendingLogout, startLogout] = useTransition()
@@ -302,6 +282,20 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
     const timer = window.setTimeout(() => setAccountFeedback(null), 4000)
     return () => window.clearTimeout(timer)
   }, [accountFeedback])
+
+  // Handle ESC key to close breakdown panel
+  useEffect(() => {
+    if (!expandedStat) return
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpandedStat(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscKey)
+    return () => document.removeEventListener('keydown', handleEscKey)
+  }, [expandedStat])
 
   const historyWithLabels = useMemo(
     () =>
@@ -598,14 +592,11 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             const variantKey = stat.variant ?? 'neutral'
             const styles = STAT_VARIANT_STYLES[variantKey]
             const Icon = resolveStatIcon(stat.label)
-            return (
-              <div
-                key={stat.label}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition hover:bg-white/10',
-                  styles.border,
-                )}
-              >
+            const isExpanded = expandedStat === stat.label
+            const hasBreakdown = !!stat.breakdown
+
+            const cardContent = (
+              <>
                 <span className={cn('inline-flex shrink-0 items-center justify-center rounded-lg p-1.5', styles.chip)}>
                   <Icon className={cn('h-3.5 w-3.5', styles.icon)} />
                 </span>
@@ -617,15 +608,68 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                     {formatCurrency(stat.amount, preferredCurrency)}
                   </p>
                 </div>
-                <InfoTooltip
-                  description={STAT_TOOLTIPS[stat.label] ?? DEFAULT_STAT_TOOLTIP}
-                  label={`Explain ${stat.label}`}
-                  placement="left"
-                />
+                {hasBreakdown && (
+                  <ChevronDown
+                    className={cn(
+                      'h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform',
+                      isExpanded && 'rotate-180',
+                    )}
+                  />
+                )}
+              </>
+            )
+
+            const cardClassName = cn(
+              'flex w-full items-center gap-3 rounded-xl border bg-white/5 px-3 py-2 backdrop-blur transition',
+              styles.border,
+              isExpanded && 'ring-1 ring-white/30',
+            )
+
+            // Use button for interactive cards, div for non-interactive
+            return hasBreakdown ? (
+              <button
+                key={stat.label}
+                type="button"
+                onClick={() => setExpandedStat(isExpanded ? null : stat.label)}
+                className={cn(cardClassName, 'cursor-pointer hover:bg-white/10 text-left')}
+                aria-expanded={isExpanded}
+                aria-label={`View ${stat.label} breakdown`}
+              >
+                {cardContent}
+              </button>
+            ) : (
+              <div key={stat.label} className={cardClassName}>
+                {cardContent}
               </div>
             )
           })}
         </div>
+
+        {/* Stat breakdown panel */}
+        {expandedStat &&
+          (() => {
+            const stat = data.stats.find((s) => s.label === expandedStat)
+            if (!stat?.breakdown) return null
+
+            return (
+              <div className="relative z-10 mt-2 rounded-xl border border-white/15 bg-white/5 p-4 backdrop-blur">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-300">
+                    {expandedStat} breakdown
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedStat(null)}
+                    className="text-xs text-slate-400 hover:text-white transition"
+                    aria-label="Close breakdown"
+                  >
+                    Close
+                  </button>
+                </div>
+                <StatBreakdownPanel breakdown={stat.breakdown} currency={preferredCurrency} />
+              </div>
+            )
+          })()}
 
         {/* Exchange rate refresh - compact */}
         {data.exchangeRateLastUpdate && (

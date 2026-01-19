@@ -46,11 +46,60 @@ export type PaginatedResult<T> = {
 // Default pagination limit
 export const DEFAULT_PAGINATION_LIMIT = 50
 
+// Stat breakdown types - show users how each stat is calculated
+export type IncomeSource = 'goal' | 'recurring' | 'budget' | 'none'
+
+export type NetThisMonthBreakdown = {
+  type: 'net-this-month'
+  income: number
+  expense: number
+  net: number
+}
+
+export type OnTrackForBreakdown = {
+  type: 'on-track-for'
+  actualIncome: number
+  actualExpense: number
+  expectedRemainingIncome: number
+  remainingBudgetedExpense: number
+  incomeSource: IncomeSource
+  projected: number
+}
+
+export type LeftToSpendBreakdown = {
+  type: 'left-to-spend'
+  totalPlanned: number
+  totalActual: number
+  totalRemaining: number
+  categories: Array<{
+    id: string
+    name: string
+    planned: number
+    actual: number
+    remaining: number
+  }>
+}
+
+export type MonthlyTargetBreakdown = {
+  type: 'monthly-target'
+  plannedIncome: number
+  incomeSource: IncomeSource
+  plannedExpense: number
+  target: number
+}
+
+export type StatBreakdown =
+  | NetThisMonthBreakdown
+  | OnTrackForBreakdown
+  | LeftToSpendBreakdown
+  | MonthlyTargetBreakdown
+
 export type MonetaryStat = {
   label: string
   amount: number
   variant?: 'positive' | 'negative' | 'neutral'
   helper?: string
+  breakdown?: StatBreakdown
 }
 
 export type CategoryBudgetSummary = {

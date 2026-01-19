@@ -10,7 +10,13 @@ import { getTransactionsForMonth } from './transactions'
 import { getBudgetsForMonth, getMonthlyIncomeGoal } from './budgets'
 import { getRecurringTemplates } from './recurring'
 import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance } from './expense-sharing'
-import type { DashboardData, CategoryBudgetSummary, MonetaryStat, MonthlyHistoryPoint } from './types'
+import type {
+  DashboardData,
+  CategoryBudgetSummary,
+  MonetaryStat,
+  MonthlyHistoryPoint,
+  IncomeSource,
+} from './types'
 
 export async function getDashboardData({
   monthKey,
@@ -346,30 +352,86 @@ export async function getDashboardData({
     }))
     .sort((a, b) => (a.month > b.month ? 1 : -1))
 
+  // Determine the income source for breakdowns
+  // For "Monthly target", use the source that determines plannedIncomeTarget
+  const incomeSourceForTarget: IncomeSource =
+    incomeGoalConverted > 0 ? 'goal' : totalRecurringIncome > 0 ? 'recurring' : plannedIncome > 0 ? 'budget' : 'none'
+
+  // For "On track for", use the source that determines expectedRemainingIncome
+  // This differs from target when recurring templates exist but have all been applied
+  const incomeSourceForProjected: IncomeSource =
+    incomeGoalConverted > 0
+      ? 'goal'
+      : expectedRecurringIncome > 0
+        ? 'recurring'
+        : remainingIncome > 0
+          ? 'budget'
+          : 'none'
+
+  // Build expense category breakdown for "Left to spend"
+  const expenseCategoryBreakdown = budgetsSummary
+    .filter((b) => b.categoryType === TransactionType.EXPENSE)
+    .map((b) => ({
+      id: b.categoryId,
+      name: b.categoryName,
+      planned: b.planned,
+      actual: b.actual,
+      remaining: b.remaining,
+    }))
+
   const stats: MonetaryStat[] = [
     {
       label: 'Net this month',
       amount: actualNet,
       variant: actualNet >= 0 ? 'positive' : 'negative',
       helper: 'Actual income minus actual expenses',
+      breakdown: {
+        type: 'net-this-month',
+        income: actualIncome,
+        expense: actualExpense,
+        net: actualNet,
+      },
     },
     {
       label: 'On track for',
       amount: projectedNet,
       variant: projectedNet >= 0 ? 'positive' : 'negative',
       helper: 'Projected balance at month end',
+      breakdown: {
+        type: 'on-track-for',
+        actualIncome,
+        actualExpense,
+        expectedRemainingIncome,
+        remainingBudgetedExpense: Math.max(remainingExpense, 0),
+        incomeSource: incomeSourceForProjected,
+        projected: projectedNet,
+      },
     },
     {
       label: 'Left to spend',
       amount: Math.max(remainingExpense, 0),
       variant: remainingExpense <= 0 ? 'neutral' : 'negative',
       helper: 'Remaining expense budget',
+      breakdown: {
+        type: 'left-to-spend',
+        totalPlanned: plannedExpense,
+        totalActual: actualExpense,
+        totalRemaining: Math.max(remainingExpense, 0),
+        categories: expenseCategoryBreakdown,
+      },
     },
     {
       label: 'Monthly target',
       amount: plannedNet,
       variant: plannedNet >= 0 ? 'positive' : 'negative',
       helper: 'Planned income minus budgeted expenses',
+      breakdown: {
+        type: 'monthly-target',
+        plannedIncome: plannedIncomeTarget,
+        incomeSource: incomeSourceForTarget,
+        plannedExpense,
+        target: plannedNet,
+      },
     },
   ]
 
