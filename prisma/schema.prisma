@@ -41,6 +41,7 @@ model User {
   passwordResetToken       String?   @unique
   passwordResetExpires     DateTime?
   hasCompletedOnboarding   Boolean   @default(false)
+  activeAccountId          String?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
@@ -50,6 +51,7 @@ model User {
   subscription          Subscription?
   sharedExpensesOwned   SharedExpense[]        @relation("SharedExpensesOwned")
   expenseParticipations ExpenseParticipant[]   @relation("ExpenseParticipations")
+  activeAccount         Account?               @relation("ActiveAccount", fields: [activeAccountId], references: [id], onDelete: SetNull)
 
   @@index([email])
 }
@@ -99,6 +101,7 @@ model Account {
   transactions       Transaction[]
   sentRequests       TransactionRequest[] @relation("SentRequests")
   receivedRequests   TransactionRequest[] @relation("ReceivedRequests")
+  activeFor          User?                @relation("ActiveAccount")
 
   @@unique([userId, name])
   @@index([userId])
