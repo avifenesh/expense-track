@@ -1568,6 +1568,38 @@ Retrieves all accounts for the authenticated user.
 
 ---
 
+### PATCH /api/v1/accounts/[id]/activate
+
+Switch the active account for the authenticated user. Updates the user's `activeAccountId` to persist account selection across sessions.
+
+**Auth:** Bearer token required
+
+**Path Parameters:**
+- `id`: Account ID to activate (required)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "activeAccountId": "clx..."
+  }
+}
+```
+
+**Errors:**
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 404: Not found - Account does not exist or user does not own it
+- 429: Rate limited - Too many requests
+
+**Security:**
+- Users can only activate accounts they own
+- Account ownership verified server-side
+- Requires active subscription
+
+---
+
 ## Holdings Endpoints
 
 ### POST /api/v1/holdings
