@@ -1,10 +1,8 @@
 name: E2E Tests (Web)
 
+# E2E tests are disabled from automatic runs until UI locators are validated
+# Run manually via workflow_dispatch to test E2E infrastructure
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
