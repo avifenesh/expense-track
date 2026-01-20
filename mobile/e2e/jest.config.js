@@ -11,11 +11,15 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/e2e/init.ts'],
   verbose: true,
   transform: {
-    '^.+\\.(ts|tsx)$': [
+    '^.+\\.(js|jsx|ts|tsx)$': [
       'babel-jest',
       {
         presets: ['babel-preset-expo'],
       },
     ],
   },
+  // Transform expo and react-native packages that use ESM
+  transformIgnorePatterns: [
+    'node_modules/(?!(expo|@expo|expo-modules-core|react-native|@react-native|@react-navigation)/)',
+  ],
 };

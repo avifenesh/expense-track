@@ -1,4 +1,4 @@
-import { element, by, expect, waitFor } from 'detox';
+import { element, by, expect, waitFor, device } from 'detox';
 import { TEST_USERS } from '../helpers/fixtures';
 
 /**
@@ -9,27 +9,38 @@ import { TEST_USERS } from '../helpers/fixtures';
  */
 
 /**
- * Wait for the app to finish loading and show either login or dashboard
+ * Wait for the app to finish loading and show either login or dashboard.
+ * Disables Detox synchronization during wait because the app may have
+ * background tasks (animations, timers) that prevent idle detection.
  */
 async function waitForAppReady(): Promise<void> {
-  // Wait for loading screen to disappear (if present)
-  try {
-    await waitFor(element(by.id('root.loadingScreen')))
-      .not.toBeVisible()
-      .withTimeout(15000);
-  } catch {
-    // Loading screen may have already disappeared, continue
-  }
+  // Disable synchronization during the wait - React Native apps often have
+  // background tasks that prevent Detox from detecting idle state
+  await device.disableSynchronization();
 
-  // Now wait for either login or dashboard screen
   try {
-    await waitFor(element(by.id('login.screen')))
-      .toBeVisible()
-      .withTimeout(10000);
-  } catch {
-    await waitFor(element(by.id('dashboard.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
+    // Wait for loading screen to disappear (if present)
+    try {
+      await waitFor(element(by.id('root.loadingScreen')))
+        .not.toBeVisible()
+        .withTimeout(30000);
+    } catch {
+      // Loading screen may have already disappeared or not exist, continue
+    }
+
+    // Now wait for either login or dashboard screen
+    try {
+      await waitFor(element(by.id('login.screen')))
+        .toBeVisible()
+        .withTimeout(15000);
+    } catch {
+      await waitFor(element(by.id('dashboard.screen')))
+        .toBeVisible()
+        .withTimeout(10000);
+    }
+  } finally {
+    // Re-enable synchronization for the rest of the test
+    await device.enableSynchronization();
   }
 }
 
