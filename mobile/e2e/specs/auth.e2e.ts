@@ -86,6 +86,10 @@ describe('Authentication', () => {
       await element(by.id('register.displayNameInput')).typeText('Test User');
       await element(by.id('register.emailInput')).typeText('invalid-email');
       await element(by.id('register.passwordInput')).typeText('TestPass123!');
+      // Dismiss keyboard by tapping return key, then scroll to make submit button visible
+      await element(by.id('register.passwordInput')).tapReturnKey();
+      // Small delay to let keyboard dismiss
+      await new Promise((resolve) => setTimeout(resolve, 500));
       await element(by.id('register.submitButton')).tap();
 
       await waitFor(element(by.id('register.emailInput-error')))
