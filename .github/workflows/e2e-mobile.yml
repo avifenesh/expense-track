@@ -197,16 +197,21 @@ jobs:
 
       - name: Run Detox tests (Android)
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 30
         with:
           api-level: 31
           target: google_apis
           arch: x86_64
           profile: pixel_5
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -partition-size 4096
           disable-animations: true
           working-directory: mobile
-          script: npm run e2e:test:android:release -- --cleanup --headless
+          script: |
+            adb wait-for-device
+            adb shell input keyevent 82
+            sleep 5
+            npm run e2e:test:android:release -- --cleanup --headless --record-logs all
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost
           E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
