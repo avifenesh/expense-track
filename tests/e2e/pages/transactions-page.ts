@@ -49,13 +49,13 @@ export class TransactionsPage extends BasePage {
     // Use .first() to handle strict mode - description may appear in multiple places
     await expect(this.page.getByText(description).first()).toBeVisible({ timeout: 20000 })
 
-    // Amount in UI is formatted with currency symbol and commas (e.g., "-$50.00", "+$3,000.00")
+    // Amount in UI is formatted with currency symbol and commas (e.g., "-$50.00", "+₪3,000.00")
     // Convert input like "50.00" to a regex that matches the formatted version
     const amountNum = parseFloat(amount)
-    // Create regex that matches the amount with optional sign, currency symbol, and commas
-    // e.g., "3000.00" should match "-$3,000.00" or "+$3,000.00"
+    // Create regex that matches the amount with optional sign, any currency symbol, and commas
+    // Uses \p{Sc} Unicode property escape to match any currency symbol (USD, EUR, ILS, etc.)
     const formattedWithCommas = amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    const amountRegex = new RegExp(`[+-]?\\$${formattedWithCommas.replace('.', '\\.')}`)
+    const amountRegex = new RegExp('[+-]?\\p{Sc}' + formattedWithCommas.replace('.', '\\.'), 'u')
 
     // Verify the amount also appears - use .first() as amount may appear in header totals too
     await expect(this.page.getByText(amountRegex).first()).toBeVisible({ timeout: 10000 })

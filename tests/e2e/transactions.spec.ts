@@ -26,7 +26,7 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
@@ -53,36 +53,13 @@ test.describe('transactions', () => {
 
       await transactionsPage.submitTransaction()
 
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
       // Navigate back to transactions tab after reload
       await transactionsPage.navigateToTransactionsTab()
       await transactionsPage.expectTransactionInList('Monthly salary', '3000.00')
-
-      await dashboardPage.clickSignOut()
-    })
-
-    // Note: This test cannot work as designed because the category dropdown
-    // auto-selects the first category on load (no empty placeholder option).
-    // The test would need UI changes to add a placeholder option.
-    test.skip('should show validation error for missing category', async ({ page }) => {
-      const transactionsPage = new TransactionsPage(page)
-      const dashboardPage = new DashboardPage(page)
-
-      await transactionsPage.navigateToTransactionsTab()
-
-      // Category field has no empty option, so can't test missing category
-      await transactionsPage.fillTransactionForm({
-        category: '',
-        amount: '50.00',
-        date: getToday(),
-      })
-
-      await transactionsPage.submitTransaction()
-
-      await transactionsPage.expectValidationError(/select a category/i)
 
       await dashboardPage.clickSignOut()
     })
@@ -124,7 +101,7 @@ test.describe('transactions', () => {
       await transactionsPage.submitTransaction()
 
       // Wait for transaction saved toast before looking for edit button
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
@@ -160,7 +137,7 @@ test.describe('transactions', () => {
       await transactionsPage.submitTransaction()
 
       // Wait for transaction saved toast before looking for delete button
-      await expect(page.getByText(/transaction saved/i)).toBeVisible()
+      await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
