@@ -1,4 +1,4 @@
-import { device, element, by, expect, waitFor } from 'detox';
+import { element, by, expect, waitFor } from 'detox';
 
 /**
  * Smoke Test Suite
@@ -8,13 +8,7 @@ import { device, element, by, expect, waitFor } from 'detox';
  */
 
 describe('Smoke Tests', () => {
-  beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
-  });
-
-  beforeEach(async () => {
-    await device.reloadReactNative();
-  });
+  // Note: beforeAll (launchApp) and beforeEach (reloadReactNative) are handled globally in init.ts
 
   it('should launch the app successfully', async () => {
     // App should launch and show either login screen or dashboard

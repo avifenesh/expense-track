@@ -1,4 +1,4 @@
-import { device, element, by, expect, waitFor } from 'detox';
+import { element, by, expect, waitFor } from 'detox';
 import { TEST_USERS } from '../helpers/fixtures';
 
 /**
@@ -9,13 +9,7 @@ import { TEST_USERS } from '../helpers/fixtures';
  */
 
 describe('Authentication', () => {
-  beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
-  });
-
-  beforeEach(async () => {
-    await device.reloadReactNative();
-  });
+  // Note: beforeAll (launchApp) and beforeEach (reloadReactNative) are handled globally in init.ts
 
   describe('Login Flow', () => {
     it('should display login screen with all required elements', async () => {
