@@ -79,7 +79,9 @@ module.exports = {
     },
     emulator: {
       type: 'android.emulator',
-      device: { avdName: 'Pixel_5_API_31' },
+      // In CI, reactivecircus/android-emulator-runner creates AVD named 'test'
+      // For local development, create AVD with: avdmanager create avd -n test -k "system-images;android-31;google_apis;x86_64" -d "pixel_5"
+      device: { avdName: 'test' },
     },
   },
 
