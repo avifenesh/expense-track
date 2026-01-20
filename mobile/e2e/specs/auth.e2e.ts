@@ -8,10 +8,39 @@ import { TEST_USERS } from '../helpers/fixtures';
  * Note: These tests require a running backend API with test users configured.
  */
 
+/**
+ * Wait for the app to finish loading and show either login or dashboard
+ */
+async function waitForAppReady(): Promise<void> {
+  // Wait for loading screen to disappear (if present)
+  try {
+    await waitFor(element(by.id('root.loadingScreen')))
+      .not.toBeVisible()
+      .withTimeout(15000);
+  } catch {
+    // Loading screen may have already disappeared, continue
+  }
+
+  // Now wait for either login or dashboard screen
+  try {
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(10000);
+  } catch {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  }
+}
+
 describe('Authentication', () => {
-  // Note: beforeAll (launchApp) and beforeEach (reloadReactNative) are handled globally in init.ts
+  // Note: beforeAll (launchApp) and beforeEach (launchApp newInstance) are handled globally in init.ts
 
   describe('Login Flow', () => {
+    beforeEach(async () => {
+      await waitForAppReady();
+    });
+
     it('should display login screen with all required elements', async () => {
       await expect(element(by.id('login.screen'))).toBeVisible();
       await expect(element(by.id('login.title'))).toHaveText('Sign In');
@@ -72,6 +101,9 @@ describe('Authentication', () => {
 
   describe('Registration Flow', () => {
     beforeEach(async () => {
+      // Wait for app to be ready first
+      await waitForAppReady();
+
       // Navigate to registration screen
       await element(by.id('login.registerLink')).tap();
       await expect(element(by.id('register.screen'))).toBeVisible();
@@ -128,6 +160,9 @@ describe('Authentication', () => {
 
   describe('Reset Password Flow', () => {
     beforeEach(async () => {
+      // Wait for app to be ready first
+      await waitForAppReady();
+
       // Navigate to reset password screen
       await element(by.id('login.resetPasswordLink')).tap();
       await expect(element(by.id('resetPassword.screen'))).toBeVisible();

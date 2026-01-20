@@ -11,8 +11,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function LoadingScreen() {
   return (
-    <View style={styles.loading}>
-      <ActivityIndicator size="large" color="#38bdf8" />
+    <View style={styles.loading} testID="root.loadingScreen">
+      <ActivityIndicator size="large" color="#38bdf8" testID="root.loadingIndicator" />
     </View>
   );
 }
