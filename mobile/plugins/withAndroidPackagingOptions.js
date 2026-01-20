@@ -8,6 +8,7 @@
  * react-native-gesture-handler and React Native 0.81+
  *
  * Applies packaging configuration to both app and all library subprojects
+ * using subprojects.whenPluginAdded to avoid afterEvaluate timing issues
  */
 const { withAppBuildGradle, withProjectBuildGradle } = require('@expo/config-plugins');
 
@@ -21,21 +22,20 @@ function withAndroidPackagingOptions(config) {
       return config;
     }
 
-    // Add subprojects block to apply packaging to all library modules
+    // Add subprojects block that hooks into plugin application
+    // This avoids the "already evaluated" error from afterEvaluate
     const subprojectsBlock = `
 // Fix duplicate native library (libfbjni.so) in androidTest builds
 // Required for react-native-gesture-handler + RN 0.81+
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                packaging {
-                    jniLibs {
-                        pickFirsts += ['lib/arm64-v8a/libfbjni.so']
-                        pickFirsts += ['lib/x86/libfbjni.so']
-                        pickFirsts += ['lib/x86_64/libfbjni.so']
-                        pickFirsts += ['lib/armeabi-v7a/libfbjni.so']
-                    }
+subprojects { subproject ->
+    subproject.pluginManager.withPlugin('com.android.library') {
+        subproject.android {
+            packaging {
+                jniLibs {
+                    pickFirsts += ['lib/arm64-v8a/libfbjni.so']
+                    pickFirsts += ['lib/x86/libfbjni.so']
+                    pickFirsts += ['lib/x86_64/libfbjni.so']
+                    pickFirsts += ['lib/armeabi-v7a/libfbjni.so']
                 }
             }
         }
