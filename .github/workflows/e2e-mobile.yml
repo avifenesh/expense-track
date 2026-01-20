@@ -79,9 +79,9 @@ jobs:
         working-directory: mobile/ios
         run: pod install
 
-      - name: Build Detox (iOS debug)
+      - name: Build Detox (iOS release)
         working-directory: mobile
-        run: npm run e2e:build:ios
+        run: npm run e2e:build:ios:release
 
       - name: Boot iOS Simulator
         run: |
@@ -90,7 +90,7 @@ jobs:
 
       - name: Run Detox tests (iOS)
         working-directory: mobile
-        run: npm run e2e:test:ios -- --cleanup --headless
+        run: npm run e2e:test:ios:release -- --cleanup --headless
         env:
           E2E_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
@@ -108,6 +108,14 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      - name: Free disk space
+        run: |
+          # Remove unnecessary tools to free up disk space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android/sdk/ndk
+          sudo rm -rf /opt/ghc
+          df -h
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -170,9 +178,9 @@ jobs:
         working-directory: mobile
         run: npx expo prebuild --clean --platform android
 
-      - name: Build Detox (Android debug)
+      - name: Build Detox (Android release)
         working-directory: mobile
-        run: npm run e2e:build:android
+        run: npm run e2e:build:android:release
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -198,7 +206,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: mobile
-          script: npm run e2e:test:android -- --cleanup --headless
+          script: npm run e2e:test:android:release -- --cleanup --headless
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost
           E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858

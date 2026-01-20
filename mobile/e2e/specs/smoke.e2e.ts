@@ -11,14 +11,20 @@ import { element, by, expect, waitFor, device } from 'detox';
  */
 
 /**
- * Wait for the app to finish loading.
+ * Wait for the app to finish loading and show the login screen.
  * Uses by.text() as primary selector since it's more reliable than testID
  * in React Native apps with native stack navigator.
  */
 async function waitForAppReady(): Promise<void> {
+  // Disable Detox synchronization to avoid timeout on animations/timers
   await device.disableSynchronization();
+
   try {
-    // Wait for "Sign In" text to appear (login screen title)
+    // First, wait a moment for the app to initialize
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Try to find the login screen title
+    // Using by.text() is more reliable than by.id() for native stack navigator titles
     await waitFor(element(by.text('Sign In')))
       .toBeVisible()
       .withTimeout(30000);

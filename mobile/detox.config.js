@@ -10,6 +10,36 @@ module.exports = {
     },
   },
 
+  // Save screenshots and logs on test failure
+  artifacts: {
+    rootDir: 'artifacts',
+    plugins: {
+      screenshot: {
+        shouldTakeAutomaticSnapshots: true,
+        keepOnlyFailedTestsArtifacts: false,
+        takeWhen: {
+          testStart: true,
+          testDone: true,
+        },
+      },
+      log: {
+        enabled: true,
+      },
+      uiHierarchy: 'enabled',
+    },
+  },
+
+  // Behavior configuration
+  behavior: {
+    init: {
+      exposeGlobals: true,
+    },
+    launchApp: 'auto',
+    cleanup: {
+      shutdownDevice: false,
+    },
+  },
+
   apps: {
     'ios.debug': {
       type: 'ios.app',
