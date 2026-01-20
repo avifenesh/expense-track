@@ -12,8 +12,7 @@ import { element, by, expect, waitFor, device } from 'detox';
 
 /**
  * Wait for the app to finish loading and show the login screen.
- * Uses by.text() as primary selector since it's more reliable than testID
- * in React Native apps with native stack navigator.
+ * Uses testID for reliable element selection.
  */
 async function waitForAppReady(): Promise<void> {
   // Disable Detox synchronization to avoid timeout on animations/timers
@@ -23,9 +22,9 @@ async function waitForAppReady(): Promise<void> {
     // First, wait a moment for the app to initialize
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Try to find the login screen title
-    // Using by.text() is more reliable than by.id() for native stack navigator titles
-    await waitFor(element(by.text('Sign In')))
+    // Wait for login screen container to be visible
+    // Using testID is more reliable than by.text() when there are multiple elements with same text
+    await waitFor(element(by.id('login.screen')))
       .toBeVisible()
       .withTimeout(30000);
   } finally {
@@ -39,47 +38,47 @@ describe('Smoke Tests', () => {
   it('should launch the app successfully', async () => {
     await waitForAppReady();
     // If we get here, app launched and login screen is visible
-    await expect(element(by.text('Sign In'))).toBeVisible();
+    await expect(element(by.id('login.screen'))).toBeVisible();
   });
 
   it('should show login screen elements', async () => {
     await waitForAppReady();
-    // Use by.text() for more reliable matching
-    await expect(element(by.text('Sign In'))).toBeVisible();
-    await expect(element(by.text('Email'))).toBeVisible();
-    await expect(element(by.text('Password'))).toBeVisible();
+    // Use testIDs for reliable element matching
+    await expect(element(by.id('login.title'))).toBeVisible();
+    await expect(element(by.id('login.emailInput'))).toBeVisible();
+    await expect(element(by.id('login.passwordInput'))).toBeVisible();
   });
 
   it('should navigate to registration screen', async () => {
     await waitForAppReady();
-    // Tap register link using text
-    await element(by.text("Don't have an account? Register")).tap();
+    // Tap register link using testID
+    await element(by.id('login.registerLink')).tap();
     // Wait for register screen
-    await waitFor(element(by.text('Create Account')))
+    await waitFor(element(by.id('register.screen')))
       .toBeVisible()
       .withTimeout(5000);
   });
 
   it('should navigate to reset password screen', async () => {
     await waitForAppReady();
-    // Tap reset password link
-    await element(by.text('Forgot password?')).tap();
+    // Tap reset password link using testID
+    await element(by.id('login.resetPasswordLink')).tap();
     // Wait for reset password screen
-    await waitFor(element(by.text('Reset Password')))
+    await waitFor(element(by.id('resetPassword.screen')))
       .toBeVisible()
       .withTimeout(5000);
   });
 
   it('should validate email format', async () => {
     await waitForAppReady();
-    // Enter invalid email and submit - still need testID for input fields
+    // Enter invalid email and submit
     await element(by.id('login.emailInput')).typeText('invalid-email');
     await element(by.id('login.passwordInput')).typeText('password123');
-    // Tap the submit button by its testID
+    // Tap the submit button
     await element(by.id('login.submitButton')).tap();
     // Should show email validation error
-    await waitFor(element(by.text('Please enter a valid email address')))
-      .toBeVisible()
+    await waitFor(element(by.id('login.emailInput-error')))
+      .toExist()
       .withTimeout(5000);
   });
 });
