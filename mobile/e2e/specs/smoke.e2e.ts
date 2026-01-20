@@ -11,55 +11,17 @@ import { element, by, expect, waitFor, device } from 'detox';
  */
 
 /**
- * Wait for the app to finish loading by looking for any content that appears
- * after the initial loading screen. Uses multiple fallback strategies.
+ * Wait for the app to finish loading.
+ * Uses by.text() as primary selector since it's more reliable than testID
+ * in React Native apps with native stack navigator.
  */
 async function waitForAppReady(): Promise<void> {
-  // Disable synchronization - React Native apps have background tasks
   await device.disableSynchronization();
-
   try {
-    // Strategy 1: Wait for loading screen to disappear (if it exists)
-    try {
-      await waitFor(element(by.id('root.loadingScreen')))
-        .not.toBeVisible()
-        .withTimeout(20000);
-    } catch {
-      // Loading screen may not exist or already gone
-    }
-
-    // Strategy 2: Wait for any visible content
-    // Try multiple elements that should appear after loading
-    const elementsToCheck = [
-      'login.screen',
-      'login.title',
-      'login.content',
-      'dashboard.screen',
-    ];
-
-    let found = false;
-    for (const testId of elementsToCheck) {
-      if (found) break;
-      try {
-        await waitFor(element(by.id(testId)))
-          .toBeVisible()
-          .withTimeout(5000);
-        found = true;
-      } catch {
-        // Try next element
-      }
-    }
-
-    // If still not found, give it one more chance with a longer timeout
-    if (!found) {
-      try {
-        await waitFor(element(by.id('login.title')))
-          .toExist()
-          .withTimeout(10000);
-      } catch {
-        // App may be in an unexpected state
-      }
-    }
+    // Wait for "Sign In" text to appear (login screen title)
+    await waitFor(element(by.text('Sign In')))
+      .toBeVisible()
+      .withTimeout(30000);
   } finally {
     await device.enableSynchronization();
   }
@@ -70,60 +32,48 @@ describe('Smoke Tests', () => {
 
   it('should launch the app successfully', async () => {
     await waitForAppReady();
-
-    // App should show some content - try login first, then dashboard
-    try {
-      await expect(element(by.id('login.title'))).toExist();
-    } catch {
-      await expect(element(by.id('dashboard.screen'))).toExist();
-    }
+    // If we get here, app launched and login screen is visible
+    await expect(element(by.text('Sign In'))).toBeVisible();
   });
 
   it('should show login screen elements', async () => {
     await waitForAppReady();
-
-    // Check for login screen elements using toExist for reliability
-    await expect(element(by.id('login.title'))).toExist();
-    await expect(element(by.id('login.emailInput'))).toExist();
-    await expect(element(by.id('login.passwordInput'))).toExist();
-    await expect(element(by.id('login.submitButton'))).toExist();
+    // Use by.text() for more reliable matching
+    await expect(element(by.text('Sign In'))).toBeVisible();
+    await expect(element(by.text('Email'))).toBeVisible();
+    await expect(element(by.text('Password'))).toBeVisible();
   });
 
   it('should navigate to registration screen', async () => {
     await waitForAppReady();
-
-    // Tap register link
-    await element(by.id('login.registerLink')).tap();
-
+    // Tap register link using text
+    await element(by.text("Don't have an account? Register")).tap();
     // Wait for register screen
-    await waitFor(element(by.id('register.screen')))
-      .toExist()
+    await waitFor(element(by.text('Create Account')))
+      .toBeVisible()
       .withTimeout(5000);
   });
 
   it('should navigate to reset password screen', async () => {
     await waitForAppReady();
-
     // Tap reset password link
-    await element(by.id('login.resetPasswordLink')).tap();
-
+    await element(by.text('Forgot password?')).tap();
     // Wait for reset password screen
-    await waitFor(element(by.id('resetPassword.screen')))
-      .toExist()
+    await waitFor(element(by.text('Reset Password')))
+      .toBeVisible()
       .withTimeout(5000);
   });
 
   it('should validate email format', async () => {
     await waitForAppReady();
-
-    // Enter invalid email and submit
+    // Enter invalid email and submit - still need testID for input fields
     await element(by.id('login.emailInput')).typeText('invalid-email');
     await element(by.id('login.passwordInput')).typeText('password123');
+    // Tap the submit button by its testID
     await element(by.id('login.submitButton')).tap();
-
     // Should show email validation error
-    await waitFor(element(by.id('login.emailInput-error')))
-      .toExist()
+    await waitFor(element(by.text('Please enter a valid email address')))
+      .toBeVisible()
       .withTimeout(5000);
   });
 });

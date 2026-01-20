@@ -11,23 +11,17 @@ import { element, by, expect, waitFor, device } from 'detox';
 
 /**
  * Wait for the app to finish loading.
+ * Uses by.text() as primary selector since it's more reliable than testID
+ * in React Native apps with native stack navigator.
  */
 async function waitForAppReady(): Promise<void> {
   await device.disableSynchronization();
   try {
-    // Wait for loading to finish
-    try {
-      await waitFor(element(by.id('root.loadingScreen')))
-        .not.toBeVisible()
-        .withTimeout(20000);
-    } catch {
-      // Loading screen may not exist or already gone
-    }
-
-    // Wait for login title to appear
-    await waitFor(element(by.id('login.title')))
-      .toExist()
-      .withTimeout(15000);
+    // Wait for "Sign In" text to appear (login screen title)
+    // Using by.text() is more reliable than by.id() for native stack navigator
+    await waitFor(element(by.text('Sign In')))
+      .toBeVisible()
+      .withTimeout(30000);
   } finally {
     await device.enableSynchronization();
   }
@@ -40,12 +34,12 @@ describe('Authentication', () => {
     });
 
     it('should display login screen with all elements', async () => {
-      await expect(element(by.id('login.title'))).toExist();
-      await expect(element(by.id('login.emailInput'))).toExist();
-      await expect(element(by.id('login.passwordInput'))).toExist();
-      await expect(element(by.id('login.submitButton'))).toExist();
-      await expect(element(by.id('login.registerLink'))).toExist();
-      await expect(element(by.id('login.resetPasswordLink'))).toExist();
+      // Use by.text() for more reliable element matching
+      await expect(element(by.text('Sign In'))).toBeVisible();
+      await expect(element(by.text('Email'))).toBeVisible();
+      await expect(element(by.text('Password'))).toBeVisible();
+      await expect(element(by.text("Don't have an account? Register"))).toBeVisible();
+      await expect(element(by.text('Forgot password?'))).toBeVisible();
     });
 
     it('should validate email format', async () => {
