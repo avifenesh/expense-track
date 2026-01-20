@@ -38,7 +38,7 @@ interface AuthActions {
 export type AuthStore = AuthState & AuthActions;
 
 const initialState: AuthState = {
-  isLoading: true,
+  isLoading: false, // Start with false - biometric check happens in background
   isAuthenticated: false,
   user: null,
   accessToken: null,
