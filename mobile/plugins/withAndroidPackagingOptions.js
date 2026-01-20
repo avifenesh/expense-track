@@ -6,26 +6,67 @@
  *
  * The issue occurs when building androidTest configurations with
  * react-native-gesture-handler and React Native 0.81+
+ *
+ * Applies packaging configuration to both app and all library subprojects
  */
-const { withAppBuildGradle } = require('@expo/config-plugins');
+const { withAppBuildGradle, withProjectBuildGradle } = require('@expo/config-plugins');
 
 function withAndroidPackagingOptions(config) {
-  return withAppBuildGradle(config, (config) => {
+  // First, modify the root build.gradle to apply packaging to all subprojects
+  config = withProjectBuildGradle(config, (config) => {
     const buildGradle = config.modResults.contents;
 
-    // Check if packaging options already exist
-    if (buildGradle.includes('packagingOptions')) {
+    // Check if subprojects packaging config already exists
+    if (buildGradle.includes('pickFirsts') && buildGradle.includes('libfbjni.so')) {
       return config;
     }
 
-    // Add packaging options to exclude duplicate .so files
+    // Add subprojects block to apply packaging to all library modules
+    const subprojectsBlock = `
+// Fix duplicate native library (libfbjni.so) in androidTest builds
+// Required for react-native-gesture-handler + RN 0.81+
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                packaging {
+                    jniLibs {
+                        pickFirsts += ['lib/arm64-v8a/libfbjni.so']
+                        pickFirsts += ['lib/x86/libfbjni.so']
+                        pickFirsts += ['lib/x86_64/libfbjni.so']
+                        pickFirsts += ['lib/armeabi-v7a/libfbjni.so']
+                    }
+                }
+            }
+        }
+    }
+}
+`;
+
+    // Append to the end of the file
+    config.modResults.contents = buildGradle + '\n' + subprojectsBlock;
+
+    return config;
+  });
+
+  // Also add to app build.gradle for completeness
+  config = withAppBuildGradle(config, (config) => {
+    const buildGradle = config.modResults.contents;
+
+    // Check if packaging options already exist
+    if (buildGradle.includes('packaging {') || buildGradle.includes('packagingOptions {')) {
+      return config;
+    }
+
+    // Add packaging block with jniLibs configuration
     const packagingBlock = `
-    packagingOptions {
-        // Fix duplicate native libraries in androidTest
-        pickFirst 'lib/arm64-v8a/libfbjni.so'
-        pickFirst 'lib/x86/libfbjni.so'
-        pickFirst 'lib/x86_64/libfbjni.so'
-        pickFirst 'lib/armeabi-v7a/libfbjni.so'
+    packaging {
+        jniLibs {
+            pickFirsts += ['lib/arm64-v8a/libfbjni.so']
+            pickFirsts += ['lib/x86/libfbjni.so']
+            pickFirsts += ['lib/x86_64/libfbjni.so']
+            pickFirsts += ['lib/armeabi-v7a/libfbjni.so']
+        }
     }
 `;
 
@@ -40,6 +81,8 @@ function withAndroidPackagingOptions(config) {
 
     return config;
   });
+
+  return config;
 }
 
 module.exports = withAndroidPackagingOptions;
