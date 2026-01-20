@@ -1,5 +1,6 @@
-import { device, beforeAll, beforeEach, afterAll } from 'detox';
+import { device } from 'detox';
 
+// Note: beforeAll, beforeEach, afterAll are Jest globals, not Detox exports
 beforeAll(async () => {
   await device.launchApp({
     newInstance: true,
