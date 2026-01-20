@@ -51,15 +51,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   ...initialState,
 
   initialize: async () => {
-    try {
+    // Wrap biometric initialization in a timeout to prevent app hanging
+    // if biometric APIs are slow or unresponsive (e.g., in CI simulators)
+    const INIT_TIMEOUT = 5000;
+
+    const initBiometric = async () => {
       const capability = await biometricService.checkBiometricCapability();
       const enabled = await biometricService.isBiometricEnabled();
+      return { capability, enabled };
+    };
 
-      set({
-        biometricCapability: capability,
-        isBiometricEnabled: enabled,
-        isLoading: false,
-      });
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), INIT_TIMEOUT);
+    });
+
+    try {
+      const result = await Promise.race([initBiometric(), timeoutPromise]);
+
+      if (result) {
+        set({
+          biometricCapability: result.capability,
+          isBiometricEnabled: result.enabled,
+          isLoading: false,
+        });
+      } else {
+        // Timeout - proceed without biometric info
+        set({ isLoading: false });
+      }
     } catch {
       set({ isLoading: false });
     }
