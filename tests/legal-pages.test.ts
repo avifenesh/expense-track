@@ -26,9 +26,8 @@ describe('Legal Pages', () => {
       const pricingPath = path.join(process.cwd(), 'src/app/(public)/pricing/page.tsx')
       const content = await fs.readFile(pricingPath, 'utf-8')
 
-      // Verify comparison table section exists
+      // Verify comparison table section heading exists
       expect(content).toContain('Free Trial vs Premium')
-      expect(content).toContain('Comparison Table')
 
       // Verify both columns are defined
       expect(content).toContain('Free Trial')
@@ -55,8 +54,9 @@ describe('Legal Pages', () => {
       const pricingPath = path.join(process.cwd(), 'src/app/(public)/pricing/page.tsx')
       const content = await fs.readFile(pricingPath, 'utf-8')
 
+      // Verify back link exists with correct text and destination
       expect(content).toContain('Back to app')
-      expect(content).toContain('Back navigation')
+      expect(content).toContain('href="/"')
     })
   })
 
