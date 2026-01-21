@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState, useTransition, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { TransactionType, Currency } from '@prisma/client'
 import { FileSpreadsheet } from 'lucide-react'
@@ -59,6 +59,9 @@ export function BudgetsTab({
   const [formErrors, setFormErrors] = useState<FormErrors | null>(null)
   const [incomeGoalErrors, setIncomeGoalErrors] = useState<FormErrors | null>(null)
   const [deletingBudgetKey, setDeletingBudgetKey] = useState<string | null>(null)
+  const [editingBudget, setEditingBudget] = useState<DashboardBudget | null>(null)
+  const isEditingBudget = Boolean(editingBudget)
+  const budgetFormRef = useRef<HTMLFormElement>(null)
 
   // Derived options
   const accountsOptions = useMemo(() => createAccountOptions(accounts), [accounts])
@@ -117,8 +120,9 @@ export function BudgetsTab({
         toast.error('Unable to save budget.')
         return
       }
-      toast.success('Budget updated.')
+      toast.success(isEditingBudget ? 'Budget updated.' : 'Budget created.')
       setFormErrors(null)
+      setEditingBudget(null)
       validation.resetAll()
       form.reset()
       router.refresh()
@@ -145,6 +149,38 @@ export function BudgetsTab({
       router.refresh()
     })
   }
+
+  const handleBudgetEdit = useCallback((budget: DashboardBudget) => {
+    setEditingBudget(budget)
+    setFormErrors(null)
+    validation.resetAll()
+
+    // Pre-fill form fields after state update
+    setTimeout(() => {
+      const form = budgetFormRef.current
+      if (!form) return
+
+      const accountSelect = form.elements.namedItem('budgetAccountId') as HTMLSelectElement
+      const categorySelect = form.elements.namedItem('budgetCategoryId') as HTMLSelectElement
+      const plannedInput = form.elements.namedItem('planned') as HTMLInputElement
+      const currencySelect = form.elements.namedItem('budgetCurrency') as HTMLSelectElement
+
+      if (accountSelect) accountSelect.value = budget.accountId
+      if (categorySelect) categorySelect.value = budget.categoryId
+      if (plannedInput) plannedInput.value = String(budget.planned)
+      if (currencySelect) currencySelect.value = budget.currency
+
+      // Scroll form into view
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 0)
+  }, [validation])
+
+  const handleCancelBudgetEdit = useCallback(() => {
+    setEditingBudget(null)
+    setFormErrors(null)
+    validation.resetAll()
+    budgetFormRef.current?.reset()
+  }, [validation])
 
   const handleIncomeGoalSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
@@ -297,15 +333,26 @@ export function BudgetsTab({
                         {formatCurrency(budget.planned, preferredCurrency)} planned
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="text-xs text-rose-200 hover:bg-rose-500/20"
-                      onClick={() => handleBudgetDelete(budget.categoryId, budget.accountId)}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? 'Removing...' : 'Remove'}
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-xs text-blue-200 hover:bg-blue-500/20"
+                        onClick={() => handleBudgetEdit(budget)}
+                        disabled={isDeleting || isPendingBudget}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-xs text-rose-200 hover:bg-rose-500/20"
+                        onClick={() => handleBudgetDelete(budget.categoryId, budget.accountId)}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Removing...' : 'Remove'}
+                      </Button>
+                    </div>
                   </div>
                   <div className="mt-3">
                     <div className="sr-only" role="status">
@@ -438,13 +485,37 @@ export function BudgetsTab({
 
           <form
             id="budget-form"
+            ref={budgetFormRef}
             onSubmit={handleBudgetSubmit}
-            className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5"
+            className={cn(
+              'space-y-4 rounded-2xl border p-5',
+              isEditingBudget
+                ? 'border-blue-500/30 bg-blue-500/5'
+                : 'border-white/10 bg-white/5',
+            )}
             tabIndex={-1}
           >
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-white">Add or update a budget</h3>
-              <p className="text-xs text-slate-400">Capture limits for priority categories and accounts.</p>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-white">
+                  {isEditingBudget ? `Edit budget: ${editingBudget?.categoryName}` : 'Add or update a budget'}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {isEditingBudget
+                    ? 'Update the planned amount. Account and category cannot be changed.'
+                    : 'Capture limits for priority categories and accounts.'}
+                </p>
+              </div>
+              {isEditingBudget && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-xs text-slate-300 hover:bg-white/10"
+                  onClick={handleCancelBudgetEdit}
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
             {formErrors?.general && <p className="text-xs text-rose-300">{formErrors.general[0]}</p>}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -457,7 +528,12 @@ export function BudgetsTab({
                   name="budgetAccountId"
                   defaultValue={defaultAccountId}
                   options={accountsOptions}
+                  disabled={isEditingBudget}
+                  title={isEditingBudget ? 'Account cannot be changed when editing a budget' : undefined}
                 />
+                {isEditingBudget && (
+                  <p className="text-xs text-slate-500">Account is part of the budget key and cannot be changed.</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-slate-300" htmlFor="budgetCategoryId">
@@ -470,6 +546,8 @@ export function BudgetsTab({
                     .filter((category) => category.type === TransactionType.EXPENSE && !category.isArchived)
                     .map((category) => ({ label: category.name, value: category.id }))}
                   required
+                  disabled={isEditingBudget}
+                  title={isEditingBudget ? 'Category cannot be changed when editing a budget' : undefined}
                   onBlur={(e) => validation.validateField('categoryId', e.target.value)}
                   onChange={() => validation.getFieldProps('categoryId').onChange()}
                   error={validation.fields.categoryId?.touched && !!validation.fields.categoryId?.error}
@@ -480,10 +558,14 @@ export function BudgetsTab({
                       : undefined
                   }
                 />
-                {(formErrors?.categoryId || validation.fields.categoryId?.error) && (
-                  <p id="budget-categoryId-error" className="text-xs text-rose-300" role="alert">
-                    {formErrors?.categoryId?.[0] || validation.fields.categoryId?.error}
-                  </p>
+                {isEditingBudget ? (
+                  <p className="text-xs text-slate-500">Category is part of the budget key and cannot be changed.</p>
+                ) : (
+                  (formErrors?.categoryId || validation.fields.categoryId?.error) && (
+                    <p id="budget-categoryId-error" className="text-xs text-rose-300" role="alert">
+                      {formErrors?.categoryId?.[0] || validation.fields.categoryId?.error}
+                    </p>
+                  )
                 )}
               </div>
               <div className="space-y-2">
@@ -530,7 +612,7 @@ export function BudgetsTab({
               </div>
             </div>
             <Button type="submit" loading={isPendingBudget} className="w-full">
-              Save budget
+              {isEditingBudget ? 'Update budget' : 'Save budget'}
             </Button>
           </form>
         </CardContent>
