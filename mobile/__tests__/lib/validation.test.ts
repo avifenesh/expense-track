@@ -9,6 +9,12 @@ import {
   validateTransactionDescription,
   validateTransactionCategory,
   validateTransactionDate,
+  validateShareDescription,
+  validateShareAmount,
+  validateSharePercentage,
+  validateParticipantsList,
+  validateTotalPercentage,
+  validateTotalFixedAmount,
 } from '../../src/lib/validation';
 
 describe('validateEmail', () => {
@@ -286,5 +292,183 @@ describe('validateTransactionDate', () => {
     const nineYearsAgo = new Date();
     nineYearsAgo.setFullYear(nineYearsAgo.getFullYear() - 9);
     expect(validateTransactionDate(nineYearsAgo)).toBeNull();
+  });
+});
+
+// Share expense validation tests
+
+describe('validateShareDescription', () => {
+  it('allows empty description', () => {
+    expect(validateShareDescription('')).toBeNull();
+    expect(validateShareDescription(null)).toBeNull();
+    expect(validateShareDescription(undefined)).toBeNull();
+  });
+
+  it('allows valid description', () => {
+    expect(validateShareDescription('Split dinner at restaurant')).toBeNull();
+  });
+
+  it('rejects description over 240 characters', () => {
+    const longDescription = 'a'.repeat(241);
+    expect(validateShareDescription(longDescription)).toContain('too long');
+  });
+
+  it('allows description at exactly 240 characters', () => {
+    const maxDescription = 'a'.repeat(240);
+    expect(validateShareDescription(maxDescription)).toBeNull();
+  });
+
+  it('rejects script tags (XSS prevention)', () => {
+    expect(validateShareDescription('<script>alert("xss")</script>')).toContain(
+      'invalid characters'
+    );
+  });
+
+  it('rejects javascript: URLs (XSS prevention)', () => {
+    expect(validateShareDescription('javascript:alert(1)')).toContain('invalid characters');
+  });
+
+  it('rejects event handlers (XSS prevention)', () => {
+    expect(validateShareDescription('onclick=alert(1)')).toContain('invalid characters');
+    expect(validateShareDescription('onmouseover=bad')).toContain('invalid characters');
+  });
+
+  it('allows normal special characters', () => {
+    expect(validateShareDescription("Dinner @ Joe's - 50/50 split!")).toBeNull();
+  });
+});
+
+describe('validateShareAmount', () => {
+  it('allows valid positive amount', () => {
+    expect(validateShareAmount(50, 100)).toBeNull();
+  });
+
+  it('allows zero amount', () => {
+    expect(validateShareAmount(0, 100)).toBeNull();
+  });
+
+  it('allows amount equal to total', () => {
+    expect(validateShareAmount(100, 100)).toBeNull();
+  });
+
+  it('rejects negative amount', () => {
+    expect(validateShareAmount(-10, 100)).toContain('negative');
+  });
+
+  it('rejects amount exceeding total', () => {
+    expect(validateShareAmount(150, 100)).toContain('exceed');
+  });
+});
+
+describe('validateSharePercentage', () => {
+  it('allows valid percentage', () => {
+    expect(validateSharePercentage(50)).toBeNull();
+  });
+
+  it('allows 0%', () => {
+    expect(validateSharePercentage(0)).toBeNull();
+  });
+
+  it('allows 100%', () => {
+    expect(validateSharePercentage(100)).toBeNull();
+  });
+
+  it('rejects negative percentage', () => {
+    expect(validateSharePercentage(-10)).toContain('negative');
+  });
+
+  it('rejects percentage over 100', () => {
+    expect(validateSharePercentage(150)).toContain('exceed 100%');
+  });
+
+  it('allows decimal percentages', () => {
+    expect(validateSharePercentage(33.33)).toBeNull();
+  });
+});
+
+describe('validateParticipantsList', () => {
+  it('allows valid participants list', () => {
+    expect(
+      validateParticipantsList([
+        { email: 'user1@example.com' },
+        { email: 'user2@example.com' },
+      ])
+    ).toBeNull();
+  });
+
+  it('rejects empty list', () => {
+    expect(validateParticipantsList([])).toContain('At least one participant');
+  });
+
+  it('rejects duplicate emails', () => {
+    expect(
+      validateParticipantsList([
+        { email: 'user@example.com' },
+        { email: 'user@example.com' },
+      ])
+    ).toContain('Duplicate');
+  });
+
+  it('rejects duplicate emails case-insensitively', () => {
+    expect(
+      validateParticipantsList([
+        { email: 'User@Example.com' },
+        { email: 'user@example.com' },
+      ])
+    ).toContain('Duplicate');
+  });
+
+  it('rejects invalid email format', () => {
+    expect(validateParticipantsList([{ email: 'not-an-email' }])).toContain(
+      'Invalid email'
+    );
+  });
+
+  it('allows single participant', () => {
+    expect(validateParticipantsList([{ email: 'user@example.com' }])).toBeNull();
+  });
+});
+
+describe('validateTotalPercentage', () => {
+  it('allows percentages that sum to 100', () => {
+    expect(validateTotalPercentage([30, 40, 30])).toBeNull();
+  });
+
+  it('allows percentages that sum to less than 100', () => {
+    expect(validateTotalPercentage([30, 40])).toBeNull();
+  });
+
+  it('rejects percentages that sum to more than 100', () => {
+    expect(validateTotalPercentage([60, 50])).toContain('exceed 100%');
+  });
+
+  it('allows empty array', () => {
+    expect(validateTotalPercentage([])).toBeNull();
+  });
+
+  it('handles decimal percentages', () => {
+    expect(validateTotalPercentage([33.34, 33.33, 33.33])).toBeNull();
+  });
+});
+
+describe('validateTotalFixedAmount', () => {
+  it('allows amounts that sum to total', () => {
+    expect(validateTotalFixedAmount([30, 70], 100)).toBeNull();
+  });
+
+  it('allows amounts that sum to less than total', () => {
+    expect(validateTotalFixedAmount([30, 40], 100)).toBeNull();
+  });
+
+  it('rejects amounts that sum to more than total', () => {
+    expect(validateTotalFixedAmount([60, 50], 100)).toContain('exceed');
+  });
+
+  it('allows empty array', () => {
+    expect(validateTotalFixedAmount([], 100)).toBeNull();
+  });
+
+  it('allows zero total for zero expense', () => {
+    expect(validateTotalFixedAmount([0, 0], 0)).toBeNull();
   });
 });
