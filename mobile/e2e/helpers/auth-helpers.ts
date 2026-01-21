@@ -164,8 +164,42 @@ export async function ensureLoggedOut(): Promise<void> {
 }
 
 /**
+ * Wait for app to load and be ready for interaction
+ * Handles app startup synchronization issues
+ */
+export async function waitForAppReady(): Promise<void> {
+  const { device, waitFor, element, by } = await import('detox');
+  await device.disableSynchronization();
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await waitFor(element(by.id('login.screen')))
+    .toBeVisible()
+    .withTimeout(30000);
+  await device.enableSynchronization();
+}
+
+/**
+ * Standard test setup: wait for app, login, handle onboarding
+ * Use this at the start of tests that need a logged-in user
+ */
+export async function setupLoggedInUser(): Promise<void> {
+  const { waitFor, element, by } = await import('detox');
+
+  await waitForAppReady();
+  await loginAsPrimaryUser();
+
+  // Handle onboarding if needed
+  try {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  } catch {
+    await completeOnboarding();
+  }
+}
+
+/**
  * Complete onboarding wizard with default selections
- * Note: Requires onboarding screens to have testIDs (to be added in future PR)
+ * TestIDs added in PR #265
  */
 export async function completeOnboarding(): Promise<void> {
   // Welcome screen
@@ -174,46 +208,53 @@ export async function completeOnboarding(): Promise<void> {
     .withTimeout(5000);
   await element(by.id('onboarding.welcome.getStartedButton')).tap();
 
-  // Currency selection
+  // Currency selection - select USD
   await waitFor(element(by.id('onboarding.currency.screen')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.currency.USD')).tap();
+  await element(by.id('onboarding.currency.option.USD')).tap();
   await element(by.id('onboarding.currency.continueButton')).tap();
 
-  // Categories selection
+  // Categories selection - keep defaults
   await waitFor(element(by.id('onboarding.categories.screen')))
     .toBeVisible()
     .withTimeout(5000);
   await element(by.id('onboarding.categories.continueButton')).tap();
 
-  // Budget setup
+  // Budget setup - skip
   await waitFor(element(by.id('onboarding.budget.screen')))
     .toBeVisible()
     .withTimeout(5000);
   await element(by.id('onboarding.budget.skipButton')).tap();
 
-  // Sample data
+  // Sample data - select "no" (start fresh)
   await waitFor(element(by.id('onboarding.sampleData.screen')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.sampleData.skipButton')).tap();
+  await element(by.id('onboarding.sampleData.option.no')).tap();
+  await element(by.id('onboarding.sampleData.continueButton')).tap();
 
-  // Biometric setup (if shown)
-  try {
-    await waitFor(element(by.id('onboarding.biometric.screen')))
-      .toBeVisible()
-      .withTimeout(3000);
-    await element(by.id('onboarding.biometric.skipButton')).tap();
-  } catch {
-    // Biometric screen not shown, continue
-  }
-
-  // Complete
+  // Complete screen - tap continue to proceed to biometric
   await waitFor(element(by.id('onboarding.complete.screen')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.complete.startButton')).tap();
+  await element(by.id('onboarding.complete.continueButton')).tap();
+
+  // Biometric screen - skip or continue based on device capability
+  await waitFor(element(by.id('onboarding.biometric.screen')))
+    .toBeVisible()
+    .withTimeout(5000);
+
+  // Try skip button (shown when biometric is available)
+  try {
+    await waitFor(element(by.id('onboarding.biometric.skipButton')))
+      .toBeVisible()
+      .withTimeout(2000);
+    await element(by.id('onboarding.biometric.skipButton')).tap();
+  } catch {
+    // Biometric not available - continue button is shown instead
+    await element(by.id('onboarding.biometric.continueButton')).tap();
+  }
 
   // Wait for dashboard
   await waitFor(element(by.id('dashboard.screen')))

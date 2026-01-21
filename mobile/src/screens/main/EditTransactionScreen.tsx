@@ -344,7 +344,7 @@ export function EditTransactionScreen({
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="editTransaction.screen">
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -355,7 +355,7 @@ export function EditTransactionScreen({
             onPress={handleCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel"
-            testID="cancel-button"
+            testID="editTransaction.cancelButton"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
@@ -598,7 +598,7 @@ export function EditTransactionScreen({
               maxLength={200}
               accessibilityLabel="Description"
               accessibilityHint="Optional description for the transaction"
-              testID="description-input"
+              testID="editTransaction.descriptionInput"
             />
             {errors.description && (
               <Text style={styles.errorText}>{errors.description}</Text>
@@ -653,7 +653,7 @@ export function EditTransactionScreen({
               accessibilityRole="button"
               accessibilityLabel="Delete transaction"
               accessibilityState={{ disabled: isDeleting || isSubmitting }}
-              testID="delete-transaction-button"
+              testID="editTransaction.deleteButton"
             >
               {isDeleting ? (
                 <ActivityIndicator size="small" color="#ef4444" />
@@ -675,7 +675,7 @@ export function EditTransactionScreen({
             accessibilityRole="button"
             accessibilityLabel="Update transaction"
             accessibilityState={{ disabled: isSubmitting || isDeleting }}
-            testID="update-transaction-button"
+            testID="editTransaction.saveButton"
           >
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#0f172a" />

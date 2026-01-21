@@ -7,12 +7,14 @@ interface BudgetProgressCardProps {
   totalPlanned: number;
   totalSpent: number;
   currency: Currency;
+  testID?: string;
 }
 
 export function BudgetProgressCard({
   totalPlanned,
   totalSpent,
   currency,
+  testID,
 }: BudgetProgressCardProps) {
   const progress = totalPlanned > 0 ? Math.min(totalSpent / totalPlanned, 1) : 0;
   const isOverBudget = totalSpent > totalPlanned && totalPlanned > 0;
@@ -20,7 +22,7 @@ export function BudgetProgressCard({
   const remaining = totalPlanned - totalSpent;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID={testID}>
       <Text style={styles.label}>This Month</Text>
       <Text style={styles.spent}>{formatCurrency(totalSpent, currency)}</Text>
       {totalPlanned > 0 ? (

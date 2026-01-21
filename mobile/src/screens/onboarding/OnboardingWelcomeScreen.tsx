@@ -7,15 +7,15 @@ export function OnboardingWelcomeScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingWelcome'>) {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome</Text>
-        <Text style={styles.subtitle}>
+    <SafeAreaView style={styles.container} testID="onboarding.welcome.screen">
+      <View style={styles.content} testID="onboarding.welcome.content">
+        <Text style={styles.title} testID="onboarding.welcome.title">Welcome</Text>
+        <Text style={styles.subtitle} testID="onboarding.welcome.subtitle">
           Let&apos;s set up your expense tracking
         </Text>
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>
+        <View style={styles.infoBox} testID="onboarding.welcome.infoBox">
+          <Text style={styles.infoText} testID="onboarding.welcome.infoText">
             We&apos;ll guide you through a few steps to personalize your
             experience
           </Text>
@@ -24,6 +24,7 @@ export function OnboardingWelcomeScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingCurrency')}
+          testID="onboarding.welcome.getStartedButton"
         >
           <Text style={styles.buttonText}>Get Started</Text>
         </Pressable>

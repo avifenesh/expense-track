@@ -244,6 +244,7 @@ export function AddTransactionScreen({
           accessibilityRole="button"
           accessibilityLabel={`Select ${category.name} category`}
           accessibilityState={{ selected: isSelected }}
+          testID={`addTransaction.category.${category.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
         >
           <View
             style={[styles.categoryDot, { backgroundColor: category.color }]}
@@ -263,22 +264,22 @@ export function AddTransactionScreen({
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="addTransaction.screen">
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.header}>
+        <View style={styles.header} testID="addTransaction.header">
           <Pressable
             style={styles.cancelButton}
             onPress={handleCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel"
-            testID="cancel-button"
+            testID="addTransaction.cancelButton"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
-          <Text style={styles.title}>Add Transaction</Text>
+          <Text style={styles.title} testID="addTransaction.title">Add Transaction</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -286,9 +287,10 @@ export function AddTransactionScreen({
           style={styles.scrollView}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          testID="addTransaction.scrollView"
         >
           {/* Type Selector */}
-          <View style={styles.section}>
+          <View style={styles.section} testID="addTransaction.typeSection">
             <Text style={styles.sectionLabel}>Type</Text>
             <View style={styles.typeRow}>
               <Pressable
@@ -300,6 +302,7 @@ export function AddTransactionScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Expense"
                 accessibilityState={{ selected: type === 'EXPENSE' }}
+                testID="addTransaction.type.expense"
               >
                 <Text
                   style={[
@@ -319,6 +322,7 @@ export function AddTransactionScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Income"
                 accessibilityState={{ selected: type === 'INCOME' }}
+                testID="addTransaction.type.income"
               >
                 <Text
                   style={[
@@ -333,7 +337,7 @@ export function AddTransactionScreen({
           </View>
 
           {/* Amount Input */}
-          <View style={styles.section}>
+          <View style={styles.section} testID="addTransaction.amountSection">
             <Text style={styles.sectionLabel}>Amount</Text>
             <View
               style={[styles.inputContainer, errors.amount && styles.inputError]}
@@ -350,37 +354,37 @@ export function AddTransactionScreen({
                 keyboardType="decimal-pad"
                 accessibilityLabel="Amount"
                 accessibilityHint="Enter the transaction amount"
-                testID="amount-input"
+                testID="addTransaction.amountInput"
               />
             </View>
             {errors.amount && (
-              <Text style={styles.errorText}>{errors.amount}</Text>
+              <Text style={styles.errorText} testID="addTransaction.amountError">{errors.amount}</Text>
             )}
           </View>
 
           {/* Category Selector */}
-          <View style={styles.section}>
+          <View style={styles.section} testID="addTransaction.categorySection">
             <Text style={styles.sectionLabel}>Category</Text>
             {categoriesLoading ? (
-              <View style={styles.loadingContainer}>
+              <View style={styles.loadingContainer} testID="addTransaction.categoryLoading">
                 <ActivityIndicator size="small" color="#38bdf8" />
               </View>
             ) : filteredCategories.length === 0 ? (
-              <Text style={styles.emptyText}>
+              <Text style={styles.emptyText} testID="addTransaction.categoryEmpty">
                 No categories available for this type
               </Text>
             ) : (
-              <View style={styles.categoriesGrid}>
+              <View style={styles.categoriesGrid} testID="addTransaction.categoryGrid">
                 {filteredCategories.map(renderCategoryItem)}
               </View>
             )}
             {errors.categoryId && (
-              <Text style={styles.errorText}>{errors.categoryId}</Text>
+              <Text style={styles.errorText} testID="addTransaction.categoryError">{errors.categoryId}</Text>
             )}
           </View>
 
           {/* Date Selector */}
-          <View style={styles.section}>
+          <View style={styles.section} testID="addTransaction.dateSection">
             <Text style={styles.sectionLabel}>Date</Text>
             <View style={styles.dateRow}>
               <Pressable
@@ -392,6 +396,7 @@ export function AddTransactionScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Today"
                 accessibilityState={{ selected: isToday(date) }}
+                testID="addTransaction.date.today"
               >
                 <Text
                   style={[
@@ -411,6 +416,7 @@ export function AddTransactionScreen({
                 accessibilityRole="button"
                 accessibilityLabel="Yesterday"
                 accessibilityState={{ selected: isYesterday(date) }}
+                testID="addTransaction.date.yesterday"
               >
                 <Text
                   style={[
@@ -429,6 +435,7 @@ export function AddTransactionScreen({
                 onPress={() => setShowDatePicker(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Select custom date"
+                testID="addTransaction.date.other"
               >
                 <Text
                   style={[
@@ -442,7 +449,7 @@ export function AddTransactionScreen({
                 </Text>
               </Pressable>
             </View>
-            {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
+            {errors.date && <Text style={styles.errorText} testID="addTransaction.dateError">{errors.date}</Text>}
           </View>
 
           {/* Date Picker Modal */}
@@ -507,7 +514,7 @@ export function AddTransactionScreen({
           </Modal>
 
           {/* Description Input */}
-          <View style={styles.section}>
+          <View style={styles.section} testID="addTransaction.descriptionSection">
             <Text style={styles.sectionLabel}>Description (Optional)</Text>
             <TextInput
               style={[
@@ -523,10 +530,10 @@ export function AddTransactionScreen({
               maxLength={200}
               accessibilityLabel="Description"
               accessibilityHint="Optional description for the transaction"
-              testID="description-input"
+              testID="addTransaction.descriptionInput"
             />
             {errors.description && (
-              <Text style={styles.errorText}>{errors.description}</Text>
+              <Text style={styles.errorText} testID="addTransaction.descriptionError">{errors.description}</Text>
             )}
             <Text style={styles.charCount}>{description.length}/200</Text>
           </View>
@@ -570,7 +577,7 @@ export function AddTransactionScreen({
         </ScrollView>
 
         {/* Submit Button */}
-        <View style={styles.footer}>
+        <View style={styles.footer} testID="addTransaction.footer">
           <Pressable
             style={[
               styles.submitButton,
@@ -581,10 +588,10 @@ export function AddTransactionScreen({
             accessibilityRole="button"
             accessibilityLabel="Save transaction"
             accessibilityState={{ disabled: isSubmitting }}
-            testID="submit-transaction-button"
+            testID="addTransaction.submitButton"
           >
             {isSubmitting ? (
-              <ActivityIndicator size="small" color="#0f172a" />
+              <ActivityIndicator size="small" color="#0f172a" testID="addTransaction.submitLoading" />
             ) : (
               <Text style={styles.submitButtonText}>Save Transaction</Text>
             )}

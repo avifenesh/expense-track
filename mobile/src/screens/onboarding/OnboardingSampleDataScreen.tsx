@@ -10,18 +10,19 @@ export function OnboardingSampleDataScreen({
   const { wantsSampleData, setSampleData } = useOnboardingStore();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.stepIndicator}>Step 4 of 5</Text>
-        <Text style={styles.title}>Sample Data</Text>
-        <Text style={styles.subtitle}>
+    <SafeAreaView style={styles.container} testID="onboarding.sampleData.screen">
+      <View style={styles.content} testID="onboarding.sampleData.content">
+        <Text style={styles.stepIndicator} testID="onboarding.sampleData.stepIndicator">Step 4 of 5</Text>
+        <Text style={styles.title} testID="onboarding.sampleData.title">Sample Data</Text>
+        <Text style={styles.subtitle} testID="onboarding.sampleData.subtitle">
           Want to explore with sample transactions?
         </Text>
 
-        <View style={styles.optionsContainer}>
+        <View style={styles.optionsContainer} testID="onboarding.sampleData.options">
           <Pressable
             style={[styles.option, wantsSampleData && styles.optionSelected]}
             onPress={() => setSampleData(true)}
+            testID="onboarding.sampleData.option.yes"
           >
             <Text style={styles.optionTitle}>Yes, add samples</Text>
             <Text style={styles.optionDescription}>
@@ -31,6 +32,7 @@ export function OnboardingSampleDataScreen({
           <Pressable
             style={[styles.option, !wantsSampleData && styles.optionSelected]}
             onPress={() => setSampleData(false)}
+            testID="onboarding.sampleData.option.no"
           >
             <Text style={styles.optionTitle}>No, start fresh</Text>
             <Text style={styles.optionDescription}>
@@ -42,6 +44,7 @@ export function OnboardingSampleDataScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingComplete')}
+          testID="onboarding.sampleData.continueButton"
         >
           <Text style={styles.buttonText}>Continue</Text>
         </Pressable>

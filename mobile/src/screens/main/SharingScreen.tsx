@@ -321,10 +321,11 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="sharing.screen">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        testID="sharing.scrollView"
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -347,9 +348,11 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           </Pressable>
         </View>
 
-        <BalanceSummary balances={settlementBalances} />
+        <View testID="sharing.balanceSummary">
+          <BalanceSummary balances={settlementBalances} />
+        </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} testID="sharing.sharedWithMe">
           <Text style={styles.sectionTitle}>Shared With You</Text>
           {isLoading && pendingSharedWithMe.length === 0 ? (
             <View style={styles.loadingContainer}>
@@ -360,6 +363,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
               title="No pending expenses"
               message="When someone shares an expense with you, it will appear here."
               style={styles.emptyState}
+              testID="sharing.emptyState.sharedWithMe"
             />
           ) : (
             <View>
@@ -370,7 +374,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           )}
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} testID="sharing.sharedByMe">
           <Text style={styles.sectionTitle}>You Shared</Text>
           {isLoading && sortedSharedByMe.length === 0 ? (
             <View style={styles.loadingContainer}>
@@ -381,6 +385,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
               title="No shared expenses"
               message="Share an expense to split costs with friends."
               style={styles.emptyState}
+              testID="sharing.emptyState.sharedByMe"
             />
           ) : (
             <View>

@@ -6,11 +6,12 @@ interface EmptyStateProps {
   title: string;
   message: string;
   style?: ViewStyle;
+  testID?: string;
 }
 
-export function EmptyState({ icon, title, message, style }: EmptyStateProps) {
+export function EmptyState({ icon, title, message, style, testID }: EmptyStateProps) {
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, style]} testID={testID}>
       {icon && <Text style={styles.icon}>{icon}</Text>}
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
