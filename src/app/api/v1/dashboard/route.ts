@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       monthKey,
       accountId,
       userId: user.userId,
-      preferredCurrency: accountCheck.resource.preferredCurrency,
+      preferredCurrency: accountCheck.resource.preferredCurrency ?? undefined,
     })
 
     const netStat = dashboardData.stats.find((s) => s.breakdown?.type === 'net-this-month')
