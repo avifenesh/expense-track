@@ -28,10 +28,10 @@ export async function simulateOnline(): Promise<void> {
 }
 
 /**
- * Simulate slow network conditions by blocking specific endpoints.
+ * Block specific API endpoints to simulate network failures for those endpoints.
  * @param endpoints - Optional array of endpoint patterns to block. Defaults to transactions and budgets.
  */
-export async function simulateSlowNetwork(
+export async function blockEndpoints(
   endpoints: string[] = [API_ENDPOINTS.transactions, API_ENDPOINTS.budgets]
 ): Promise<void> {
   await device.setURLBlacklist(endpoints);
@@ -55,7 +55,7 @@ export async function withOfflineMode<T>(fn: () => Promise<T>): Promise<T> {
 export const NetworkHelpers = {
   goOffline: simulateOffline,
   goOnline: simulateOnline,
-  slowNetwork: simulateSlowNetwork,
+  blockEndpoints,
   withOfflineMode,
   API_ENDPOINTS,
 };

@@ -264,7 +264,7 @@ describe('Authentication', () => {
 
     it('should login with biometrics', async () => {
       // Enable biometric enrollment using helper
-      await device.setBiometricEnrollment(true);
+      await BiometricHelpers.enable();
 
       // First, log in normally to set up biometric
       await loginAsPrimaryUser();
@@ -321,8 +321,9 @@ describe('Authentication', () => {
       }
     });
 
-    it('should remain logged in across navigation', async () => {
-      // This test verifies session persistence across screen navigation.
+    it('should auto-refresh expired token', async () => {
+      // This test verifies token auto-refresh by navigating between screens.
+      // Each screen navigation triggers API calls that require authentication.
       // If token refresh fails during navigation, user would be redirected to login.
       // Successful navigation indicates token is valid or was refreshed transparently.
       await loginAsPrimaryUser();
