@@ -5,7 +5,7 @@ import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey, getMonthKey } from '@/utils/date'
-import { getApiTestUser, getOtherTestUser, TEST_USER_ID, OTHER_USER_ID } from './helpers'
+import { getApiTestUser, getOtherTestUser, TEST_USER_ID } from './helpers'
 import { Currency, TransactionType } from '@prisma/client'
 
 // Mock rate limiting to avoid test interference
