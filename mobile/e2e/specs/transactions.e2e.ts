@@ -11,6 +11,9 @@ import {
   filterByType,
 } from '../helpers';
 
+/** Test constants */
+const TEST_SEARCH_TERM = 'Search Test';
+
 /**
  * Transaction Test Suite (P0)
  *
@@ -191,7 +194,7 @@ describe('Transactions', () => {
 
         // Search for the transaction
         await element(by.id('transactions.searchInput')).tap();
-        await element(by.id('transactions.searchInput')).typeText('Search Test');
+        await element(by.id('transactions.searchInput')).typeText(TEST_SEARCH_TERM);
         await element(by.id('transactions.searchInput')).tapReturnKey();
 
         // Verify search results

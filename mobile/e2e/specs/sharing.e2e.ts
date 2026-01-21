@@ -1,6 +1,11 @@
 import { element, by, expect, waitFor, device } from 'detox';
 import { setupLoggedInUser } from '../helpers';
 
+/** Test constants */
+const TEST_EXPENSE_DESCRIPTION = 'Test Dinner';
+const TEST_EXPENSE_AMOUNT = '50';
+const TEST_PARTICIPANT_EMAIL = 'friend@example.com';
+
 /**
  * Sharing Test Suite (P0)
  *
@@ -98,7 +103,7 @@ describe('Sharing', () => {
             .toBeVisible()
             .withTimeout(3000);
           await element(by.id('shareExpense.descriptionInput')).tap();
-          await element(by.id('shareExpense.descriptionInput')).typeText('Test Dinner');
+          await element(by.id('shareExpense.descriptionInput')).typeText(TEST_EXPENSE_DESCRIPTION);
           await element(by.id('shareExpense.descriptionInput')).tapReturnKey();
         } catch {
           // Description might be optional
@@ -109,7 +114,7 @@ describe('Sharing', () => {
           .toBeVisible()
           .withTimeout(3000);
         await element(by.id('shareExpense.amountInput')).tap();
-        await element(by.id('shareExpense.amountInput')).typeText('50');
+        await element(by.id('shareExpense.amountInput')).typeText(TEST_EXPENSE_AMOUNT);
         await element(by.id('shareExpense.amountInput')).tapReturnKey();
 
         // Add participant
@@ -118,7 +123,7 @@ describe('Sharing', () => {
             .toBeVisible()
             .withTimeout(3000);
           await element(by.id('shareExpense.participantInput')).tap();
-          await element(by.id('shareExpense.participantInput')).typeText('friend@example.com');
+          await element(by.id('shareExpense.participantInput')).typeText(TEST_PARTICIPANT_EMAIL);
           await element(by.id('shareExpense.participantInput')).tapReturnKey();
 
           try {

@@ -7,6 +7,12 @@ import { device } from 'detox';
  * Uses Detox's network simulation APIs.
  */
 
+/** API endpoints used for network simulation */
+const API_ENDPOINTS = {
+  transactions: '.*api/v1/transactions.*',
+  budgets: '.*api/v1/budgets.*',
+};
+
 /**
  * Simulate device going offline (airplane mode).
  */
@@ -22,12 +28,13 @@ export async function simulateOnline(): Promise<void> {
 }
 
 /**
- * Simulate slow network conditions.
- * Note: This blocks specific API endpoints to simulate partial connectivity.
+ * Simulate slow network conditions by blocking specific endpoints.
+ * @param endpoints - Optional array of endpoint patterns to block. Defaults to transactions and budgets.
  */
-export async function simulateSlowNetwork(): Promise<void> {
-  // Block specific endpoints to simulate partial network issues
-  await device.setURLBlacklist(['.*api/v1/transactions.*', '.*api/v1/budgets.*']);
+export async function simulateSlowNetwork(
+  endpoints: string[] = [API_ENDPOINTS.transactions, API_ENDPOINTS.budgets]
+): Promise<void> {
+  await device.setURLBlacklist(endpoints);
 }
 
 /**

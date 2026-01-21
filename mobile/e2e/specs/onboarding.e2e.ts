@@ -1,5 +1,12 @@
 import { element, by, expect, waitFor, device } from 'detox';
-import { registerUser, completeOnboarding } from '../helpers';
+import {
+  registerUser,
+  completeOnboarding,
+  BiometricHelpers,
+} from '../helpers';
+
+/** Test constants */
+const TEST_BUDGET_AMOUNT = '1500';
 
 /**
  * Onboarding Test Suite (P0)
@@ -164,7 +171,7 @@ describe('Onboarding', () => {
           .toBeVisible()
           .withTimeout(3000);
         await element(by.id('onboarding.budget.amountInput')).tap();
-        await element(by.id('onboarding.budget.amountInput')).typeText('1500');
+        await element(by.id('onboarding.budget.amountInput')).typeText(TEST_BUDGET_AMOUNT);
         await element(by.id('onboarding.budget.amountInput')).tapReturnKey();
 
         // Set budget
@@ -204,11 +211,7 @@ describe('Onboarding', () => {
 
     it('should enable biometric auth during onboarding', async () => {
       // Enable biometric enrollment
-      if (device.getPlatform() === 'ios') {
-        await device.setBiometricEnrollment(true);
-      } else {
-        await device.setBiometricEnrollment(true);
-      }
+      await BiometricHelpers.enable();
 
       await setupNewUserForOnboarding();
 
@@ -243,11 +246,7 @@ describe('Onboarding', () => {
         await element(by.id('onboarding.biometric.enableButton')).tap();
 
         // Simulate successful biometric
-        if (device.getPlatform() === 'ios') {
-          await device.matchFace();
-        } else {
-          await device.matchFinger();
-        }
+        await BiometricHelpers.authenticateSuccess();
 
         // Continue
         await element(by.id('onboarding.biometric.continueButton')).tap();

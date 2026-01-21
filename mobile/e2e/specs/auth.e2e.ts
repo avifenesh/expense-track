@@ -262,12 +262,8 @@ describe('Authentication', () => {
     });
 
     it('should login with biometrics', async () => {
-      // Enable biometric enrollment
-      if (device.getPlatform() === 'ios') {
-        await device.setBiometricEnrollment(true);
-      } else {
-        await device.setBiometricEnrollment(true);
-      }
+      // Enable biometric enrollment using helper
+      await device.setBiometricEnrollment(true);
 
       // First, log in normally to set up biometric
       await loginAsPrimaryUser();
@@ -295,7 +291,7 @@ describe('Authentication', () => {
           .withTimeout(3000);
         await element(by.id('settings.biometricToggle')).tap();
 
-        // Simulate successful biometric
+        // Simulate successful biometric using platform-appropriate method
         if (device.getPlatform() === 'ios') {
           await device.matchFace();
         } else {
@@ -315,6 +311,7 @@ describe('Authentication', () => {
           .withTimeout(3000);
         await element(by.id('login.biometricButton')).tap();
 
+        // Simulate successful biometric
         if (device.getPlatform() === 'ios') {
           await device.matchFace();
         } else {
@@ -331,8 +328,10 @@ describe('Authentication', () => {
       }
     });
 
-    it('should auto-refresh expired token', async () => {
-      // Login and reach dashboard
+    it('should remain logged in across navigation', async () => {
+      // This test verifies session persistence across screen navigation.
+      // If token refresh fails during navigation, user would be redirected to login.
+      // Successful navigation indicates token is valid or was refreshed transparently.
       await loginAsPrimaryUser();
 
       try {
@@ -359,8 +358,7 @@ describe('Authentication', () => {
         .toBeVisible()
         .withTimeout(5000);
 
-      // If token refresh failed, we'd be redirected to login
-      // Being on dashboard means token is valid or was refreshed
+      // Being on dashboard means session is maintained throughout navigation
       await expect(element(by.id('dashboard.screen'))).toBeVisible();
     });
   });

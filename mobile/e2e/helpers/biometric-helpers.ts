@@ -13,11 +13,7 @@ import { device } from 'detox';
  * Android: Enrolls fingerprint
  */
 export async function enableBiometric(): Promise<void> {
-  if (device.getPlatform() === 'ios') {
-    await device.setBiometricEnrollment(true);
-  } else {
-    await device.setBiometricEnrollment(true);
-  }
+  await device.setBiometricEnrollment(true);
 }
 
 /**
@@ -53,7 +49,7 @@ export async function authenticateFailure(): Promise<void> {
  * BiometricHelpers namespace for convenient importing.
  */
 export const BiometricHelpers = {
-  enableForPlatform: enableBiometric,
+  enable: enableBiometric,
   disable: disableBiometric,
   authenticateSuccess,
   authenticateFailure,

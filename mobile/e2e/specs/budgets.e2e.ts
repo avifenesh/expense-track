@@ -1,6 +1,9 @@
 import { element, by, expect, waitFor, device } from 'detox';
 import { setupLoggedInUser } from '../helpers';
 
+/** Test constants */
+const TEST_BUDGET_AMOUNT = '500';
+
 /**
  * Budget Test Suite (P0)
  *
@@ -178,7 +181,7 @@ describe('Budgets', () => {
           .toBeVisible()
           .withTimeout(3000);
         await element(by.id('addBudget.amountInput')).tap();
-        await element(by.id('addBudget.amountInput')).typeText('500');
+        await element(by.id('addBudget.amountInput')).typeText(TEST_BUDGET_AMOUNT);
         await element(by.id('addBudget.amountInput')).tapReturnKey();
 
         // Save budget

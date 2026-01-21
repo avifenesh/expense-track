@@ -1,5 +1,9 @@
 import { element, by, expect, waitFor, device } from 'detox';
-import { setupLoggedInUser } from '../helpers';
+import { setupLoggedInUser, BiometricHelpers } from '../helpers';
+
+/** Test constants */
+const UPDATED_DISPLAY_NAME = 'Updated Name';
+const UI_DELAY_MS = 1000;
 
 /**
  * Settings Test Suite (P0)
@@ -132,7 +136,7 @@ describe('Settings', () => {
         // Clear and enter new display name
         await element(by.id('profile.displayNameInput')).tap();
         await element(by.id('profile.displayNameInput')).clearText();
-        await element(by.id('profile.displayNameInput')).typeText('Updated Name');
+        await element(by.id('profile.displayNameInput')).typeText(UPDATED_DISPLAY_NAME);
         await element(by.id('profile.displayNameInput')).tapReturnKey();
 
         // Save changes
@@ -173,11 +177,7 @@ describe('Settings', () => {
 
     it('should toggle biometric auth', async () => {
       // Enable biometric enrollment
-      if (device.getPlatform() === 'ios') {
-        await device.setBiometricEnrollment(true);
-      } else {
-        await device.setBiometricEnrollment(true);
-      }
+      await BiometricHelpers.enable();
 
       // Find biometric setting
       try {
@@ -192,17 +192,13 @@ describe('Settings', () => {
 
         // Simulate biometric authentication if prompted
         try {
-          if (device.getPlatform() === 'ios') {
-            await device.matchFace();
-          } else {
-            await device.matchFinger();
-          }
+          await BiometricHelpers.authenticateSuccess();
         } catch {
           // No biometric prompt
         }
 
         // Wait for toggle state to update
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, UI_DELAY_MS));
 
         // Toggle biometric off
         await element(by.id('settings.biometricToggle')).tap();

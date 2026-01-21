@@ -1,5 +1,5 @@
 import { element, by, expect, waitFor, device } from 'detox';
-import { setupLoggedInUser } from '../helpers';
+import { setupLoggedInUser, NetworkHelpers } from '../helpers';
 
 /**
  * Error Handling Test Suite (P0)
@@ -174,7 +174,7 @@ describe('Error Handling', () => {
       await loginAndSetup();
 
       // Simulate offline mode
-      await device.setURLBlacklist(['.*']);
+      await NetworkHelpers.goOffline();
 
       // Navigate to trigger network request
       await element(by.id('tab.transactions')).tap();
@@ -191,7 +191,7 @@ describe('Error Handling', () => {
       }
 
       // Restore network
-      await device.setURLBlacklist([]);
+      await NetworkHelpers.goOnline();
 
       // Navigate away and back to trigger refresh
       await element(by.id('tab.dashboard')).tap();
@@ -212,8 +212,8 @@ describe('Error Handling', () => {
         .toBeVisible()
         .withTimeout(5000);
 
-      // Simulate partial network failure
-      await device.setURLBlacklist(['.*api/v1/transactions.*']);
+      // Simulate partial network failure (block transactions API)
+      await NetworkHelpers.slowNetwork(['.*api/v1/transactions.*']);
 
       // Try to refresh or perform action
       try {
@@ -240,7 +240,7 @@ describe('Error Handling', () => {
       }
 
       // Restore network
-      await device.setURLBlacklist([]);
+      await NetworkHelpers.goOnline();
 
       // Verify app recovers
       await element(by.id('tab.dashboard')).tap();
