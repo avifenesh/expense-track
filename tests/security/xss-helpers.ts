@@ -13,7 +13,7 @@
  */
 export function assertNoExecutableScript(html: string, payload: string) {
   // Should NOT contain unescaped script tags
-  const scriptTagPattern = /<script[^>]*>[\s\S]*?<\/script\s*[^>]*?>/i
+  const scriptTagPattern = /<script[^>]*>[\s\S]*?<\/script[^<]*>/i
   if (scriptTagPattern.test(html)) {
     throw new Error(`HTML contains executable script tag. Payload: ${payload}\nHTML snippet: ${html.substring(0, 200)}`)
   }
