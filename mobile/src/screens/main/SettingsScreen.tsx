@@ -112,11 +112,11 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data</Text>
           <View style={styles.menuGroup}>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.exportDataItem">
               <Text style={styles.menuText}>Export Data</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.deleteAccountItem">
               <Text style={[styles.menuText, styles.dangerText]}>Delete Account</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
@@ -126,15 +126,15 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
           <View style={styles.menuGroup}>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.privacyPolicyItem">
               <Text style={styles.menuText}>Privacy Policy</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.termsItem">
               <Text style={styles.menuText}>Terms of Service</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <View style={styles.menuItem}>
+            <View style={styles.menuItem} testID="settings.versionItem">
               <Text style={styles.menuText}>Version</Text>
               <Text style={styles.menuValue}>{APP_VERSION}</Text>
             </View>
@@ -145,7 +145,7 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
           style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
           onPress={handleLogout}
           disabled={isLoggingOut}
-          testID="logout-button"
+          testID="settings.logoutButton"
         >
           {isLoggingOut ? (
             <ActivityIndicator color="#ef4444" />

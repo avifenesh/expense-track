@@ -56,6 +56,144 @@ __tests__/
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories, sharing)
 ```
 
+## E2E Testing
+
+End-to-end tests use Detox to validate complete user workflows on iOS and Android.
+
+### Prerequisites
+
+- **iOS (macOS only)**: Xcode 16.2+ with command-line tools
+- **Android (all platforms)**: Android SDK with API 31 system image
+
+### Quick Start
+
+#### First-Time Setup
+
+```bash
+cd mobile
+npm run e2e:setup
+```
+
+This will:
+- Auto-detect your platform (macOS, Linux, Windows)
+- Install Detox CLI globally
+- Install required platform tools (applesimutils for iOS, Android SDK components)
+- Create iOS simulator (iPhone 15) if needed
+- Create Android AVD (named "test", API 31) if needed
+- Run `expo prebuild` to generate native projects
+- Install npm dependencies
+
+#### Running Tests
+
+**Full workflow (setup + run + teardown)**:
+```bash
+npm run e2e:full:ios       # iOS only
+npm run e2e:full:android   # Android only
+npm run e2e:full:both      # Both platforms
+```
+
+**Run tests only (assumes setup already done)**:
+```bash
+npm run e2e:run:ios        # iOS only
+npm run e2e:run:android    # Android only
+npm run e2e:run:both       # Both platforms
+```
+
+**Advanced options (use scripts directly)**:
+```bash
+# Run specific test file
+./scripts/run-e2e.sh --platform ios --spec e2e/specs/auth.e2e.ts
+
+# Build before testing
+./scripts/run-e2e.sh --platform android --build
+
+# Use release build
+./scripts/run-e2e.sh --platform ios --release --build
+
+# Run without headless mode (show simulator/emulator)
+./scripts/run-e2e.sh --platform android --no-headless
+```
+
+#### Teardown
+
+```bash
+npm run e2e:teardown       # Kill emulators/simulators and clean up
+```
+
+### E2E Test Suites
+
+Tests are organized by feature area:
+
+- **auth.e2e.ts** - Login, registration, password reset flows
+- **onboarding.e2e.ts** - Multi-step onboarding wizard
+- **transactions.e2e.ts** - Transaction list and filtering
+- **budgets.e2e.ts** - Budget display and month navigation
+- **sharing.e2e.ts** - Expense sharing and balance summary
+- **navigation.e2e.ts** - Tab navigation and state persistence
+- **settings.e2e.ts** - Settings menu and logout
+- **errors.e2e.ts** - Error handling and network failures
+- **smoke.e2e.ts** - Critical path smoke tests
+
+### Platform-Specific Notes
+
+**macOS**:
+- Supports both iOS and Android testing
+- iOS requires Xcode (macOS only)
+- Use Homebrew to install applesimutils: `brew install applesimutils`
+
+**Linux**:
+- Android testing only
+- Requires KVM for hardware acceleration: `sudo apt-get install qemu-kvm`
+- Set up permissions: Add user to `kvm` group
+
+**Windows**:
+- Android testing only
+- Use PowerShell scripts directly: `.\scripts\setup-e2e.ps1`
+- Or use Git Bash with `.sh` scripts
+
+### Manual Setup (Alternative)
+
+If automated setup fails, you can set up manually:
+
+**iOS Simulator**:
+```bash
+xcrun simctl create "iPhone 15" "iPhone 15"
+```
+
+**Android AVD**:
+```bash
+sdkmanager "system-images;android-31;google_apis;x86_64"
+avdmanager create avd -n test -k "system-images;android-31;google_apis;x86_64" -d "pixel_5"
+```
+
+### Troubleshooting
+
+**iOS simulator won't boot**:
+- Try: `killall Simulator && xcrun simctl erase all`
+- Restart Xcode
+
+**Android emulator won't boot**:
+- Try: `adb kill-server && adb start-server`
+- Delete and recreate AVD: `avdmanager delete avd -n test`
+
+**Tests failing**:
+- Check artifacts in `mobile/artifacts/` for screenshots and logs
+- Run with `--no-headless` to watch execution
+- Ensure device is booted: `xcrun simctl list` (iOS) or `adb devices` (Android)
+
+### Test Artifacts
+
+Failed tests automatically save:
+- Screenshots (before/after each step)
+- Device logs
+- UI hierarchy dumps
+
+Location: `mobile/artifacts/`
+
+### CI Integration
+
+E2E tests run automatically in GitHub Actions on PRs. See `.github/workflows/e2e-mobile.yml` for CI configuration.
+
 ## Project Structure
 
 ```
