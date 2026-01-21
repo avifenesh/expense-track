@@ -104,9 +104,9 @@ jobs:
 
   e2e-android:
     name: Android E2E Tests
-    # Use macOS-14-large (Intel x64) for hardware-accelerated Android emulation
-    # The standard macos-14 is ARM64 which has HVF issues with GitHub Actions
-    runs-on: macos-14-large
+    # Use macOS-15-large (Intel x64) for hardware-accelerated Android emulation
+    # ARM64 runners (macos-14, macos-15) have HVF issues with GitHub Actions
+    runs-on: macos-15-large
     timeout-minutes: 45
 
     steps:
