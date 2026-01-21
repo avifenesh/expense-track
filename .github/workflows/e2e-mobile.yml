@@ -104,12 +104,24 @@ jobs:
 
   e2e-android:
     name: Android E2E Tests
-    # Use macOS-15-large (Intel x64) for hardware-accelerated Android emulation
-    # ARM64 runners (macos-14, macos-15) have HVF issues with GitHub Actions
-    runs-on: macos-15-large
+    # Ubuntu runners have KVM hardware acceleration available
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android/sdk/ndk
+          sudo rm -rf /opt/ghc
+          df -h
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -159,7 +171,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31-x86_64-macos-${{ hashFiles('mobile/detox.config.*') }}
+          key: avd-31-x86_64-linux-${{ hashFiles('mobile/detox.config.*') }}
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -184,7 +196,7 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
           script: echo "Generated AVD snapshot for caching."
 
@@ -195,13 +207,13 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
           working-directory: mobile
           script: |
             adb wait-for-device
             adb shell input keyevent 82
-            sleep 3
+            sleep 5
             npm run e2e:test:android:release -- --cleanup --headless --record-logs all
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost
