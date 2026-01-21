@@ -5,7 +5,7 @@ import { TRIAL_DURATION_DAYS, SUBSCRIPTION_PRICE_CENTS } from '@/lib/subscriptio
 
 export const metadata: Metadata = {
   title: 'Pricing - Balance Beacon',
-  description: 'Simple, transparent pricing. Start your 14-day free trial and take control of your finances for just $5/month.',
+  description: 'Simple, transparent pricing. Start your 14-day free trial and take control of your finances for just $3/month.',
 }
 
 const features = [

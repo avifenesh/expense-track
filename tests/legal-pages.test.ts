@@ -7,7 +7,7 @@ describe('Legal Pages', () => {
       const { metadata } = await import('@/app/(public)/pricing/page')
       expect(metadata.title).toBe('Pricing - Balance Beacon')
       expect(metadata.description).toContain('14-day free trial')
-      expect(metadata.description).toContain('$5/month')
+      expect(metadata.description).toContain('$3/month')
     })
 
     it('should export default page component', async () => {
@@ -17,7 +17,7 @@ describe('Legal Pages', () => {
 
     it('should use correct subscription constants', () => {
       expect(TRIAL_DURATION_DAYS).toBe(14)
-      expect(SUBSCRIPTION_PRICE_CENTS).toBe(500)
+      expect(SUBSCRIPTION_PRICE_CENTS).toBe(300)
     })
   })
 
