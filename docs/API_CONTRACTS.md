@@ -1125,23 +1125,53 @@ Mark a participant's share as paid (owner only).
 
 ---
 
-### DELETE /api/v1/expenses/shares/[sharedExpenseId] (PLANNED)
+### DELETE /api/v1/expenses/shares/[id]
 
-> ⚠️ **Not yet implemented.** Planned for future release.
+Delete a shared expense (owner only). Cannot delete if any participant has already paid their share.
 
-Cancel a shared expense.
+**Auth:** Bearer token required
 
-**Auth:** Bearer token required (must be owner)
+**Authorization:** Only the expense owner can delete a shared expense. Participants cannot delete expenses shared with them.
+
+**Path Parameters:**
+- `id`: The shared expense ID (CUID format)
+
+**State Requirements:**
+- Cannot delete if any participant has `status: PAID`
+- Can delete if all participants are `PENDING` or `DECLINED`
 
 **Response (200):**
 ```json
 {
   "success": true,
   "data": {
-    "message": "Shared expense cancelled"
+    "deleted": true
   }
 }
 ```
+
+**Errors:**
+- 400: Validation error - Cannot delete when participants have already paid
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - Only the expense owner can delete shared expenses
+- 404: Not found - Shared expense not found
+- 429: Rate limited - Too many requests
+
+**Example Error (400 - Participant already paid):**
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "participants": ["Cannot delete expense when participants have already paid"]
+  }
+}
+```
+
+**Notes:**
+- Performs a soft delete (records are not permanently removed)
+- Both the SharedExpense and all ExpenseParticipant records are soft-deleted atomically
+- Soft-deleted records will not appear in list endpoints
 
 ---
 

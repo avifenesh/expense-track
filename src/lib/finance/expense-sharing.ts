@@ -157,7 +157,7 @@ export async function getSharedExpenses(
   const limit = options?.limit ?? DEFAULT_PAGINATION_LIMIT
 
   const sharedExpenses = await prisma.sharedExpense.findMany({
-    where: { ownerId: userId },
+    where: { ownerId: userId, deletedAt: null },
     include: {
       transaction: {
         include: {
@@ -165,6 +165,7 @@ export async function getSharedExpenses(
         },
       },
       participants: {
+        where: { deletedAt: null },
         include: {
           participant: {
             select: {
@@ -225,11 +226,11 @@ export async function getSharedExpensesPaginated(
   // Build where clause with status filtering using Prisma relation filters
   // "pending" = at least one participant is PENDING (some)
   // "settled" = no participants are PENDING (none)
-  const where: Prisma.SharedExpenseWhereInput = { ownerId: userId }
+  const where: Prisma.SharedExpenseWhereInput = { ownerId: userId, deletedAt: null }
   if (statusFilter === 'pending') {
-    where.participants = { some: { status: PaymentStatus.PENDING } }
+    where.participants = { some: { status: PaymentStatus.PENDING, deletedAt: null } }
   } else if (statusFilter === 'settled') {
-    where.participants = { none: { status: PaymentStatus.PENDING } }
+    where.participants = { none: { status: PaymentStatus.PENDING, deletedAt: null } }
   }
 
   // Use transaction for atomicity of count + fetch
@@ -244,6 +245,7 @@ export async function getSharedExpensesPaginated(
           },
         },
         participants: {
+          where: { deletedAt: null },
           include: {
             participant: {
               select: {
@@ -282,7 +284,7 @@ export async function getExpensesSharedWithMe(
   const limit = options?.limit ?? DEFAULT_PAGINATION_LIMIT
 
   const participations = await prisma.expenseParticipant.findMany({
-    where: { userId },
+    where: { userId, deletedAt: null, sharedExpense: { deletedAt: null } },
     include: {
       sharedExpense: {
         include: {
@@ -337,7 +339,11 @@ export async function getExpensesSharedWithMePaginated(
   const offset = options?.offset ?? 0
   const statusFilter = options?.status ?? 'all'
 
-  const where: Prisma.ExpenseParticipantWhereInput = { userId }
+  const where: Prisma.ExpenseParticipantWhereInput = {
+    userId,
+    deletedAt: null,
+    sharedExpense: { deletedAt: null },
+  }
   if (statusFilter === 'pending') {
     where.status = PaymentStatus.PENDING
   } else if (statusFilter === 'paid') {
@@ -438,8 +444,9 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
   // Get what others owe the user (expenses user shared)
   const sharedByUser = await prisma.expenseParticipant.findMany({
     where: {
-      sharedExpense: { ownerId: userId },
+      sharedExpense: { ownerId: userId, deletedAt: null },
       status: PaymentStatus.PENDING,
+      deletedAt: null,
     },
     include: {
       participant: {
@@ -462,6 +469,8 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
     where: {
       userId,
       status: PaymentStatus.PENDING,
+      deletedAt: null,
+      sharedExpense: { deletedAt: null },
     },
     include: {
       sharedExpense: {
@@ -529,6 +538,8 @@ export async function getPaymentHistory(userId: string, limit = 10): Promise<Pay
     where: {
       status: PaymentStatus.PAID,
       paidAt: { not: null },
+      deletedAt: null,
+      sharedExpense: { deletedAt: null },
       OR: [{ sharedExpense: { ownerId: userId } }, { userId }],
     },
     include: {
