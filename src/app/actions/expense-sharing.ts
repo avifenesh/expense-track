@@ -247,9 +247,6 @@ export async function settleAllWithUserAction(input: SettleAllWithUserInput) {
   const { authUser } = subscriptionCheck
 
   try {
-    // Find all PENDING participants where:
-    // 1. Current user owns the expense AND participant is targetUser (they owe us)
-    // 2. Current user is the participant AND expense owner is targetUser (we owe them)
     const participantsTheyOweUs = await prisma.expenseParticipant.findMany({
       where: {
         sharedExpense: {
@@ -283,7 +280,6 @@ export async function settleAllWithUserAction(input: SettleAllWithUserInput) {
       return generalError('No pending expenses found with this user')
     }
 
-    // Bulk update all participants to PAID
     const updateResult = await prisma.expenseParticipant.updateMany({
       where: {
         id: { in: allParticipantIds },

@@ -524,12 +524,7 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
   return Array.from(balanceMap.values()).sort((a, b) => Math.abs(b.netBalance) - Math.abs(a.netBalance))
 }
 
-/**
- * Get payment history for a user - both payments made and received.
- * Returns the most recent settlements ordered by date.
- */
 export async function getPaymentHistory(userId: string, limit = 10): Promise<PaymentHistoryItem[]> {
-  // Payments received (user owns the expense, participant paid)
   const paymentsReceived = await prisma.expenseParticipant.findMany({
     where: {
       sharedExpense: { ownerId: userId },
@@ -554,7 +549,6 @@ export async function getPaymentHistory(userId: string, limit = 10): Promise<Pay
     take: limit,
   })
 
-  // Payments made (user is participant, they paid the owner)
   const paymentsMade = await prisma.expenseParticipant.findMany({
     where: {
       userId,
@@ -599,6 +593,5 @@ export async function getPaymentHistory(userId: string, limit = 10): Promise<Pay
     })),
   ]
 
-  // Sort by date descending and limit
   return historyItems.sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime()).slice(0, limit)
 }

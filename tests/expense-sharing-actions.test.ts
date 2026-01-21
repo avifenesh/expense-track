@@ -847,10 +847,9 @@ describe('settleAllWithUserAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
 
-    // Mock finding participants they owe us and we owe them
     vi.mocked(prisma.expenseParticipant.findMany)
-      .mockResolvedValueOnce([{ id: 'part-1' }, { id: 'part-2' }] as any) // They owe us
-      .mockResolvedValueOnce([{ id: 'part-3' }] as any) // We owe them
+      .mockResolvedValueOnce([{ id: 'part-1' }, { id: 'part-2' }] as any)
+      .mockResolvedValueOnce([{ id: 'part-3' }] as any)
 
     vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 3 })
 
@@ -881,7 +880,6 @@ describe('settleAllWithUserAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
 
-    // First call for expenses they owe us (should filter by currency)
     vi.mocked(prisma.expenseParticipant.findMany)
       .mockResolvedValueOnce([{ id: 'part-usd' }] as any)
       .mockResolvedValueOnce([] as any)
@@ -894,7 +892,6 @@ describe('settleAllWithUserAction', () => {
       csrfToken: 'test-token',
     })
 
-    // Verify the query filters by currency
     expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
