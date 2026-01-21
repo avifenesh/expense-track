@@ -6,6 +6,7 @@ import {
   logout,
   registerUser,
   completeOnboarding,
+  BiometricHelpers,
 } from '../helpers';
 
 /**
@@ -291,12 +292,8 @@ describe('Authentication', () => {
           .withTimeout(3000);
         await element(by.id('settings.biometricToggle')).tap();
 
-        // Simulate successful biometric using platform-appropriate method
-        if (device.getPlatform() === 'ios') {
-          await device.matchFace();
-        } else {
-          await device.matchFinger();
-        }
+        // Simulate successful biometric
+        await BiometricHelpers.authenticateSuccess();
       } catch {
         // Biometric setting not available
       }
@@ -312,11 +309,7 @@ describe('Authentication', () => {
         await element(by.id('login.biometricButton')).tap();
 
         // Simulate successful biometric
-        if (device.getPlatform() === 'ios') {
-          await device.matchFace();
-        } else {
-          await device.matchFinger();
-        }
+        await BiometricHelpers.authenticateSuccess();
 
         // Should be logged in
         await waitFor(element(by.id('dashboard.screen')))
