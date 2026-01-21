@@ -147,7 +147,7 @@ jobs:
         run: npm run e2e:build:ios:release
         env:
           # EXPO_PUBLIC_* vars must be set at build time
-          EXPO_PUBLIC_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Boot iOS Simulator
         run: |
@@ -159,7 +159,7 @@ jobs:
         run: npm run e2e:test:ios:release -- --cleanup --headless
         env:
           E2E_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
-          EXPO_PUBLIC_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload iOS test artifacts
         if: failure()
@@ -312,7 +312,7 @@ jobs:
         run: npm run e2e:build:android:release
         env:
           # EXPO_PUBLIC_* vars must be set at build time
-          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Clean ADB server
         run: |
@@ -350,7 +350,7 @@ jobs:
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost
           E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
-          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload Android test artifacts
         if: failure()
