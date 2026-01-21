@@ -65,14 +65,25 @@ describe('Error Handling', () => {
       await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
+      // Complete onboarding if shown (wait for either dashboard or onboarding)
       try {
-        await waitFor(element(by.id('onboarding.welcome.screen')))
+        await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
-          .withTimeout(3000);
-        await completeOnboarding();
+          .withTimeout(2000);
+        // Already on dashboard, skip onboarding
       } catch {
-        // Already past onboarding
+        // Not on dashboard, try onboarding
+        try {
+          await waitFor(element(by.id('onboarding.welcome.screen')))
+            .toBeVisible()
+            .withTimeout(2000);
+          await completeOnboarding();
+        } catch {
+          // Neither dashboard nor onboarding visible, wait longer
+          await waitFor(element(by.id('dashboard.screen')))
+            .toBeVisible()
+            .withTimeout(5000);
+        }
       }
 
       // Navigate to transactions (should fail to fetch)
@@ -105,14 +116,25 @@ describe('Error Handling', () => {
       await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
+      // Complete onboarding if shown (wait for either dashboard or onboarding)
       try {
-        await waitFor(element(by.id('onboarding.welcome.screen')))
+        await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
-          .withTimeout(3000);
-        await completeOnboarding();
+          .withTimeout(2000);
+        // Already on dashboard, skip onboarding
       } catch {
-        // Already past onboarding
+        // Not on dashboard, try onboarding
+        try {
+          await waitFor(element(by.id('onboarding.welcome.screen')))
+            .toBeVisible()
+            .withTimeout(2000);
+          await completeOnboarding();
+        } catch {
+          // Neither dashboard nor onboarding visible, wait longer
+          await waitFor(element(by.id('dashboard.screen')))
+            .toBeVisible()
+            .withTimeout(5000);
+        }
       }
 
       // Navigate to transactions (should fail)
@@ -148,14 +170,25 @@ describe('Error Handling', () => {
       await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
+      // Complete onboarding if shown (wait for either dashboard or onboarding)
       try {
-        await waitFor(element(by.id('onboarding.welcome.screen')))
+        await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
-          .withTimeout(3000);
-        await completeOnboarding();
+          .withTimeout(2000);
+        // Already on dashboard, skip onboarding
       } catch {
-        // Already past onboarding
+        // Not on dashboard, try onboarding
+        try {
+          await waitFor(element(by.id('onboarding.welcome.screen')))
+            .toBeVisible()
+            .withTimeout(2000);
+          await completeOnboarding();
+        } catch {
+          // Neither dashboard nor onboarding visible, wait longer
+          await waitFor(element(by.id('dashboard.screen')))
+            .toBeVisible()
+            .withTimeout(5000);
+        }
       }
 
       // Navigate to transactions
@@ -182,14 +215,25 @@ describe('Error Handling', () => {
       // Navigate to dashboard first while online
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
+      // Complete onboarding if shown (wait for either dashboard or onboarding)
       try {
-        await waitFor(element(by.id('onboarding.welcome.screen')))
+        await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
-          .withTimeout(3000);
-        await completeOnboarding();
+          .withTimeout(2000);
+        // Already on dashboard, skip onboarding
       } catch {
-        // Already past onboarding
+        // Not on dashboard, try onboarding
+        try {
+          await waitFor(element(by.id('onboarding.welcome.screen')))
+            .toBeVisible()
+            .withTimeout(2000);
+          await completeOnboarding();
+        } catch {
+          // Neither dashboard nor onboarding visible, wait longer
+          await waitFor(element(by.id('dashboard.screen')))
+            .toBeVisible()
+            .withTimeout(5000);
+        }
       }
 
       // Go offline
@@ -239,14 +283,25 @@ describe('Error Handling', () => {
       await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
+      // Complete onboarding if shown (wait for either dashboard or onboarding)
       try {
-        await waitFor(element(by.id('onboarding.welcome.screen')))
+        await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
-          .withTimeout(3000);
-        await completeOnboarding();
+          .withTimeout(2000);
+        // Already on dashboard, skip onboarding
       } catch {
-        // Already past onboarding
+        // Not on dashboard, try onboarding
+        try {
+          await waitFor(element(by.id('onboarding.welcome.screen')))
+            .toBeVisible()
+            .withTimeout(2000);
+          await completeOnboarding();
+        } catch {
+          // Neither dashboard nor onboarding visible, wait longer
+          await waitFor(element(by.id('dashboard.screen')))
+            .toBeVisible()
+            .withTimeout(5000);
+        }
       }
 
       // Should successfully reach dashboard
