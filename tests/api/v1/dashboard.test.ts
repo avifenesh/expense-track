@@ -6,7 +6,7 @@ import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getMonthStartFromKey, getMonthKey } from '@/utils/date'
 import { getApiTestUser, getOtherTestUser, TEST_USER_ID, OTHER_USER_ID } from './helpers'
-import { Currency, TransactionType, PaymentStatus } from '@prisma/client'
+import { Currency, TransactionType } from '@prisma/client'
 
 // Mock rate limiting to avoid test interference
 vi.mock('@/lib/rate-limit', () => ({
@@ -94,9 +94,14 @@ describe('Dashboard API Routes', () => {
   })
 
   afterEach(async () => {
-    // Clean up test data
+    // Clean up test data (including bulk transactions from limit test)
     await prisma.transaction.deleteMany({
-      where: { description: 'Test transaction' },
+      where: {
+        OR: [
+          { description: 'Test transaction' },
+          { description: { startsWith: 'Bulk test transaction' } },
+        ],
+      },
     })
     await prisma.budget.deleteMany({
       where: { accountId },
@@ -303,10 +308,7 @@ describe('Dashboard API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.data.recentTransactions.length).toBeLessThanOrEqual(5)
-
-      await prisma.transaction.deleteMany({
-        where: { description: { startsWith: 'Bulk test transaction' } },
-      })
+      // Cleanup handled by afterEach
     })
 
     it('returns pendingSharedExpenses count', async () => {

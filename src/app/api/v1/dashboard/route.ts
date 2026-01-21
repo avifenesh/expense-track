@@ -11,7 +11,7 @@ import {
   validationError,
 } from '@/lib/api-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
-import { getMonthKey, formatDateForApi } from '@/utils/date'
+import { getMonthKey, getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { serverLogger } from '@/lib/server-logger'
 import { getBudgetProgress } from '@/lib/dashboard-ux'
 
@@ -54,10 +54,12 @@ export async function GET(request: NextRequest) {
 
   let monthKey: string
   if (monthParam !== null && monthParam !== '') {
-    if (!/^\d{4}-\d{2}$/.test(monthParam)) {
+    try {
+      getMonthStartFromKey(monthParam)
+      monthKey = monthParam
+    } catch {
       return validationError({ month: ['month must be in YYYY-MM format'] })
     }
-    monthKey = monthParam
   } else {
     monthKey = getMonthKey(new Date())
   }
@@ -109,16 +111,19 @@ export async function GET(request: NextRequest) {
       percentUsed: Math.round(getBudgetProgress(budget) * 100),
     }))
 
-    const recentTransactions = dashboardData.transactions.slice(0, 5).map((t) => ({
-      id: t.id,
-      amount: t.convertedAmount.toFixed(2),
-      description: t.description,
-      date: formatDateForApi(t.date),
-      category: {
-        name: t.category.name,
-        color: t.category.color,
-      },
-    }))
+    const recentTransactions = dashboardData.transactions
+      .filter((t) => t.category != null)
+      .slice(0, 5)
+      .map((t) => ({
+        id: t.id,
+        amount: t.convertedAmount.toFixed(2),
+        description: t.description,
+        date: formatDateForApi(t.date),
+        category: {
+          name: t.category.name,
+          color: t.category.color,
+        },
+      }))
 
     const pendingSharedExpenses = (dashboardData.expensesSharedWithMe || []).filter(
       (p) => p.status === 'PENDING'
