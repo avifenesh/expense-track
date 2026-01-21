@@ -2,38 +2,22 @@ import { element, by, expect, waitFor, device } from 'detox';
 import { loginAsPrimaryUser, completeOnboarding } from '../helpers';
 import { simulateOffline, simulateOnline, NetworkHelpers } from '../helpers/network-helpers';
 
-/**
- * Error Handling Test Suite
- *
- * Tests for error states, network failures, and recovery mechanisms.
- * Uses network simulation to trigger error conditions.
- *
- * Note: These tests validate error UI and retry logic without actual backend failures.
- */
 
-/**
- * Navigate to transactions screen after login (for testing error states)
- */
 async function navigateToTransactions(): Promise<void> {
   await loginAsPrimaryUser();
 
-  // Complete onboarding if shown
   try {
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
       .withTimeout(3000);
     await completeOnboarding();
-  } catch {
-    // Already past onboarding
-  }
+  } catch {}
 
-  // Navigate to transactions tab
   await waitFor(element(by.id('tab.transactions')))
     .toBeVisible()
     .withTimeout(5000);
   await element(by.id('tab.transactions')).tap();
 
-  // Wait for transactions screen
   await waitFor(element(by.id('transactions.screen')))
     .toBeVisible()
     .withTimeout(5000);
@@ -61,25 +45,20 @@ describe('Error Handling', () => {
       // Simulate network failure
       await simulateOffline();
 
-      // Reload the screen to trigger network request
-      await device.reloadReactNative();
+          await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown (wait for either dashboard or onboarding)
-      try {
+          try {
         await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
           .withTimeout(2000);
-        // Already on dashboard, skip onboarding
       } catch {
-        // Not on dashboard, try onboarding
         try {
           await waitFor(element(by.id('onboarding.welcome.screen')))
             .toBeVisible()
             .withTimeout(2000);
           await completeOnboarding();
         } catch {
-          // Neither dashboard nor onboarding visible, wait longer
           await waitFor(element(by.id('dashboard.screen')))
             .toBeVisible()
             .withTimeout(5000);
@@ -101,8 +80,7 @@ describe('Error Handling', () => {
         await expect(element(by.id('transactions.screen'))).toBeVisible();
       }
 
-      // Restore network
-      await simulateOnline();
+          await simulateOnline();
     });
 
     it('should recover with retry button', async () => {
@@ -112,25 +90,20 @@ describe('Error Handling', () => {
       // Simulate network failure
       await simulateOffline();
 
-      // Reload to trigger error
-      await device.reloadReactNative();
+          await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown (wait for either dashboard or onboarding)
-      try {
+          try {
         await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
           .withTimeout(2000);
-        // Already on dashboard, skip onboarding
       } catch {
-        // Not on dashboard, try onboarding
         try {
           await waitFor(element(by.id('onboarding.welcome.screen')))
             .toBeVisible()
             .withTimeout(2000);
           await completeOnboarding();
         } catch {
-          // Neither dashboard nor onboarding visible, wait longer
           await waitFor(element(by.id('dashboard.screen')))
             .toBeVisible()
             .withTimeout(5000);
@@ -143,14 +116,12 @@ describe('Error Handling', () => {
       // Restore network before retrying
       await simulateOnline();
 
-      // Look for retry button
-      try {
+          try {
         await waitFor(element(by.id('transactions.retryButton')))
           .toBeVisible()
           .withTimeout(5000);
 
-        // Tap retry button
-        await element(by.id('transactions.retryButton')).tap();
+              await element(by.id('transactions.retryButton')).tap();
 
         // Should recover and show content
         await waitFor(element(by.id('transactions.screen')))
@@ -166,25 +137,20 @@ describe('Error Handling', () => {
 
   describe('Loading States', () => {
     it('should show loading indicator during network requests', async () => {
-      // Reload to trigger fresh load
-      await device.reloadReactNative();
+          await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown (wait for either dashboard or onboarding)
-      try {
+          try {
         await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
           .withTimeout(2000);
-        // Already on dashboard, skip onboarding
       } catch {
-        // Not on dashboard, try onboarding
         try {
           await waitFor(element(by.id('onboarding.welcome.screen')))
             .toBeVisible()
             .withTimeout(2000);
           await completeOnboarding();
         } catch {
-          // Neither dashboard nor onboarding visible, wait longer
           await waitFor(element(by.id('dashboard.screen')))
             .toBeVisible()
             .withTimeout(5000);
@@ -199,9 +165,7 @@ describe('Error Handling', () => {
         await waitFor(element(by.id('transactions.loadingIndicator')))
           .toBeVisible()
           .withTimeout(1000);
-      } catch {
-        // Loading was too fast to catch - that's okay
-      }
+      } catch {}
 
       // Should eventually show content
       await waitFor(element(by.id('transactions.screen')))
@@ -215,32 +179,26 @@ describe('Error Handling', () => {
       // Navigate to dashboard first while online
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown (wait for either dashboard or onboarding)
-      try {
+          try {
         await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
           .withTimeout(2000);
-        // Already on dashboard, skip onboarding
       } catch {
-        // Not on dashboard, try onboarding
         try {
           await waitFor(element(by.id('onboarding.welcome.screen')))
             .toBeVisible()
             .withTimeout(2000);
           await completeOnboarding();
         } catch {
-          // Neither dashboard nor onboarding visible, wait longer
           await waitFor(element(by.id('dashboard.screen')))
             .toBeVisible()
             .withTimeout(5000);
         }
       }
 
-      // Go offline
-      await simulateOffline();
+          await simulateOffline();
 
-      // Try to navigate to different tabs
-      // App should not crash even without network
+          // App should not crash even without network
       await element(by.id('tab.transactions')).tap();
       await waitFor(element(by.id('transactions.screen')))
         .toBeVisible()
@@ -256,8 +214,7 @@ describe('Error Handling', () => {
         .toBeVisible()
         .withTimeout(5000);
 
-      // Restore network
-      await simulateOnline();
+          await simulateOnline();
     });
   });
 
@@ -265,39 +222,30 @@ describe('Error Handling', () => {
     it('should automatically recover when network is restored', async () => {
       // Use the NetworkHelpers wrapper for automatic cleanup
       await NetworkHelpers.withOfflineMode(async () => {
-        // Reload while offline
-        await device.reloadReactNative();
+              await device.reloadReactNative();
 
-        // Try to login (should show error or wait)
-        try {
+              try {
           await loginAsPrimaryUser();
-        } catch {
-          // Login might fail offline - that's expected
-        }
+        } catch {}
 
         // Network will be restored after this block
       });
 
       // Network is now online again
-      // Try login again - should work
-      await device.reloadReactNative();
+          await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown (wait for either dashboard or onboarding)
-      try {
+          try {
         await waitFor(element(by.id('dashboard.screen')))
           .toBeVisible()
           .withTimeout(2000);
-        // Already on dashboard, skip onboarding
       } catch {
-        // Not on dashboard, try onboarding
         try {
           await waitFor(element(by.id('onboarding.welcome.screen')))
             .toBeVisible()
             .withTimeout(2000);
           await completeOnboarding();
         } catch {
-          // Neither dashboard nor onboarding visible, wait longer
           await waitFor(element(by.id('dashboard.screen')))
             .toBeVisible()
             .withTimeout(5000);
@@ -321,24 +269,19 @@ describe('Error Handling', () => {
       // NOT error state
 
       try {
-        // Check for empty state
-        await expect(element(by.id('transactions.emptyState'))).toBeVisible();
+              await expect(element(by.id('transactions.emptyState'))).toBeVisible();
       } catch {
-        // Check for list with data
-        try {
+              try {
           await expect(element(by.id('transactions.list'))).toBeVisible();
         } catch {
-          // Check for loading
-          await expect(element(by.id('transactions.loadingIndicator'))).toBeVisible();
+                  await expect(element(by.id('transactions.loadingIndicator'))).toBeVisible();
         }
       }
 
       // Error state should NOT be visible when network is working
       try {
         await expect(element(by.id('transactions.errorState'))).not.toBeVisible();
-      } catch {
-        // Element might not exist - that's fine
-      }
+      } catch {}
     });
   });
 
@@ -347,70 +290,54 @@ describe('Error Handling', () => {
       // Navigate to dashboard first while online
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
-      try {
+          try {
         await waitFor(element(by.id('onboarding.welcome.screen')))
           .toBeVisible()
           .withTimeout(3000);
         await completeOnboarding();
-      } catch {
-        // Already past onboarding
-      }
+      } catch {}
 
-      // Verify we're on dashboard
-      await waitFor(element(by.id('dashboard.screen')))
+          await waitFor(element(by.id('dashboard.screen')))
         .toBeVisible()
         .withTimeout(5000);
 
-      // Go offline
-      await simulateOffline();
+          await simulateOffline();
 
-      // Look for offline indicator/banner
-      try {
+          try {
         await waitFor(element(by.id('offline.indicator')))
           .toBeVisible()
           .withTimeout(5000);
 
-        // Verify offline indicator is visible
-        await expect(element(by.id('offline.indicator'))).toBeVisible();
+              await expect(element(by.id('offline.indicator'))).toBeVisible();
 
-        // Try navigating while offline to trigger the indicator
-        await element(by.id('tab.transactions')).tap();
+              await element(by.id('tab.transactions')).tap();
 
         // Offline indicator should persist
         try {
           await expect(element(by.id('offline.indicator'))).toBeVisible();
-        } catch {
-          // Indicator might appear only on certain screens
-        }
+        } catch {}
       } catch {
         // Offline indicator might not be implemented
-        // Or might have different testID
-        // Check for alternative offline UI patterns
-        try {
+              try {
           await expect(element(by.id('network.offlineBanner'))).toBeVisible();
         } catch {
           try {
             await expect(element(by.id('connectivity.offline'))).toBeVisible();
           } catch {
             // No offline indicator found - app handles offline differently
-            // Just verify app doesn't crash when offline
             await expect(element(by.id('dashboard.screen'))).toBeVisible();
           }
         }
       }
 
-      // Restore network
-      await simulateOnline();
+          await simulateOnline();
 
       // Offline indicator should disappear
       try {
         await waitFor(element(by.id('offline.indicator')))
           .not.toBeVisible()
           .withTimeout(5000);
-      } catch {
-        // Indicator might have already disappeared or not implemented
-      }
+      } catch {}
     });
   });
 
@@ -421,36 +348,27 @@ describe('Error Handling', () => {
       // Block specific API endpoint to simulate error
       await NetworkHelpers.blockBackendAPI();
 
-      // Try to perform an action that would call the API
-      // Pull to refresh to trigger data fetch
+          // Pull to refresh to trigger data fetch
       try {
         await element(by.id('transactions.scrollView')).scroll(200, 'down');
         await element(by.id('transactions.scrollView')).scroll(200, 'up');
-      } catch {
-        // Scroll might not work - try different approach
-      }
+      } catch {}
 
-      // Reload screen to trigger API call
-      await device.reloadReactNative();
+          await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
-      try {
+          try {
         await waitFor(element(by.id('onboarding.welcome.screen')))
           .toBeVisible()
           .withTimeout(3000);
         await completeOnboarding();
-      } catch {
-        // Already past onboarding
-      }
+      } catch {}
 
       // Navigate to transactions
       await element(by.id('tab.transactions')).tap();
 
-      // Look for error alert/toast
-      try {
-        // Check for error toast
-        await waitFor(element(by.id('toast.error')))
+          try {
+              await waitFor(element(by.id('toast.error')))
           .toBeVisible()
           .withTimeout(5000);
         await expect(element(by.id('toast.error'))).toBeVisible();
@@ -463,19 +381,16 @@ describe('Error Handling', () => {
           await expect(element(by.id('transactions.errorState'))).toBeVisible();
         } catch {
           // Error UI might not be visible yet or uses different pattern
-          // Check for inline error message
-          try {
+                  try {
             await expect(element(by.id('error.message'))).toBeVisible();
           } catch {
             // App might handle API errors gracefully without UI
-            // Just verify the screen doesn't crash
             await expect(element(by.id('transactions.screen'))).toBeVisible();
           }
         }
       }
 
-      // Restore network
-      await simulateOnline();
+          await simulateOnline();
 
       // Error should clear after network is restored and retry
       try {

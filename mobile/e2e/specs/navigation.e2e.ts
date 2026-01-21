@@ -1,36 +1,21 @@
 import { element, by, expect, waitFor, device } from 'detox';
 import { loginAsPrimaryUser, completeOnboarding } from '../helpers';
 
-/**
- * Navigation Test Suite
- *
- * Tests for bottom tab navigation between main screens.
- * Verifies tab switching and active tab indicator.
- *
- * Note: These tests validate UI navigation behavior without backend dependency.
- */
 
-/**
- * Navigate to dashboard after login
- */
 async function navigateToDashboard(): Promise<void> {
   await loginAsPrimaryUser();
 
-  // Complete onboarding if shown (wait for either dashboard or onboarding)
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
       .withTimeout(2000);
-    // Already on dashboard, skip onboarding
   } catch {
-    // Not on dashboard, try onboarding
     try {
       await waitFor(element(by.id('onboarding.welcome.screen')))
         .toBeVisible()
         .withTimeout(2000);
       await completeOnboarding();
     } catch {
-      // Neither dashboard nor onboarding visible, wait longer
       await waitFor(element(by.id('dashboard.screen')))
         .toBeVisible()
         .withTimeout(5000);
@@ -99,14 +84,12 @@ describe('Navigation', () => {
       // Dashboard should be active initially
       await expect(element(by.id('dashboard.screen'))).toBeVisible();
 
-      // Note: Tab bar active state is typically indicated by:
       // - Different icon color
       // - Different text color
       // - Accessibility state (selected: true)
       // This test verifies tabs are visible and tappable
 
-      // Verify all tab buttons are accessible
-      await expect(element(by.id('tab.dashboard'))).toBeVisible();
+          await expect(element(by.id('tab.dashboard'))).toBeVisible();
       await expect(element(by.id('tab.transactions'))).toBeVisible();
       await expect(element(by.id('tab.budgets'))).toBeVisible();
       await expect(element(by.id('tab.sharing'))).toBeVisible();
@@ -151,8 +134,7 @@ describe('Navigation', () => {
         .withTimeout(3000);
 
       // Transactions screen should still be in same state
-      // (React Navigation maintains tab state by default)
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
     });
   });
 
@@ -180,15 +162,13 @@ describe('Navigation', () => {
 
   describe('Double Tap Behavior', () => {
     it('should handle double tap on same tab gracefully', async () => {
-      // Tap dashboard tab twice
-      await element(by.id('tab.dashboard')).tap();
+          await element(by.id('tab.dashboard')).tap();
       await element(by.id('tab.dashboard')).tap();
 
       // Should remain on dashboard without crashing
       await expect(element(by.id('dashboard.screen'))).toBeVisible();
 
-      // Try with another tab
-      await element(by.id('tab.transactions')).tap();
+          await element(by.id('tab.transactions')).tap();
       await waitFor(element(by.id('transactions.screen')))
         .toBeVisible()
         .withTimeout(3000);
@@ -210,8 +190,7 @@ describe('Navigation', () => {
         .toBeVisible()
         .withTimeout(3000);
 
-      // Try to open a sub-screen (Add Transaction)
-      try {
+          try {
         await element(by.id('transactions.addButton')).tap();
         await waitFor(element(by.id('addTransaction.screen')))
           .toBeVisible()
@@ -226,8 +205,7 @@ describe('Navigation', () => {
           try {
             await element(by.id('addTransaction.backButton')).tap();
           } catch {
-            // Try swipe gesture
-            await element(by.id('addTransaction.screen')).swipe('right', 'fast', 0.9, 0.5, 0.1);
+                      await element(by.id('addTransaction.screen')).swipe('right', 'fast', 0.9, 0.5, 0.1);
           }
         }
 
@@ -238,8 +216,7 @@ describe('Navigation', () => {
       } catch {
         // Add transaction button might not be visible
         // Or addTransaction.screen uses different testID
-        // Verify transactions screen is still functional
-        await expect(element(by.id('transactions.screen'))).toBeVisible();
+              await expect(element(by.id('transactions.screen'))).toBeVisible();
       }
 
       // Test back navigation on settings sub-screen
@@ -248,8 +225,7 @@ describe('Navigation', () => {
         .toBeVisible()
         .withTimeout(3000);
 
-      // Try to open profile screen
-      try {
+          try {
         await element(by.id('settings.profileItem')).tap();
         await waitFor(element(by.id('profile.screen')))
           .toBeVisible()
@@ -272,8 +248,7 @@ describe('Navigation', () => {
           .withTimeout(5000);
       } catch {
         // Profile screen might not be implemented
-        // Verify settings screen is still functional
-        await expect(element(by.id('settings.screen'))).toBeVisible();
+              await expect(element(by.id('settings.screen'))).toBeVisible();
       }
 
       // Final verification: Navigate back to dashboard

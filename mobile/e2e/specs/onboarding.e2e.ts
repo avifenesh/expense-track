@@ -2,26 +2,13 @@ import { element, by, expect, waitFor, device } from 'detox';
 import { registerUser } from '../helpers';
 import { BiometricHelpers } from '../helpers/biometric-helpers';
 
-/**
- * Onboarding Test Suite
- *
- * Tests for the multi-step onboarding flow after initial registration.
- * Covers currency selection, categories, budget setup, sample data, and biometric enrollment.
- *
- * Note: These tests validate UI navigation and choices. Backend integration is not required.
- */
 
-/**
- * Navigate to onboarding by registering a new user
- * Uses timestamp-based email to ensure uniqueness
- */
 async function navigateToOnboarding(): Promise<void> {
   const timestamp = Date.now();
   const email = `test-onboarding-${timestamp}@example.com`;
 
   await registerUser('Test User', email, 'TestPass123!');
 
-  // Wait for onboarding welcome screen
   await waitFor(element(by.id('onboarding.welcome.screen')))
     .toBeVisible()
     .withTimeout(10000);
@@ -40,35 +27,29 @@ describe('Onboarding', () => {
     it('should complete full onboarding flow with all steps', async () => {
       await navigateToOnboarding();
 
-      // Step 1: Welcome screen
-      await expect(element(by.id('onboarding.welcome.screen'))).toBeVisible();
+          await expect(element(by.id('onboarding.welcome.screen'))).toBeVisible();
       await expect(element(by.id('onboarding.welcome.title'))).toBeVisible();
       await expect(element(by.id('onboarding.welcome.subtitle'))).toBeVisible();
       await element(by.id('onboarding.welcome.getStartedButton')).tap();
 
-      // Step 2: Currency selection
-      await waitFor(element(by.id('onboarding.currency.screen')))
+          await waitFor(element(by.id('onboarding.currency.screen')))
         .toBeVisible()
         .withTimeout(5000);
       await expect(element(by.id('onboarding.currency.title'))).toBeVisible();
       await expect(element(by.id('onboarding.currency.USD'))).toBeVisible();
       await expect(element(by.id('onboarding.currency.EUR'))).toBeVisible();
       await expect(element(by.id('onboarding.currency.ILS'))).toBeVisible();
-      // Select USD
-      await element(by.id('onboarding.currency.USD')).tap();
+          await element(by.id('onboarding.currency.USD')).tap();
       await element(by.id('onboarding.currency.continueButton')).tap();
 
-      // Step 3: Categories selection
-      await waitFor(element(by.id('onboarding.categories.screen')))
+          await waitFor(element(by.id('onboarding.categories.screen')))
         .toBeVisible()
         .withTimeout(5000);
       await expect(element(by.id('onboarding.categories.title'))).toBeVisible();
       await expect(element(by.id('onboarding.categories.subtitle'))).toBeVisible();
-      // Continue with default categories
-      await element(by.id('onboarding.categories.continueButton')).tap();
+          await element(by.id('onboarding.categories.continueButton')).tap();
 
-      // Step 4: Budget setup
-      await waitFor(element(by.id('onboarding.budget.screen')))
+          await waitFor(element(by.id('onboarding.budget.screen')))
         .toBeVisible()
         .withTimeout(5000);
       await expect(element(by.id('onboarding.budget.title'))).toBeVisible();
@@ -80,8 +61,7 @@ describe('Onboarding', () => {
       await element(by.id('onboarding.budget.amountInput')).typeText('2000');
       await element(by.id('onboarding.budget.setBudgetButton')).tap();
 
-      // Step 5: Sample data
-      await waitFor(element(by.id('onboarding.sampleData.screen')))
+          await waitFor(element(by.id('onboarding.sampleData.screen')))
         .toBeVisible()
         .withTimeout(5000);
       await expect(element(by.id('onboarding.sampleData.title'))).toBeVisible();
@@ -91,19 +71,15 @@ describe('Onboarding', () => {
       await element(by.id('onboarding.sampleData.yesButton')).tap();
       await element(by.id('onboarding.sampleData.continueButton')).tap();
 
-      // Step 6: Biometric setup (may not appear on all devices)
-      try {
+          try {
         await waitFor(element(by.id('onboarding.biometric.screen')))
           .toBeVisible()
           .withTimeout(3000);
         await expect(element(by.id('onboarding.biometric.title'))).toBeVisible();
         await element(by.id('onboarding.biometric.skipButton')).tap();
-      } catch {
-        // Biometric screen not shown (device doesn't support it)
-      }
+      } catch {}
 
-      // Step 7: Complete screen
-      await waitFor(element(by.id('onboarding.complete.screen')))
+          await waitFor(element(by.id('onboarding.complete.screen')))
         .toBeVisible()
         .withTimeout(5000);
       await expect(element(by.id('onboarding.complete.title'))).toBeVisible();
@@ -156,9 +132,7 @@ describe('Onboarding', () => {
           .toBeVisible()
           .withTimeout(3000);
         await element(by.id('onboarding.biometric.skipButton')).tap();
-      } catch {
-        // Biometric screen not shown
-      }
+      } catch {}
 
       // Complete screen
       await waitFor(element(by.id('onboarding.complete.screen')))
@@ -198,33 +172,26 @@ describe('Onboarding', () => {
         .toBeVisible()
         .withTimeout(5000);
 
-      // Verify budget input elements are visible
-      await expect(element(by.id('onboarding.budget.amountInput'))).toBeVisible();
+          await expect(element(by.id('onboarding.budget.amountInput'))).toBeVisible();
       await expect(element(by.id('onboarding.budget.setBudgetButton'))).toBeVisible();
 
-      // Enter budget amount
-      await element(by.id('onboarding.budget.amountInput')).tap();
+          await element(by.id('onboarding.budget.amountInput')).tap();
       await element(by.id('onboarding.budget.amountInput')).typeText('1500');
 
-      // Submit budget
-      await element(by.id('onboarding.budget.setBudgetButton')).tap();
+          await element(by.id('onboarding.budget.setBudgetButton')).tap();
 
-      // Continue through remaining steps
-      await waitFor(element(by.id('onboarding.sampleData.screen')))
+          await waitFor(element(by.id('onboarding.sampleData.screen')))
         .toBeVisible()
         .withTimeout(5000);
       await element(by.id('onboarding.sampleData.noButton')).tap();
       await element(by.id('onboarding.sampleData.continueButton')).tap();
 
-      // Skip biometric if shown
-      try {
+          try {
         await waitFor(element(by.id('onboarding.biometric.screen')))
           .toBeVisible()
           .withTimeout(3000);
         await element(by.id('onboarding.biometric.skipButton')).tap();
-      } catch {
-        // Biometric screen not shown
-      }
+      } catch {}
 
       // Complete screen
       await waitFor(element(by.id('onboarding.complete.screen')))
@@ -241,8 +208,7 @@ describe('Onboarding', () => {
 
   describe('Biometric Setup', () => {
     it('should enable biometric auth', async () => {
-      // Enable biometric capability before starting
-      await BiometricHelpers.enableForPlatform();
+          await BiometricHelpers.enableForPlatform();
 
       await navigateToOnboarding();
 
@@ -281,12 +247,10 @@ describe('Onboarding', () => {
           .toBeVisible()
           .withTimeout(5000);
 
-        // Verify biometric screen elements
-        await expect(element(by.id('onboarding.biometric.title'))).toBeVisible();
+              await expect(element(by.id('onboarding.biometric.title'))).toBeVisible();
         await expect(element(by.id('onboarding.biometric.enableButton'))).toBeVisible();
 
-        // Tap enable button
-        await element(by.id('onboarding.biometric.enableButton')).tap();
+              await element(by.id('onboarding.biometric.enableButton')).tap();
 
         // Simulate successful biometric enrollment
         await BiometricHelpers.authenticateSuccess();
@@ -296,9 +260,7 @@ describe('Onboarding', () => {
           await waitFor(element(by.id('onboarding.biometric.successMessage')))
             .toBeVisible()
             .withTimeout(3000);
-        } catch {
-          // Success message might auto-dismiss or not exist
-        }
+        } catch {}
       } catch {
         // Biometric screen not shown (device doesn't support it)
         // Test passes - feature not available on this device
@@ -310,9 +272,7 @@ describe('Onboarding', () => {
           .toBeVisible()
           .withTimeout(5000);
         await element(by.id('onboarding.complete.startButton')).tap();
-      } catch {
-        // Already past complete screen
-      }
+      } catch {}
 
       // Should navigate to dashboard
       await waitFor(element(by.id('dashboard.screen')))

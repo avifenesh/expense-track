@@ -1,49 +1,32 @@
 import { element, by, expect, waitFor, device } from 'detox';
 import { loginAsPrimaryUser, completeOnboarding } from '../helpers';
 
-/**
- * Transactions Test Suite
- *
- * Tests for the transactions screen, including list display and filtering.
- *
- * Note: These tests validate UI behavior. Backend integration for actual transaction data
- * is not required - tests work with empty states or sample data from onboarding.
- */
 
-/**
- * Navigate to transactions screen after login
- */
 async function navigateToTransactions(): Promise<void> {
   await loginAsPrimaryUser();
 
-  // Complete onboarding if shown (wait for either dashboard or onboarding)
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
       .withTimeout(2000);
-    // Already on dashboard, skip onboarding
   } catch {
-    // Not on dashboard, try onboarding
     try {
       await waitFor(element(by.id('onboarding.welcome.screen')))
         .toBeVisible()
         .withTimeout(2000);
       await completeOnboarding();
     } catch {
-      // Neither dashboard nor onboarding visible, wait longer
       await waitFor(element(by.id('dashboard.screen')))
         .toBeVisible()
         .withTimeout(5000);
     }
   }
 
-  // Navigate to transactions tab
   await waitFor(element(by.id('tab.transactions')))
     .toBeVisible()
     .withTimeout(5000);
   await element(by.id('tab.transactions')).tap();
 
-  // Wait for transactions screen
   await waitFor(element(by.id('transactions.screen')))
     .toBeVisible()
     .withTimeout(5000);
@@ -61,23 +44,18 @@ describe('Transactions', () => {
 
   describe('Screen Display', () => {
     it('should display transaction list with filters', async () => {
-      // Verify screen elements are visible
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
       await expect(element(by.id('transactions.title'))).toBeVisible();
       await expect(element(by.id('transactions.addButton'))).toBeVisible();
 
-      // Verify filter chips are visible
-      await expect(element(by.id('transactions.filterAll'))).toBeVisible();
+          await expect(element(by.id('transactions.filterAll'))).toBeVisible();
       await expect(element(by.id('transactions.filterIncome'))).toBeVisible();
       await expect(element(by.id('transactions.filterExpense'))).toBeVisible();
 
-      // Verify list or empty state is shown
-      try {
-        // Check if list is visible (has transactions)
-        await expect(element(by.id('transactions.list'))).toBeVisible();
+          try {
+              await expect(element(by.id('transactions.list'))).toBeVisible();
       } catch {
-        // Check if empty state is visible (no transactions)
-        await expect(element(by.id('transactions.emptyState'))).toBeVisible();
+              await expect(element(by.id('transactions.emptyState'))).toBeVisible();
       }
     });
   });
@@ -87,27 +65,19 @@ describe('Transactions', () => {
       // Start with "All" filter selected
       await expect(element(by.id('transactions.filterAll'))).toBeVisible();
 
-      // Tap "Income" filter
-      await element(by.id('transactions.filterIncome')).tap();
+          await element(by.id('transactions.filterIncome')).tap();
 
-      // Verify filter was applied (UI should update)
-      // Note: Visual feedback varies - this checks that tap doesn't crash
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
 
-      // Tap "Expense" filter
-      await element(by.id('transactions.filterExpense')).tap();
+          await element(by.id('transactions.filterExpense')).tap();
 
-      // Verify filter was applied
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
 
-      // Tap "All" filter to reset
-      await element(by.id('transactions.filterAll')).tap();
+          await element(by.id('transactions.filterAll')).tap();
 
-      // Verify we're back to all transactions
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
 
-      // Verify list or empty state is still shown
-      try {
+          try {
         await expect(element(by.id('transactions.list'))).toBeVisible();
       } catch {
         await expect(element(by.id('transactions.emptyState'))).toBeVisible();
@@ -123,11 +93,9 @@ describe('Transactions', () => {
           .toBeVisible()
           .withTimeout(3000);
 
-        // Verify add button is still accessible from empty state
-        await expect(element(by.id('transactions.addButton'))).toBeVisible();
+              await expect(element(by.id('transactions.addButton'))).toBeVisible();
       } catch {
         // Has transactions - test doesn't apply
-        // Just verify the list is shown instead
         await expect(element(by.id('transactions.list'))).toBeVisible();
       }
     });
@@ -135,19 +103,15 @@ describe('Transactions', () => {
 
   describe('Loading State', () => {
     it('should show loading indicator during data fetch', async () => {
-      // Reload to trigger loading state
-      await device.reloadReactNative();
+          await device.reloadReactNative();
       await loginAsPrimaryUser();
 
-      // Complete onboarding if shown
-      try {
+          try {
         await waitFor(element(by.id('onboarding.welcome.screen')))
           .toBeVisible()
           .withTimeout(3000);
         await completeOnboarding();
-      } catch {
-        // Already past onboarding
-      }
+      } catch {}
 
       // Navigate to transactions
       await element(by.id('tab.transactions')).tap();
@@ -171,30 +135,23 @@ describe('Transactions', () => {
 
   describe('Search and Filter', () => {
     it('should search and filter transactions', async () => {
-      // Verify we're on transactions screen
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
 
-      // Check if search input exists
-      try {
+          try {
         await waitFor(element(by.id('transactions.searchInput')))
           .toBeVisible()
           .withTimeout(3000);
 
-        // Enter search text
-        await element(by.id('transactions.searchInput')).tap();
+              await element(by.id('transactions.searchInput')).tap();
         await element(by.id('transactions.searchInput')).typeText('food');
 
-        // Dismiss keyboard
-        await element(by.id('transactions.searchInput')).tapReturnKey();
+              await element(by.id('transactions.searchInput')).tapReturnKey();
 
-        // Verify search is applied (screen should update)
-        await expect(element(by.id('transactions.screen'))).toBeVisible();
+              await expect(element(by.id('transactions.screen'))).toBeVisible();
 
         // Clear search
         await element(by.id('transactions.searchInput')).clearText();
-      } catch {
-        // Search input not implemented - skip search portion
-      }
+      } catch {}
 
       // Test combined filtering with type filters
       await expect(element(by.id('transactions.filterAll'))).toBeVisible();
@@ -203,34 +160,26 @@ describe('Transactions', () => {
       await element(by.id('transactions.filterIncome')).tap();
       await expect(element(by.id('transactions.screen'))).toBeVisible();
 
-      // Try category filter if available
-      try {
+          try {
         await waitFor(element(by.id('transactions.categoryFilter')))
           .toBeVisible()
           .withTimeout(2000);
         await element(by.id('transactions.categoryFilter')).tap();
 
-        // Select a category if dropdown appears
-        try {
+              try {
           await waitFor(element(by.id('transactions.categoryOption.food')))
             .toBeVisible()
             .withTimeout(2000);
           await element(by.id('transactions.categoryOption.food')).tap();
-        } catch {
-          // Category options not visible - dismiss filter
-        }
-      } catch {
-        // Category filter not implemented
-      }
+        } catch {}
+      } catch {}
 
       // Reset to "All" filter
       await element(by.id('transactions.filterAll')).tap();
 
-      // Verify screen is still functional
-      await expect(element(by.id('transactions.screen'))).toBeVisible();
+          await expect(element(by.id('transactions.screen'))).toBeVisible();
 
-      // Check for list or empty state
-      try {
+          try {
         await expect(element(by.id('transactions.list'))).toBeVisible();
       } catch {
         await expect(element(by.id('transactions.emptyState'))).toBeVisible();
