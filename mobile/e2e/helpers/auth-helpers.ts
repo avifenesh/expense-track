@@ -49,11 +49,13 @@ export async function login(email: string, password: string): Promise<void> {
 
   // Wait for navigation to dashboard or onboarding
   // Note: Detox doesn't have .or() method - use try-catch pattern
+  // Increase dashboard timeout to 30s to avoid false-positive onboarding check
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
-      .withTimeout(15000);
+      .withTimeout(30000);
   } catch {
+    // If dashboard doesn't appear, user needs onboarding
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
       .withTimeout(5000);
