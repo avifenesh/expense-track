@@ -1,8 +1,5 @@
 import { element, by, expect, waitFor, device } from 'detox';
-import {
-  loginAsPrimaryUser,
-  completeOnboarding,
-} from '../helpers';
+import { setupLoggedInUser } from '../helpers';
 
 /**
  * Budget Test Suite (P0)
@@ -15,25 +12,7 @@ import {
  * Helper to login and navigate to budgets
  */
 async function loginAndNavigateToBudgets(): Promise<void> {
-  // Wait for app to load
-  await device.disableSynchronization();
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  await waitFor(element(by.id('login.screen')))
-    .toBeVisible()
-    .withTimeout(30000);
-  await device.enableSynchronization();
-
-  // Login
-  await loginAsPrimaryUser();
-
-  // Handle onboarding if needed
-  try {
-    await waitFor(element(by.id('dashboard.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
-  } catch {
-    await completeOnboarding();
-  }
+  await setupLoggedInUser();
 
   // Navigate to budgets tab
   await element(by.id('tab.budgets')).tap();
@@ -121,22 +100,7 @@ describe('Budgets', () => {
     });
 
     it('should show loading state', async () => {
-      await device.disableSynchronization();
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      await waitFor(element(by.id('login.screen')))
-        .toBeVisible()
-        .withTimeout(30000);
-      await device.enableSynchronization();
-
-      await loginAsPrimaryUser();
-
-      try {
-        await waitFor(element(by.id('dashboard.screen')))
-          .toBeVisible()
-          .withTimeout(5000);
-      } catch {
-        await completeOnboarding();
-      }
+      await setupLoggedInUser();
 
       // Navigate to budgets - might briefly show loading
       await element(by.id('tab.budgets')).tap();
@@ -153,22 +117,7 @@ describe('Budgets', () => {
     });
 
     it('should handle error states gracefully', async () => {
-      await device.disableSynchronization();
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      await waitFor(element(by.id('login.screen')))
-        .toBeVisible()
-        .withTimeout(30000);
-      await device.enableSynchronization();
-
-      await loginAsPrimaryUser();
-
-      try {
-        await waitFor(element(by.id('dashboard.screen')))
-          .toBeVisible()
-          .withTimeout(5000);
-      } catch {
-        await completeOnboarding();
-      }
+      await setupLoggedInUser();
 
       await element(by.id('tab.budgets')).tap();
 

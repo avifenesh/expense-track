@@ -1,8 +1,7 @@
 import { element, by, expect, waitFor, device } from 'detox';
 import {
   TEST_TRANSACTIONS,
-  loginAsPrimaryUser,
-  completeOnboarding,
+  setupLoggedInUser,
   navigateToTransactions,
   createExpense,
   createIncome,
@@ -23,26 +22,7 @@ import {
  * Helper to login and ensure user is on dashboard
  */
 async function loginAndSetup(): Promise<void> {
-  // Wait for app to load
-  await device.disableSynchronization();
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  await waitFor(element(by.id('login.screen')))
-    .toBeVisible()
-    .withTimeout(30000);
-  await device.enableSynchronization();
-
-  // Login
-  await loginAsPrimaryUser();
-
-  // Handle onboarding if needed
-  try {
-    await waitFor(element(by.id('dashboard.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
-  } catch {
-    // Complete onboarding
-    await completeOnboarding();
-  }
+  await setupLoggedInUser();
 }
 
 describe('Transactions', () => {

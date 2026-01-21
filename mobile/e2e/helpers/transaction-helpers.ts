@@ -27,24 +27,38 @@ export async function openAddTransaction(): Promise<void> {
 }
 
 /**
- * Create an expense transaction
+ * Sanitize category name to testID format
+ * Replaces all non-alphanumeric characters with dashes
  */
-export async function createExpense(
+function sanitizeCategoryForTestId(category: string): string {
+  return category.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+}
+
+/**
+ * Create a transaction (shared implementation for expense and income)
+ */
+async function createTransaction(
+  type: 'expense' | 'income',
   amount: string,
   category: string,
   description?: string
 ): Promise<void> {
   await openAddTransaction();
 
-  // Select expense type (default, but be explicit)
-  await element(by.id('addTransaction.type.expense')).tap();
+  // Select transaction type
+  await element(by.id(`addTransaction.type.${type}`)).tap();
+
+  // Wait for categories to reload (needed for income type, harmless for expense)
+  await waitFor(element(by.id('addTransaction.categoryGrid')))
+    .toBeVisible()
+    .withTimeout(5000);
 
   // Enter amount
   await element(by.id('addTransaction.amountInput')).tap();
   await element(by.id('addTransaction.amountInput')).typeText(amount);
 
-  // Select category - use lowercase, dash-separated format
-  const categoryTestId = `addTransaction.category.${category.replace(/\s+/g, '-').toLowerCase()}`;
+  // Select category - sanitize name to match testID format
+  const categoryTestId = `addTransaction.category.${sanitizeCategoryForTestId(category)}`;
   await element(by.id(categoryTestId)).tap();
 
   // Enter description if provided
@@ -64,6 +78,17 @@ export async function createExpense(
 }
 
 /**
+ * Create an expense transaction
+ */
+export async function createExpense(
+  amount: string,
+  category: string,
+  description?: string
+): Promise<void> {
+  await createTransaction('expense', amount, category, description);
+}
+
+/**
  * Create an income transaction
  */
 export async function createIncome(
@@ -71,38 +96,7 @@ export async function createIncome(
   category: string,
   description?: string
 ): Promise<void> {
-  await openAddTransaction();
-
-  // Select income type
-  await element(by.id('addTransaction.type.income')).tap();
-
-  // Wait for categories to reload for income type
-  await waitFor(element(by.id('addTransaction.categoryGrid')))
-    .toBeVisible()
-    .withTimeout(5000);
-
-  // Enter amount
-  await element(by.id('addTransaction.amountInput')).tap();
-  await element(by.id('addTransaction.amountInput')).typeText(amount);
-
-  // Select category
-  const categoryTestId = `addTransaction.category.${category.replace(/\s+/g, '-').toLowerCase()}`;
-  await element(by.id(categoryTestId)).tap();
-
-  // Enter description if provided
-  if (description) {
-    await element(by.id('addTransaction.descriptionInput')).tap();
-    await element(by.id('addTransaction.descriptionInput')).typeText(description);
-    await element(by.id('addTransaction.descriptionInput')).tapReturnKey();
-  }
-
-  // Submit
-  await element(by.id('addTransaction.submitButton')).tap();
-
-  // Wait for return to transactions screen
-  await waitFor(element(by.id('transactions.screen')))
-    .toBeVisible()
-    .withTimeout(10000);
+  await createTransaction('income', amount, category, description);
 }
 
 /**

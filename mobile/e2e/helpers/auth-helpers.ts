@@ -164,6 +164,40 @@ export async function ensureLoggedOut(): Promise<void> {
 }
 
 /**
+ * Wait for app to load and be ready for interaction
+ * Handles app startup synchronization issues
+ */
+export async function waitForAppReady(): Promise<void> {
+  const { device, waitFor, element, by } = await import('detox');
+  await device.disableSynchronization();
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await waitFor(element(by.id('login.screen')))
+    .toBeVisible()
+    .withTimeout(30000);
+  await device.enableSynchronization();
+}
+
+/**
+ * Standard test setup: wait for app, login, handle onboarding
+ * Use this at the start of tests that need a logged-in user
+ */
+export async function setupLoggedInUser(): Promise<void> {
+  const { waitFor, element, by } = await import('detox');
+
+  await waitForAppReady();
+  await loginAsPrimaryUser();
+
+  // Handle onboarding if needed
+  try {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  } catch {
+    await completeOnboarding();
+  }
+}
+
+/**
  * Complete onboarding wizard with default selections
  * TestIDs added in PR #265
  */

@@ -1,8 +1,5 @@
 import { element, by, expect, waitFor, device } from 'detox';
-import {
-  loginAsPrimaryUser,
-  completeOnboarding,
-} from '../helpers';
+import { setupLoggedInUser } from '../helpers';
 
 /**
  * Sharing Test Suite (P0)
@@ -15,25 +12,7 @@ import {
  * Helper to login and navigate to sharing
  */
 async function loginAndNavigateToSharing(): Promise<void> {
-  // Wait for app to load
-  await device.disableSynchronization();
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  await waitFor(element(by.id('login.screen')))
-    .toBeVisible()
-    .withTimeout(30000);
-  await device.enableSynchronization();
-
-  // Login
-  await loginAsPrimaryUser();
-
-  // Handle onboarding if needed
-  try {
-    await waitFor(element(by.id('dashboard.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
-  } catch {
-    await completeOnboarding();
-  }
+  await setupLoggedInUser();
 
   // Navigate to sharing tab
   await element(by.id('tab.sharing')).tap();

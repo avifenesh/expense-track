@@ -244,7 +244,7 @@ export function AddTransactionScreen({
           accessibilityRole="button"
           accessibilityLabel={`Select ${category.name} category`}
           accessibilityState={{ selected: isSelected }}
-          testID={`addTransaction.category.${category.name.replace(/\s+/g, '-').toLowerCase()}`}
+          testID={`addTransaction.category.${category.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
         >
           <View
             style={[styles.categoryDot, { backgroundColor: category.color }]}

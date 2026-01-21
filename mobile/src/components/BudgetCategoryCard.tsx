@@ -10,6 +10,7 @@ export interface BudgetCategoryCardProps {
   spent: number;
   currency: Currency;
   onPress?: () => void;
+  testID?: string;
 }
 
 export function BudgetCategoryCard({
@@ -19,6 +20,7 @@ export function BudgetCategoryCard({
   spent,
   currency,
   onPress,
+  testID,
 }: BudgetCategoryCardProps) {
   const isOverBudget = spent > planned && planned > 0;
   const progress = planned > 0 ? Math.min(spent / planned, 1) : 0;
@@ -27,7 +29,7 @@ export function BudgetCategoryCard({
   const formattedPlanned = formatCurrency(planned, currency);
 
   const content = (
-    <View style={styles.container}>
+    <View style={styles.container} testID={testID}>
       <View style={styles.header}>
         <View style={styles.categoryInfo}>
           <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
