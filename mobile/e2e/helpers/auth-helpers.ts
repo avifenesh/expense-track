@@ -207,9 +207,15 @@ export async function completeOnboarding(): Promise<void> {
   await waitFor(element(by.id('onboarding.sampleData.screen')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.sampleData.skipButton')).tap();
+  await element(by.id('onboarding.sampleData.continueButton')).tap();
 
-  // Biometric setup (if shown)
+  // Complete (before biometric in actual flow)
+  await waitFor(element(by.id('onboarding.complete.screen')))
+    .toBeVisible()
+    .withTimeout(5000);
+  await element(by.id('onboarding.complete.startButton')).tap();
+
+  // Biometric setup (final step, may be skipped)
   try {
     await waitFor(element(by.id('onboarding.biometric.screen')))
       .toBeVisible()
@@ -218,12 +224,6 @@ export async function completeOnboarding(): Promise<void> {
   } catch {
     // Biometric screen not shown, continue
   }
-
-  // Complete
-  await waitFor(element(by.id('onboarding.complete.screen')))
-    .toBeVisible()
-    .withTimeout(5000);
-  await element(by.id('onboarding.complete.startButton')).tap();
 
   // Wait for dashboard
   await waitFor(element(by.id('dashboard.screen')))

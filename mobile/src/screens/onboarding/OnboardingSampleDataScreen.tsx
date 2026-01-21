@@ -10,7 +10,7 @@ export function OnboardingSampleDataScreen({
   const { wantsSampleData, setSampleData } = useOnboardingStore();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="onboarding.sampleData.screen">
       <View style={styles.content}>
         <Text style={styles.stepIndicator}>Step 4 of 5</Text>
         <Text style={styles.title}>Sample Data</Text>
@@ -42,6 +42,7 @@ export function OnboardingSampleDataScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingComplete')}
+          testID="onboarding.sampleData.continueButton"
         >
           <Text style={styles.buttonText}>Continue</Text>
         </Pressable>

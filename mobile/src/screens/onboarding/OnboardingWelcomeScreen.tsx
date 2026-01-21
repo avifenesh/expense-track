@@ -7,9 +7,11 @@ export function OnboardingWelcomeScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingWelcome'>) {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="onboarding.welcome.screen">
       <View style={styles.content}>
-        <Text style={styles.title}>Welcome</Text>
+        <Text style={styles.title} testID="onboarding.welcome.title">
+          Welcome
+        </Text>
         <Text style={styles.subtitle}>
           Let&apos;s set up your expense tracking
         </Text>
@@ -24,6 +26,7 @@ export function OnboardingWelcomeScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingCurrency')}
+          testID="onboarding.welcome.getStartedButton"
         >
           <Text style={styles.buttonText}>Get Started</Text>
         </Pressable>

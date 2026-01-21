@@ -16,7 +16,7 @@ export function OnboardingCategoriesScreen({
   const { selectedCategories, toggleCategory } = useOnboardingStore();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="onboarding.categories.screen">
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <Text style={styles.stepIndicator}>Step 2 of 5</Text>
         <Text style={styles.title}>Categories</Text>
@@ -45,6 +45,7 @@ export function OnboardingCategoriesScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingBudget')}
+          testID="onboarding.categories.continueButton"
         >
           <Text style={styles.buttonText}>Continue</Text>
         </Pressable>

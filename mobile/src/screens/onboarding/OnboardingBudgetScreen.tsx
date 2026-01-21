@@ -29,7 +29,7 @@ export function OnboardingBudgetScreen({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="onboarding.budget.screen">
       <View style={styles.content}>
         <Text style={styles.stepIndicator}>Step 3 of 5</Text>
         <Text style={styles.title}>Set Budget</Text>
@@ -57,10 +57,10 @@ export function OnboardingBudgetScreen({
         </View>
 
         <View style={styles.buttonContainer}>
-          <Pressable style={styles.skipButton} onPress={handleSkip}>
+          <Pressable style={styles.skipButton} onPress={handleSkip} testID="onboarding.budget.skipButton">
             <Text style={styles.skipButtonText}>Skip for now</Text>
           </Pressable>
-          <Pressable style={styles.button} onPress={handleSetBudget}>
+          <Pressable style={styles.button} onPress={handleSetBudget} testID="onboarding.budget.setBudgetButton">
             <Text style={styles.buttonText}>Set Budget</Text>
           </Pressable>
         </View>
