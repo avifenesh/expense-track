@@ -16,15 +16,15 @@ export function OnboardingCurrencyScreen({
   const { selectedCurrency, setCurrency } = useOnboardingStore();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.stepIndicator}>Step 1 of 5</Text>
-        <Text style={styles.title}>Choose Currency</Text>
-        <Text style={styles.subtitle}>
+    <SafeAreaView style={styles.container} testID="onboarding.currency.screen">
+      <View style={styles.content} testID="onboarding.currency.content">
+        <Text style={styles.stepIndicator} testID="onboarding.currency.stepIndicator">Step 1 of 5</Text>
+        <Text style={styles.title} testID="onboarding.currency.title">Choose Currency</Text>
+        <Text style={styles.subtitle} testID="onboarding.currency.subtitle">
           Select your preferred currency for tracking expenses
         </Text>
 
-        <View style={styles.optionsContainer}>
+        <View style={styles.optionsContainer} testID="onboarding.currency.options">
           {CURRENCIES.map((currency) => (
             <Pressable
               key={currency.code}
@@ -33,6 +33,7 @@ export function OnboardingCurrencyScreen({
                 selectedCurrency === currency.code && styles.optionSelected,
               ]}
               onPress={() => setCurrency(currency.code)}
+              testID={`onboarding.currency.option.${currency.code}`}
             >
               <Text style={styles.optionSymbol}>{currency.symbol}</Text>
               <Text style={styles.optionText}>{currency.name}</Text>
@@ -43,6 +44,7 @@ export function OnboardingCurrencyScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingCategories')}
+          testID="onboarding.currency.continueButton"
         >
           <Text style={styles.buttonText}>Continue</Text>
         </Pressable>

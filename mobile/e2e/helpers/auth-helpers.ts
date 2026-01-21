@@ -165,7 +165,7 @@ export async function ensureLoggedOut(): Promise<void> {
 
 /**
  * Complete onboarding wizard with default selections
- * Note: Requires onboarding screens to have testIDs (to be added in future PR)
+ * TestIDs added in PR #265
  */
 export async function completeOnboarding(): Promise<void> {
   // Welcome screen
@@ -174,46 +174,47 @@ export async function completeOnboarding(): Promise<void> {
     .withTimeout(5000);
   await element(by.id('onboarding.welcome.getStartedButton')).tap();
 
-  // Currency selection
+  // Currency selection - select USD
   await waitFor(element(by.id('onboarding.currency.screen')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.currency.USD')).tap();
+  await element(by.id('onboarding.currency.option.USD')).tap();
   await element(by.id('onboarding.currency.continueButton')).tap();
 
-  // Categories selection
+  // Categories selection - keep defaults
   await waitFor(element(by.id('onboarding.categories.screen')))
     .toBeVisible()
     .withTimeout(5000);
   await element(by.id('onboarding.categories.continueButton')).tap();
 
-  // Budget setup
+  // Budget setup - skip
   await waitFor(element(by.id('onboarding.budget.screen')))
     .toBeVisible()
     .withTimeout(5000);
   await element(by.id('onboarding.budget.skipButton')).tap();
 
-  // Sample data
+  // Sample data - select "no" (start fresh)
   await waitFor(element(by.id('onboarding.sampleData.screen')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.sampleData.skipButton')).tap();
+  await element(by.id('onboarding.sampleData.option.no')).tap();
+  await element(by.id('onboarding.sampleData.continueButton')).tap();
 
-  // Biometric setup (if shown)
+  // Biometric setup (if shown) - skip
   try {
-    await waitFor(element(by.id('onboarding.biometric.screen')))
+    await waitFor(element(by.id('skip-button')))
       .toBeVisible()
       .withTimeout(3000);
-    await element(by.id('onboarding.biometric.skipButton')).tap();
+    await element(by.id('skip-button')).tap();
   } catch {
     // Biometric screen not shown, continue
   }
 
-  // Complete
-  await waitFor(element(by.id('onboarding.complete.screen')))
+  // Complete screen
+  await waitFor(element(by.id('continue-button')))
     .toBeVisible()
     .withTimeout(5000);
-  await element(by.id('onboarding.complete.startButton')).tap();
+  await element(by.id('continue-button')).tap();
 
   // Wait for dashboard
   await waitFor(element(by.id('dashboard.screen')))

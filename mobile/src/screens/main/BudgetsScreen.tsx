@@ -163,9 +163,9 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   // Loading state (initial load only)
   if (accountsLoading && accounts.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="budgets.loadingScreen">
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" />
+          <ActivityIndicator size="large" color="#38bdf8" testID="budgets.loadingIndicator" />
           <Text style={styles.loadingText}>Loading budgets...</Text>
         </View>
       </SafeAreaView>
@@ -175,11 +175,11 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   // Error state
   if (error && !isRefreshing) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="budgets.errorScreen">
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+          <Text style={styles.errorTitle} testID="budgets.errorTitle">Something went wrong</Text>
+          <Text style={styles.errorText} testID="budgets.errorText">{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh} testID="budgets.retryButton">
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -190,7 +190,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   // No accounts state
   if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="budgets.noAccountsScreen">
         <View style={styles.centerContainer}>
           <Text style={styles.emptyTitle}>No Accounts Found</Text>
           <Text style={styles.emptyText}>
@@ -202,7 +202,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="budgets.screen">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
@@ -214,26 +214,29 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
             colors={['#38bdf8']}
           />
         }
+        testID="budgets.scrollView"
       >
-        <Text style={styles.title}>Budgets</Text>
-        <Text style={styles.subtitle}>Track your spending by category</Text>
+        <Text style={styles.title} testID="budgets.title">Budgets</Text>
+        <Text style={styles.subtitle} testID="budgets.subtitle">Track your spending by category</Text>
 
         <MonthSelector
           selectedMonth={selectedMonth}
           onMonthChange={handleMonthChange}
           disabled={!!isLoading}
+          testID="budgets.monthSelector"
         />
 
         <BudgetProgressCard
           totalPlanned={totalPlanned}
           totalSpent={totalSpent}
           currency={currency}
+          testID="budgets.progressCard"
         />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Category Budgets</Text>
+        <View style={styles.section} testID="budgets.categorySection">
+          <Text style={styles.sectionTitle} testID="budgets.categoryTitle">Category Budgets</Text>
           {budgetsLoading && budgets.length === 0 ? (
-            <View style={styles.loadingContainer}>
+            <View style={styles.loadingContainer} testID="budgets.categoryLoading">
               <ActivityIndicator size="small" color="#38bdf8" />
             </View>
           ) : budgets.length === 0 ? (
@@ -241,10 +244,11 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
               title="No budgets set"
               message="Set up budgets to track your spending by category."
               style={styles.emptyState}
+              testID="budgets.emptyState"
             />
           ) : (
-            <View>
-              {budgets.map((budget) => {
+            <View testID="budgets.categoryList">
+              {budgets.map((budget, index) => {
                 // Prefer category from categoryMap, fall back to budget.category
                 // when not in map (e.g., categories not loaded yet or category deleted)
                 const category = categoryMap.get(budget.categoryId) || budget.category;
@@ -257,6 +261,7 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
                     planned={parseFloat(budget.planned)}
                     spent={spent}
                     currency={currency}
+                    testID={`budgets.categoryCard.${index}`}
                   />
                 );
               })}

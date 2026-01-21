@@ -155,8 +155,8 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
   const renderEmpty = useCallback(() => {
     if (isLoading || isLoadingAccounts) {
       return (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" />
+        <View style={styles.centerContainer} testID="transactions.loadingState">
+          <ActivityIndicator size="large" color="#38bdf8" testID="transactions.loadingIndicator" />
         </View>
       );
     }
@@ -167,6 +167,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
           title="Unable to load transactions"
           message={error}
           style={styles.emptyState}
+          testID="transactions.errorState"
         />
       );
     }
@@ -177,6 +178,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
           title="No accounts found"
           message="Create an account to start tracking transactions."
           style={styles.emptyState}
+          testID="transactions.noAccountsState"
         />
       );
     }
@@ -193,6 +195,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
         title="No transactions"
         message={filterMessage}
         style={styles.emptyState}
+        testID="transactions.emptyState"
       />
     );
   }, [isLoading, isLoadingAccounts, error, accounts.length, filterType]);
@@ -200,23 +203,25 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
   const isActiveFilter = (type: FilterType) => filterType === type;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Transactions</Text>
+    <SafeAreaView style={styles.container} edges={['top']} testID="transactions.screen">
+      <View style={styles.header} testID="transactions.header">
+        <Text style={styles.title} testID="transactions.title">Transactions</Text>
         <Pressable
           style={styles.addButton}
           onPress={handleAddTransaction}
           accessibilityRole="button"
           accessibilityLabel="Add transaction"
+          testID="transactions.addButton"
         >
           <Text style={styles.addButtonText}>+ Add</Text>
         </Pressable>
       </View>
 
-      <View style={styles.filterRow}>
+      <View style={styles.filterRow} testID="transactions.filterRow">
         <Pressable
           style={[styles.filterChip, isActiveFilter('all') && styles.filterChipActive]}
           onPress={() => handleFilterChange('all')}
+          testID="transactions.filter.all"
         >
           <Text style={[styles.filterText, isActiveFilter('all') && styles.filterTextActive]}>
             All
@@ -225,6 +230,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
         <Pressable
           style={[styles.filterChip, isActiveFilter('INCOME') && styles.filterChipActive]}
           onPress={() => handleFilterChange('INCOME')}
+          testID="transactions.filter.income"
         >
           <Text style={[styles.filterText, isActiveFilter('INCOME') && styles.filterTextActive]}>
             Income
@@ -233,6 +239,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
         <Pressable
           style={[styles.filterChip, isActiveFilter('EXPENSE') && styles.filterChipActive]}
           onPress={() => handleFilterChange('EXPENSE')}
+          testID="transactions.filter.expense"
         >
           <Text style={[styles.filterText, isActiveFilter('EXPENSE') && styles.filterTextActive]}>
             Expenses
@@ -259,6 +266,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
         }
         contentContainerStyle={styles.listContent}
         stickySectionHeadersEnabled={false}
+        testID="transactions.list"
       />
     </SafeAreaView>
   );

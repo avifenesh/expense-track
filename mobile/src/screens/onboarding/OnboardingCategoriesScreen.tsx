@@ -16,15 +16,15 @@ export function OnboardingCategoriesScreen({
   const { selectedCategories, toggleCategory } = useOnboardingStore();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.stepIndicator}>Step 2 of 5</Text>
-        <Text style={styles.title}>Categories</Text>
-        <Text style={styles.subtitle}>
+    <SafeAreaView style={styles.container} testID="onboarding.categories.screen">
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} testID="onboarding.categories.scrollView">
+        <Text style={styles.stepIndicator} testID="onboarding.categories.stepIndicator">Step 2 of 5</Text>
+        <Text style={styles.title} testID="onboarding.categories.title">Categories</Text>
+        <Text style={styles.subtitle} testID="onboarding.categories.subtitle">
           Select the expense categories you want to track
         </Text>
 
-        <View style={styles.categoriesContainer}>
+        <View style={styles.categoriesContainer} testID="onboarding.categories.list">
           {DEFAULT_CATEGORIES.map((category) => {
             const isSelected = selectedCategories.includes(category);
             return (
@@ -32,6 +32,7 @@ export function OnboardingCategoriesScreen({
                 key={category}
                 style={[styles.category, isSelected && styles.categorySelected]}
                 onPress={() => toggleCategory(category)}
+                testID={`onboarding.categories.item.${category.replace(/\s+/g, '-').toLowerCase()}`}
               >
                 <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
                   {isSelected && '✓ '}
@@ -45,6 +46,7 @@ export function OnboardingCategoriesScreen({
         <Pressable
           style={styles.button}
           onPress={() => navigation.navigate('OnboardingBudget')}
+          testID="onboarding.categories.continueButton"
         >
           <Text style={styles.buttonText}>Continue</Text>
         </Pressable>

@@ -1,12 +1,18 @@
 import { element, by, expect, waitFor, device } from 'detox';
+import {
+  TEST_USERS,
+  login,
+  loginAsPrimaryUser,
+  logout,
+  registerUser,
+  completeOnboarding,
+} from '../helpers';
 
 /**
  * Authentication Test Suite
  *
  * Tests for UI rendering and validation on auth screens.
- *
- * Note: These tests validate UI behavior only and do not require a backend.
- * Full auth flow tests with backend integration will be added in a follow-up PR.
+ * P0 CRUD flow tests for full authentication workflows.
  */
 
 /**
@@ -133,6 +139,116 @@ describe('Authentication', () => {
       await waitFor(element(by.id('login.screen')))
         .toBeVisible()
         .withTimeout(5000);
+    });
+  });
+
+  /**
+   * P0 CRUD Flow Tests
+   *
+   * These tests validate complete authentication flows with backend integration.
+   * Requires test users to be seeded in the backend.
+   */
+  describe('P0: Auth CRUD Flows', () => {
+    beforeEach(async () => {
+      await device.launchApp({ newInstance: true });
+      await waitForAppReady();
+    });
+
+    it('should login with valid credentials', async () => {
+      // Login with primary test user
+      await login(TEST_USERS.primary.email, TEST_USERS.primary.password);
+
+      // Verify we reach dashboard or onboarding
+      // If user hasn't completed onboarding, they go to onboarding first
+      try {
+        await waitFor(element(by.id('dashboard.screen')))
+          .toBeVisible()
+          .withTimeout(10000);
+      } catch {
+        // User needs to complete onboarding
+        await waitFor(element(by.id('onboarding.welcome.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+      }
+    });
+
+    it('should register new user', async () => {
+      // Generate unique email for this test run
+      const timestamp = Date.now();
+      const newEmail = `e2e-new-${timestamp}@test.local`;
+
+      // Navigate to registration
+      await registerUser('New Test User', newEmail, 'NewUserPassword123!');
+
+      // Should redirect to verify email or onboarding
+      try {
+        await waitFor(element(by.id('verifyEmail.screen')))
+          .toBeVisible()
+          .withTimeout(10000);
+      } catch {
+        // Direct to onboarding (email verification disabled in test env)
+        await waitFor(element(by.id('onboarding.welcome.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+      }
+    });
+
+    it('should reset password', async () => {
+      // Navigate to reset password
+      await element(by.id('login.resetPasswordLink')).tap();
+
+      await waitFor(element(by.id('resetPassword.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+
+      // Enter email
+      await element(by.id('resetPassword.emailInput')).typeText(
+        TEST_USERS.primary.email
+      );
+      await element(by.id('resetPassword.emailInput')).tapReturnKey();
+
+      // Submit reset request
+      await element(by.id('resetPassword.requestButton')).tap();
+
+      // Should show success message or navigate to next step
+      try {
+        await waitFor(element(by.id('resetPassword.successMessage')))
+          .toBeVisible()
+          .withTimeout(10000);
+      } catch {
+        // Check if we moved to code entry screen
+        await waitFor(element(by.id('resetPassword.codeInput')))
+          .toBeVisible()
+          .withTimeout(5000);
+      }
+    });
+
+    it('should logout and clear session', async () => {
+      // First login
+      await loginAsPrimaryUser();
+
+      // Handle onboarding if needed
+      try {
+        await waitFor(element(by.id('dashboard.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+      } catch {
+        // Complete onboarding first
+        await completeOnboarding();
+      }
+
+      // Now logout
+      await logout();
+
+      // Verify we're back at login screen
+      await expect(element(by.id('login.screen'))).toBeVisible();
+
+      // Verify session is cleared - try to access protected content
+      // App should show login screen, not auto-login
+      await device.launchApp({ newInstance: false });
+      await waitFor(element(by.id('login.screen')))
+        .toBeVisible()
+        .withTimeout(10000);
     });
   });
 });

@@ -29,16 +29,16 @@ export function OnboardingBudgetScreen({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.stepIndicator}>Step 3 of 5</Text>
-        <Text style={styles.title}>Set Budget</Text>
-        <Text style={styles.subtitle}>
+    <SafeAreaView style={styles.container} testID="onboarding.budget.screen">
+      <View style={styles.content} testID="onboarding.budget.content">
+        <Text style={styles.stepIndicator} testID="onboarding.budget.stepIndicator">Step 3 of 5</Text>
+        <Text style={styles.title} testID="onboarding.budget.title">Set Budget</Text>
+        <Text style={styles.subtitle} testID="onboarding.budget.subtitle">
           Set your monthly budget to track spending
         </Text>
 
-        <View style={styles.budgetInput}>
-          <Text style={styles.budgetSymbol}>{currencySymbol}</Text>
+        <View style={styles.budgetInput} testID="onboarding.budget.inputContainer">
+          <Text style={styles.budgetSymbol} testID="onboarding.budget.currencySymbol">{currencySymbol}</Text>
           <TextInput
             style={styles.budgetAmountInput}
             value={inputValue}
@@ -46,21 +46,22 @@ export function OnboardingBudgetScreen({
             keyboardType="numeric"
             placeholder="0"
             placeholderTextColor="#64748b"
+            testID="onboarding.budget.amountInput"
           />
           <Text style={styles.budgetPeriod}>/month</Text>
         </View>
 
-        <View style={styles.infoBox}>
+        <View style={styles.infoBox} testID="onboarding.budget.infoBox">
           <Text style={styles.infoText}>
             You can adjust this later and set category-specific budgets
           </Text>
         </View>
 
         <View style={styles.buttonContainer}>
-          <Pressable style={styles.skipButton} onPress={handleSkip}>
+          <Pressable style={styles.skipButton} onPress={handleSkip} testID="onboarding.budget.skipButton">
             <Text style={styles.skipButtonText}>Skip for now</Text>
           </Pressable>
-          <Pressable style={styles.button} onPress={handleSetBudget}>
+          <Pressable style={styles.button} onPress={handleSetBudget} testID="onboarding.budget.setBudgetButton">
             <Text style={styles.buttonText}>Set Budget</Text>
           </Pressable>
         </View>
