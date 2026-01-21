@@ -88,10 +88,10 @@ export function BudgetsTab({
     const formData = new FormData(form)
 
     // In edit mode, use editingBudget values for disabled fields
-    const accountId = isEditingBudget
+    const accountId = editingBudget
       ? editingBudget.accountId
       : (formData.get('budgetAccountId') as string) || defaultAccountId
-    const categoryId = isEditingBudget
+    const categoryId = editingBudget
       ? editingBudget.categoryId
       : (formData.get('budgetCategoryId') as string)
     const planned = Number(formData.get('planned') || 0)
