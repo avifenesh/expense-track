@@ -147,9 +147,7 @@ export function extractTextContent(html: string): string {
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<[^>]*>/g, '')
-    .replace(/[<>]/g, '')
 }
-
 /**
  * Count XSS attack surfaces in HTML
  *
