@@ -4,7 +4,16 @@ import { apiPost, apiGet, ApiError } from '../../src/services/api';
 import { useAuthStore } from '../../src/stores/authStore';
 
 jest.mock('../../src/lib/queuePersistence');
-jest.mock('../../src/services/api');
+jest.mock('../../src/services/api', () => {
+  const actual = jest.requireActual('../../src/services/api');
+  return {
+    ...actual,
+    apiGet: jest.fn(),
+    apiPost: jest.fn(),
+    apiPut: jest.fn(),
+    apiDelete: jest.fn(),
+  };
+});
 jest.mock('../../src/stores/authStore');
 
 const mockLoadQueue = loadQueue as jest.MockedFunction<typeof loadQueue>;
@@ -48,11 +57,12 @@ const createTransaction = (id: string) => ({
 describe('offlineQueueStore', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useOfflineQueueStore.getState().reset();
+    // Set up mocks before calling reset() since reset() calls clearQueue()
     mockLoadQueue.mockResolvedValue([]);
     mockSaveQueue.mockResolvedValue();
     mockClearQueue.mockResolvedValue();
     mockUseAuthStore.getState = jest.fn().mockReturnValue({ accessToken: 'test-token' });
+    useOfflineQueueStore.getState().reset();
   });
 
   describe('addToQueue', () => {

@@ -1,13 +1,37 @@
 import { useTransactionsStore } from '../../src/stores/transactionsStore';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useOfflineQueueStore } from '../../src/stores/offlineQueueStore';
 import { ApiError, apiGet, apiPost, apiPut, apiDelete } from '../../src/services/api';
+import { networkStatus } from '../../src/services/networkStatus';
 
-jest.mock('../../src/services/api');
+jest.mock('../../src/services/api', () => {
+  const actual = jest.requireActual('../../src/services/api');
+  return {
+    ...actual,
+    apiGet: jest.fn(),
+    apiPost: jest.fn(),
+    apiPut: jest.fn(),
+    apiDelete: jest.fn(),
+  };
+});
+jest.mock('../../src/services/networkStatus', () => ({
+  networkStatus: {
+    isOnline: jest.fn(),
+  },
+}));
+jest.mock('../../src/stores/offlineQueueStore');
 
 const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
 const mockApiPost = apiPost as jest.MockedFunction<typeof apiPost>;
 const mockApiPut = apiPut as jest.MockedFunction<typeof apiPut>;
 const mockApiDelete = apiDelete as jest.MockedFunction<typeof apiDelete>;
+const mockNetworkStatus = networkStatus as jest.Mocked<typeof networkStatus>;
+const mockOfflineQueueStore = useOfflineQueueStore as unknown as jest.Mock;
+
+const mockAddToQueue = jest.fn();
+mockOfflineQueueStore.getState = jest.fn().mockReturnValue({
+  addToQueue: mockAddToQueue,
+});
 
 const mockTransaction = {
   id: 'tx-1',
@@ -33,6 +57,8 @@ describe('transactionsStore', () => {
     jest.clearAllMocks();
     useTransactionsStore.getState().reset();
     useAuthStore.setState({ accessToken: 'test-token' });
+    // Default to online for most tests
+    mockNetworkStatus.isOnline.mockReturnValue(true);
   });
 
   describe('initial state', () => {
@@ -375,6 +401,95 @@ describe('transactionsStore', () => {
       expect(state.total).toBe(0);
       expect(state.error).toBeNull();
       expect(state.filters.accountId).toBe('');
+    });
+  });
+
+  describe('offline queue integration', () => {
+    const transactionInput = {
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      type: 'EXPENSE' as const,
+      amount: 50,
+      currency: 'USD' as const,
+      date: '2026-01-15T00:00:00.000Z',
+      description: 'Test offline transaction',
+    };
+
+    beforeEach(() => {
+      mockNetworkStatus.isOnline.mockReturnValue(true);
+      mockAddToQueue.mockResolvedValue('pending_123');
+    });
+
+    it('queues transaction when offline', async () => {
+      mockNetworkStatus.isOnline.mockReturnValue(false);
+
+      const result = await useTransactionsStore.getState().createTransaction(transactionInput);
+
+      expect(mockAddToQueue).toHaveBeenCalledWith(transactionInput);
+      expect(mockApiPost).not.toHaveBeenCalled();
+      expect(result.id).toBe('pending_123');
+      expect(result.isPending).toBe(true);
+    });
+
+    it('queues transaction on NETWORK_ERROR', async () => {
+      mockNetworkStatus.isOnline.mockReturnValue(true);
+      mockApiPost.mockRejectedValue(new ApiError('Network error', 'NETWORK_ERROR', 0));
+
+      const result = await useTransactionsStore.getState().createTransaction(transactionInput);
+
+      expect(mockApiPost).toHaveBeenCalled();
+      expect(mockAddToQueue).toHaveBeenCalledWith(transactionInput);
+      expect(result.id).toBe('pending_123');
+      expect(result.isPending).toBe(true);
+    });
+
+    it('adds pending transaction to store when queued', async () => {
+      mockNetworkStatus.isOnline.mockReturnValue(false);
+
+      await useTransactionsStore.getState().createTransaction(transactionInput);
+
+      const state = useTransactionsStore.getState();
+      expect(state.transactions).toHaveLength(1);
+      expect(state.transactions[0].isPending).toBe(true);
+      expect(state.total).toBe(1);
+    });
+
+    it('creates pending transaction with correct structure', async () => {
+      mockNetworkStatus.isOnline.mockReturnValue(false);
+
+      const result = await useTransactionsStore.getState().createTransaction(transactionInput);
+
+      expect(result).toMatchObject({
+        id: 'pending_123',
+        accountId: transactionInput.accountId,
+        categoryId: transactionInput.categoryId,
+        type: transactionInput.type,
+        amount: transactionInput.amount.toString(),
+        currency: transactionInput.currency,
+        date: transactionInput.date,
+        description: transactionInput.description,
+        isRecurring: false,
+        isPending: true,
+      });
+      expect(result.category).toMatchObject({
+        id: transactionInput.categoryId,
+        name: 'Pending',
+        type: transactionInput.type,
+      });
+      // Month should be the first day of the month in ISO format
+      expect(result.month).toBeDefined();
+      expect(new Date(result.month).getDate()).toBe(1);
+    });
+
+    it('does not queue on non-network API errors', async () => {
+      mockNetworkStatus.isOnline.mockReturnValue(true);
+      mockApiPost.mockRejectedValue(new ApiError('Validation error', 'VALIDATION_ERROR', 400));
+
+      await expect(
+        useTransactionsStore.getState().createTransaction(transactionInput)
+      ).rejects.toThrow(ApiError);
+
+      expect(mockAddToQueue).not.toHaveBeenCalled();
     });
   });
 });

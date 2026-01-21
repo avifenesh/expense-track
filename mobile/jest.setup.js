@@ -10,29 +10,30 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 // Mock @react-native-community/netinfo
+// Use 'mock' prefix to satisfy Jest's hoisting requirements
 const mockNetInfoState = {
   isConnected: true,
   isInternetReachable: true,
 };
 
-const netInfoListeners = new Set();
+const mockNetInfoListeners = new Set();
 
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn((callback) => {
-    netInfoListeners.add(callback);
-    return () => netInfoListeners.delete(callback);
+    mockNetInfoListeners.add(callback);
+    return () => mockNetInfoListeners.delete(callback);
   }),
   fetch: jest.fn(() => Promise.resolve(mockNetInfoState)),
   // Helper functions for tests
   __setMockState: (state) => {
     Object.assign(mockNetInfoState, state);
-    netInfoListeners.forEach((listener) => listener(mockNetInfoState));
+    mockNetInfoListeners.forEach((listener) => listener(mockNetInfoState));
   },
   __getMockState: () => mockNetInfoState,
   __resetMock: () => {
     mockNetInfoState.isConnected = true;
     mockNetInfoState.isInternetReachable = true;
-    netInfoListeners.clear();
+    mockNetInfoListeners.clear();
   },
 }));
 

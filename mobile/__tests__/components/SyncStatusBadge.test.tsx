@@ -175,9 +175,10 @@ describe('SyncStatusBadge', () => {
     );
 
     const badge = getByTestId('sync-status-badge');
-    expect(badge.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ marginTop: 10 })])
-    );
+    // The style can be an array (when using StyleSheet.compose) or a single object
+    const style = badge.props.style;
+    const styleObj = Array.isArray(style) ? Object.assign({}, ...style) : style;
+    expect(styleObj).toMatchObject({ marginTop: 10 });
   });
 
   it('has correct accessibility properties', () => {
