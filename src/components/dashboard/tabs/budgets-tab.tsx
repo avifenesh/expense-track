@@ -539,7 +539,7 @@ export function BudgetsTab({
                   title={isEditingBudget ? 'Account cannot be changed when editing a budget' : undefined}
                 />
                 {isEditingBudget && (
-                  <p className="text-xs text-slate-500">Account is part of the budget key and cannot be changed.</p>
+                  <p className="text-xs text-slate-400">Account is part of the budget key and cannot be changed.</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -566,7 +566,7 @@ export function BudgetsTab({
                   }
                 />
                 {isEditingBudget ? (
-                  <p className="text-xs text-slate-500">Category is part of the budget key and cannot be changed.</p>
+                  <p className="text-xs text-slate-400">Category is part of the budget key and cannot be changed.</p>
                 ) : (
                   (formErrors?.categoryId || validation.fields.categoryId?.error) && (
                     <p id="budget-categoryId-error" className="text-xs text-rose-300" role="alert">
