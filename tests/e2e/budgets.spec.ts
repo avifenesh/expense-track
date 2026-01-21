@@ -86,6 +86,119 @@ test.describe('budgets', () => {
     })
   })
 
+  test.describe('budget editing', () => {
+    test('should edit an existing budget', async ({ page }) => {
+      const budgetsPage = new BudgetsPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await budgetsPage.navigateToBudgetsTab()
+
+      await budgetsPage.fillBudgetForm({
+        category: TEST_CATEGORIES.UTILITIES,
+        planned: '200.00',
+      })
+      await budgetsPage.submitBudget()
+      await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
+
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+      await budgetsPage.navigateToBudgetsTab()
+
+      // Click edit button
+      await budgetsPage.clickEditBudget(TEST_CATEGORIES.UTILITIES)
+
+      // Verify edit mode is active
+      await budgetsPage.expectEditMode(TEST_CATEGORIES.UTILITIES)
+
+      // Verify form is pre-filled
+      await budgetsPage.expectFormPrefilledWith({ planned: '200' })
+
+      // Update the amount
+      await budgetsPage.updateBudgetAmount('300.00')
+
+      await expect(page.getByText(/budget updated/i)).toBeVisible({ timeout: 10000 })
+
+      // Reload and verify change persisted
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+      await budgetsPage.navigateToBudgetsTab()
+      await budgetsPage.expectBudgetInList(TEST_CATEGORIES.UTILITIES, '300')
+
+      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.UTILITIES)
+      await expect(page.getByText(/budget removed/i)).toBeVisible()
+
+      await dashboardPage.clickSignOut()
+    })
+
+    test('should cancel editing a budget', async ({ page }) => {
+      const budgetsPage = new BudgetsPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await budgetsPage.navigateToBudgetsTab()
+
+      await budgetsPage.fillBudgetForm({
+        category: TEST_CATEGORIES.TRANSPORTATION,
+        planned: '100.00',
+      })
+      await budgetsPage.submitBudget()
+      await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
+
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+      await budgetsPage.navigateToBudgetsTab()
+
+      // Click edit button
+      await budgetsPage.clickEditBudget(TEST_CATEGORIES.TRANSPORTATION)
+
+      // Verify edit mode
+      await budgetsPage.expectEditMode(TEST_CATEGORIES.TRANSPORTATION)
+
+      // Click cancel
+      await budgetsPage.clickCancelEdit()
+
+      // Verify no longer in edit mode
+      await budgetsPage.expectNotEditMode()
+
+      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.TRANSPORTATION)
+      await expect(page.getByText(/budget removed/i)).toBeVisible()
+
+      await dashboardPage.clickSignOut()
+    })
+
+    test('should disable account and category fields in edit mode', async ({ page }) => {
+      const budgetsPage = new BudgetsPage(page)
+      const dashboardPage = new DashboardPage(page)
+
+      await budgetsPage.navigateToBudgetsTab()
+
+      await budgetsPage.fillBudgetForm({
+        category: TEST_CATEGORIES.HEALTH,
+        planned: '75.00',
+      })
+      await budgetsPage.submitBudget()
+      await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
+
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+      await budgetsPage.navigateToBudgetsTab()
+
+      // Click edit button
+      await budgetsPage.clickEditBudget(TEST_CATEGORIES.HEALTH)
+
+      const accountSelect = page.locator('#budgetAccountId')
+      const categorySelect = page.locator('#budgetCategoryId')
+      await expect(accountSelect).toBeDisabled()
+      await expect(categorySelect).toBeDisabled()
+
+      // Cancel and clean up
+      await budgetsPage.clickCancelEdit()
+      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.HEALTH)
+      await expect(page.getByText(/budget removed/i)).toBeVisible()
+
+      await dashboardPage.clickSignOut()
+    })
+  })
+
   test.describe('budget filtering', () => {
     test('should filter budgets by account', async ({ page }) => {
       const budgetsPage = new BudgetsPage(page)

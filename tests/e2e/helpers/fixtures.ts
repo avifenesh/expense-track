@@ -32,6 +32,8 @@ export const TEST_CATEGORIES = {
   SALARY: 'Salary',
   ENTERTAINMENT: 'Entertainment',
   UTILITIES: 'Utilities',
+  TRANSPORTATION: 'Transportation',
+  HEALTH: 'Health',
 } as const
 
 // Date helpers for consistent test data

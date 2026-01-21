@@ -34,9 +34,33 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickEditBudget(category: string) {
-    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
     const item = this.page.locator('div.rounded-2xl', { hasText: category })
     await item.getByRole('button', { name: /edit/i }).first().click()
+  }
+
+  async clickCancelEdit() {
+    await this.clickButton('Cancel')
+  }
+
+  async expectEditMode(categoryName: string) {
+    await expect(this.page.getByText(`Edit budget: ${categoryName}`)).toBeVisible()
+    await expect(this.page.getByRole('button', { name: 'Cancel' })).toBeVisible()
+    await expect(this.page.getByRole('button', { name: 'Update budget' })).toBeVisible()
+  }
+
+  async expectNotEditMode() {
+    await expect(this.page.getByText(/Add or update a budget/)).toBeVisible()
+    await expect(this.page.getByRole('button', { name: 'Save budget' })).toBeVisible()
+  }
+
+  async expectFormPrefilledWith(data: { planned: string }) {
+    const plannedInput = this.page.getByLabel('Planned amount')
+    await expect(plannedInput).toHaveValue(data.planned)
+  }
+
+  async updateBudgetAmount(amount: string) {
+    await this.fillInput('Planned amount', amount)
+    await this.clickButton('Update budget')
   }
 
   async clickDeleteBudget(category: string) {
