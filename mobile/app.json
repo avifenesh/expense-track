@@ -8,7 +8,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
-      "./plugins/withAndroidPackagingOptions"
+      "./plugins/withAndroidPackagingOptions",
+      "./plugins/withDetoxAndroid"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
