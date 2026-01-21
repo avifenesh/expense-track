@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { prisma } from '@/lib/prisma'
 import { Currency, SplitType, PaymentStatus } from '@prisma/client'
-import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance } from '@/lib/finance'
+import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance, getPaymentHistory } from '@/lib/finance'
 
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
@@ -476,5 +476,170 @@ describe('getSettlementBalance', () => {
       youOwe: 0,
       netBalance: 30,
     })
+  })
+})
+
+describe('getPaymentHistory', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return empty array when no payment history', async () => {
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce([]) // payments received
+      .mockResolvedValueOnce([]) // payments made
+
+    const result = await getPaymentHistory('user-1')
+
+    expect(result).toEqual([])
+  })
+
+  it('should return payments received with direction="received"', async () => {
+    const paidAt = new Date('2026-01-15T10:00:00Z')
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce([
+        {
+          id: 'part-1',
+          shareAmount: { toNumber: () => 50 },
+          paidAt,
+          participant: {
+            id: 'user-payer',
+            email: 'payer@example.com',
+            displayName: 'Payer User',
+          },
+          sharedExpense: {
+            currency: 'USD',
+          },
+        },
+      ] as any) // payments received
+      .mockResolvedValueOnce([]) // payments made
+
+    const result = await getPaymentHistory('user-1')
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      participantId: 'part-1',
+      userDisplayName: 'Payer User',
+      userEmail: 'payer@example.com',
+      amount: 50,
+      currency: 'USD',
+      paidAt,
+      direction: 'received',
+    })
+  })
+
+  it('should return payments made with direction="paid"', async () => {
+    const paidAt = new Date('2026-01-14T10:00:00Z')
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce([]) // payments received
+      .mockResolvedValueOnce([
+        {
+          id: 'part-2',
+          shareAmount: { toNumber: () => 75 },
+          paidAt,
+          sharedExpense: {
+            currency: 'EUR',
+            owner: {
+              id: 'user-owner',
+              email: 'owner@example.com',
+              displayName: 'Owner User',
+            },
+          },
+        },
+      ] as any) // payments made
+
+    const result = await getPaymentHistory('user-1')
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      participantId: 'part-2',
+      userDisplayName: 'Owner User',
+      userEmail: 'owner@example.com',
+      amount: 75,
+      currency: 'EUR',
+      paidAt,
+      direction: 'paid',
+    })
+  })
+
+  it('should merge and sort payments by date descending', async () => {
+    const paidAt1 = new Date('2026-01-10T10:00:00Z') // oldest
+    const paidAt2 = new Date('2026-01-15T10:00:00Z') // newest
+    const paidAt3 = new Date('2026-01-12T10:00:00Z') // middle
+
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce([
+        {
+          id: 'part-1',
+          shareAmount: { toNumber: () => 50 },
+          paidAt: paidAt1,
+          participant: { id: 'u1', email: 'a@test.com', displayName: 'User A' },
+          sharedExpense: { currency: 'USD' },
+        },
+        {
+          id: 'part-2',
+          shareAmount: { toNumber: () => 30 },
+          paidAt: paidAt2,
+          participant: { id: 'u2', email: 'b@test.com', displayName: 'User B' },
+          sharedExpense: { currency: 'USD' },
+        },
+      ] as any) // payments received
+      .mockResolvedValueOnce([
+        {
+          id: 'part-3',
+          shareAmount: { toNumber: () => 25 },
+          paidAt: paidAt3,
+          sharedExpense: {
+            currency: 'USD',
+            owner: { id: 'u3', email: 'c@test.com', displayName: 'User C' },
+          },
+        },
+      ] as any) // payments made
+
+    const result = await getPaymentHistory('user-1')
+
+    expect(result).toHaveLength(3)
+    expect(result[0].participantId).toBe('part-2') // newest (Jan 15)
+    expect(result[1].participantId).toBe('part-3') // middle (Jan 12)
+    expect(result[2].participantId).toBe('part-1') // oldest (Jan 10)
+  })
+
+  it('should respect the limit parameter', async () => {
+    const payments = Array.from({ length: 5 }, (_, i) => ({
+      id: `part-${i}`,
+      shareAmount: { toNumber: () => 10 },
+      paidAt: new Date(`2026-01-${15 - i}T10:00:00Z`),
+      participant: { id: `u${i}`, email: `user${i}@test.com`, displayName: `User ${i}` },
+      sharedExpense: { currency: 'USD' },
+    }))
+
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce(payments as any) // payments received
+      .mockResolvedValueOnce([]) // payments made
+
+    const result = await getPaymentHistory('user-1', 3)
+
+    expect(result).toHaveLength(3)
+    expect(result[0].participantId).toBe('part-0') // most recent
+    expect(result[2].participantId).toBe('part-2')
+  })
+
+  it('should convert decimal amounts to numbers', async () => {
+    vi.mocked(prisma.expenseParticipant.findMany)
+      .mockResolvedValueOnce([
+        {
+          id: 'part-1',
+          shareAmount: { toNumber: () => 99.99 },
+          paidAt: new Date(),
+          participant: { id: 'u1', email: 'a@test.com', displayName: 'User A' },
+          sharedExpense: { currency: 'USD' },
+        },
+      ] as any)
+      .mockResolvedValueOnce([])
+
+    const result = await getPaymentHistory('user-1')
+
+    expect(result[0].amount).toBe(99.99)
+    expect(typeof result[0].amount).toBe('number')
   })
 })
