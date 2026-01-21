@@ -106,11 +106,11 @@ describe('GET /api/v1/users/lookup', () => {
       expect(response.status).toBe(200)
     })
 
-    it('blocks requests over sensitive rate limit', async () => {
-      // Sensitive rate limit is 20 requests per 5 minutes
-      for (let i = 0; i < 20; i++) {
-        checkRateLimitTyped(mockUser.userId, 'sensitive')
-        incrementRateLimitTyped(mockUser.userId, 'sensitive')
+    it('blocks requests over login rate limit', async () => {
+      // Login rate limit is 5 requests per minute (protects against email enumeration)
+      for (let i = 0; i < 5; i++) {
+        checkRateLimitTyped(mockUser.userId, 'login')
+        incrementRateLimitTyped(mockUser.userId, 'login')
       }
 
       const response = await GET(createRequest('found@example.com'))

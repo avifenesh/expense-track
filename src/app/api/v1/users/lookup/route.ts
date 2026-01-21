@@ -95,8 +95,8 @@ export async function GET(request: NextRequest) {
       })
     },
     {
-      // Use sensitive rate limiting to prevent email enumeration attacks
-      rateLimitType: 'sensitive',
+      // Use login rate limiting (5/min) to prevent email enumeration attacks
+      rateLimitType: 'login',
       // Read-only endpoint, no subscription required
       requireSubscription: false,
     }
