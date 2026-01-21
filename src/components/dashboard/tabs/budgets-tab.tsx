@@ -171,11 +171,11 @@ export function BudgetsTab({
       if (accountSelect) accountSelect.value = budget.accountId
       if (categorySelect) categorySelect.value = budget.categoryId
       if (plannedInput) plannedInput.value = String(budget.planned)
-      if (currencySelect) currencySelect.value = budget.currency
+      if (currencySelect) currencySelect.value = preferredCurrency
 
       form.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
-  }, [validation])
+  }, [validation, preferredCurrency])
 
   const handleCancelBudgetEdit = useCallback(() => {
     setEditingBudget(null)
