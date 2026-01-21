@@ -60,7 +60,7 @@ describe('getSharedExpenses', () => {
     expect(result.nextCursor).toBeNull()
     expect(prisma.sharedExpense.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { ownerId: 'user-1' },
+        where: { ownerId: 'user-1', deletedAt: null },
       }),
     )
   })
@@ -230,7 +230,7 @@ describe('getExpensesSharedWithMe', () => {
     expect(result.nextCursor).toBeNull()
     expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: 'user-1' },
+        where: { userId: 'user-1', deletedAt: null, sharedExpense: { deletedAt: null } },
       }),
     )
   })
