@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabScreenProps } from '../../navigation/types';
-import { useSharingStore } from '../../stores';
-import { EmptyState } from '../../components';
+import { useSharingStore, useTransactionsStore, useAccountsStore } from '../../stores';
+import { EmptyState, TransactionPickerModal } from '../../components';
 import { formatCurrency } from '../../utils/format';
 import type { Currency } from '../../types';
 import type {
@@ -197,9 +197,10 @@ function ParticipantRow({ participant, currency, isPaid, isLoading, onMarkPaid }
   );
 }
 
-export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
+export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
 
   const {
     sharedByMe,
@@ -212,9 +213,25 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
     clearError,
   } = useSharingStore();
 
+  const { fetchTransactions, filters, setFilters } = useTransactionsStore();
+  const { activeAccountId } = useAccountsStore();
+
   useEffect(() => {
     fetchSharing();
   }, [fetchSharing]);
+
+  // Ensure transactions are loaded for picker
+  useEffect(() => {
+    if (activeAccountId && activeAccountId !== filters.accountId) {
+      setFilters({ accountId: activeAccountId });
+    }
+  }, [activeAccountId, filters.accountId, setFilters]);
+
+  useEffect(() => {
+    if (filters.accountId) {
+      fetchTransactions();
+    }
+  }, [filters.accountId, fetchTransactions]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -237,6 +254,22 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
     },
     [markParticipantPaid, markingPaidId]
   );
+
+  const handleSharePress = useCallback(() => {
+    setIsPickerVisible(true);
+  }, []);
+
+  const handleTransactionSelect = useCallback(
+    (transactionId: string) => {
+      setIsPickerVisible(false);
+      navigation.navigate('ShareExpense', { transactionId });
+    },
+    [navigation]
+  );
+
+  const handlePickerClose = useCallback(() => {
+    setIsPickerVisible(false);
+  }, []);
 
   const pendingSharedWithMe = useMemo(
     () => sharedWithMe.filter((p) => p.status === 'PENDING'),
@@ -303,7 +336,13 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Sharing</Text>
-          <Pressable style={styles.addButton}>
+          <Pressable
+            style={styles.addButton}
+            onPress={handleSharePress}
+            accessibilityRole="button"
+            accessibilityLabel="Share an expense"
+            testID="share-expense-button"
+          >
             <Text style={styles.addButtonText}>+ Share</Text>
           </Pressable>
         </View>
@@ -357,6 +396,12 @@ export function SharingScreen(_props: MainTabScreenProps<'Sharing'>) {
           )}
         </View>
       </ScrollView>
+
+      <TransactionPickerModal
+        visible={isPickerVisible}
+        onClose={handlePickerClose}
+        onSelect={handleTransactionSelect}
+      />
     </SafeAreaView>
   );
 }

@@ -2,7 +2,11 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { AppStackParamList } from './types';
 import { MainTabNavigator } from './MainTabNavigator';
-import { AddTransactionScreen, EditTransactionScreen } from '../screens';
+import {
+  AddTransactionScreen,
+  EditTransactionScreen,
+  ShareExpenseScreen,
+} from '../screens';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -26,6 +30,14 @@ export function AppStack() {
       <Stack.Screen
         name="EditTransaction"
         component={EditTransactionScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="ShareExpense"
+        component={ShareExpenseScreen}
         options={{
           presentation: 'modal',
           animation: 'slide_from_bottom',

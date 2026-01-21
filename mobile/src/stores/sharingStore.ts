@@ -76,13 +76,35 @@ export interface SettlementBalance {
   netBalance: string;
 }
 
+export interface CreateSharedExpenseParticipant {
+  email: string;
+  shareAmount: number;
+  sharePercentage?: number;
+}
+
 export interface CreateSharedExpenseInput {
   transactionId: string;
   splitType: SplitType;
   description: string;
+  participants: CreateSharedExpenseParticipant[];
+}
+
+export interface CreateSharedExpenseResponse {
+  id: string;
+  transactionId: string;
+  splitType: SplitType;
+  totalAmount: string;
+  currency: Currency;
+  description: string | null;
+  createdAt: string;
   participants: {
+    id: string;
+    userId: string;
     email: string;
-    shareAmount: number;
+    displayName: string | null;
+    shareAmount: string;
+    sharePercentage: string | null;
+    status: ShareStatus;
   }[];
 }
 
@@ -122,6 +144,7 @@ interface SharingState {
 
 interface SharingActions {
   fetchSharing: () => Promise<void>;
+  createSharedExpense: (input: CreateSharedExpenseInput) => Promise<CreateSharedExpenseResponse>;
   markParticipantPaid: (participantId: string) => Promise<MarkPaidResponse>;
   declineShare: (participantId: string) => Promise<DeclineShareResponse>;
   cancelSharedExpense: (sharedExpenseId: string) => Promise<void>;
@@ -162,6 +185,40 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
       const message =
         error instanceof ApiError ? error.message : 'Failed to fetch sharing data';
       set({ error: message, isLoading: false });
+    }
+  },
+
+  createSharedExpense: async (input: CreateSharedExpenseInput) => {
+    const accessToken = useAuthStore.getState().accessToken;
+
+    try {
+      const response = await apiPost<CreateSharedExpenseResponse>(
+        '/expenses/share',
+        {
+          transactionId: input.transactionId,
+          splitType: input.splitType,
+          description: input.description || undefined,
+          participants: input.participants.map((p) => ({
+            email: p.email,
+            shareAmount: p.shareAmount,
+            ...(input.splitType === 'PERCENTAGE' && p.sharePercentage != null
+              ? { sharePercentage: p.sharePercentage }
+              : {}),
+          })),
+        },
+        accessToken
+      );
+
+      // Refetch sharing data to update local state with the new shared expense
+      const get = useSharingStore.getState;
+      await get().fetchSharing();
+
+      return response;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Failed to create shared expense', 'CREATE_SHARE_FAILED', 0);
     }
   },
 

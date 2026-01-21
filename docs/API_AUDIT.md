@@ -200,7 +200,7 @@ Server actions and REST API endpoints audit for Issue #64.
 ✅ PATCH  /api/v1/expenses/shares/[id]/paid   - Mark share as paid
 ✅ POST   /api/v1/expenses/shares/[id]/decline - Decline share
 ⚠️  DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense (Issue #187)
-⚠️  GET    /api/v1/users/lookup                - Lookup user by email (Issue #188)
+✅ GET    /api/v1/users/lookup                - Lookup user by email
 ⚠️  POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder (Issue #189)
 ```
 
