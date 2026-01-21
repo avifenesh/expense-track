@@ -19,6 +19,7 @@ concurrency:
 # Limit permissions for security
 permissions:
   contents: read
+  issues: write  # Required for creating issues on scheduled failures
 
 env:
   # E2E test users - must match seeded data
@@ -144,6 +145,9 @@ jobs:
       - name: Build Detox (iOS release)
         working-directory: mobile
         run: npm run e2e:build:ios:release
+        env:
+          # EXPO_PUBLIC_* vars must be set at build time
+          EXPO_PUBLIC_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Boot iOS Simulator
         run: |
@@ -306,6 +310,9 @@ jobs:
       - name: Build Detox (Android release)
         working-directory: mobile
         run: npm run e2e:build:android:release
+        env:
+          # EXPO_PUBLIC_* vars must be set at build time
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Clean ADB server
         run: |
@@ -352,3 +359,48 @@ jobs:
           name: detox-android-artifacts
           path: mobile/artifacts/
           retention-days: 7
+
+  # Create issue on scheduled test failures
+  create-issue-on-failure:
+    name: Create Issue on Failure
+    needs: [e2e-ios, e2e-android]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Check for existing open issue
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'e2e-failure,mobile',
+              per_page: 1
+            });
+
+            if (existingIssues.length > 0) {
+              // Update existing issue with new failure
+              const issue = existingIssues[0];
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `## E2E Tests Failed Again - ${date}\n\n**Run:** ${runUrl}\n\nScheduled E2E tests failed. Please investigate.`
+              });
+              console.log(`Updated existing issue #${issue.number}`);
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Mobile E2E] Scheduled tests failing - ${date}`,
+                body: `## Mobile E2E Tests Failed\n\n**Date:** ${date}\n**Trigger:** Scheduled run\n**Run:** ${runUrl}\n\n### Investigation Steps\n1. Check the workflow run for detailed logs\n2. Look at uploaded artifacts for screenshots/logs\n3. Verify backend health endpoint is responding\n4. Check if test users are properly seeded\n\n### Quick Links\n- [iOS Job](${runUrl}#:~:text=iOS%20E2E%20Tests)\n- [Android Job](${runUrl}#:~:text=Android%20E2E%20Tests)\n\ncc @avifenesh`,
+                labels: ['e2e-failure', 'mobile', 'automated']
+              });
+              console.log('Created new issue for E2E failure');
+            }
