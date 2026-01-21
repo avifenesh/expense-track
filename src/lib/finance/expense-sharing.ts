@@ -7,6 +7,7 @@ import type {
   SharedExpenseSummary,
   ExpenseParticipationSummary,
   SettlementBalance,
+  PaymentHistoryItem,
   PaginationOptions,
   PaginatedResult,
   SharedExpensePaginationOptions,
@@ -521,4 +522,83 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
   }
 
   return Array.from(balanceMap.values()).sort((a, b) => Math.abs(b.netBalance) - Math.abs(a.netBalance))
+}
+
+/**
+ * Get payment history for a user - both payments made and received.
+ * Returns the most recent settlements ordered by date.
+ */
+export async function getPaymentHistory(userId: string, limit = 10): Promise<PaymentHistoryItem[]> {
+  // Payments received (user owns the expense, participant paid)
+  const paymentsReceived = await prisma.expenseParticipant.findMany({
+    where: {
+      sharedExpense: { ownerId: userId },
+      status: PaymentStatus.PAID,
+      paidAt: { not: null },
+    },
+    include: {
+      participant: {
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+        },
+      },
+      sharedExpense: {
+        select: {
+          currency: true,
+        },
+      },
+    },
+    orderBy: { paidAt: 'desc' },
+    take: limit,
+  })
+
+  // Payments made (user is participant, they paid the owner)
+  const paymentsMade = await prisma.expenseParticipant.findMany({
+    where: {
+      userId,
+      status: PaymentStatus.PAID,
+      paidAt: { not: null },
+    },
+    include: {
+      sharedExpense: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { paidAt: 'desc' },
+    take: limit,
+  })
+
+  const historyItems: PaymentHistoryItem[] = [
+    ...paymentsReceived.map((p) => ({
+      participantId: p.id,
+      userDisplayName: p.participant.displayName,
+      userEmail: p.participant.email,
+      amount: decimalToNumber(p.shareAmount),
+      currency: p.sharedExpense.currency,
+      paidAt: p.paidAt!,
+      direction: 'received' as const,
+    })),
+    ...paymentsMade.map((p) => ({
+      participantId: p.id,
+      userDisplayName: p.sharedExpense.owner.displayName,
+      userEmail: p.sharedExpense.owner.email,
+      amount: decimalToNumber(p.shareAmount),
+      currency: p.sharedExpense.currency,
+      paidAt: p.paidAt!,
+      direction: 'paid' as const,
+    })),
+  ]
+
+  // Sort by date descending and limit
+  return historyItems.sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime()).slice(0, limit)
 }

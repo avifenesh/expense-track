@@ -319,6 +319,14 @@ export const markSharePaidSchema = z.object({
 
 export type MarkSharePaidInput = z.infer<typeof markSharePaidSchema>
 
+export const settleAllWithUserSchema = z.object({
+  targetUserId: z.string().min(1, 'Target user ID is required'),
+  currency: z.nativeEnum(Currency),
+  csrfToken: z.string().min(1, 'Security token required'),
+})
+
+export type SettleAllWithUserInput = z.infer<typeof settleAllWithUserSchema>
+
 export const cancelSharedExpenseSchema = z.object({
   sharedExpenseId: z.string().min(1, 'Shared expense ID is required'),
   csrfToken: z.string().min(1, 'Security token required'),

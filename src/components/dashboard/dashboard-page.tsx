@@ -781,6 +781,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             sharedExpenses={data.sharedExpenses || []}
             expensesSharedWithMe={data.expensesSharedWithMe || []}
             settlementBalances={data.settlementBalances || []}
+            paymentHistory={data.paymentHistory || []}
             preferredCurrency={preferredCurrency}
           />
         )}
