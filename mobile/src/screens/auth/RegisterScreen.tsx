@@ -110,7 +110,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="register.screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -118,20 +118,21 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          testID="register.scrollView"
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Start tracking your expenses</Text>
+            <Text style={styles.title} testID="register.title">Create Account</Text>
+            <Text style={styles.subtitle} testID="register.subtitle">Start tracking your expenses</Text>
 
             {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+              <View style={styles.errorContainer} testID="register.errorContainer">
+                <Text style={styles.errorText} testID="register.errorText">{error}</Text>
               </View>
             )}
 
-            <View style={styles.form}>
+            <View style={styles.form} testID="register.form">
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Display Name</Text>
+                <Text style={styles.label} testID="register.displayNameLabel">Display Name</Text>
                 <TextInput
                   style={[styles.input, displayNameError && styles.inputError]}
                   value={displayName}
@@ -141,14 +142,15 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                   autoCapitalize="words"
                   autoComplete="name"
                   editable={!isLoading}
+                  testID="register.displayNameInput"
                 />
                 {displayNameError && (
-                  <Text style={styles.fieldError}>{displayNameError}</Text>
+                  <Text style={styles.fieldError} testID="register.displayNameInput-error">{displayNameError}</Text>
                 )}
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label} testID="register.emailLabel">Email</Text>
                 <TextInput
                   style={[styles.input, emailError && styles.inputError]}
                   value={email}
@@ -160,14 +162,15 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                   autoComplete="email"
                   autoCorrect={false}
                   editable={!isLoading}
+                  testID="register.emailInput"
                 />
                 {emailError && (
-                  <Text style={styles.fieldError}>{emailError}</Text>
+                  <Text style={styles.fieldError} testID="register.emailInput-error">{emailError}</Text>
                 )}
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label} testID="register.passwordLabel">Password</Text>
                 <TextInput
                   style={[
                     styles.input,
@@ -183,9 +186,10 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                   autoCapitalize="none"
                   autoComplete="password-new"
                   editable={!isLoading}
+                  testID="register.passwordInput"
                 />
                 {(showPasswordRequirements || password.length > 0) && (
-                  <View style={styles.requirementsContainer}>
+                  <View style={styles.requirementsContainer} testID="register.passwordRequirements">
                     {passwordRequirements.map((req, index) => (
                       <View key={index} style={styles.requirement}>
                         <Text
@@ -193,6 +197,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                             styles.requirementText,
                             req.met && styles.requirementMet,
                           ]}
+                          testID={`register.passwordRequirement.${index}`}
                         >
                           {req.met ? '\u2713' : '\u2022'} {req.label}
                         </Text>
@@ -201,7 +206,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                   </View>
                 )}
                 {passwordErrors.length > 0 && !showPasswordRequirements && (
-                  <Text style={styles.fieldError}>
+                  <Text style={styles.fieldError} testID="register.passwordInput-error">
                     {passwordErrors.join(', ')}
                   </Text>
                 )}
@@ -211,9 +216,10 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                 style={[styles.button, isLoading && styles.buttonDisabled]}
                 onPress={handleRegister}
                 disabled={isLoading}
+                testID="register.submitButton"
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#0f172a" />
+                  <ActivityIndicator color="#0f172a" testID="register.submitButton-loading" />
                 ) : (
                   <Text style={styles.buttonText}>Create Account</Text>
                 )}
@@ -224,6 +230,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
               style={styles.link}
               onPress={() => navigation.navigate('Login')}
               disabled={isLoading}
+              testID="register.loginLink"
             >
               <Text style={styles.linkText}>
                 Already have an account? Sign in

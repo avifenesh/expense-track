@@ -135,10 +135,10 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   // Loading state (initial load only)
   if (accountsLoading && accounts.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.loadingScreen">
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" />
-          <Text style={styles.loadingText}>Loading your finances...</Text>
+          <ActivityIndicator size="large" color="#38bdf8" testID="dashboard.loadingIndicator" />
+          <Text style={styles.loadingText} testID="dashboard.loadingText">Loading your finances...</Text>
         </View>
       </SafeAreaView>
     );
@@ -147,11 +147,11 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   // Error state
   if (error && !isRefreshing) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.errorScreen">
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+          <Text style={styles.errorTitle} testID="dashboard.errorTitle">Something went wrong</Text>
+          <Text style={styles.errorText} testID="dashboard.errorText">{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh} testID="dashboard.retryButton">
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -162,10 +162,10 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   // No accounts state
   if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.emptyScreen">
         <View style={styles.centerContainer}>
-          <Text style={styles.emptyTitle}>No Accounts Found</Text>
-          <Text style={styles.emptyText}>
+          <Text style={styles.emptyTitle} testID="dashboard.emptyTitle">No Accounts Found</Text>
+          <Text style={styles.emptyText} testID="dashboard.emptyText">
             Create an account to start tracking your finances.
           </Text>
         </View>
@@ -174,66 +174,71 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.screen">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        testID="dashboard.scrollView"
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
             tintColor="#38bdf8"
             colors={['#38bdf8']}
+            testID="dashboard.refreshControl"
           />
         }
       >
-        <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.subtitle}>Your financial overview</Text>
+        <Text style={styles.title} testID="dashboard.title">Dashboard</Text>
+        <Text style={styles.subtitle} testID="dashboard.subtitle">Your financial overview</Text>
 
         <MonthSelector
           selectedMonth={selectedMonth}
           onMonthChange={handleMonthChange}
           disabled={!!isLoading}
+          testID="dashboard.monthSelector"
         />
 
         <BudgetProgressCard
           totalPlanned={totalBudget}
           totalSpent={totalExpenses}
           currency={currency}
+          testID="dashboard.budgetProgressCard"
         />
 
-        <View style={styles.statsRow}>
-          <View style={[styles.statCard, styles.incomeCard]}>
-            <Text style={styles.statLabel}>Income</Text>
-            <Text style={[styles.statAmount, styles.incomeAmount]}>
+        <View style={styles.statsRow} testID="dashboard.statsRow">
+          <View style={[styles.statCard, styles.incomeCard]} testID="dashboard.incomeCard">
+            <Text style={styles.statLabel} testID="dashboard.incomeLabel">Income</Text>
+            <Text style={[styles.statAmount, styles.incomeAmount]} testID="dashboard.incomeAmount">
               +{formatCurrency(totalIncome, currency)}
             </Text>
           </View>
-          <View style={[styles.statCard, styles.expenseCard]}>
-            <Text style={styles.statLabel}>Expenses</Text>
-            <Text style={[styles.statAmount, styles.expenseAmount]}>
+          <View style={[styles.statCard, styles.expenseCard]} testID="dashboard.expenseCard">
+            <Text style={styles.statLabel} testID="dashboard.expenseLabel">Expenses</Text>
+            <Text style={[styles.statAmount, styles.expenseAmount]} testID="dashboard.expenseAmount">
               -{formatCurrency(totalExpenses, currency)}
             </Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        <View style={styles.section} testID="dashboard.recentTransactionsSection">
+          <Text style={styles.sectionTitle} testID="dashboard.recentTransactionsTitle">Recent Transactions</Text>
           {transactionsLoading && transactions.length === 0 ? (
-            <View style={styles.loadingContainer}>
+            <View style={styles.loadingContainer} testID="dashboard.transactionsLoading">
               <ActivityIndicator size="small" color="#38bdf8" />
             </View>
           ) : recentTransactions.length === 0 ? (
-            <View style={styles.emptyContainer}>
+            <View style={styles.emptyContainer} testID="dashboard.transactionsEmpty">
               <Text style={styles.emptyText}>No transactions this month</Text>
             </View>
           ) : (
-            <View>
-              {recentTransactions.map((transaction) => (
+            <View testID="dashboard.transactionsList">
+              {recentTransactions.map((transaction, index) => (
                 <TransactionListItem
                   key={transaction.id}
                   transaction={transaction}
                   onPress={handleTransactionPress}
+                  testID={`dashboard.transaction.${index}`}
                 />
               ))}
             </View>
@@ -247,6 +252,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
         onPress={handleAddTransaction}
         accessibilityRole="button"
         accessibilityLabel="Add transaction"
+        testID="dashboard.addTransactionFab"
       >
         <Text style={styles.fabText}>+</Text>
       </Pressable>

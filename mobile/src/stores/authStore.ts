@@ -38,7 +38,7 @@ interface AuthActions {
 export type AuthStore = AuthState & AuthActions;
 
 const initialState: AuthState = {
-  isLoading: true,
+  isLoading: false, // Start with false - biometric check happens in background
   isAuthenticated: false,
   user: null,
   accessToken: null,
@@ -51,17 +51,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   ...initialState,
 
   initialize: async () => {
+    // Biometric capabilities will be loaded in background; isLoading starts as false
+    // Load biometric capabilities asynchronously (non-blocking)
     try {
       const capability = await biometricService.checkBiometricCapability();
       const enabled = await biometricService.isBiometricEnabled();
-
       set({
         biometricCapability: capability,
         isBiometricEnabled: enabled,
-        isLoading: false,
       });
     } catch {
-      set({ isLoading: false });
+      // Biometric init failed - app continues without biometric support
     }
   },
 
