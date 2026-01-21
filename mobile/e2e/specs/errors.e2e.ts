@@ -213,7 +213,7 @@ describe('Error Handling', () => {
         .withTimeout(5000);
 
       // Simulate partial network failure (block transactions API)
-      await NetworkHelpers.slowNetwork(['.*api/v1/transactions.*']);
+      await NetworkHelpers.slowNetwork([NetworkHelpers.API_ENDPOINTS.transactions]);
 
       // Try to refresh or perform action
       try {

@@ -8,7 +8,7 @@ import { device } from 'detox';
  */
 
 /** API endpoints used for network simulation */
-const API_ENDPOINTS = {
+export const API_ENDPOINTS = {
   transactions: '.*api/v1/transactions.*',
   budgets: '.*api/v1/budgets.*',
 };
@@ -57,4 +57,5 @@ export const NetworkHelpers = {
   goOnline: simulateOnline,
   slowNetwork: simulateSlowNetwork,
   withOfflineMode,
+  API_ENDPOINTS,
 };
