@@ -5,6 +5,7 @@ export { MonthSelector } from './MonthSelector';
 export { BudgetProgressCard } from './BudgetProgressCard';
 export { BudgetCategoryCard } from './BudgetCategoryCard';
 export type { BudgetCategoryCardProps } from './BudgetCategoryCard';
+export { TransactionPickerModal } from './TransactionPickerModal';
 
 // Form Components
 export {
