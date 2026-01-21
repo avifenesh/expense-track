@@ -247,34 +247,27 @@ export async function settleAllWithUserAction(input: SettleAllWithUserInput) {
   const { authUser } = subscriptionCheck
 
   try {
-    const participantsTheyOweUs = await prisma.expenseParticipant.findMany({
+    const participantsToSettle = await prisma.expenseParticipant.findMany({
       where: {
+        status: PaymentStatus.PENDING,
         sharedExpense: {
-          ownerId: authUser.id,
           currency: data.currency,
         },
-        userId: data.targetUserId,
-        status: PaymentStatus.PENDING,
+        OR: [
+          {
+            sharedExpense: { ownerId: authUser.id },
+            userId: data.targetUserId,
+          },
+          {
+            sharedExpense: { ownerId: data.targetUserId },
+            userId: authUser.id,
+          },
+        ],
       },
       select: { id: true },
     })
 
-    const participantsWeOweThem = await prisma.expenseParticipant.findMany({
-      where: {
-        sharedExpense: {
-          ownerId: data.targetUserId,
-          currency: data.currency,
-        },
-        userId: authUser.id,
-        status: PaymentStatus.PENDING,
-      },
-      select: { id: true },
-    })
-
-    const allParticipantIds = [
-      ...participantsTheyOweUs.map((p) => p.id),
-      ...participantsWeOweThem.map((p) => p.id),
-    ]
+    const allParticipantIds = participantsToSettle.map((p) => p.id)
 
     if (allParticipantIds.length === 0) {
       return generalError('No pending expenses found with this user')

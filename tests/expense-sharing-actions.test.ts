@@ -847,9 +847,11 @@ describe('settleAllWithUserAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
 
-    vi.mocked(prisma.expenseParticipant.findMany)
-      .mockResolvedValueOnce([{ id: 'part-1' }, { id: 'part-2' }] as any)
-      .mockResolvedValueOnce([{ id: 'part-3' }] as any)
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValueOnce([
+      { id: 'part-1' },
+      { id: 'part-2' },
+      { id: 'part-3' },
+    ] as any)
 
     vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 3 })
 
@@ -880,9 +882,7 @@ describe('settleAllWithUserAction', () => {
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
 
-    vi.mocked(prisma.expenseParticipant.findMany)
-      .mockResolvedValueOnce([{ id: 'part-usd' }] as any)
-      .mockResolvedValueOnce([] as any)
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValueOnce([{ id: 'part-usd' }] as any)
 
     vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 1 })
 
@@ -899,7 +899,7 @@ describe('settleAllWithUserAction', () => {
             currency: Currency.EUR,
           }),
         }),
-      })
+      }),
     )
   })
 })

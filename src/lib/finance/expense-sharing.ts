@@ -525,11 +525,11 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
 }
 
 export async function getPaymentHistory(userId: string, limit = 10): Promise<PaymentHistoryItem[]> {
-  const paymentsReceived = await prisma.expenseParticipant.findMany({
+  const participants = await prisma.expenseParticipant.findMany({
     where: {
-      sharedExpense: { ownerId: userId },
       status: PaymentStatus.PAID,
       paidAt: { not: null },
+      OR: [{ sharedExpense: { ownerId: userId } }, { userId }],
     },
     include: {
       participant: {
@@ -539,23 +539,6 @@ export async function getPaymentHistory(userId: string, limit = 10): Promise<Pay
           displayName: true,
         },
       },
-      sharedExpense: {
-        select: {
-          currency: true,
-        },
-      },
-    },
-    orderBy: { paidAt: 'desc' },
-    take: limit,
-  })
-
-  const paymentsMade = await prisma.expenseParticipant.findMany({
-    where: {
-      userId,
-      status: PaymentStatus.PAID,
-      paidAt: { not: null },
-    },
-    include: {
       sharedExpense: {
         include: {
           owner: {
@@ -572,26 +555,18 @@ export async function getPaymentHistory(userId: string, limit = 10): Promise<Pay
     take: limit,
   })
 
-  const historyItems: PaymentHistoryItem[] = [
-    ...paymentsReceived.map((p) => ({
-      participantId: p.id,
-      userDisplayName: p.participant.displayName,
-      userEmail: p.participant.email,
-      amount: decimalToNumber(p.shareAmount),
-      currency: p.sharedExpense.currency,
-      paidAt: p.paidAt!,
-      direction: 'received' as const,
-    })),
-    ...paymentsMade.map((p) => ({
-      participantId: p.id,
-      userDisplayName: p.sharedExpense.owner.displayName,
-      userEmail: p.sharedExpense.owner.email,
-      amount: decimalToNumber(p.shareAmount),
-      currency: p.sharedExpense.currency,
-      paidAt: p.paidAt!,
-      direction: 'paid' as const,
-    })),
-  ]
+  return participants.map((p) => {
+    const isReceived = p.sharedExpense.ownerId === userId
+    const otherUser = isReceived ? p.participant : p.sharedExpense.owner
 
-  return historyItems.sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime()).slice(0, limit)
+    return {
+      participantId: p.id,
+      userDisplayName: otherUser.displayName,
+      userEmail: otherUser.email,
+      amount: decimalToNumber(p.shareAmount),
+      currency: p.sharedExpense.currency,
+      paidAt: p.paidAt!,
+      direction: isReceived ? ('received' as const) : ('paid' as const),
+    }
+  })
 }
