@@ -11,6 +11,7 @@ const {
   withAppBuildGradle,
   withProjectBuildGradle,
   withSettingsGradle,
+  withAndroidManifest,
   withDangerousMod,
 } = require('@expo/config-plugins');
 const fs = require('fs');
@@ -119,7 +120,7 @@ function withDetoxBuildGradle(config) {
 }
 
 /**
- * Create DetoxTest.java file
+ * Create DetoxTest.java and network security config files
  */
 function withDetoxTestFile(config) {
   return withDangerousMod(config, [
@@ -177,9 +178,45 @@ public class DetoxTest {
       const detoxTestPath = path.join(androidTestDir, 'DetoxTest.java');
       fs.writeFileSync(detoxTestPath, detoxTestContent);
 
+      // Create network security config for Detox communication (Android SDK≥28)
+      const xmlDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'xml');
+      fs.mkdirSync(xmlDir, { recursive: true });
+
+      const networkSecurityConfig = `<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext traffic for localhost (Detox communication) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>
+`;
+
+      const networkConfigPath = path.join(xmlDir, 'network_security_config.xml');
+      fs.writeFileSync(networkConfigPath, networkSecurityConfig);
+
       return config;
     },
   ]);
+}
+
+/**
+ * Add network security config reference to AndroidManifest.xml
+ */
+function withDetoxManifest(config) {
+  return withAndroidManifest(config, (config) => {
+    const manifest = config.modResults;
+    const application = manifest.manifest.application?.[0];
+
+    if (application) {
+      // Add networkSecurityConfig attribute for Detox communication
+      if (!application.$['android:networkSecurityConfig']) {
+        application.$['android:networkSecurityConfig'] = '@xml/network_security_config';
+      }
+    }
+
+    return config;
+  });
 }
 
 /**
@@ -189,6 +226,7 @@ module.exports = function withDetoxAndroid(config) {
   config = withDetoxSettingsGradle(config);
   config = withDetoxRootBuildGradle(config);
   config = withDetoxBuildGradle(config);
+  config = withDetoxManifest(config);
   config = withDetoxTestFile(config);
   return config;
 };
