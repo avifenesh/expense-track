@@ -134,6 +134,34 @@ export function ShareExpenseScreen({
     setErrors((prev) => ({ ...prev, email: undefined }));
   }, []);
 
+  const addParticipant = useCallback(
+    (user: Omit<ShareUser, 'id'> & { userId?: string; isVerified: boolean }) => {
+      const newParticipant: ParticipantEntry = {
+        email: user.email,
+        displayName: user.displayName,
+        userId: user.userId,
+        percentage: splitType === 'PERCENTAGE' ? Math.floor(100 / (participants.length + 2)) : 0,
+        fixedAmount: 0,
+        isVerified: user.isVerified,
+      };
+
+      setParticipants((prev) => {
+        const updated = [...prev, newParticipant];
+
+        if (splitType === 'PERCENTAGE') {
+          const equalPercentage = Math.floor(100 / (updated.length + 1));
+          return updated.map((p) => ({ ...p, percentage: equalPercentage }));
+        }
+
+        return updated;
+      });
+
+      setEmailInput('');
+      setErrors((prev) => ({ ...prev, email: undefined, participants: undefined }));
+    },
+    [splitType, participants.length]
+  );
+
   const handleLookupUser = useCallback(async () => {
     const email = emailInput.trim().toLowerCase();
 
@@ -183,36 +211,7 @@ export function ShareExpenseScreen({
     } finally {
       setIsLookingUp(false);
     }
-  }, [emailInput, participants, lookupUser]);
-
-  const addParticipant = useCallback(
-    (user: Omit<ShareUser, 'id'> & { userId?: string; isVerified: boolean }) => {
-      const newParticipant: ParticipantEntry = {
-        email: user.email,
-        displayName: user.displayName,
-        userId: user.userId,
-        percentage: splitType === 'PERCENTAGE' ? Math.floor(100 / (participants.length + 2)) : 0,
-        fixedAmount: 0,
-        isVerified: user.isVerified,
-      };
-
-      setParticipants((prev) => {
-        const updated = [...prev, newParticipant];
-
-        // Rebalance percentages for percentage split
-        if (splitType === 'PERCENTAGE') {
-          const equalPercentage = Math.floor(100 / (updated.length + 1));
-          return updated.map((p) => ({ ...p, percentage: equalPercentage }));
-        }
-
-        return updated;
-      });
-
-      setEmailInput('');
-      setErrors((prev) => ({ ...prev, email: undefined, participants: undefined }));
-    },
-    [splitType, participants.length]
-  );
+  }, [emailInput, participants, lookupUser, addParticipant]);
 
   const removeParticipant = useCallback(
     (email: string) => {

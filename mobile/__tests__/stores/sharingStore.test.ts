@@ -618,7 +618,7 @@ describe('sharingStore', () => {
 
       await useSharingStore.getState().createSharedExpense(input);
 
-      const callArgs = mockApiPost.mock.calls[0][1] as any;
+      const callArgs = mockApiPost.mock.calls[0][1] as { participants: Array<{ email: string; shareAmount: number; sharePercentage?: number }> };
       expect(callArgs.participants[0]).toEqual({
         email: 'friend@example.com',
         shareAmount: 45.50,
@@ -643,7 +643,7 @@ describe('sharingStore', () => {
 
       await useSharingStore.getState().createSharedExpense(input);
 
-      const callArgs = mockApiPost.mock.calls[0][1] as any;
+      const callArgs = mockApiPost.mock.calls[0][1] as { description?: string };
       expect(callArgs.description).toBeUndefined();
     });
 
