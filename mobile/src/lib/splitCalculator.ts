@@ -1,14 +1,3 @@
-/**
- * Split Calculator Utility
- *
- * Provides pure functions for calculating expense splits across three split types:
- * - EQUAL: Divides amount equally among participants
- * - PERCENTAGE: Calculates amounts based on percentages
- * - FIXED: Uses fixed amounts, owner pays remainder
- *
- * All calculations use 2 decimal places for currency precision.
- */
-
 export type SplitType = 'EQUAL' | 'PERCENTAGE' | 'FIXED';
 
 export interface ParticipantShare {
@@ -22,49 +11,21 @@ export interface SplitValidationError {
   message: string;
 }
 
-/**
- * Rounds a number to 2 decimal places using banker's rounding.
- * This is the standard for financial calculations.
- */
 export function roundToTwoDecimals(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-/**
- * Calculates equal split amounts for a given number of participants.
- * The owner is NOT included in the participant count.
- *
- * @param totalAmount - The total expense amount
- * @param participantCount - Number of participants (excluding owner)
- * @returns Share amount per participant
- *
- * @example
- * // Split $100 among 2 participants (owner pays remainder)
- * calculateEqualSplit(100, 2) // Returns 33.33 (each participant pays)
- */
 export function calculateEqualSplit(totalAmount: number, participantCount: number): number {
   if (participantCount <= 0) {
     return 0;
   }
 
-  // For equal split, divide by total people (participants + owner)
   const totalPeople = participantCount + 1;
   const sharePerPerson = totalAmount / totalPeople;
 
   return roundToTwoDecimals(sharePerPerson);
 }
 
-/**
- * Calculates share amounts based on percentage allocations.
- *
- * @param totalAmount - The total expense amount
- * @param percentages - Map of email to percentage (0-100)
- * @returns Map of email to calculated amount
- *
- * @example
- * calculatePercentageSplit(100, { 'user@example.com': 30 })
- * // Returns Map { 'user@example.com' => 30.00 }
- */
 export function calculatePercentageSplit(
   totalAmount: number,
   percentages: Map<string, number>
@@ -79,30 +40,12 @@ export function calculatePercentageSplit(
   return result;
 }
 
-/**
- * Calculates the owner's share after participants' fixed amounts.
- *
- * @param totalAmount - The total expense amount
- * @param participantShares - Array of participant share amounts
- * @returns Owner's remaining share
- *
- * @example
- * getOwnerShare(100, [30, 20]) // Returns 50.00
- */
 export function getOwnerShare(totalAmount: number, participantShares: number[]): number {
   const totalParticipantShares = participantShares.reduce((sum, share) => sum + share, 0);
   const ownerShare = totalAmount - totalParticipantShares;
   return roundToTwoDecimals(ownerShare);
 }
 
-/**
- * Calculates all participant shares based on split type.
- *
- * @param splitType - The type of split (EQUAL, PERCENTAGE, FIXED)
- * @param totalAmount - The total expense amount
- * @param participants - Array of participants with optional share data
- * @returns Array of ParticipantShare objects with calculated amounts
- */
 export function calculateSplitAmounts(
   splitType: SplitType,
   totalAmount: number,
@@ -147,22 +90,11 @@ export function calculateSplitAmounts(
   }
 }
 
-/**
- * Gets the total amount that participants will pay.
- */
 export function getTotalParticipantShare(shares: ParticipantShare[]): number {
   const total = shares.reduce((sum, share) => sum + share.amount, 0);
   return roundToTwoDecimals(total);
 }
 
-/**
- * Validates split configuration and returns any errors.
- *
- * @param splitType - The type of split
- * @param totalAmount - The total expense amount
- * @param participants - Array of participants with share data
- * @returns Array of validation errors (empty if valid)
- */
 export function validateSplitAmounts(
   splitType: SplitType,
   totalAmount: number,
@@ -170,7 +102,6 @@ export function validateSplitAmounts(
 ): SplitValidationError[] {
   const errors: SplitValidationError[] = [];
 
-  // Check for at least one participant
   if (participants.length === 0) {
     errors.push({
       field: 'participants',
@@ -179,7 +110,6 @@ export function validateSplitAmounts(
     return errors;
   }
 
-  // Check for valid total amount
   if (totalAmount <= 0) {
     errors.push({
       field: 'amount',
@@ -190,7 +120,6 @@ export function validateSplitAmounts(
 
   switch (splitType) {
     case 'PERCENTAGE': {
-      // Validate each participant has a percentage
       for (const p of participants) {
         if (p.percentage == null || p.percentage < 0 || p.percentage > 100) {
           errors.push({
@@ -200,7 +129,6 @@ export function validateSplitAmounts(
         }
       }
 
-      // Validate total percentage doesn't exceed 100%
       const totalPercentage = participants.reduce((sum, p) => sum + (p.percentage ?? 0), 0);
       if (totalPercentage > 100) {
         errors.push({
@@ -212,7 +140,6 @@ export function validateSplitAmounts(
     }
 
     case 'FIXED': {
-      // Validate each participant has a valid fixed amount
       for (const p of participants) {
         if (p.fixedAmount == null || p.fixedAmount < 0) {
           errors.push({
@@ -222,7 +149,6 @@ export function validateSplitAmounts(
         }
       }
 
-      // Validate total fixed amounts don't exceed total
       const totalFixed = participants.reduce((sum, p) => sum + (p.fixedAmount ?? 0), 0);
       if (totalFixed > totalAmount) {
         errors.push({
@@ -234,21 +160,12 @@ export function validateSplitAmounts(
     }
 
     case 'EQUAL':
-      // Equal split has no additional validation requirements
       break;
   }
 
   return errors;
 }
 
-/**
- * Creates a preview of the split for display purposes.
- *
- * @param splitType - The type of split
- * @param totalAmount - The total expense amount
- * @param participants - Array of participants
- * @returns Object containing owner share, participant shares, and totals
- */
 export function createSplitPreview(
   splitType: SplitType,
   totalAmount: number,
@@ -286,14 +203,6 @@ export function createSplitPreview(
   };
 }
 
-/**
- * Distributes rounding errors to ensure totals match exactly.
- * Uses the "largest remainder method" for fair distribution.
- *
- * @param targetTotal - The exact total that shares should sum to
- * @param shares - Array of shares to adjust
- * @returns Adjusted shares that sum exactly to targetTotal
- */
 export function distributeRoundingError(targetTotal: number, shares: number[]): number[] {
   if (shares.length === 0) {
     return [];
@@ -306,7 +215,6 @@ export function distributeRoundingError(targetTotal: number, shares: number[]): 
     return shares;
   }
 
-  // Adjust the first share to account for rounding differences
   const adjusted = [...shares];
   adjusted[0] = roundToTwoDecimals(adjusted[0] + difference);
 

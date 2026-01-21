@@ -5,10 +5,6 @@ import { prisma } from '@/lib/prisma'
 import { successResponse, validationError, notFoundError } from '@/lib/api-helpers'
 import { serverLogger } from '@/lib/server-logger'
 
-/**
- * Schema for email query parameter validation.
- * Validates email format and normalizes to lowercase.
- */
 const emailQuerySchema = z.object({
   email: z
     .string()
@@ -18,31 +14,10 @@ const emailQuerySchema = z.object({
     .transform((email) => email.toLowerCase()),
 })
 
-/**
- * GET /api/v1/users/lookup
- *
- * Look up a user by email address.
- * Used by mobile app to find users when sharing expenses.
- *
- * Query Parameters:
- *   - email: string (required) - Email address to look up
- *
- * Response:
- *   - 200: { user: { id, email, displayName } }
- *   - 400: Validation error (invalid email format)
- *   - 404: User not found
- *   - 429: Rate limit exceeded (prevents email enumeration)
- *
- * Security:
- *   - Requires JWT authentication
- *   - Rate limited (sensitive) to prevent email enumeration attacks
- *   - Users cannot look up their own email
- */
 export async function GET(request: NextRequest) {
   return withApiAuth(
     request,
     async (user) => {
-      // 1. Extract and validate email query parameter
       const searchParams = request.nextUrl.searchParams
       const emailParam = searchParams.get('email')
 
@@ -53,14 +28,12 @@ export async function GET(request: NextRequest) {
 
       const { email } = parsed.data
 
-      // 2. Prevent looking up own email
       if (email === user.email.toLowerCase()) {
         return validationError({
           email: ['Cannot look up your own email address'],
         })
       }
 
-      // 3. Look up user in database
       const foundUser = await prisma.user.findUnique({
         where: { email },
         select: {
@@ -85,7 +58,6 @@ export async function GET(request: NextRequest) {
         foundUserId: foundUser.id,
       })
 
-      // 4. Return user data
       return successResponse({
         user: {
           id: foundUser.id,
@@ -95,9 +67,7 @@ export async function GET(request: NextRequest) {
       })
     },
     {
-      // Use login rate limiting (5/min) to prevent email enumeration attacks
       rateLimitType: 'login',
-      // Read-only endpoint, no subscription required
       requireSubscription: false,
     }
   )

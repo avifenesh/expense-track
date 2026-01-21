@@ -164,22 +164,9 @@ export function validateTransactionDate(date: Date | null): string | null {
   return null;
 }
 
-// ============================================
-// Share Expense Validation
-// ============================================
 
-/**
- * Maximum length for share expense description.
- */
 const MAX_SHARE_DESCRIPTION_LENGTH = 240;
 
-/**
- * Validates a share expense description.
- * Description is optional but must be valid if provided.
- *
- * @param description - The description to validate
- * @returns Error message if invalid, null if valid
- */
 export function validateShareDescription(description: string | null | undefined): string | null {
   if (!description || description.trim().length === 0) {
     return null; // Description is optional
@@ -198,13 +185,6 @@ export function validateShareDescription(description: string | null | undefined)
   return null;
 }
 
-/**
- * Validates a share amount against the total expense amount.
- *
- * @param amount - The share amount to validate
- * @param totalAmount - The total expense amount
- * @returns Error message if invalid, null if valid
- */
 export function validateShareAmount(amount: number, totalAmount: number): string | null {
   if (amount < 0) {
     return 'Amount cannot be negative';
@@ -217,12 +197,6 @@ export function validateShareAmount(amount: number, totalAmount: number): string
   return null;
 }
 
-/**
- * Validates a share percentage.
- *
- * @param percentage - The percentage to validate (0-100)
- * @returns Error message if invalid, null if valid
- */
 export function validateSharePercentage(percentage: number): string | null {
   if (percentage < 0) {
     return 'Percentage cannot be negative';
@@ -235,12 +209,6 @@ export function validateSharePercentage(percentage: number): string | null {
   return null;
 }
 
-/**
- * Validates that there is at least one participant.
- *
- * @param participants - Array of participant objects
- * @returns Error message if invalid, null if valid
- */
 export function validateParticipantsList(
   participants: Array<{ email: string }>
 ): string | null {
@@ -269,12 +237,6 @@ export function validateParticipantsList(
   return null;
 }
 
-/**
- * Validates total percentage allocation for percentage splits.
- *
- * @param percentages - Array of percentage values
- * @returns Error message if invalid, null if valid
- */
 export function validateTotalPercentage(percentages: number[]): string | null {
   const total = percentages.reduce((sum, p) => sum + p, 0);
 
@@ -285,13 +247,6 @@ export function validateTotalPercentage(percentages: number[]): string | null {
   return null;
 }
 
-/**
- * Validates total fixed amounts for fixed splits.
- *
- * @param amounts - Array of fixed amounts
- * @param totalAmount - The total expense amount
- * @returns Error message if invalid, null if valid
- */
 export function validateTotalFixedAmount(amounts: number[], totalAmount: number): string | null {
   const total = amounts.reduce((sum, a) => sum + a, 0);
 

@@ -32,10 +32,6 @@ import {
 } from '../../lib/splitCalculator';
 import type { Currency } from '../../types';
 
-// ============================================
-// Types
-// ============================================
-
 interface ParticipantEntry {
   email: string;
   displayName?: string | null;
@@ -53,19 +49,11 @@ type FormErrors = {
   general?: string;
 };
 
-// ============================================
-// Constants
-// ============================================
-
 const SPLIT_TYPES: { value: SplitType; label: string; description: string }[] = [
   { value: 'EQUAL', label: 'Equal', description: 'Split equally' },
   { value: 'PERCENTAGE', label: 'Percentage', description: 'By percentage' },
   { value: 'FIXED', label: 'Fixed', description: 'Fixed amounts' },
 ];
-
-// ============================================
-// Component
-// ============================================
 
 export function ShareExpenseScreen({
   navigation,
@@ -645,10 +633,6 @@ export function ShareExpenseScreen({
     </SafeAreaView>
   );
 }
-
-// ============================================
-// Styles
-// ============================================
 
 const styles = StyleSheet.create({
   container: {

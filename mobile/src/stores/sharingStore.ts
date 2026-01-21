@@ -210,7 +210,6 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
       );
 
       // Refetch sharing data to update local state with the new shared expense
-      // This ensures consistency with server state and avoids complex state merging
       const get = useSharingStore.getState;
       await get().fetchSharing();
 
