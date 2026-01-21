@@ -6,6 +6,7 @@ export { BudgetProgressCard } from './BudgetProgressCard';
 export { BudgetCategoryCard } from './BudgetCategoryCard';
 export type { BudgetCategoryCardProps } from './BudgetCategoryCard';
 export { TransactionPickerModal } from './TransactionPickerModal';
+export { SyncStatusBadge } from './SyncStatusBadge';
 
 // Form Components
 export {

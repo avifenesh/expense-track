@@ -19,6 +19,7 @@ import {
   TransactionListItem,
   DateSectionHeader,
   EmptyState,
+  SyncStatusBadge,
 } from '../../components';
 import { getDateKey, formatDateHeader } from '../../utils/date';
 
@@ -205,7 +206,10 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
   return (
     <SafeAreaView style={styles.container} edges={['top']} testID="transactions.screen">
       <View style={styles.header} testID="transactions.header">
-        <Text style={styles.title} testID="transactions.title">Transactions</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.title} testID="transactions.title">Transactions</Text>
+          <SyncStatusBadge style={styles.syncBadge} testID="transactions.syncStatusBadge" />
+        </View>
         <Pressable
           style={styles.addButton}
           onPress={handleAddTransaction}
@@ -285,10 +289,18 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#fff',
+  },
+  syncBadge: {
+    marginLeft: 8,
   },
   addButton: {
     backgroundColor: '#38bdf8',

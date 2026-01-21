@@ -21,6 +21,7 @@ import {
   MonthSelector,
   TransactionListItem,
   BudgetProgressCard,
+  SyncStatusBadge,
 } from '../../components';
 import { getMonthKey } from '../../utils/date';
 import { formatCurrency } from '../../utils/format';
@@ -189,8 +190,13 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
           />
         }
       >
-        <Text style={styles.title} testID="dashboard.title">Dashboard</Text>
-        <Text style={styles.subtitle} testID="dashboard.subtitle">Your financial overview</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title} testID="dashboard.title">Dashboard</Text>
+            <Text style={styles.subtitle} testID="dashboard.subtitle">Your financial overview</Text>
+          </View>
+          <SyncStatusBadge testID="dashboard.syncStatusBadge" />
+        </View>
 
         <MonthSelector
           selectedMonth={selectedMonth}
@@ -278,6 +284,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -287,7 +299,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#94a3b8',
-    marginBottom: 16,
   },
   statsRow: {
     flexDirection: 'row',

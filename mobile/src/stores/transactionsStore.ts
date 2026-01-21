@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import { registerStoreReset } from './storeRegistry';
+import { networkStatus } from '../services/networkStatus';
+import { useOfflineQueueStore } from './offlineQueueStore';
+import { logger } from '../lib/logger';
 import type { Currency } from '../types';
 import type { Category, TransactionType } from './categoriesStore';
 
@@ -19,6 +22,7 @@ export interface Transaction {
   description: string | null;
   isRecurring: boolean;
   category: Category;
+  isPending?: boolean;
 }
 
 export interface TransactionFilters {
@@ -85,6 +89,36 @@ const initialState: TransactionsState = {
   offset: 0,
   limit: 50,
 };
+
+function createPendingTransaction(
+  pendingId: string,
+  data: CreateTransactionInput
+): Transaction {
+  const date = new Date(data.date);
+  const month = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
+
+  return {
+    id: pendingId,
+    accountId: data.accountId,
+    categoryId: data.categoryId,
+    type: data.type,
+    amount: data.amount.toString(),
+    currency: data.currency,
+    date: data.date,
+    month,
+    description: data.description ?? null,
+    isRecurring: data.isRecurring ?? false,
+    category: {
+      id: data.categoryId,
+      name: 'Pending',
+      icon: '',
+      type: data.type,
+      isArchived: false,
+      sortOrder: 0,
+    },
+    isPending: true,
+  };
+}
 
 export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
   ...initialState,
@@ -164,6 +198,17 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
   createTransaction: async (data: CreateTransactionInput) => {
     const accessToken = useAuthStore.getState().accessToken;
 
+    if (!networkStatus.isOnline()) {
+      logger.info('Offline: queueing transaction for later sync');
+      const pendingId = await useOfflineQueueStore.getState().addToQueue(data);
+      const pendingTransaction = createPendingTransaction(pendingId, data);
+      set((state) => ({
+        transactions: [pendingTransaction, ...state.transactions],
+        total: state.total + 1,
+      }));
+      return pendingTransaction;
+    }
+
     try {
       const { id } = await apiPost<{ id: string }>(
         '/transactions',
@@ -183,6 +228,16 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
 
       return transaction;
     } catch (error) {
+      if (error instanceof ApiError && error.code === 'NETWORK_ERROR') {
+        logger.info('Network error: queueing transaction for later sync');
+        const pendingId = await useOfflineQueueStore.getState().addToQueue(data);
+        const pendingTransaction = createPendingTransaction(pendingId, data);
+        set((state) => ({
+          transactions: [pendingTransaction, ...state.transactions],
+          total: state.total + 1,
+        }));
+        return pendingTransaction;
+      }
       if (error instanceof ApiError) {
         throw error;
       }

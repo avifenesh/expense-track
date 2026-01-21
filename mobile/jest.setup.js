@@ -9,6 +9,67 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
 
+// Mock @react-native-community/netinfo
+const mockNetInfoState = {
+  isConnected: true,
+  isInternetReachable: true,
+};
+
+const netInfoListeners = new Set();
+
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: jest.fn((callback) => {
+    netInfoListeners.add(callback);
+    return () => netInfoListeners.delete(callback);
+  }),
+  fetch: jest.fn(() => Promise.resolve(mockNetInfoState)),
+  // Helper functions for tests
+  __setMockState: (state) => {
+    Object.assign(mockNetInfoState, state);
+    netInfoListeners.forEach((listener) => listener(mockNetInfoState));
+  },
+  __getMockState: () => mockNetInfoState,
+  __resetMock: () => {
+    mockNetInfoState.isConnected = true;
+    mockNetInfoState.isInternetReachable = true;
+    netInfoListeners.clear();
+  },
+}));
+
+// Mock @react-native-async-storage/async-storage
+const mockAsyncStorage = new Map();
+
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn((key) => Promise.resolve(mockAsyncStorage.get(key) || null)),
+  setItem: jest.fn((key, value) => {
+    mockAsyncStorage.set(key, value);
+    return Promise.resolve();
+  }),
+  removeItem: jest.fn((key) => {
+    mockAsyncStorage.delete(key);
+    return Promise.resolve();
+  }),
+  clear: jest.fn(() => {
+    mockAsyncStorage.clear();
+    return Promise.resolve();
+  }),
+  getAllKeys: jest.fn(() => Promise.resolve(Array.from(mockAsyncStorage.keys()))),
+  multiGet: jest.fn((keys) =>
+    Promise.resolve(keys.map((key) => [key, mockAsyncStorage.get(key) || null]))
+  ),
+  multiSet: jest.fn((pairs) => {
+    pairs.forEach(([key, value]) => mockAsyncStorage.set(key, value));
+    return Promise.resolve();
+  }),
+  multiRemove: jest.fn((keys) => {
+    keys.forEach((key) => mockAsyncStorage.delete(key));
+    return Promise.resolve();
+  }),
+  // Helper functions for tests
+  __getMockStorage: () => mockAsyncStorage,
+  __clearMockStorage: () => mockAsyncStorage.clear(),
+}));
+
 // Mock @react-navigation/native-stack
 jest.mock('@react-navigation/native-stack', () => {
   const React = require('react');
