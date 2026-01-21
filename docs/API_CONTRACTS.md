@@ -1572,7 +1572,7 @@ Get current user's subscription state and Paddle checkout settings.
       "customerEmail": "user@example.com"
     },
     "pricing": {
-      "monthlyPriceCents": 500,
+      "monthlyPriceCents": 300,
       "trialDays": 14,
       "currency": "USD"
     }

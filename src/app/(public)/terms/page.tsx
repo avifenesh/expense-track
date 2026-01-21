@@ -86,7 +86,7 @@ export default function TermsPage() {
 
             <h3>Subscription Pricing</h3>
             <p>
-              After your free trial, the Service is available for $5.00 USD per month. This price is subject to change
+              After your free trial, the Service is available for $3.00 USD per month. This price is subject to change
               with 30 days&apos; notice.
             </p>
 

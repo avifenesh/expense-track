@@ -1,9 +1,9 @@
 /**
- * Subscription-related constants
+ * Subscription pricing constants
  *
- * Extracted to a separate file without 'server-only' so they can be
- * imported from both server code and standalone scripts (seed, backfill).
+ * Extracted to separate file for use in both server code and standalone scripts
+ * without 'server-only' imports. These constants are referenced across the app
+ * for subscription pricing display and logic.
  */
-
 export const TRIAL_DURATION_DAYS = 14
-export const SUBSCRIPTION_PRICE_CENTS = 500 // $5.00/month
+export const SUBSCRIPTION_PRICE_CENTS = 300 // $3.00/month

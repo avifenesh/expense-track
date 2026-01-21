@@ -63,7 +63,7 @@ describe('Subscription Module', () => {
     })
 
     it('should have correct subscription price', () => {
-      expect(SUBSCRIPTION_PRICE_CENTS).toBe(500) // $5.00
+      expect(SUBSCRIPTION_PRICE_CENTS).toBe(300) // $3.00
     })
   })
 

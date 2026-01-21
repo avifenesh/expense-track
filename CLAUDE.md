@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Personal finance SaaS (in development, public launch soon). Web + mobile apps. 14-day trial, $5/month.
+Personal finance SaaS (in development, public launch soon). Web + mobile apps. 14-day trial, $3/month.
 
 **Vision:** Individual-first expense tracking. Users manage their own finances with optional expense sharing (splitting costs with roommates, partners, friends). Clarity over complexity - understand your finances in 30 seconds.
 

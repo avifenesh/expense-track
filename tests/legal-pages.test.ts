@@ -7,7 +7,7 @@ describe('Legal Pages', () => {
       const { metadata } = await import('@/app/(public)/pricing/page')
       expect(metadata.title).toBe('Pricing - Balance Beacon')
       expect(metadata.description).toContain('14-day free trial')
-      expect(metadata.description).toContain('$5/month')
+      expect(metadata.description).toContain('$3/month')
     })
 
     it('should export default page component', async () => {
@@ -17,7 +17,46 @@ describe('Legal Pages', () => {
 
     it('should use correct subscription constants', () => {
       expect(TRIAL_DURATION_DAYS).toBe(14)
-      expect(SUBSCRIPTION_PRICE_CENTS).toBe(500)
+      expect(SUBSCRIPTION_PRICE_CENTS).toBe(300)
+    })
+
+    it('should include comparison table in pricing page', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const pricingPath = path.join(process.cwd(), 'src/app/(public)/pricing/page.tsx')
+      const content = await fs.readFile(pricingPath, 'utf-8')
+
+      // Verify comparison table section heading exists
+      expect(content).toContain('Free Trial vs Premium')
+
+      // Verify both columns are defined
+      expect(content).toContain('Free Trial')
+      expect(content).toContain('Premium')
+
+      // Verify key features are listed
+      expect(content).toContain('Transaction tracking')
+      expect(content).toContain('Budget tracking')
+      expect(content).toContain('Multi-currency support')
+      expect(content).toContain('Expense sharing')
+      expect(content).toContain('Investment tracking')
+      expect(content).toContain('Data export')
+      expect(content).toContain('Mobile app access')
+      expect(content).toContain('Priority support')
+
+      // Verify trial limit indicator
+      expect(content).toContain('Limited (50)')
+      expect(content).toContain('Unlimited')
+    })
+
+    it('should include back navigation link', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const pricingPath = path.join(process.cwd(), 'src/app/(public)/pricing/page.tsx')
+      const content = await fs.readFile(pricingPath, 'utf-8')
+
+      // Verify back link exists with correct text and destination
+      expect(content).toContain('Back to app')
+      expect(content).toContain('href="/"')
     })
   })
 
