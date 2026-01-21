@@ -17,7 +17,6 @@ vi.mock('@/lib/rate-limit', () => ({
 
 describe('Dashboard API Routes', () => {
   let validToken: string
-  let otherUserToken: string
   let accountId: string
   let otherAccountId: string
   let categoryId: string
@@ -27,7 +26,6 @@ describe('Dashboard API Routes', () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
     resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
-    otherUserToken = generateAccessToken(OTHER_USER_ID, 'api-other@example.com')
 
     const testUser = await getApiTestUser()
     const otherTestUser = await getOtherTestUser()
