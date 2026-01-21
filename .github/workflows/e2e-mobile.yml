@@ -102,127 +102,14 @@ jobs:
           path: mobile/artifacts/
           retention-days: 7
 
-  e2e-android:
-    name: Android E2E Tests
-    # Ubuntu runners have KVM hardware acceleration available
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android/sdk/ndk
-          sudo rm -rf /opt/ghc
-          df -h
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      # Cache Gradle before prebuild
-      - name: Cache Android Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/android/**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      # Cache Android build outputs
-      - name: Cache Android Build
-        uses: actions/cache@v4
-        with:
-          path: |
-            mobile/android/.gradle
-            mobile/android/app/build
-          key: ${{ runner.os }}-android-build-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-android-build-
-
-      # Cache AVD
-      - name: AVD Cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-31-x86_64-linux-${{ hashFiles('mobile/detox.config.*') }}
-
-      - name: Install mobile dependencies
-        working-directory: mobile
-        run: npm install --legacy-peer-deps
-
-      - name: Install Detox CLI
-        run: npm install -g detox-cli
-
-      - name: Generate native projects (Expo prebuild)
-        working-directory: mobile
-        run: npx expo prebuild --clean --platform android
-
-      - name: Build Detox (Android release)
-        working-directory: mobile
-        run: npm run e2e:build:android:release
-
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 31
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          script: echo "Generated AVD snapshot for caching."
-
-      - name: Run Detox tests (Android)
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 31
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          working-directory: mobile
-          script: |
-            adb wait-for-device
-            adb shell input keyevent 82
-            sleep 5
-            npm run e2e:test:android:release -- --cleanup --headless --record-logs all
-        env:
-          # 10.0.2.2 is Android emulator's alias for host localhost
-          E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
-
-      - name: Upload Android test artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: detox-android-artifacts
-          path: mobile/artifacts/
-          retention-days: 7
+  # NOTE: Android E2E tests are temporarily disabled.
+  # Detox requires Android-specific instrumentation (DetoxTest.java, Gradle config)
+  # that Expo prebuild doesn't provide. This requires either:
+  # 1. A custom Expo config plugin for Detox Android setup
+  # 2. Switching to Maestro (Expo's recommended E2E framework)
+  # See issue #276 for Android E2E implementation plan.
+  #
+  # e2e-android:
+  #   name: Android E2E Tests
+  #   runs-on: ubuntu-latest
+  #   ... (disabled until proper Android Detox setup is implemented)
