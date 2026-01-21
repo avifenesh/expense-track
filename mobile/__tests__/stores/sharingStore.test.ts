@@ -508,4 +508,200 @@ describe('sharingStore', () => {
       expect(mockApiGet).toHaveBeenCalledWith('/sharing', null);
     });
   });
+
+  describe('createSharedExpense', () => {
+    beforeEach(() => {
+      useAuthStore.setState({ accessToken: 'test-token' });
+      mockApiPost.mockClear();
+      mockApiGet.mockClear();
+    });
+
+    it('creates shared expense with EQUAL split', async () => {
+      const input = {
+        transactionId: 'tx-1',
+        splitType: 'EQUAL' as const,
+        description: 'Dinner split',
+        participants: [
+          { email: 'friend@example.com', shareAmount: 50 },
+        ],
+      };
+
+      const mockResponse = {
+        id: 'share-1',
+        transactionId: 'tx-1',
+        splitType: 'EQUAL',
+        participants: [{ id: 'part-1', email: 'friend@example.com' }],
+      };
+
+      mockApiPost.mockResolvedValue(mockResponse);
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [mockSharedExpense],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
+
+      const result = await useSharingStore.getState().createSharedExpense(input);
+
+      expect(mockApiPost).toHaveBeenCalledWith(
+        '/expenses/share',
+        {
+          transactionId: 'tx-1',
+          splitType: 'EQUAL',
+          description: 'Dinner split',
+          participants: [{ email: 'friend@example.com', shareAmount: 50 }],
+        },
+        'test-token'
+      );
+      expect(mockApiGet).toHaveBeenCalledWith('/sharing', 'test-token');
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('creates shared expense with PERCENTAGE split and includes percentages', async () => {
+      const input = {
+        transactionId: 'tx-2',
+        splitType: 'PERCENTAGE' as const,
+        description: 'Split by percentage',
+        participants: [
+          { email: 'friend@example.com', shareAmount: 30, sharePercentage: 30 },
+          { email: 'other@example.com', shareAmount: 20, sharePercentage: 20 },
+        ],
+      };
+
+      const mockResponse = {
+        id: 'share-2',
+        transactionId: 'tx-2',
+        splitType: 'PERCENTAGE',
+      };
+
+      mockApiPost.mockResolvedValue(mockResponse);
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
+
+      await useSharingStore.getState().createSharedExpense(input);
+
+      expect(mockApiPost).toHaveBeenCalledWith(
+        '/expenses/share',
+        {
+          transactionId: 'tx-2',
+          splitType: 'PERCENTAGE',
+          description: 'Split by percentage',
+          participants: [
+            { email: 'friend@example.com', shareAmount: 30, sharePercentage: 30 },
+            { email: 'other@example.com', shareAmount: 20, sharePercentage: 20 },
+          ],
+        },
+        'test-token'
+      );
+    });
+
+    it('creates shared expense with FIXED split and excludes percentages', async () => {
+      const input = {
+        transactionId: 'tx-3',
+        splitType: 'FIXED' as const,
+        description: 'Fixed amounts',
+        participants: [
+          { email: 'friend@example.com', shareAmount: 45.50, sharePercentage: null },
+        ],
+      };
+
+      const mockResponse = { id: 'share-3' };
+
+      mockApiPost.mockResolvedValue(mockResponse);
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
+
+      await useSharingStore.getState().createSharedExpense(input);
+
+      const callArgs = mockApiPost.mock.calls[0][1] as any;
+      expect(callArgs.participants[0]).toEqual({
+        email: 'friend@example.com',
+        shareAmount: 45.50,
+      });
+      expect(callArgs.participants[0].sharePercentage).toBeUndefined();
+    });
+
+    it('handles empty description as undefined', async () => {
+      const input = {
+        transactionId: 'tx-4',
+        splitType: 'EQUAL' as const,
+        description: '',
+        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
+      };
+
+      mockApiPost.mockResolvedValue({ id: 'share-4' });
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
+
+      await useSharingStore.getState().createSharedExpense(input);
+
+      const callArgs = mockApiPost.mock.calls[0][1] as any;
+      expect(callArgs.description).toBeUndefined();
+    });
+
+    it('refetches sharing data after successful creation', async () => {
+      const input = {
+        transactionId: 'tx-5',
+        splitType: 'EQUAL' as const,
+        description: 'Test',
+        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
+      };
+
+      mockApiPost.mockResolvedValue({ id: 'share-5' });
+      mockApiGet.mockResolvedValue({
+        sharedExpenses: [mockSharedExpense],
+        expensesSharedWithMe: [],
+        settlementBalances: [],
+      });
+
+      await useSharingStore.getState().createSharedExpense(input);
+
+      expect(mockApiGet).toHaveBeenCalledTimes(1);
+      expect(mockApiGet).toHaveBeenCalledWith('/sharing', 'test-token');
+      expect(useSharingStore.getState().sharedExpenses).toEqual([mockSharedExpense]);
+    });
+
+    it('throws ApiError on API failure', async () => {
+      const input = {
+        transactionId: 'tx-6',
+        splitType: 'EQUAL' as const,
+        description: 'Test',
+        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
+      };
+
+      const apiError = new ApiError('Transaction already shared', 409);
+      mockApiPost.mockRejectedValue(apiError);
+
+      await expect(
+        useSharingStore.getState().createSharedExpense(input)
+      ).rejects.toThrow(ApiError);
+      await expect(
+        useSharingStore.getState().createSharedExpense(input)
+      ).rejects.toThrow('Transaction already shared');
+    });
+
+    it('wraps non-ApiError failures', async () => {
+      const input = {
+        transactionId: 'tx-7',
+        splitType: 'EQUAL' as const,
+        description: 'Test',
+        participants: [{ email: 'friend@example.com', shareAmount: 50 }],
+      };
+
+      const genericError = new Error('Network failure');
+      mockApiPost.mockRejectedValue(genericError);
+
+      await expect(
+        useSharingStore.getState().createSharedExpense(input)
+      ).rejects.toThrow('Failed to create shared expense');
+    });
+  });
 });
