@@ -3,6 +3,7 @@ import { registerStoreReset } from './storeRegistry';
 import { loadQueue, saveQueue, clearQueue, QueuedItem } from '../lib/queuePersistence';
 import { apiPost, apiGet, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
+import { useTransactionsStore } from './transactionsStore';
 import { logger } from '../lib/logger';
 import type { CreateTransactionInput, Transaction } from './transactionsStore';
 
@@ -51,17 +52,20 @@ export const useOfflineQueueStore = create<OfflineQueueStore>((set, get) => ({
       retryCount: 0,
     };
 
-    const newItems = [...get().items, queueItem];
+    const previousItems = get().items;
+    const newItems = [...previousItems, queueItem];
     set({ items: newItems, syncError: null });
 
     try {
       await saveQueue(newItems);
       logger.info('Transaction queued for offline sync', { id });
+      return id;
     } catch (error) {
       logger.error('Failed to persist queue item', error);
+      // Revert in-memory state to keep it consistent with persistent storage
+      set({ items: previousItems });
+      throw error;
     }
-
-    return id;
   },
 
   removeFromQueue: async (id: string) => {
@@ -95,8 +99,9 @@ export const useOfflineQueueStore = create<OfflineQueueStore>((set, get) => ({
 
     let successCount = 0;
     let failCount = 0;
+    const updatedItems: QueuedItem[] = [];
 
-    for (const item of [...items]) {
+    for (const item of items) {
       try {
         const { id: serverId } = await apiPost<{ id: string }>(
           '/transactions',
@@ -104,11 +109,14 @@ export const useOfflineQueueStore = create<OfflineQueueStore>((set, get) => ({
           accessToken
         );
 
-        await apiGet<Transaction>(`/transactions/${serverId}`, accessToken);
+        const transaction = await apiGet<Transaction>(`/transactions/${serverId}`, accessToken);
 
-        await get().removeFromQueue(item.id);
+        // Replace pending transaction in transactionsStore with synced transaction
+        useTransactionsStore.getState().replacePendingTransaction(item.id, transaction);
+
         successCount++;
         logger.info('Synced offline transaction', { queueId: item.id, serverId });
+        // Don't add to updatedItems - item is successfully synced and removed
       } catch (error) {
         failCount++;
         const errorMessage = error instanceof ApiError ? error.message : 'Sync failed';
@@ -120,38 +128,39 @@ export const useOfflineQueueStore = create<OfflineQueueStore>((set, get) => ({
         };
 
         if (updatedItem.retryCount >= MAX_RETRIES) {
-          logger.warn('Transaction exceeded max retries', {
+          logger.warn('Transaction exceeded max retries, removing from queue', {
             id: item.id,
             retries: updatedItem.retryCount,
           });
-        }
-
-        const currentItems = get().items;
-        const newItems = currentItems.map((i) => (i.id === item.id ? updatedItem : i));
-        set({ items: newItems });
-
-        try {
-          await saveQueue(newItems);
-        } catch (saveError) {
-          logger.error('Failed to persist retry count', saveError);
+          // Don't add to updatedItems - remove from queue after max retries
+        } else {
+          // Keep in queue for retry
+          updatedItems.push(updatedItem);
         }
 
         logger.error('Failed to sync offline transaction', error, { id: item.id });
       }
     }
 
-    const remainingItems = get().items;
-    const hasErrors = remainingItems.some((item) => item.lastError);
-
+    // Single state update after processing all items
+    const hasErrors = updatedItems.some((item) => item.lastError);
     set({
+      items: updatedItems,
       isSyncing: false,
       syncError: hasErrors ? `${failCount} transaction(s) failed to sync` : null,
     });
 
+    // Persist updated queue
+    try {
+      await saveQueue(updatedItems);
+    } catch (saveError) {
+      logger.error('Failed to persist queue after sync', saveError);
+    }
+
     logger.info('Offline queue sync completed', {
       success: successCount,
       failed: failCount,
-      remaining: remainingItems.length,
+      remaining: updatedItems.length,
     });
   },
 

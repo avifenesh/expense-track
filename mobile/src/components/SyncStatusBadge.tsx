@@ -16,7 +16,7 @@ export interface SyncStatusBadgeProps {
   testID?: string;
 }
 
-export function SyncStatusBadge({ style, onPress }: SyncStatusBadgeProps) {
+export function SyncStatusBadge({ style, onPress, testID = 'sync-status-badge' }: SyncStatusBadgeProps) {
   const { items, isSyncing, syncError } = useOfflineQueueStore((state) => ({
     items: state.items,
     isSyncing: state.isSyncing,
@@ -72,7 +72,7 @@ export function SyncStatusBadge({ style, onPress }: SyncStatusBadgeProps) {
     <TouchableOpacity
       onPress={handlePress}
       style={[styles.container, { backgroundColor: getBackgroundColor() }, style]}
-      testID="sync-status-badge"
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={
         isSyncing

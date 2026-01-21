@@ -70,6 +70,7 @@ interface TransactionsActions {
   createTransaction: (data: CreateTransactionInput) => Promise<Transaction>;
   updateTransaction: (data: UpdateTransactionInput) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
+  replacePendingTransaction: (pendingId: string, transaction: Transaction) => void;
   setFilters: (filters: Partial<TransactionFilters>) => void;
   clearError: () => void;
   reset: () => void;
@@ -292,6 +293,18 @@ export const useTransactionsStore = create<TransactionsStore>((set, get) => ({
       }
       throw new ApiError('Failed to delete transaction', 'DELETE_FAILED', 0);
     }
+  },
+
+  replacePendingTransaction: (pendingId: string, transaction: Transaction) => {
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.id === pendingId ? transaction : t
+      ),
+    }));
+    logger.info('Replaced pending transaction with synced transaction', {
+      pendingId,
+      transactionId: transaction.id,
+    });
   },
 
   setFilters: (filters: Partial<TransactionFilters>) => {

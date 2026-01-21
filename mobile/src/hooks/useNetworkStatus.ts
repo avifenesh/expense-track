@@ -17,12 +17,8 @@ export function useNetworkStatus(): UseNetworkStatusResult {
     return unsubscribe;
   }, []);
 
-  const isOnline =
-    status.isConnected &&
-    (status.isInternetReachable === null || status.isInternetReachable === true);
-
   return {
-    isOnline,
+    isOnline: networkStatus.isOnline(),
     isInternetReachable: status.isInternetReachable,
   };
 }

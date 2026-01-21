@@ -10,7 +10,7 @@ type NetworkStatusCallback = (status: NetworkStatus) => void;
 
 class NetworkStatusService {
   private currentStatus: NetworkStatus = {
-    isConnected: true,
+    isConnected: false,
     isInternetReachable: null,
   };
   private subscribers: Set<NetworkStatusCallback> = new Set();
