@@ -186,40 +186,37 @@ Server actions and REST API endpoints audit for Issue #64.
 
 ---
 
-## Missing REST Endpoints
+## REST Endpoints Status
 
-The following server actions have no corresponding REST API endpoints. These are prioritized for Sprint 4 (Mobile).
+> **Updated**: 2026-01-21 (Reality Check Scan)
 
-### High Priority (Expense Sharing)
+### Expense Sharing Endpoints
 
-**Status**: Mobile sharingStore implemented (#207) - Zustand store ready for REST API integration when endpoints are available.
-
-Core feature for the app:
+**Status**: Most core sharing endpoints are now implemented.
 
 ```
-POST   /api/v1/expenses/share              - Share expense with users
-PATCH  /api/v1/expenses/shares/[id]/paid   - Mark share as paid
-DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense
-POST   /api/v1/expenses/shares/[id]/decline - Decline share
-GET    /api/v1/expenses/shared-by-me       - Get my shared expenses
-✓ GET  /api/v1/expenses/shared-with-me     - Get expenses shared with me (Issue #184)
-GET    /api/v1/users/lookup                - Lookup user by email
-POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder
+✅ GET    /api/v1/sharing                     - Combined endpoint: sharedExpenses, expensesSharedWithMe, settlementBalances
+✅ POST   /api/v1/expenses/share              - Share expense with users
+✅ PATCH  /api/v1/expenses/shares/[id]/paid   - Mark share as paid
+✅ POST   /api/v1/expenses/shares/[id]/decline - Decline share
+⚠️  DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense (Issue #187)
+⚠️  GET    /api/v1/users/lookup                - Lookup user by email (Issue #188)
+⚠️  POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder (Issue #189)
 ```
 
-### Medium Priority (Read Endpoints)
+### Read Endpoints
 
-Mobile needs list endpoints for data sync:
+**Status**: Most list endpoints are now implemented.
 
 ```
-GET    /api/v1/transactions       - List transactions (with filters)
-GET    /api/v1/budgets            - List budgets for account/month
-GET    /api/v1/categories         - List user categories
-GET    /api/v1/holdings           - List holdings for account
-GET    /api/v1/recurring          - List recurring templates
-GET    /api/v1/accounts           - List user accounts
-GET    /api/v1/dashboard          - Dashboard summary data
-GET    /api/v1/users/me           - Current user profile
+✅ GET    /api/v1/transactions       - List transactions (with filters, pagination)
+✅ GET    /api/v1/budgets            - List budgets for account/month
+✅ GET    /api/v1/categories         - List user categories (with type filter)
+✅ GET    /api/v1/accounts           - List user accounts
+✅ GET    /api/v1/users/me           - Current user profile
+⚠️  GET    /api/v1/holdings           - List holdings for account (Issue #196)
+⚠️  GET    /api/v1/recurring          - List recurring templates (Issue #197)
+⚠️  GET    /api/v1/dashboard          - Dashboard summary data (Issue #191)
 ```
 
 ### Medium Priority (Onboarding)
@@ -289,16 +286,22 @@ Returns 402 with error response:
 
 ## Summary
 
-### Current State
+### Current State (Updated 2026-01-21)
 - **Web app**: Fully functional with 43 server actions
-- **REST API**: 24 route files covering core CRUD operations
+- **REST API**: 40+ route handlers covering core CRUD operations and most features
 - **Authentication**: JWT-based for mobile, cookie-based for web
+- **Mobile App**: 80% complete - core screens and stores implemented
+
+### Remaining API Gaps
+1. **Expense Sharing**: DELETE share, user lookup, payment reminders (#187, #188, #189)
+2. **Read Endpoints**: holdings list, recurring list, dashboard summary (#191, #196, #197)
+3. **Onboarding**: skip endpoint (#199)
+4. **Misc**: exchange rate refresh, set balance (#204, #205)
 
 ### Sprint 4 Priorities
-1. Add subscription validation to REST API
-2. Implement expense sharing endpoints (high priority for feature parity)
-3. Add list/read endpoints for data sync
-4. Implement onboarding flow endpoints
+1. Complete remaining expense sharing endpoints
+2. Add dashboard summary endpoint for mobile
+3. Add subscription validation to more REST endpoints
 
 ### Notes
 - Server actions in `shared.ts` are internal utilities, not user-facing actions

@@ -44,7 +44,12 @@ Every PR receives automatic reviews from 4 agents: **Copilot**, **Claude**, **Ge
 
 - **Sprint 1**: Production readiness - 90%+ test coverage, bug fixes, UX polish - COMPLETE
 - **Sprint 2**: Multi-tenant - user auth, data isolation, subscriptions, data migration - COMPLETE
-- **Sprint 3**: Mobile - React Native app (Expo), REST API, iOS/Android deployment
+- **Sprint 3**: Mobile - React Native app (Expo), REST API, iOS/Android deployment - 80% COMPLETE
+  - Core screens (Dashboard, Transactions, Budgets, Sharing, Settings): DONE
+  - Mobile API client & Zustand stores: DONE
+  - REST API endpoints: DONE (minor gaps remain)
+  - E2E testing infrastructure: IN PROGRESS (PR #271)
+  - Remaining: AddBudgetScreen, ShareExpenseScreen, Detox Android CI
 - **Sprint 4**: Production Infrastructure - External services, caching, monitoring, performance
 - **Sprint 5**: Launch Prep - Legal compliance, support infrastructure, app store submissions
 
