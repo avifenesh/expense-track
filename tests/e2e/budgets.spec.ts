@@ -137,7 +137,7 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
 
       await budgetsPage.fillBudgetForm({
-        category: TEST_CATEGORIES.TRANSPORT,
+        category: TEST_CATEGORIES.TRANSPORTATION,
         planned: '100.00',
       })
       await budgetsPage.submitBudget()
@@ -148,10 +148,10 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
 
       // Click edit button
-      await budgetsPage.clickEditBudget(TEST_CATEGORIES.TRANSPORT)
+      await budgetsPage.clickEditBudget(TEST_CATEGORIES.TRANSPORTATION)
 
       // Verify edit mode
-      await budgetsPage.expectEditMode(TEST_CATEGORIES.TRANSPORT)
+      await budgetsPage.expectEditMode(TEST_CATEGORIES.TRANSPORTATION)
 
       // Click cancel
       await budgetsPage.clickCancelEdit()
@@ -159,7 +159,7 @@ test.describe('budgets', () => {
       // Verify no longer in edit mode
       await budgetsPage.expectNotEditMode()
 
-      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.TRANSPORT)
+      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.TRANSPORTATION)
       await expect(page.getByText(/budget removed/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
@@ -172,7 +172,7 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
 
       await budgetsPage.fillBudgetForm({
-        category: TEST_CATEGORIES.HEALTHCARE,
+        category: TEST_CATEGORIES.HEALTH,
         planned: '75.00',
       })
       await budgetsPage.submitBudget()
@@ -183,7 +183,7 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
 
       // Click edit button
-      await budgetsPage.clickEditBudget(TEST_CATEGORIES.HEALTHCARE)
+      await budgetsPage.clickEditBudget(TEST_CATEGORIES.HEALTH)
 
       const accountSelect = page.locator('#budgetAccountId')
       const categorySelect = page.locator('#budgetCategoryId')
@@ -192,7 +192,7 @@ test.describe('budgets', () => {
 
       // Cancel and clean up
       await budgetsPage.clickCancelEdit()
-      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.HEALTHCARE)
+      await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.HEALTH)
       await expect(page.getByText(/budget removed/i)).toBeVisible()
 
       await dashboardPage.clickSignOut()
