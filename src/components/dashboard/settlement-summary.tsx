@@ -15,11 +15,10 @@ import type { SettlementBalance, PaymentHistoryItem } from '@/lib/finance'
 
 export type SettlementSummaryProps = {
   balances: SettlementBalance[]
-  preferredCurrency: Currency
   paymentHistory?: PaymentHistoryItem[]
 }
 
-export function SettlementSummary({ balances, preferredCurrency, paymentHistory = [] }: SettlementSummaryProps) {
+export function SettlementSummary({ balances, paymentHistory = [] }: SettlementSummaryProps) {
   const router = useRouter()
   const csrfToken = useCsrfToken()
   const [isPending, startTransition] = useTransition()
