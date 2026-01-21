@@ -1,0 +1,16 @@
+services:
+  db-e2e:
+    image: postgres:16-alpine
+    container_name: balance-beacon-e2e-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: balance_beacon_e2e
+      POSTGRES_USER: e2e_user
+      POSTGRES_PASSWORD: e2e_password
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "balance_beacon_e2e", "-U", "e2e_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

@@ -50,3 +50,6 @@ mobile/coverage/
 .claude/workflow-status.json
 .claude/workflow-state.json
 .claude/validation-result.json
+
+# E2E environment configuration
+.env.e2e
