@@ -238,18 +238,17 @@ describe('Dashboard API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
+      expect(data.data.budgetProgress.length).toBeGreaterThan(0)
 
-      // Should have at least one budget (we created one in beforeEach)
-      if (data.data.budgetProgress.length > 0) {
-        const budget = data.data.budgetProgress[0]
-        expect(budget.categoryId).toBeDefined()
-        expect(budget.categoryName).toBeDefined()
-        expect(budget.budgeted).toBeDefined()
-        expect(budget.spent).toBeDefined()
-        expect(budget.remaining).toBeDefined()
-        expect(budget.percentUsed).toBeDefined()
-      }
+      const budget = data.data.budgetProgress[0]
+      expect(budget.categoryId).toBeDefined()
+      expect(budget.categoryName).toBeDefined()
+      expect(budget.budgeted).toBeDefined()
+      expect(budget.spent).toBeDefined()
+      expect(budget.remaining).toBeDefined()
+      expect(budget.percentUsed).toBeDefined()
     })
+
 
     it('includes recent transactions in response', async () => {
       const request = new NextRequest(
@@ -264,20 +263,18 @@ describe('Dashboard API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
+      expect(data.data.recentTransactions.length).toBeGreaterThan(0)
 
-      // Should have at least one transaction (we created one in beforeEach)
-      if (data.data.recentTransactions.length > 0) {
-        const txn = data.data.recentTransactions[0]
-        expect(txn.id).toBeDefined()
-        expect(txn.amount).toBeDefined()
-        expect(txn.date).toBeDefined()
-        expect(txn.category).toBeDefined()
-        expect(txn.category.name).toBeDefined()
-      }
+      const txn = data.data.recentTransactions[0]
+      expect(txn.id).toBeDefined()
+      expect(txn.amount).toBeDefined()
+      expect(txn.date).toBeDefined()
+      expect(txn.category).toBeDefined()
+      expect(txn.category.name).toBeDefined()
     })
 
+
     it('limits recent transactions to 5', async () => {
-      // Create more transactions
       for (let i = 0; i < 10; i++) {
         await prisma.transaction.create({
           data: {
@@ -307,7 +304,6 @@ describe('Dashboard API Routes', () => {
       expect(response.status).toBe(200)
       expect(data.data.recentTransactions.length).toBeLessThanOrEqual(5)
 
-      // Cleanup bulk transactions
       await prisma.transaction.deleteMany({
         where: { description: { startsWith: 'Bulk test transaction' } },
       })
