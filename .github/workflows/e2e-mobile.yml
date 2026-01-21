@@ -176,7 +176,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31-x86_64-linux-${{ hashFiles('mobile/detox.config.*') }}
+          key: avd-31-x86_64-linux-${{ hashFiles('mobile/detox.config.*') }}-v2
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -192,6 +192,11 @@ jobs:
       - name: Build Detox (Android release)
         working-directory: mobile
         run: npm run e2e:build:android:release
+
+      - name: Clean ADB server
+        run: |
+          adb kill-server || true
+          sleep 2
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -216,9 +221,10 @@ jobs:
           disable-animations: true
           working-directory: mobile
           script: |
-            adb wait-for-device
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
             adb shell input keyevent 82
-            sleep 5
+            sleep 10
+            adb devices -l
             npm run e2e:test:android:release -- --cleanup --headless --record-logs all
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost
