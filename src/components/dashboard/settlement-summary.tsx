@@ -114,8 +114,7 @@ export function SettlementSummary({ balances, preferredCurrency, paymentHistory 
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-xs text-amber-300 hover:bg-amber-500/20"
+                        className="h-8 min-h-0 px-2 py-1 text-xs text-amber-300 hover:bg-amber-500/20"
                         disabled={isPending}
                         title="Send reminder"
                       >
@@ -126,8 +125,7 @@ export function SettlementSummary({ balances, preferredCurrency, paymentHistory 
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-xs text-emerald-300 hover:bg-emerald-500/20"
+                        className="h-8 min-h-0 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-500/20"
                         onClick={() => handleSettleAll(balance.userId, balance.currency)}
                         disabled={isPending}
                         title="Settle all pending expenses with this person"
