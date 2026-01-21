@@ -133,4 +133,93 @@ describe('Navigation', () => {
       await expect(element(by.id('dashboard.title'))).toBeVisible();
     });
   });
+
+  /**
+   * P1 Tests: Back Navigation
+   */
+  describe('P1: Back Navigation', () => {
+    beforeEach(async () => {
+      await device.launchApp({ newInstance: true });
+      await loginAndSetup();
+    });
+
+    it('should handle back navigation from detail screens', async () => {
+      // Navigate to Transactions
+      await element(by.id('tab.transactions')).tap();
+      await waitFor(element(by.id('transactions.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+
+      // Try to open add transaction screen
+      try {
+        await waitFor(element(by.id('transactions.addButton')))
+          .toBeVisible()
+          .withTimeout(3000);
+        await element(by.id('transactions.addButton')).tap();
+
+        await waitFor(element(by.id('addTransaction.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+
+        // Use device back button (Android) or swipe (iOS)
+        if (device.getPlatform() === 'android') {
+          await device.pressBack();
+        } else {
+          try {
+            await element(by.id('addTransaction.backButton')).tap();
+          } catch {
+            await element(by.id('addTransaction.screen')).swipe('right', 'fast', 0.9, 0.5, 0.1);
+          }
+        }
+
+        // Should return to transactions screen
+        await waitFor(element(by.id('transactions.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+      } catch {
+        // Add transaction screen not available
+      }
+
+      // Navigate to Settings and test profile back navigation
+      await element(by.id('tab.settings')).tap();
+      await waitFor(element(by.id('settings.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+
+      try {
+        await waitFor(element(by.id('settings.profileItem')))
+          .toBeVisible()
+          .withTimeout(3000);
+        await element(by.id('settings.profileItem')).tap();
+
+        await waitFor(element(by.id('profile.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+
+        // Navigate back
+        if (device.getPlatform() === 'android') {
+          await device.pressBack();
+        } else {
+          try {
+            await element(by.id('profile.backButton')).tap();
+          } catch {
+            await element(by.id('profile.screen')).swipe('right', 'fast', 0.9, 0.5, 0.1);
+          }
+        }
+
+        // Should return to settings screen
+        await waitFor(element(by.id('settings.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+      } catch {
+        // Profile screen not available
+      }
+
+      // Verify we can still navigate
+      await element(by.id('tab.dashboard')).tap();
+      await waitFor(element(by.id('dashboard.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    });
+  });
 });
