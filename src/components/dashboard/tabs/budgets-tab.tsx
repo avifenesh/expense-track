@@ -87,14 +87,19 @@ export function BudgetsTab({
     const form = event.currentTarget
     const formData = new FormData(form)
 
-    const categoryId = formData.get('budgetCategoryId') as string
+    // In edit mode, use editingBudget values for disabled fields
+    const accountId = isEditingBudget
+      ? editingBudget.accountId
+      : (formData.get('budgetAccountId') as string) || defaultAccountId
+    const categoryId = isEditingBudget
+      ? editingBudget.categoryId
+      : (formData.get('budgetCategoryId') as string)
     const planned = Number(formData.get('planned') || 0)
 
-    // Validate all fields
-    const isValid = validation.validateAll({
-      categoryId,
-      planned: String(planned),
-    })
+    // Skip categoryId validation in edit mode (field is disabled)
+    const isValid = isEditingBudget
+      ? validation.validateField('planned', String(planned))
+      : validation.validateAll({ categoryId, planned: String(planned) })
 
     if (!isValid) {
       setFormErrors(validation.errors)
@@ -102,7 +107,7 @@ export function BudgetsTab({
     }
 
     const payload = {
-      accountId: (formData.get('budgetAccountId') as string) || defaultAccountId,
+      accountId,
       categoryId,
       monthKey,
       planned,
