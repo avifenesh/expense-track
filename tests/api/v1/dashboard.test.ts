@@ -252,7 +252,6 @@ describe('Dashboard API Routes', () => {
       expect(budget.percentUsed).toBeDefined()
     })
 
-
     it('includes recent transactions in response', async () => {
       const request = new NextRequest(
         `http://localhost/api/v1/dashboard?accountId=${accountId}`,
@@ -275,7 +274,6 @@ describe('Dashboard API Routes', () => {
       expect(txn.category).toBeDefined()
       expect(txn.category.name).toBeDefined()
     })
-
 
     it('limits recent transactions to 5', async () => {
       for (let i = 0; i < 10; i++) {

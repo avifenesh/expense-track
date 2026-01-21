@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
-import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
+import { ensureResourceOwnership } from '@/lib/api-auth-helpers'
 import { getCachedDashboardData } from '@/lib/dashboard-cache'
 import {
   authError,
@@ -14,6 +14,7 @@ import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { getMonthKey, getMonthStartFromKey, formatDateForApi } from '@/utils/date'
 import { serverLogger } from '@/lib/server-logger'
 import { getBudgetProgress } from '@/lib/dashboard-ux'
+import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/v1/dashboard
@@ -68,7 +69,14 @@ export async function GET(request: NextRequest) {
     monthKey = getMonthKey(new Date())
   }
 
-  const accountCheck = await ensureApiAccountOwnership(accountId, user.userId)
+  const accountCheck = await ensureResourceOwnership(
+    () =>
+      prisma.account.findFirst({
+        where: { id: accountId, userId: user.userId, deletedAt: null },
+        select: { id: true, preferredCurrency: true },
+      }),
+    'Account'
+  )
   if (!accountCheck.allowed) {
     return forbiddenError('Access denied')
   }
@@ -78,6 +86,7 @@ export async function GET(request: NextRequest) {
       monthKey,
       accountId,
       userId: user.userId,
+      preferredCurrency: accountCheck.resource.preferredCurrency,
     })
 
     const netStat = dashboardData.stats.find((s) => s.breakdown?.type === 'net-this-month')

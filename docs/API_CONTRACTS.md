@@ -1337,6 +1337,7 @@ Get dashboard summary data including budget progress, recent transactions, and s
 - 401: Unauthorized - Invalid or missing auth token
 - 403: Forbidden - User doesn't own the account
 - 429: Rate limited - Too many requests
+- 500: Server error - Unable to fetch dashboard data
 
 ---
 
