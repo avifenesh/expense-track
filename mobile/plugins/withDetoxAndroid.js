@@ -2,28 +2,60 @@
  * Expo Config Plugin for Detox Android Setup
  *
  * Adds the necessary Android instrumentation for Detox E2E tests:
- * 1. Modifies android/build.gradle (root) with Detox maven repository
- * 2. Modifies android/app/build.gradle with test configuration
- * 3. Creates DetoxTest.java in androidTest directory
+ * 1. Modifies android/settings.gradle with Detox maven repository (modern Gradle)
+ * 2. Modifies android/build.gradle (root) with Detox maven repository (legacy fallback)
+ * 3. Modifies android/app/build.gradle with test configuration
+ * 4. Creates DetoxTest.java in androidTest directory
  */
 const {
   withAppBuildGradle,
   withProjectBuildGradle,
+  withSettingsGradle,
   withDangerousMod,
 } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
 /**
+ * Modify android/settings.gradle to add Detox maven repository
+ * Modern Gradle uses dependencyResolutionManagement in settings.gradle
+ */
+function withDetoxSettingsGradle(config) {
+  return withSettingsGradle(config, (config) => {
+    let contents = config.modResults.contents;
+
+    // Add Detox maven repository to dependencyResolutionManagement.repositories
+    if (!contents.includes('Detox-android')) {
+      // Look for dependencyResolutionManagement block
+      if (contents.includes('dependencyResolutionManagement')) {
+        contents = contents.replace(
+          /dependencyResolutionManagement\s*\{[\s\S]*?repositories\s*\{/,
+          (match) => `${match}
+        maven {
+            url(new File(["node_modules", "detox", "Detox-android"].join(File.separator)))
+            content {
+                includeGroup("com.wix")
+            }
+        }`
+        );
+      }
+    }
+
+    config.modResults.contents = contents;
+    return config;
+  });
+}
+
+/**
  * Modify android/build.gradle (root) to add Detox maven repository
+ * Legacy fallback for older Gradle configurations
  */
 function withDetoxRootBuildGradle(config) {
   return withProjectBuildGradle(config, (config) => {
     let contents = config.modResults.contents;
 
-    // Add Detox maven repository to allprojects.repositories
+    // Add Detox maven repository to allprojects.repositories (if exists)
     if (!contents.includes('Detox-android')) {
-      // Try to add to allprojects block if it exists
       if (contents.includes('allprojects')) {
         contents = contents.replace(
           /allprojects\s*\{\s*repositories\s*\{/,
@@ -154,6 +186,7 @@ public class DetoxTest {
  * Main plugin export
  */
 module.exports = function withDetoxAndroid(config) {
+  config = withDetoxSettingsGradle(config);
   config = withDetoxRootBuildGradle(config);
   config = withDetoxBuildGradle(config);
   config = withDetoxTestFile(config);
