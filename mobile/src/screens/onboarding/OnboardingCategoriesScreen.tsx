@@ -32,7 +32,7 @@ export function OnboardingCategoriesScreen({
                 key={category}
                 style={[styles.category, isSelected && styles.categorySelected]}
                 onPress={() => toggleCategory(category)}
-                testID={`onboarding.categories.item.${category.replace(/\s+/g, '-').toLowerCase()}`}
+                testID={`onboarding.categories.item.${category.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
               >
                 <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
                   {isSelected && '✓ '}

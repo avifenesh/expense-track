@@ -100,8 +100,8 @@ describe('Onboarding', () => {
       // Verify categories list is visible
       await expect(element(by.id('onboarding.categories.list'))).toBeVisible();
 
-      // Toggle a category (Food & Dining - uses lowercase dash format)
-      await element(by.id('onboarding.categories.item.food-&-dining')).tap();
+      // Toggle a category (Food & Dining - special chars replaced with dashes)
+      await element(by.id('onboarding.categories.item.food--dining')).tap();
 
       // Continue
       await element(by.id('onboarding.categories.continueButton')).tap();
