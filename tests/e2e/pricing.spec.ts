@@ -13,8 +13,8 @@ test.describe('pricing page', () => {
     test('should display correct pricing', async ({ page }) => {
       await page.goto('/pricing')
 
-      await expect(page.getByText('$3')).toBeVisible()
-      await expect(page.getByText('/month')).toBeVisible()
+      const mainPrice = page.getByText('$3').filter({ hasText: '/month' })
+      await expect(mainPrice).toBeVisible()
 
       await expect(page.getByText(/14.*day.*free.*trial/i)).toBeVisible()
     })

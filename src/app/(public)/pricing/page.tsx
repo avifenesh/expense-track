@@ -16,6 +16,7 @@ function CheckIcon({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={2}
+      aria-label="Included"
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
@@ -30,6 +31,7 @@ function XIcon({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={2}
+      aria-label="Not included"
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
@@ -141,16 +143,16 @@ export default function PricingPage() {
             <h2 className="mb-8 text-center text-2xl font-semibold text-white">
               Free Trial vs Premium
             </h2>
-            <div className="overflow-hidden rounded-2xl border border-white/15">
-              <div className="grid grid-cols-1 md:grid-cols-3">
-                <div className="hidden border-b border-white/15 bg-white/5 p-4 md:block">
+            <div className="overflow-hidden rounded-2xl border border-white/15" role="table">
+              <div className="grid grid-cols-1 md:grid-cols-3" role="rowgroup">
+                <div className="hidden border-b border-white/15 bg-white/5 p-4 md:block" role="columnheader">
                   <span className="text-sm font-medium text-slate-400">Features</span>
                 </div>
-                <div className="border-b border-white/15 bg-white/5 p-4 text-center">
+                <div className="border-b border-white/15 bg-white/5 p-4 text-center" role="columnheader">
                   <span className="text-sm font-medium text-slate-200">Free Trial</span>
                   <p className="mt-1 text-xs text-slate-400">{TRIAL_DURATION_DAYS} days</p>
                 </div>
-                <div className="border-b border-white/15 bg-emerald-500/10 p-4 text-center">
+                <div className="border-b border-white/15 bg-emerald-500/10 p-4 text-center" role="columnheader">
                   <span className="text-sm font-medium text-emerald-300">Premium</span>
                   <p className="mt-1 text-xs text-emerald-300/70">{priceDisplay}/month</p>
                 </div>
