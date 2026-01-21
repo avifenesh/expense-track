@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { useOfflineQueueStore } from '../stores';
 
-interface SyncStatusBadgeProps {
+export interface SyncStatusBadgeProps {
   style?: ViewStyle;
   onPress?: () => void;
+  testID?: string;
 }
 
 export function SyncStatusBadge({ style, onPress }: SyncStatusBadgeProps) {

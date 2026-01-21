@@ -111,10 +111,10 @@ function createPendingTransaction(
     category: {
       id: data.categoryId,
       name: 'Pending',
-      icon: '',
       type: data.type,
+      color: '#9CA3AF',
       isArchived: false,
-      sortOrder: 0,
+      isHolding: false,
     },
     isPending: true,
   };

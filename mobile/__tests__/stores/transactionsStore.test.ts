@@ -49,6 +49,8 @@ const mockTransaction = {
     name: 'Food',
     type: 'EXPENSE' as const,
     color: '#4CAF50',
+    isArchived: false,
+    isHolding: false,
   },
 };
 
