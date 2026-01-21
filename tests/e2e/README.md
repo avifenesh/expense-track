@@ -13,8 +13,9 @@ This test suite covers:
 - **Dashboard** (9 tests): Layout, month navigation, account switching, tabs
 - **Settings** (8 tests): Account menu dropdown, export data, sign out, delete account
 - **Subscription** (5 tests): Subscription banner, upgrade page, pricing
+- **Pricing** (9 tests): Public pricing page, comparison table, navigation
 
-**Total: 68 web E2E tests**
+**Total: 77 web E2E tests**
 
 ## Setup
 
@@ -120,6 +121,7 @@ Test files in `tests/e2e/`:
 - `dashboard.spec.ts` - Dashboard navigation tests
 - `settings.spec.ts` - Settings page tests
 - `subscription.spec.ts` - Subscription flow tests
+- `pricing.spec.ts` - Public pricing page tests
 
 ## Writing Tests
 
