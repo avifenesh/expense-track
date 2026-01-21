@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Pricing: Updated from $5/month to $3/month (#274)
+  - Reduced subscription price constant to 300 cents ($3.00)
+  - Updated pricing display across all pages
+  - Updated legal terms and documentation
+
+### Added
+- Web: Enhanced pricing page with feature comparison table (#274)
+  - Free trial vs Premium comparison table
+  - Visual feature breakdown with checkmarks
+  - Back navigation to app
+  - Pricing page E2E test suite
+  - Comprehensive unit tests for comparison table
+
 ### Fixed
 - Web: E2E test locator fixes and improvements (#263)
   - Fixed 45+ flaky test locators across 8 spec files
