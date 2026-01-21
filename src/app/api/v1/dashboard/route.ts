@@ -54,12 +54,16 @@ export async function GET(request: NextRequest) {
 
   let monthKey: string
   if (monthParam !== null && monthParam !== '') {
-    try {
-      getMonthStartFromKey(monthParam)
-      monthKey = monthParam
-    } catch {
+    // Validate YYYY-MM format
+    if (!/^\d{4}-\d{2}$/.test(monthParam)) {
       return validationError({ month: ['month must be in YYYY-MM format'] })
     }
+    // Validate it produces a valid date
+    const parsed = getMonthStartFromKey(monthParam)
+    if (isNaN(parsed.getTime())) {
+      return validationError({ month: ['month must be in YYYY-MM format'] })
+    }
+    monthKey = monthParam
   } else {
     monthKey = getMonthKey(new Date())
   }
