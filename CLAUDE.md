@@ -96,7 +96,7 @@ npm test                 # Run mobile tests
 - `tests/` - Vitest unit tests
 - `tests/e2e/` - Playwright E2E tests (see `tests/e2e/README.md`)
 - `mobile/` - React Native mobile app (Expo)
-  - See `mobile/README.md` for setup instructions
+  - See `docs/MOBILE_TESTING.md` for testing guide
 
 ## Patterns
 
