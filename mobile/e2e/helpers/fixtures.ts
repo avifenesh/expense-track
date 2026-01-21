@@ -10,14 +10,14 @@ export const TEST_USERS = {
   // Note: These credentials should match users seeded in CI workflow
   primary: {
     email: 'e2e-user1@test.local',
-    password: 'E2ETestPassword123!',
+    password: 'TestPassword123!',
     name: 'E2E Test User',
   },
 
   // Secondary test user for multi-user scenarios
   secondary: {
     email: 'e2e-user2@test.local',
-    password: 'E2ETestPassword123!',
+    password: 'TestPassword123!',
     name: 'E2E Test User 2',
   },
 
