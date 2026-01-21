@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition, useCallback, useRef, useEffect } from 'react'
+import { useMemo, useState, useTransition, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { TransactionType, Currency } from '@prisma/client'
 import { FileSpreadsheet } from 'lucide-react'
@@ -155,7 +155,6 @@ export function BudgetsTab({
     setFormErrors(null)
     validation.resetAll()
 
-    // Pre-fill form fields after state update
     setTimeout(() => {
       const form = budgetFormRef.current
       if (!form) return
@@ -170,7 +169,6 @@ export function BudgetsTab({
       if (plannedInput) plannedInput.value = String(budget.planned)
       if (currencySelect) currencySelect.value = budget.currency
 
-      // Scroll form into view
       form.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 0)
   }, [validation])

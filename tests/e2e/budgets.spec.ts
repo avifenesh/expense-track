@@ -93,7 +93,6 @@ test.describe('budgets', () => {
 
       await budgetsPage.navigateToBudgetsTab()
 
-      // Create a budget first
       await budgetsPage.fillBudgetForm({
         category: TEST_CATEGORIES.UTILITIES,
         planned: '200.00',
@@ -101,7 +100,6 @@ test.describe('budgets', () => {
       await budgetsPage.submitBudget()
       await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
 
-      // Reload to ensure fresh data
       await page.reload()
       await page.waitForLoadState('networkidle')
       await budgetsPage.navigateToBudgetsTab()
@@ -126,7 +124,6 @@ test.describe('budgets', () => {
       await budgetsPage.navigateToBudgetsTab()
       await budgetsPage.expectBudgetInList(TEST_CATEGORIES.UTILITIES, '300')
 
-      // Clean up - delete the budget
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.UTILITIES)
       await expect(page.getByText(/budget removed/i)).toBeVisible()
 
@@ -139,7 +136,6 @@ test.describe('budgets', () => {
 
       await budgetsPage.navigateToBudgetsTab()
 
-      // Create a budget first
       await budgetsPage.fillBudgetForm({
         category: TEST_CATEGORIES.TRANSPORT,
         planned: '100.00',
@@ -147,7 +143,6 @@ test.describe('budgets', () => {
       await budgetsPage.submitBudget()
       await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
 
-      // Reload to ensure fresh data
       await page.reload()
       await page.waitForLoadState('networkidle')
       await budgetsPage.navigateToBudgetsTab()
@@ -164,7 +159,6 @@ test.describe('budgets', () => {
       // Verify no longer in edit mode
       await budgetsPage.expectNotEditMode()
 
-      // Clean up - delete the budget
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.TRANSPORT)
       await expect(page.getByText(/budget removed/i)).toBeVisible()
 
@@ -177,7 +171,6 @@ test.describe('budgets', () => {
 
       await budgetsPage.navigateToBudgetsTab()
 
-      // Create a budget first
       await budgetsPage.fillBudgetForm({
         category: TEST_CATEGORIES.HEALTHCARE,
         planned: '75.00',
@@ -185,7 +178,6 @@ test.describe('budgets', () => {
       await budgetsPage.submitBudget()
       await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
 
-      // Reload to ensure fresh data
       await page.reload()
       await page.waitForLoadState('networkidle')
       await budgetsPage.navigateToBudgetsTab()
@@ -193,7 +185,6 @@ test.describe('budgets', () => {
       // Click edit button
       await budgetsPage.clickEditBudget(TEST_CATEGORIES.HEALTHCARE)
 
-      // Verify account and category selects are disabled
       const accountSelect = page.locator('#budgetAccountId')
       const categorySelect = page.locator('#budgetCategoryId')
       await expect(accountSelect).toBeDisabled()

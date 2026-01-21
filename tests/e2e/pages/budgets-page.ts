@@ -34,7 +34,6 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickEditBudget(category: string) {
-    // Use rounded-2xl class to target budget row divs specifically (not parent containers)
     const item = this.page.locator('div.rounded-2xl', { hasText: category })
     await item.getByRole('button', { name: /edit/i }).first().click()
   }
