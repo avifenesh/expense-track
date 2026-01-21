@@ -22,6 +22,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     async (user) => {
       const { participantId } = await params
 
+      // 1. Get participant
       const participant = await prisma.expenseParticipant.findFirst({
         where: { id: participantId, deletedAt: null, sharedExpense: { deletedAt: null } },
         include: {
@@ -35,15 +36,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         return notFoundError('Participant not found')
       }
 
+      // 2. Authorization check
       if (participant.sharedExpense.ownerId !== user.userId) {
         return forbiddenError(
           'Only the expense owner can mark payments as received'
         )
       }
 
+      // 3. Update status atomically
       const paidAt = new Date()
 
-      // Use updateMany with status condition for atomic check-and-update
       const updateResult = await prisma.expenseParticipant.updateMany({
         where: {
           id: participantId,
@@ -55,7 +57,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         },
       })
 
-      // If no rows updated, share was not in PENDING status
       if (updateResult.count === 0) {
         return validationError({
           status: [
@@ -70,6 +71,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         participantId,
       })
 
+      // 4. Return success
       return successResponse({
         id: participantId,
         status: PaymentStatus.PAID,

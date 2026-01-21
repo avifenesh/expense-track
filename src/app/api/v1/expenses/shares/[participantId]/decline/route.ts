@@ -25,6 +25,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     async (user) => {
       const { participantId } = await params
 
+      // 1. Parse optional reason
       let reason: string | undefined
       try {
         const body = await request.json() as DeclineRequestBody
@@ -37,10 +38,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           reason = body.reason.trim() || undefined
         }
       } catch {
-        // Body is optional - empty body or missing Content-Type is expected and acceptable.
-        // No logging needed for expected behavior.
+        // Empty body is acceptable
       }
 
+      // 2. Get participant
       const participant = await prisma.expenseParticipant.findFirst({
         where: { id: participantId, deletedAt: null, sharedExpense: { deletedAt: null } },
       })
@@ -49,16 +50,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         return notFoundError('Participant not found')
       }
 
+      // 3. Authorization check
       if (participant.userId !== user.userId) {
         return forbiddenError('You can only decline shares assigned to you')
       }
 
+      // 4. Validate state
       if (participant.status !== PaymentStatus.PENDING) {
         return validationError({
-          status: [`Cannot decline a share that is already ${participant.status.toLowerCase()}`],
+          status: ['Cannot decline a share that is already ' + participant.status.toLowerCase()],
         })
       }
 
+      // 5. Update status
       const declinedAt = new Date()
 
       await prisma.expenseParticipant.update({
@@ -77,6 +81,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         reason: reason ?? null,
       })
 
+      // 6. Return success
       return successResponse({
         id: participantId,
         status: 'DECLINED',

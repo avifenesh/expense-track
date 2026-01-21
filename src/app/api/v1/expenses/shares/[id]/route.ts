@@ -14,8 +14,7 @@ type RouteParams = { params: Promise<{ id: string }> }
 
 /**
  * DELETE /api/v1/expenses/shares/[id]
- * Cancel/delete a shared expense (owner only).
- * Cannot delete if any participant has already paid.
+ * Delete a shared expense (owner only, cannot delete if any participant paid).
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(
@@ -23,6 +22,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     async (user) => {
       const { id } = await params
 
+      // 1. Get shared expense
       const sharedExpense = await prisma.sharedExpense.findFirst({
         where: {
           id,
@@ -39,19 +39,22 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         return notFoundError('Shared expense not found')
       }
 
+      // 2. Authorization check
       if (sharedExpense.ownerId !== user.userId) {
-        return forbiddenError('Only the expense owner can cancel a shared expense')
+        return forbiddenError('Only the expense owner can delete a shared expense')
       }
 
+      // 3. Validate state
       const paidParticipant = sharedExpense.participants.find(
         (p) => p.status === PaymentStatus.PAID
       )
       if (paidParticipant) {
         return validationError({
-          participants: ['Cannot cancel expense when participants have already paid'],
+          participants: ['Cannot delete expense when participants have already paid'],
         })
       }
 
+      // 4. Soft delete in transaction
       const now = new Date()
 
       await prisma.$transaction(async (tx) => {
@@ -79,6 +82,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         participantCount: sharedExpense.participants.length,
       })
 
+      // 5. Return success
       return successResponse({ deleted: true })
     },
     { requireSubscription: true }
