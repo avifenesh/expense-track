@@ -39,11 +39,13 @@ jobs:
       - name: Setup PostgreSQL
         run: |
           brew install postgresql@16
+          echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc
+          export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
           brew services start postgresql@16
-          sleep 3
-          createuser -s e2e_user
-          psql postgres -c "ALTER USER e2e_user WITH PASSWORD 'e2e_password';"
-          createdb -O e2e_user balance_beacon_e2e
+          sleep 5
+          /opt/homebrew/opt/postgresql@16/bin/createuser -s e2e_user || true
+          /opt/homebrew/opt/postgresql@16/bin/psql postgres -c "ALTER USER e2e_user WITH PASSWORD 'e2e_password';"
+          /opt/homebrew/opt/postgresql@16/bin/createdb -O e2e_user balance_beacon_e2e
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
