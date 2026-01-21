@@ -45,7 +45,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         return forbiddenError('Only the expense owner can delete a shared expense')
       }
 
-      // 3. Validate state
+      // 3. Validate state (pre-check, also verified atomically inside transaction)
       const paidParticipant = sharedExpense.participants.find(
         (p) => p.status === PaymentStatus.PAID
       )
@@ -55,13 +55,25 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         })
       }
 
-      // 4. Soft delete in transaction
+      // 4. Soft delete in transaction with atomic paid-check
       const now = new Date()
 
       try {
         await prisma.$transaction(async (tx) => {
+          // Re-check for PAID participants inside transaction to prevent race condition
+          const paidCount = await tx.expenseParticipant.count({
+            where: {
+              sharedExpenseId: id,
+              status: PaymentStatus.PAID,
+              deletedAt: null,
+            },
+          })
+          if (paidCount > 0) {
+            throw new Error('PAID_PARTICIPANT')
+          }
+
           await tx.sharedExpense.update({
-            where: { id },
+            where: { id, deletedAt: null },
             data: {
               deletedAt: now,
               deletedBy: user.userId,
@@ -69,7 +81,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           })
 
           await tx.expenseParticipant.updateMany({
-            where: { sharedExpenseId: id },
+            where: { sharedExpenseId: id, deletedAt: null },
             data: {
               deletedAt: now,
               deletedBy: user.userId,
@@ -77,6 +89,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           })
         })
       } catch (error) {
+        // Handle race condition where participant was marked PAID during transaction
+        if (error instanceof Error && error.message === 'PAID_PARTICIPANT') {
+          return validationError({
+            participants: ['Cannot delete expense when participants have already paid'],
+          })
+        }
         serverLogger.error('Failed to delete shared expense', {
           action: 'DELETE /api/v1/expenses/shares/[id]',
           userId: user.userId,

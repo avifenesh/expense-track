@@ -1127,11 +1127,11 @@ Mark a participant's share as paid (owner only).
 
 ### DELETE /api/v1/expenses/shares/[id]
 
-Cancel/delete a shared expense (owner only). Cannot delete if any participant has already paid their share.
+Delete a shared expense (owner only). Cannot delete if any participant has already paid their share.
 
 **Auth:** Bearer token required
 
-**Authorization:** Only the expense owner can cancel a shared expense. Participants cannot cancel expenses shared with them.
+**Authorization:** Only the expense owner can delete a shared expense. Participants cannot delete expenses shared with them.
 
 **Path Parameters:**
 - `id`: The shared expense ID (CUID format)
@@ -1154,7 +1154,7 @@ Cancel/delete a shared expense (owner only). Cannot delete if any participant ha
 - 400: Validation error - Cannot delete when participants have already paid
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
-- 403: Forbidden - Only the expense owner can cancel shared expenses
+- 403: Forbidden - Only the expense owner can delete shared expenses
 - 404: Not found - Shared expense not found
 - 429: Rate limited - Too many requests
 
@@ -1163,7 +1163,7 @@ Cancel/delete a shared expense (owner only). Cannot delete if any participant ha
 {
   "error": "Validation failed",
   "fields": {
-    "participants": ["Cannot cancel expense when participants have already paid"]
+    "participants": ["Cannot delete expense when participants have already paid"]
   }
 }
 ```
