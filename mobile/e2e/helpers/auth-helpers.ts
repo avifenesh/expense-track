@@ -151,15 +151,44 @@ export async function registerUser(
 }
 
 /**
- * Check if user is currently logged in
+ * Wait for any dashboard state (full or empty)
+ * Fresh users with no accounts see dashboard.emptyScreen
  */
-export async function isLoggedIn(): Promise<boolean> {
+export async function waitForDashboard(timeout = 10000): Promise<void> {
+  try {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(timeout);
+  } catch {
+    // Fresh users with no accounts see empty state
+    await waitFor(element(by.id('dashboard.emptyScreen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  }
+}
+
+/**
+ * Check if user is currently on dashboard (any state)
+ */
+export async function isOnDashboard(): Promise<boolean> {
   try {
     await expect(element(by.id('dashboard.screen'))).toBeVisible();
     return true;
   } catch {
-    return false;
+    try {
+      await expect(element(by.id('dashboard.emptyScreen'))).toBeVisible();
+      return true;
+    } catch {
+      return false;
+    }
   }
+}
+
+/**
+ * Check if user is currently logged in
+ */
+export async function isLoggedIn(): Promise<boolean> {
+  return await isOnDashboard();
 }
 
 /**
