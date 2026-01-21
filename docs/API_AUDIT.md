@@ -216,7 +216,7 @@ Server actions and REST API endpoints audit for Issue #64.
 ✅ GET    /api/v1/users/me           - Current user profile
 ⚠️  GET    /api/v1/holdings           - List holdings for account (Issue #196)
 ⚠️  GET    /api/v1/recurring          - List recurring templates (Issue #197)
-⚠️  GET    /api/v1/dashboard          - Dashboard summary data (Issue #191)
+✅ GET    /api/v1/dashboard          - Dashboard summary data (Issue #191)
 ```
 
 ### Medium Priority (Onboarding)

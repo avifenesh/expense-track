@@ -1282,11 +1282,11 @@ List user's accounts.
 
 ---
 
-### GET /api/v1/dashboard (PLANNED)
+### GET /api/v1/dashboard
 
-> ⚠️ **Not yet implemented.** Planned for mobile dashboard.
+> ✅ **Implemented in Sprint 3 (Issue #191).** Mobile dashboard summary endpoint.
 
-Get dashboard summary data.
+Get dashboard summary data including budget progress, recent transactions, and shared expense count.
 
 **Auth:** Bearer token required
 
@@ -1299,17 +1299,17 @@ Get dashboard summary data.
 {
   "success": true,
   "data": {
+    "month": "2024-01",
     "summary": {
       "totalIncome": "5000.00",
       "totalExpenses": "3500.00",
-      "netSavings": "1500.00",
-      "currency": "USD"
+      "netResult": "1500.00"
     },
     "budgetProgress": [
       {
         "categoryId": "clx...",
         "categoryName": "Food",
-        "planned": "500.00",
+        "budgeted": "500.00",
         "spent": "350.00",
         "remaining": "150.00",
         "percentUsed": 70
@@ -1327,13 +1327,17 @@ Get dashboard summary data.
         }
       }
     ],
-    "pendingShares": {
-      "owedToMe": "75.00",
-      "owedByMe": "25.00"
-    }
+    "pendingSharedExpenses": 3
   }
 }
 ```
+
+**Errors:**
+- 400: Validation error - Missing accountId or invalid month format
+- 401: Unauthorized - Invalid or missing auth token
+- 403: Forbidden - User doesn't own the account
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to fetch dashboard data
 
 ---
 
