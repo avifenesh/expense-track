@@ -155,9 +155,13 @@ export function BudgetsTab({
     setFormErrors(null)
     validation.resetAll()
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       const form = budgetFormRef.current
-      if (!form) return
+      if (!form) {
+        toast.error('Unable to load budget editor. Please try again.')
+        setEditingBudget(null)
+        return
+      }
 
       const accountSelect = form.elements.namedItem('budgetAccountId') as HTMLSelectElement
       const categorySelect = form.elements.namedItem('budgetCategoryId') as HTMLSelectElement
@@ -170,7 +174,7 @@ export function BudgetsTab({
       if (currencySelect) currencySelect.value = budget.currency
 
       form.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 0)
+    })
   }, [validation])
 
   const handleCancelBudgetEdit = useCallback(() => {
