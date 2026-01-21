@@ -2,6 +2,7 @@ name: E2E Tests (Web)
 
 permissions:
   contents: read
+  issues: write  # Required for creating issues on scheduled failures
 
 on:
   schedule:
@@ -101,3 +102,48 @@ jobs:
           name: playwright-html-report
           path: playwright-report/
           retention-days: 7
+
+  # Create issue on scheduled test failures
+  create-issue-on-failure:
+    name: Create Issue on Failure
+    needs: [e2e-web]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Check for existing open issue
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'e2e-failure,web',
+              per_page: 1
+            });
+
+            if (existingIssues.length > 0) {
+              // Update existing issue with new failure
+              const issue = existingIssues[0];
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `## E2E Tests Failed Again - ${date}\n\n**Run:** ${runUrl}\n\nScheduled E2E tests failed. Please investigate.`
+              });
+              console.log(`Updated existing issue #${issue.number}`);
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Web E2E] Scheduled tests failing - ${date}`,
+                body: `## Web E2E Tests Failed\n\n**Date:** ${date}\n**Trigger:** Scheduled run\n**Run:** ${runUrl}\n\n### Investigation Steps\n1. Check the workflow run for detailed logs\n2. Look at uploaded Playwright report artifacts\n3. Verify database connection and seeded users\n4. Check for flaky tests in recent changes\n\ncc @avifenesh`,
+                labels: ['e2e-failure', 'web', 'automated']
+              });
+              console.log('Created new issue for E2E failure');
+            }
