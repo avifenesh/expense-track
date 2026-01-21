@@ -143,9 +143,11 @@ export function shouldBeRejectedByValidation(payload: string): boolean {
  */
 export function extractTextContent(html: string): string {
   // Very basic HTML tag removal, with explicit script stripping
+  // Finally, remove any remaining angle brackets to ensure no tag-like content remains
   return html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<[^>]+>/g, '')
+    .replace(/[<>]/g, '')
 }
 
 /**
