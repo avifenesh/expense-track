@@ -300,6 +300,8 @@ model SharedExpense {
   totalAmount   Decimal              @db.Decimal(12, 2)
   currency      Currency             @default(USD)
   description   String?
+  deletedAt     DateTime?
+  deletedBy     String?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
@@ -310,6 +312,7 @@ model SharedExpense {
   @@index([ownerId])
   @@index([createdAt])
   @@index([ownerId, createdAt]) // Composite index for owner's expenses sorted by date
+  @@index([deletedAt])
 }
 
 model ExpenseParticipant {
@@ -323,6 +326,8 @@ model ExpenseParticipant {
   declinedAt      DateTime?
   declineReason   String?
   reminderSentAt  DateTime?
+  deletedAt       DateTime?
+  deletedBy       String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -333,6 +338,7 @@ model ExpenseParticipant {
   @@index([userId])
   @@index([status])
   @@index([userId, status])
+  @@index([deletedAt])
 }
 
 enum SplitType {

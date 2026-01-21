@@ -41,8 +41,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         // No logging needed for expected behavior.
       }
 
-      const participant = await prisma.expenseParticipant.findUnique({
-        where: { id: participantId },
+      const participant = await prisma.expenseParticipant.findFirst({
+        where: { id: participantId, deletedAt: null, sharedExpense: { deletedAt: null } },
       })
 
       if (!participant) {
