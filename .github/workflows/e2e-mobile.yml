@@ -104,18 +104,11 @@ jobs:
 
   e2e-android:
     name: Android E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Use macOS for hardware-accelerated Android emulation (ARM64 native on M1)
+    runs-on: macos-14
+    timeout-minutes: 45
 
     steps:
-      - name: Free disk space
-        run: |
-          # Remove unnecessary tools to free up disk space
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android/sdk/ndk
-          sudo rm -rf /opt/ghc
-          df -h
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -135,7 +128,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # Cache Gradle before prebuild - restoring early helps
+      # Cache Gradle before prebuild
       - name: Cache Android Gradle
         uses: actions/cache@v4
         with:
@@ -146,7 +139,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Cache Android build outputs - speeds up rebuilds
+      # Cache Android build outputs
       - name: Cache Android Build
         uses: actions/cache@v4
         with:
@@ -157,7 +150,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-android-build-
 
-      # Cache AVD early
+      # Cache AVD
       - name: AVD Cache
         uses: actions/cache@v4
         id: avd-cache
@@ -165,7 +158,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31-pixel_5-${{ hashFiles('mobile/detox.config.*') }}
+          key: avd-31-arm64-${{ hashFiles('mobile/detox.config.*') }}
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -188,29 +181,26 @@ jobs:
         with:
           api-level: 31
           target: google_apis
-          arch: x86_64
-          profile: pixel_5
+          arch: arm64-v8a
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -noaudio -no-boot-anim
           disable-animations: true
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run Detox tests (Android)
         uses: reactivecircus/android-emulator-runner@v2
-        timeout-minutes: 30
         with:
           api-level: 31
           target: google_apis
-          arch: x86_64
-          profile: pixel_5
+          arch: arm64-v8a
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -partition-size 4096
+          emulator-options: -no-window -noaudio -no-boot-anim
           disable-animations: true
           working-directory: mobile
           script: |
             adb wait-for-device
             adb shell input keyevent 82
-            sleep 5
+            sleep 3
             npm run e2e:test:android:release -- --cleanup --headless --record-logs all
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost
