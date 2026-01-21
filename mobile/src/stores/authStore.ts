@@ -51,10 +51,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   ...initialState,
 
   initialize: async () => {
-    // Set isLoading to false immediately to unblock navigation
-    // Biometric capabilities will be loaded in background
-    set({ isLoading: false });
-
+    // Biometric capabilities will be loaded in background; isLoading starts as false
     // Load biometric capabilities asynchronously (non-blocking)
     try {
       const capability = await biometricService.checkBiometricCapability();

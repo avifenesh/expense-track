@@ -104,8 +104,9 @@ jobs:
 
   e2e-android:
     name: Android E2E Tests
-    # Use macOS for hardware-accelerated Android emulation (ARM64 native on M1)
-    runs-on: macos-14
+    # Use macOS-13 (Intel) for hardware-accelerated Android emulation via HAXM
+    # macOS-14 (M1) has HVF issues with GitHub Actions runners
+    runs-on: macos-13
     timeout-minutes: 45
 
     steps:
@@ -158,7 +159,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31-arm64-${{ hashFiles('mobile/detox.config.*') }}
+          key: avd-31-x86_64-macos-${{ hashFiles('mobile/detox.config.*') }}
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -181,7 +182,7 @@ jobs:
         with:
           api-level: 31
           target: google_apis
-          arch: arm64-v8a
+          arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -noaudio -no-boot-anim
           disable-animations: true
@@ -192,7 +193,7 @@ jobs:
         with:
           api-level: 31
           target: google_apis
-          arch: arm64-v8a
+          arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -noaudio -no-boot-anim
           disable-animations: true
