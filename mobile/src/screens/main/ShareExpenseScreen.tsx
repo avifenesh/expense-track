@@ -20,6 +20,7 @@ import {
   type SplitType,
   type ShareUser,
 } from '../../stores';
+import { ApiError } from '../../services/api';
 import { formatCurrency } from '../../utils/format';
 import {
   validateShareDescription,
@@ -169,7 +170,15 @@ export function ShareExpenseScreen({
         }));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to look up user';
+      // Preserve ApiError messages (rate limiting, validation, etc.) for better UX
+      let message: string;
+      if (error instanceof ApiError) {
+        message = error.message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Failed to look up user';
+      }
       setErrors((prev) => ({ ...prev, email: message }));
     } finally {
       setIsLookingUp(false);
@@ -331,6 +340,19 @@ export function ShareExpenseScreen({
 
   const getDisplayName = (participant: ParticipantEntry): string => {
     return participant.displayName || participant.email.split('@')[0];
+  };
+
+  const getCurrencySymbol = (curr: Currency): string => {
+    switch (curr) {
+      case 'USD':
+        return '$';
+      case 'EUR':
+        return '\u20AC'; // Euro symbol
+      case 'ILS':
+        return '\u20AA'; // Shekel symbol
+      default:
+        return '$';
+    }
   };
 
   // ============================================
@@ -502,7 +524,7 @@ export function ShareExpenseScreen({
 
                     {splitType === 'FIXED' && (
                       <View style={styles.participantInputContainer}>
-                        <Text style={styles.currencySymbol}>$</Text>
+                        <Text style={styles.currencySymbol}>{getCurrencySymbol(currency)}</Text>
                         <TextInput
                           style={styles.participantInput}
                           value={

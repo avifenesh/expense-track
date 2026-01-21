@@ -20,6 +20,7 @@ export function calculateEqualSplit(totalAmount: number, participantCount: numbe
     return 0;
   }
 
+  // Owner is always included in the split, so total people = participants + 1 (owner)
   const totalPeople = participantCount + 1;
   const sharePerPerson = totalAmount / totalPeople;
 

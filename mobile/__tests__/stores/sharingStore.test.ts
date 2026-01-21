@@ -666,7 +666,7 @@ describe('sharingStore', () => {
 
       expect(mockApiGet).toHaveBeenCalledTimes(1);
       expect(mockApiGet).toHaveBeenCalledWith('/sharing', 'test-token');
-      expect(useSharingStore.getState().sharedExpenses).toEqual([mockSharedExpense]);
+      expect(useSharingStore.getState().sharedByMe).toEqual([mockSharedExpense]);
     });
 
     it('throws ApiError on API failure', async () => {
@@ -677,7 +677,7 @@ describe('sharingStore', () => {
         participants: [{ email: 'friend@example.com', shareAmount: 50 }],
       };
 
-      const apiError = new ApiError('Transaction already shared', 409);
+      const apiError = new ApiError('Transaction already shared', 'ALREADY_SHARED', 409);
       mockApiPost.mockRejectedValue(apiError);
 
       await expect(
