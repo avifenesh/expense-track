@@ -82,7 +82,7 @@ describe('Sharing', () => {
 
       // If no shared expenses, should show empty state or prompt
       try {
-        await waitFor(element(by.id('sharing.emptyState')))
+        await waitFor(element(by.id('sharing.emptyState.sharedWithMe')))
           .toBeVisible()
           .withTimeout(2000);
       } catch {

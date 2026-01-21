@@ -53,9 +53,9 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
   const showBiometricOption = biometricCapability?.isAvailable;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+    <SafeAreaView style={styles.container} edges={['top']} testID="settings.screen">
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} testID="settings.scrollView">
+        <Text style={styles.title} testID="settings.title">Settings</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -145,7 +145,7 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
           style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
           onPress={handleLogout}
           disabled={isLoggingOut}
-          testID="logout-button"
+          testID="settings.logoutButton"
         >
           {isLoggingOut ? (
             <ActivityIndicator color="#ef4444" />

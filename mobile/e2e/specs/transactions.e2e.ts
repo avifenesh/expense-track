@@ -1,6 +1,5 @@
 import { element, by, expect, waitFor, device } from 'detox';
 import {
-  TEST_USERS,
   TEST_TRANSACTIONS,
   loginAsPrimaryUser,
   completeOnboarding,
