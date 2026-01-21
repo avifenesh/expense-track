@@ -98,15 +98,16 @@ npm run e2e:teardown       # Kill emulators/simulators and clean up
 
 ### E2E Test Suites
 
-Tests are organized by feature area:
+Tests are organized by feature area (50 total tests - P0 + P1):
 
-- **onboarding.e2e.ts** - Multi-step onboarding wizard
-- **transactions.e2e.ts** - Transaction list and filtering
-- **budgets.e2e.ts** - Budget display and month navigation
-- **sharing.e2e.ts** - Expense sharing and balance summary
-- **navigation.e2e.ts** - Tab navigation and state persistence
-- **settings.e2e.ts** - Settings menu and logout
-- **errors.e2e.ts** - Error handling and network failures
+- **auth.e2e.ts** - Login, registration, password reset, biometric auth (8 tests)
+- **onboarding.e2e.ts** - Multi-step onboarding wizard, budget setup, biometric enablement (4 tests)
+- **transactions.e2e.ts** - Transaction list, filtering, search (5 tests)
+- **budgets.e2e.ts** - Budget display, month navigation, budget creation (6 tests)
+- **sharing.e2e.ts** - Expense sharing, balance summary, create/settle expenses (7 tests)
+- **navigation.e2e.ts** - Tab navigation, state persistence, back navigation (5 tests)
+- **settings.e2e.ts** - Settings menu, logout, profile editing, biometric toggle (8 tests)
+- **errors.e2e.ts** - Error handling, network failures, offline indicator (7 tests)
 
 ### Platform-Specific Notes
 
