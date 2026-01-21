@@ -49,14 +49,23 @@ export async function login(email: string, password: string): Promise<void> {
 
   // Wait for navigation to dashboard or onboarding
   // Note: Detox doesn't have .or() method - use try-catch pattern
+  // Fresh users may see empty dashboard if they have no accounts
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
       .withTimeout(15000);
   } catch {
-    await waitFor(element(by.id('onboarding.welcome.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
+    // Try empty dashboard (fresh users with no accounts)
+    try {
+      await waitFor(element(by.id('dashboard.emptyScreen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    } catch {
+      // Fall back to onboarding welcome screen
+      await waitFor(element(by.id('onboarding.welcome.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    }
   }
 }
 
@@ -187,13 +196,21 @@ export async function setupLoggedInUser(): Promise<void> {
   await waitForAppReady();
   await loginAsPrimaryUser();
 
-  // Handle onboarding if needed
+  // Handle onboarding if needed - check for dashboard (full or empty) first
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
       .withTimeout(5000);
   } catch {
-    await completeOnboarding();
+    // Try empty dashboard (fresh users with no accounts)
+    try {
+      await waitFor(element(by.id('dashboard.emptyScreen')))
+        .toBeVisible()
+        .withTimeout(3000);
+    } catch {
+      // Not on dashboard - need to complete onboarding
+      await completeOnboarding();
+    }
   }
 }
 
@@ -256,8 +273,16 @@ export async function completeOnboarding(): Promise<void> {
     await element(by.id('onboarding.biometric.continueButton')).tap();
   }
 
-  // Wait for dashboard
-  await waitFor(element(by.id('dashboard.screen')))
-    .toBeVisible()
-    .withTimeout(5000);
+  // Wait for dashboard - may show empty state for fresh users with no accounts
+  // Try main dashboard first, fallback to empty state
+  try {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  } catch {
+    // Fresh users with no accounts see empty state
+    await waitFor(element(by.id('dashboard.emptyScreen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  }
 }
