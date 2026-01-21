@@ -14,6 +14,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- Mobile: ShareExpenseScreen for creating shared expenses (#218)
+  - Multi-step form: expense details, participant selection, split configuration
+  - User lookup by email (GET /api/v1/users/lookup)
+  - Three split types: EQUAL (auto-calculate), PERCENTAGE (% per person), FIXED (amount per person)
+  - Real-time validation (at least 1 participant, splits must sum to total, percentages to 100%)
+  - Split preview showing amounts per participant and owner share
+  - TransactionPickerModal component for selecting existing transactions
+  - Split calculator utility module with comprehensive validation
+  - Integration with sharingStore.createSharedExpense
+  - Navigation from SharingScreen FAB
+- API: GET /api/v1/users/lookup endpoint for user lookup (#218, #188)
+  - Lookup user by email for expense sharing
+  - Returns user ID, email, display name
+  - Prevents self-lookup
+  - Case-insensitive email matching
+  - Rate limited (5 requests/minute)
+  - JWT authentication required
 - Web: Enhanced pricing page with feature comparison table (#274)
   - Free trial vs Premium comparison table
   - Visual feature breakdown with checkmarks

@@ -1165,11 +1165,9 @@ Send payment reminder to participant.
 
 ---
 
-### GET /api/v1/users/lookup (PLANNED)
+### GET /api/v1/users/lookup
 
-> ⚠️ **Not yet implemented.** Planned for future release.
-
-Lookup user by email for sharing.
+Lookup user by email for expense sharing.
 
 **Auth:** Bearer token required
 
@@ -1198,6 +1196,17 @@ Lookup user by email for sharing.
 }
 ```
 
+**Errors:**
+- 400: Validation error - Invalid email format or trying to lookup own email
+- 401: Unauthorized - Invalid or missing auth token
+- 404: Not found - User with specified email does not exist
+- 429: Rate limited - Too many requests
+
+**Security:**
+- Cannot lookup your own email address
+- Email is case-insensitive
+- Maximum email length: 255 characters
+- Rate limited using login rate limits (5 requests per minute)
 ---
 ---
 
