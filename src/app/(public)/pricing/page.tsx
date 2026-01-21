@@ -54,12 +54,11 @@ export default function PricingPage() {
     <div className="flex min-h-screen flex-col text-slate-100">
       <div
         className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(94,234,212,0.18),_transparent_55%),_linear-gradient(145deg,_#020617_0%,_#0f172a_55%,_#020617_100%)]"
-        aria-hidden
+        aria-hidden="true"
       />
 
       <main className="flex-1 px-4 py-16 sm:px-8">
         <div className="mx-auto max-w-4xl">
-          {/* Back navigation */}
           <div className="mb-8">
             <Link
               href="/"
@@ -72,7 +71,6 @@ export default function PricingPage() {
             </Link>
           </div>
 
-          {/* Hero */}
           <div className="mb-12 text-center">
             <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wide text-slate-200">
               Simple Pricing
@@ -85,17 +83,14 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {/* Pricing Card */}
           <div className="mx-auto max-w-md">
             <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-8 backdrop-blur-lg">
-              {/* Badge */}
               <div className="absolute right-4 top-4">
                 <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-300">
                   Most Popular
                 </span>
               </div>
 
-              {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
                   <span className="text-5xl font-bold text-white">{priceDisplay}</span>
@@ -106,14 +101,12 @@ export default function PricingPage() {
                 </p>
               </div>
 
-              {/* Trial highlight */}
               <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <p className="text-center text-sm font-medium text-emerald-300">
                   Start with {TRIAL_DURATION_DAYS} days free - no credit card required
                 </p>
               </div>
 
-              {/* Features */}
               <ul className="mb-8 space-y-3">
                 {features.map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
@@ -131,7 +124,6 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              {/* CTA */}
               <Link
                 href="/register"
                 className="block w-full rounded-full bg-white/20 px-6 py-3 text-center font-medium text-white transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
@@ -139,36 +131,30 @@ export default function PricingPage() {
                 Start Free Trial
               </Link>
 
-              {/* Money-back guarantee */}
               <p className="mt-4 text-center text-xs text-slate-400">
                 30-day money-back guarantee. Cancel anytime.
               </p>
             </div>
           </div>
 
-          {/* Comparison Table */}
           <div className="mt-16">
             <h2 className="mb-8 text-center text-2xl font-semibold text-white">
               Free Trial vs Premium
             </h2>
             <div className="overflow-hidden rounded-2xl border border-white/15">
               <div className="grid grid-cols-1 md:grid-cols-3">
-                {/* Feature column header */}
                 <div className="hidden border-b border-white/15 bg-white/5 p-4 md:block">
                   <span className="text-sm font-medium text-slate-400">Features</span>
                 </div>
-                {/* Free Trial header */}
                 <div className="border-b border-white/15 bg-white/5 p-4 text-center">
                   <span className="text-sm font-medium text-slate-200">Free Trial</span>
                   <p className="mt-1 text-xs text-slate-400">{TRIAL_DURATION_DAYS} days</p>
                 </div>
-                {/* Premium header */}
                 <div className="border-b border-white/15 bg-emerald-500/10 p-4 text-center">
                   <span className="text-sm font-medium text-emerald-300">Premium</span>
                   <p className="mt-1 text-xs text-emerald-300/70">{priceDisplay}/month</p>
                 </div>
 
-                {/* Row 1: Transaction tracking */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Transaction tracking</span>
                 </div>
@@ -179,7 +165,6 @@ export default function PricingPage() {
                   <span className="text-sm text-emerald-300">Unlimited</span>
                 </div>
 
-                {/* Row 2: Budget tracking */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Budget tracking</span>
                 </div>
@@ -190,7 +175,6 @@ export default function PricingPage() {
                   <CheckIcon className="text-emerald-400" />
                 </div>
 
-                {/* Row 3: Multi-currency */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Multi-currency support</span>
                 </div>
@@ -201,7 +185,6 @@ export default function PricingPage() {
                   <CheckIcon className="text-emerald-400" />
                 </div>
 
-                {/* Row 4: Expense sharing */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Expense sharing</span>
                 </div>
@@ -212,7 +195,6 @@ export default function PricingPage() {
                   <CheckIcon className="text-emerald-400" />
                 </div>
 
-                {/* Row 5: Investment tracking */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Investment tracking</span>
                 </div>
@@ -223,7 +205,6 @@ export default function PricingPage() {
                   <CheckIcon className="text-emerald-400" />
                 </div>
 
-                {/* Row 6: Data export */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Data export (CSV)</span>
                 </div>
@@ -234,7 +215,6 @@ export default function PricingPage() {
                   <CheckIcon className="text-emerald-400" />
                 </div>
 
-                {/* Row 7: Mobile app */}
                 <div className="border-b border-white/15 bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Mobile app access</span>
                 </div>
@@ -245,7 +225,6 @@ export default function PricingPage() {
                   <CheckIcon className="text-emerald-400" />
                 </div>
 
-                {/* Row 8: Priority support */}
                 <div className="bg-white/5 p-4">
                   <span className="text-sm text-slate-200">Priority support</span>
                 </div>
@@ -259,7 +238,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Additional info */}
           <div className="mt-12 text-center">
             <p className="text-slate-400">
               Questions? Contact us at{' '}
