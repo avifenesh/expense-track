@@ -824,7 +824,7 @@ describe('settleAllWithUserAction', () => {
     }
   })
 
-  it('should fail when no pending expenses found with target user', async () => {
+  it('should fail when no pending payments to receive from target user', async () => {
     const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
     vi.mocked(requireSession).mockResolvedValue({} as any)
     vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
@@ -838,7 +838,7 @@ describe('settleAllWithUserAction', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.general).toContain('No pending expenses found with this user')
+      expect(result.error.general).toContain('No pending payments to receive from this user')
     }
   })
 
@@ -869,6 +869,7 @@ describe('settleAllWithUserAction', () => {
     expect(prisma.expenseParticipant.updateMany).toHaveBeenCalledWith({
       where: {
         id: { in: ['part-1', 'part-2', 'part-3'] },
+        status: PaymentStatus.PENDING,
       },
       data: {
         status: PaymentStatus.PAID,
@@ -895,8 +896,38 @@ describe('settleAllWithUserAction', () => {
     expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
+          status: PaymentStatus.PENDING,
+          userId: 'user-friend',
           sharedExpense: expect.objectContaining({
+            ownerId: 'user-owner',
             currency: Currency.EUR,
+          }),
+        }),
+      }),
+    )
+  })
+
+  it('should only settle expenses where caller is the owner', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValueOnce([{ id: 'part-1' }] as any)
+    vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 1 })
+
+    await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    // Should only query for expenses where caller (user-owner) is the owner
+    expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: 'user-friend',
+          sharedExpense: expect.objectContaining({
+            ownerId: 'user-owner',
           }),
         }),
       }),

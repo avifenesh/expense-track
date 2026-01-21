@@ -40,9 +40,14 @@ export function SettlementSummary({ balances, preferredCurrency, paymentHistory 
     return null
   }
 
-  const totalYouOwe = balances.reduce((sum, b) => sum + b.youOwe, 0)
-  const totalTheyOwe = balances.reduce((sum, b) => sum + b.theyOwe, 0)
-  const netBalance = totalTheyOwe - totalYouOwe
+  // Group totals by currency to avoid mixing different currency amounts
+  const currencies = [...new Set(balances.map((b) => b.currency))]
+  const totalsByCurrency = currencies.map((currency) => {
+    const currencyBalances = balances.filter((b) => b.currency === currency)
+    const youOwe = currencyBalances.reduce((sum, b) => sum + b.youOwe, 0)
+    const theyOwe = currencyBalances.reduce((sum, b) => sum + b.theyOwe, 0)
+    return { currency, youOwe, theyOwe, netBalance: theyOwe - youOwe }
+  })
 
   return (
     <Card className="border-white/15 bg-white/10">
@@ -54,34 +59,40 @@ export function SettlementSummary({ balances, preferredCurrency, paymentHistory 
         <p className="text-sm text-slate-400">Outstanding balances with people you share expenses with.</p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-3 gap-4 rounded-xl bg-white/5 p-4">
-          <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">You owe</p>
-            <p className="text-xl font-bold text-rose-400">{formatCurrency(totalYouOwe, preferredCurrency)}</p>
+        {totalsByCurrency.map((totals) => (
+          <div key={totals.currency} className="space-y-2">
+            {currencies.length > 1 && (
+              <p className="text-xs font-medium text-slate-500">{totals.currency}</p>
+            )}
+            <div className="grid grid-cols-3 gap-4 rounded-xl bg-white/5 p-4">
+              <div className="text-center">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">You owe</p>
+                <p className="text-xl font-bold text-rose-400">{formatCurrency(totals.youOwe, totals.currency)}</p>
+              </div>
+              <div className="flex items-center justify-center">
+                <ArrowRight className="h-5 w-5 text-slate-500" />
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">They owe</p>
+                <p className="text-xl font-bold text-emerald-400">{formatCurrency(totals.theyOwe, totals.currency)}</p>
+              </div>
+            </div>
+            <div className={cn('rounded-xl p-3 text-center', totals.netBalance >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10')}>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Net balance</p>
+              <p className={cn('text-xl font-bold', totals.netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400')}>
+                {totals.netBalance >= 0 ? '+' : ''}
+                {formatCurrency(totals.netBalance, totals.currency)}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                {totals.netBalance > 0
+                  ? 'People owe you more than you owe them'
+                  : totals.netBalance < 0
+                    ? 'You owe others more than they owe you'
+                    : 'All settled up!'}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center justify-center">
-            <ArrowRight className="h-5 w-5 text-slate-500" />
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">They owe</p>
-            <p className="text-xl font-bold text-emerald-400">{formatCurrency(totalTheyOwe, preferredCurrency)}</p>
-          </div>
-        </div>
-
-        <div className={cn('rounded-xl p-4 text-center', netBalance >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10')}>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Net balance</p>
-          <p className={cn('text-2xl font-bold', netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400')}>
-            {netBalance >= 0 ? '+' : ''}
-            {formatCurrency(netBalance, preferredCurrency)}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            {netBalance > 0
-              ? 'People owe you more than you owe them'
-              : netBalance < 0
-                ? 'You owe others more than they owe you'
-                : 'All settled up!'}
-          </p>
-        </div>
+        ))}
 
         <div className="space-y-2">
           <h3 className="text-xs font-medium uppercase tracking-wide text-slate-400">By person</h3>
@@ -108,32 +119,29 @@ export function SettlementSummary({ balances, preferredCurrency, paymentHistory 
                         : 'Settled'}
                   </p>
                 </div>
-                {balance.netBalance !== 0 && (
+                {balance.netBalance > 0 && (
                   <div className="flex items-center gap-1">
-                    {balance.netBalance > 0 ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-8 min-h-0 px-2 py-1 text-xs text-amber-300 hover:bg-amber-500/20"
-                        disabled={isPending}
-                        title="Send reminder"
-                      >
-                        <Bell className="mr-1 h-3.5 w-3.5" />
-                        Remind
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-8 min-h-0 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-500/20"
-                        onClick={() => handleSettleAll(balance.userId, balance.currency)}
-                        disabled={isPending}
-                        title="Settle all pending expenses with this person"
-                      >
-                        <Check className="mr-1 h-3.5 w-3.5" />
-                        Settle
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 min-h-0 px-2 py-1 text-xs text-amber-300 opacity-50 cursor-not-allowed"
+                      disabled
+                      title="Reminders coming soon"
+                    >
+                      <Bell className="mr-1 h-3.5 w-3.5" />
+                      Remind
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 min-h-0 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-500/20"
+                      onClick={() => handleSettleAll(balance.userId, balance.currency)}
+                      disabled={isPending}
+                      title="Mark all pending payments from this person as received"
+                    >
+                      <Check className="mr-1 h-3.5 w-3.5" />
+                      Settle
+                    </Button>
                   </div>
                 )}
                 {balance.netBalance === 0 && (

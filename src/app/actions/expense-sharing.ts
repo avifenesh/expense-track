@@ -247,22 +247,16 @@ export async function settleAllWithUserAction(input: SettleAllWithUserInput) {
   const { authUser } = subscriptionCheck
 
   try {
+    // Only settle expenses where the caller is the owner (they can mark payments as received)
+    // The caller cannot mark their own payments to others as "paid" - that's the other party's job
     const participantsToSettle = await prisma.expenseParticipant.findMany({
       where: {
         status: PaymentStatus.PENDING,
+        userId: data.targetUserId,
         sharedExpense: {
+          ownerId: authUser.id,
           currency: data.currency,
         },
-        OR: [
-          {
-            sharedExpense: { ownerId: authUser.id },
-            userId: data.targetUserId,
-          },
-          {
-            sharedExpense: { ownerId: data.targetUserId },
-            userId: authUser.id,
-          },
-        ],
       },
       select: { id: true },
     })
@@ -270,12 +264,13 @@ export async function settleAllWithUserAction(input: SettleAllWithUserInput) {
     const allParticipantIds = participantsToSettle.map((p) => p.id)
 
     if (allParticipantIds.length === 0) {
-      return generalError('No pending expenses found with this user')
+      return generalError('No pending payments to receive from this user')
     }
 
     const updateResult = await prisma.expenseParticipant.updateMany({
       where: {
         id: { in: allParticipantIds },
+        status: PaymentStatus.PENDING,
       },
       data: {
         status: PaymentStatus.PAID,
