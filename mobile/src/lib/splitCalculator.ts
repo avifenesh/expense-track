@@ -122,10 +122,10 @@ export function validateSplitAmounts(
   switch (splitType) {
     case 'PERCENTAGE': {
       for (const p of participants) {
-        if (p.percentage == null || p.percentage < 0 || p.percentage > 100) {
+        if (p.percentage == null || p.percentage <= 0 || p.percentage > 100) {
           errors.push({
             field: 'percentage',
-            message: `Invalid percentage for ${p.email}. Must be between 0 and 100.`,
+            message: `Invalid percentage for ${p.email}. Must be between 0.01 and 100.`,
           });
         }
       }
@@ -142,10 +142,10 @@ export function validateSplitAmounts(
 
     case 'FIXED': {
       for (const p of participants) {
-        if (p.fixedAmount == null || p.fixedAmount < 0) {
+        if (p.fixedAmount == null || p.fixedAmount < 0.01) {
           errors.push({
             field: 'amount',
-            message: `Invalid amount for ${p.email}. Must be zero or greater.`,
+            message: `Invalid amount for ${p.email}. Must be at least $0.01.`,
           });
         }
       }
