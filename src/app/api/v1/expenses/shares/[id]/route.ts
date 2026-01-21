@@ -6,6 +6,7 @@ import {
   notFoundError,
   forbiddenError,
   validationError,
+  serverError,
 } from '@/lib/api-helpers'
 import { PaymentStatus } from '@prisma/client'
 import { serverLogger } from '@/lib/server-logger'
@@ -57,23 +58,33 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       // 4. Soft delete in transaction
       const now = new Date()
 
-      await prisma.$transaction(async (tx) => {
-        await tx.sharedExpense.update({
-          where: { id },
-          data: {
-            deletedAt: now,
-            deletedBy: user.userId,
-          },
-        })
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.sharedExpense.update({
+            where: { id },
+            data: {
+              deletedAt: now,
+              deletedBy: user.userId,
+            },
+          })
 
-        await tx.expenseParticipant.updateMany({
-          where: { sharedExpenseId: id },
-          data: {
-            deletedAt: now,
-            deletedBy: user.userId,
-          },
+          await tx.expenseParticipant.updateMany({
+            where: { sharedExpenseId: id },
+            data: {
+              deletedAt: now,
+              deletedBy: user.userId,
+            },
+          })
         })
-      })
+      } catch (error) {
+        serverLogger.error('Failed to delete shared expense', {
+          action: 'DELETE /api/v1/expenses/shares/[id]',
+          userId: user.userId,
+          sharedExpenseId: id,
+          participantCount: sharedExpense.participants.length,
+        }, error)
+        return serverError('Failed to delete shared expense. Please try again.')
+      }
 
       serverLogger.info('Deleted shared expense', {
         action: 'DELETE /api/v1/expenses/shares/[id]',
