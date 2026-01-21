@@ -142,10 +142,12 @@ export function shouldBeRejectedByValidation(payload: string): boolean {
  * Useful for validating that even if HTML is present, the dangerous parts are removed
  */
 export function extractTextContent(html: string): string {
-  // Very basic HTML tag removal
-  return html.replace(/<[^>]*>/g, '')
+  // Very basic HTML tag removal, with explicit script and style stripping
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]*>/g, '')
 }
-
 /**
  * Count XSS attack surfaces in HTML
  *
