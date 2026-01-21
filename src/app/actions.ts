@@ -76,6 +76,7 @@ export {
 export {
   shareExpenseAction,
   markSharePaidAction,
+  settleAllWithUserAction,
   cancelSharedExpenseAction,
   declineShareAction,
   getMySharedExpensesAction,

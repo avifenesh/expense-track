@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   shareExpenseAction,
   markSharePaidAction,
+  settleAllWithUserAction,
   cancelSharedExpenseAction,
   declineShareAction,
   lookupUserForSharingAction,
@@ -89,9 +90,11 @@ vi.mock('@/lib/prisma', () => ({
     },
     expenseParticipant: {
       createMany: vi.fn(),
+      findMany: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -781,5 +784,153 @@ describe('SQL injection protection', () => {
       // Should handle safely - either validation error or not found
       expect('error' in result).toBe(true)
     }
+  })
+})
+
+describe('settleAllWithUserAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should fail when CSRF token is invalid', async () => {
+    const { validateCsrfToken } = await import('@/lib/csrf')
+    vi.mocked(validateCsrfToken).mockResolvedValueOnce(false)
+
+    const result = await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.USD,
+      csrfToken: 'invalid-token',
+    })
+
+    expect('error' in result).toBe(true)
+  })
+
+  it('should fail when no active subscription', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    const { hasActiveSubscription } = await import('@/lib/subscription')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+    vi.mocked(hasActiveSubscription).mockResolvedValueOnce(false)
+
+    const result = await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.subscription).toBeDefined()
+    }
+  })
+
+  it('should fail when no pending payments to receive from target user', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValue([])
+
+    const result = await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.general).toContain('No pending payments to receive from this user')
+    }
+  })
+
+  it('should settle all pending expenses with target user', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValueOnce([
+      { id: 'part-1' },
+      { id: 'part-2' },
+      { id: 'part-3' },
+    ] as any)
+
+    vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 3 })
+
+    const result = await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    expect('error' in result).toBe(false)
+    if (!('error' in result)) {
+      expect(result.data.settledCount).toBe(3)
+    }
+
+    expect(prisma.expenseParticipant.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ['part-1', 'part-2', 'part-3'] },
+        status: PaymentStatus.PENDING,
+      },
+      data: {
+        status: PaymentStatus.PAID,
+        paidAt: expect.any(Date),
+      },
+    })
+  })
+
+  it('should only settle expenses for specified currency', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValueOnce([{ id: 'part-usd' }] as any)
+
+    vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 1 })
+
+    await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.EUR,
+      csrfToken: 'test-token',
+    })
+
+    expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: PaymentStatus.PENDING,
+          userId: 'user-friend',
+          sharedExpense: expect.objectContaining({
+            ownerId: 'user-owner',
+            currency: Currency.EUR,
+          }),
+        }),
+      }),
+    )
+  })
+
+  it('should only settle expenses where caller is the owner', async () => {
+    const { requireSession, getDbUserAsAuthUser } = await import('@/lib/auth-server')
+    vi.mocked(requireSession).mockResolvedValue({} as any)
+    vi.mocked(getDbUserAsAuthUser).mockResolvedValue(mockAuthUser)
+
+    vi.mocked(prisma.expenseParticipant.findMany).mockResolvedValueOnce([{ id: 'part-1' }] as any)
+    vi.mocked(prisma.expenseParticipant.updateMany).mockResolvedValue({ count: 1 })
+
+    await settleAllWithUserAction({
+      targetUserId: 'user-friend',
+      currency: Currency.USD,
+      csrfToken: 'test-token',
+    })
+
+    // Should only query for expenses where caller (user-owner) is the owner
+    expect(prisma.expenseParticipant.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: 'user-friend',
+          sharedExpense: expect.objectContaining({
+            ownerId: 'user-owner',
+          }),
+        }),
+      }),
+    )
   })
 })

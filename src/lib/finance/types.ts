@@ -242,6 +242,16 @@ export type SettlementBalance = {
   netBalance: number
 }
 
+export type PaymentHistoryItem = {
+  participantId: string
+  userDisplayName: string
+  userEmail: string
+  amount: number
+  currency: Currency
+  paidAt: Date
+  direction: 'paid' | 'received'
+}
+
 // Base transaction type with relations
 export type TransactionWithDisplay = Omit<
   Prisma.TransactionGetPayload<{
@@ -290,4 +300,5 @@ export type DashboardData = {
   sharedExpenses?: SharedExpenseSummary[]
   expensesSharedWithMe?: ExpenseParticipationSummary[]
   settlementBalances?: SettlementBalance[]
+  paymentHistory?: PaymentHistoryItem[]
 }

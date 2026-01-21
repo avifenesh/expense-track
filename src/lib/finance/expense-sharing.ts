@@ -7,6 +7,7 @@ import type {
   SharedExpenseSummary,
   ExpenseParticipationSummary,
   SettlementBalance,
+  PaymentHistoryItem,
   PaginationOptions,
   PaginatedResult,
   SharedExpensePaginationOptions,
@@ -521,4 +522,51 @@ export async function getSettlementBalance(userId: string): Promise<SettlementBa
   }
 
   return Array.from(balanceMap.values()).sort((a, b) => Math.abs(b.netBalance) - Math.abs(a.netBalance))
+}
+
+export async function getPaymentHistory(userId: string, limit = 10): Promise<PaymentHistoryItem[]> {
+  const participants = await prisma.expenseParticipant.findMany({
+    where: {
+      status: PaymentStatus.PAID,
+      paidAt: { not: null },
+      OR: [{ sharedExpense: { ownerId: userId } }, { userId }],
+    },
+    include: {
+      participant: {
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+        },
+      },
+      sharedExpense: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { paidAt: 'desc' },
+    take: limit,
+  })
+
+  return participants.map((p) => {
+    const isReceived = p.sharedExpense.ownerId === userId
+    const otherUser = isReceived ? p.participant : p.sharedExpense.owner
+
+    return {
+      participantId: p.id,
+      userDisplayName: otherUser.displayName,
+      userEmail: otherUser.email,
+      amount: decimalToNumber(p.shareAmount),
+      currency: p.sharedExpense.currency,
+      paidAt: p.paidAt!,
+      direction: isReceived ? ('received' as const) : ('paid' as const),
+    }
+  })
 }

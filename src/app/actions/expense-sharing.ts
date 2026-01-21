@@ -11,12 +11,14 @@ import { parseInput, toDecimalString, requireAuthUser, requireCsrfToken, require
 import {
   shareExpenseSchema,
   markSharePaidSchema,
+  settleAllWithUserSchema,
   cancelSharedExpenseSchema,
   declineShareSchema,
   userLookupSchema,
   sendPaymentReminderSchema,
   type ShareExpenseInput,
   type MarkSharePaidInput,
+  type SettleAllWithUserInput,
   type CancelSharedExpenseInput,
   type DeclineShareInput,
   type UserLookupInput,
@@ -228,6 +230,62 @@ export async function markSharePaidAction(input: MarkSharePaidInput) {
       userId: authUser.id,
       input: data,
       fallbackMessage: 'Unable to mark share as paid',
+    })
+  }
+}
+
+export async function settleAllWithUserAction(input: SettleAllWithUserInput) {
+  const parsed = parseInput(settleAllWithUserSchema, input)
+  if ('error' in parsed) return parsed
+  const data = parsed.data
+
+  const csrfCheck = await requireCsrfToken(data.csrfToken)
+  if ('error' in csrfCheck) return csrfCheck
+
+  const subscriptionCheck = await requireActiveSubscription()
+  if ('error' in subscriptionCheck) return subscriptionCheck
+  const { authUser } = subscriptionCheck
+
+  try {
+    // Only settle expenses where the caller is the owner (they can mark payments as received)
+    // The caller cannot mark their own payments to others as "paid" - that's the other party's job
+    const participantsToSettle = await prisma.expenseParticipant.findMany({
+      where: {
+        status: PaymentStatus.PENDING,
+        userId: data.targetUserId,
+        sharedExpense: {
+          ownerId: authUser.id,
+          currency: data.currency,
+        },
+      },
+      select: { id: true },
+    })
+
+    const allParticipantIds = participantsToSettle.map((p) => p.id)
+
+    if (allParticipantIds.length === 0) {
+      return generalError('No pending payments to receive from this user')
+    }
+
+    const updateResult = await prisma.expenseParticipant.updateMany({
+      where: {
+        id: { in: allParticipantIds },
+        status: PaymentStatus.PENDING,
+      },
+      data: {
+        status: PaymentStatus.PAID,
+        paidAt: new Date(),
+      },
+    })
+
+    revalidatePath('/')
+    return success({ settledCount: updateResult.count })
+  } catch (error) {
+    return handlePrismaError(error, {
+      action: 'settleAllWithUser',
+      userId: authUser.id,
+      input: data,
+      fallbackMessage: 'Unable to settle expenses',
     })
   }
 }

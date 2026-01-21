@@ -19,6 +19,7 @@ export type {
   SharedExpenseSummary,
   ExpenseParticipationSummary,
   SettlementBalance,
+  PaymentHistoryItem,
   TransactionWithDisplay,
   DashboardData,
   PaginationOptions,
@@ -62,6 +63,7 @@ export {
   getExpensesSharedWithMe,
   calculateShares,
   getSettlementBalance,
+  getPaymentHistory,
 } from './expense-sharing'
 
 export type { OffsetPaginatedResult } from './expense-sharing'

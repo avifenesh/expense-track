@@ -9,7 +9,7 @@ import { getAccounts, getCategories, getTransactionRequests } from './accounts'
 import { getTransactionsForMonth } from './transactions'
 import { getBudgetsForMonth, getMonthlyIncomeGoal } from './budgets'
 import { getRecurringTemplates } from './recurring'
-import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance } from './expense-sharing'
+import { getSharedExpenses, getExpensesSharedWithMe, getSettlementBalance, getPaymentHistory } from './expense-sharing'
 import type {
   DashboardData,
   CategoryBudgetSummary,
@@ -48,6 +48,7 @@ export async function getDashboardData({
     sharedExpenses,
     expensesSharedWithMe,
     settlementBalances,
+    paymentHistory,
   ] = await Promise.all([
     getCategories(userId),
     getBudgetsForMonth({ monthKey, accountId }),
@@ -106,6 +107,7 @@ export async function getDashboardData({
     userId ? getSharedExpenses(userId).then((r) => r.items) : Promise.resolve([]),
     userId ? getExpensesSharedWithMe(userId).then((r) => r.items) : Promise.resolve([]),
     userId ? getSettlementBalance(userId) : Promise.resolve([]),
+    userId ? getPaymentHistory(userId) : Promise.resolve([]),
   ])
 
   const transactionsWithNumbers = transactions
@@ -471,5 +473,6 @@ export async function getDashboardData({
     sharedExpenses,
     expensesSharedWithMe,
     settlementBalances,
+    paymentHistory,
   }
 }
