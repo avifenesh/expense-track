@@ -163,3 +163,141 @@ export function validateTransactionDate(date: Date | null): string | null {
 
   return null;
 }
+
+// ============================================
+// Share Expense Validation
+// ============================================
+
+/**
+ * Maximum length for share expense description.
+ */
+const MAX_SHARE_DESCRIPTION_LENGTH = 240;
+
+/**
+ * Validates a share expense description.
+ * Description is optional but must be valid if provided.
+ *
+ * @param description - The description to validate
+ * @returns Error message if invalid, null if valid
+ */
+export function validateShareDescription(description: string | null | undefined): string | null {
+  if (!description || description.trim().length === 0) {
+    return null; // Description is optional
+  }
+
+  if (description.length > MAX_SHARE_DESCRIPTION_LENGTH) {
+    return `Description is too long (max ${MAX_SHARE_DESCRIPTION_LENGTH} characters)`;
+  }
+
+  // XSS prevention - block script tags, javascript: URLs, and event handlers
+  const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
+  if (dangerousPattern.test(description)) {
+    return 'Description contains invalid characters';
+  }
+
+  return null;
+}
+
+/**
+ * Validates a share amount against the total expense amount.
+ *
+ * @param amount - The share amount to validate
+ * @param totalAmount - The total expense amount
+ * @returns Error message if invalid, null if valid
+ */
+export function validateShareAmount(amount: number, totalAmount: number): string | null {
+  if (amount < 0) {
+    return 'Amount cannot be negative';
+  }
+
+  if (amount > totalAmount) {
+    return `Amount cannot exceed total ($${totalAmount.toFixed(2)})`;
+  }
+
+  return null;
+}
+
+/**
+ * Validates a share percentage.
+ *
+ * @param percentage - The percentage to validate (0-100)
+ * @returns Error message if invalid, null if valid
+ */
+export function validateSharePercentage(percentage: number): string | null {
+  if (percentage < 0) {
+    return 'Percentage cannot be negative';
+  }
+
+  if (percentage > 100) {
+    return 'Percentage cannot exceed 100%';
+  }
+
+  return null;
+}
+
+/**
+ * Validates that there is at least one participant.
+ *
+ * @param participants - Array of participant objects
+ * @returns Error message if invalid, null if valid
+ */
+export function validateParticipantsList(
+  participants: Array<{ email: string }>
+): string | null {
+  if (!participants || participants.length === 0) {
+    return 'At least one participant is required';
+  }
+
+  // Check for duplicate emails
+  const emails = new Set<string>();
+  for (const p of participants) {
+    const normalizedEmail = p.email.toLowerCase().trim();
+    if (emails.has(normalizedEmail)) {
+      return 'Duplicate participant emails are not allowed';
+    }
+    emails.add(normalizedEmail);
+  }
+
+  // Validate each email
+  for (const p of participants) {
+    const emailError = validateEmail(p.email);
+    if (emailError) {
+      return `Invalid email: ${p.email}`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validates total percentage allocation for percentage splits.
+ *
+ * @param percentages - Array of percentage values
+ * @returns Error message if invalid, null if valid
+ */
+export function validateTotalPercentage(percentages: number[]): string | null {
+  const total = percentages.reduce((sum, p) => sum + p, 0);
+
+  if (total > 100) {
+    return `Total percentage (${total.toFixed(1)}%) cannot exceed 100%`;
+  }
+
+  return null;
+}
+
+/**
+ * Validates total fixed amounts for fixed splits.
+ *
+ * @param amounts - Array of fixed amounts
+ * @param totalAmount - The total expense amount
+ * @returns Error message if invalid, null if valid
+ */
+export function validateTotalFixedAmount(amounts: number[], totalAmount: number): string | null {
+  const total = amounts.reduce((sum, a) => sum + a, 0);
+
+  if (total > totalAmount) {
+    return `Total amounts ($${total.toFixed(2)}) cannot exceed expense total ($${totalAmount.toFixed(2)})`;
+  }
+
+  return null;
+}
