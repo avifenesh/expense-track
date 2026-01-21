@@ -158,7 +158,8 @@ describe('Transactions', () => {
           .toBeVisible()
           .withTimeout(1000);
       } catch {
-        // Loading was too fast to catch - that's okay
+        // If loading indicator not observed, verify we're on the transactions screen
+        await expect(element(by.id('transactions.screen'))).toBeVisible();
       }
 
       // Should eventually show screen content

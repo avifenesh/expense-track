@@ -1,5 +1,5 @@
 import { element, by, expect, waitFor, device } from 'detox';
-import { completeOnboarding, registerUser } from '../helpers';
+import { registerUser } from '../helpers';
 
 /**
  * Onboarding Test Suite

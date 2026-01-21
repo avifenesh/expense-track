@@ -53,26 +53,26 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
   const showBiometricOption = biometricCapability?.isAvailable;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+    <SafeAreaView style={styles.container} edges={['top']} testID="settings.screen">
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} testID="settings.scrollView">
+        <Text style={styles.title} testID="settings.title">Settings</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuGroup}>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.profileItem">
               <Text style={styles.menuText}>Profile</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.currencyItem">
               <Text style={styles.menuText}>Currency</Text>
               <Text style={styles.menuValue}>USD</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.accountsItem">
               <Text style={styles.menuText}>Accounts</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable style={styles.menuItem} testID="settings.categoriesItem">
               <Text style={styles.menuText}>Categories</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>

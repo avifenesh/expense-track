@@ -7,6 +7,9 @@ import { device } from 'detox';
  * Useful for testing offline behavior, error handling, and retry logic.
  */
 
+// Track network state for isOnline() queries
+let networkState: 'online' | 'offline' = 'online';
+
 /**
  * Simulate offline network state
  * Blocks all network requests by adding all URLs to blacklist
@@ -15,6 +18,7 @@ export async function simulateOffline(): Promise<void> {
   // Block all network requests using wildcard pattern
   // Note: This affects all network calls from the app, including API requests
   await device.setURLBlacklist(['.*']);
+  networkState = 'offline';
 }
 
 /**
@@ -24,23 +28,21 @@ export async function simulateOffline(): Promise<void> {
 export async function simulateOnline(): Promise<void> {
   // Clear URL blacklist to restore network
   await device.setURLBlacklist([]);
+  networkState = 'online';
 }
 
 /**
  * Simulate slow network with artificial latency
- * Note: Detox doesn't natively support latency simulation
- * This is a placeholder for future implementation or documentation
  *
- * @param latencyMs - Target latency in milliseconds (not implemented)
+ * @throws Error - Detox doesn't natively support latency simulation.
+ *   For slow network testing, consider:
+ *   1. Using network link conditioner on iOS (manual setup)
+ *   2. Using Android emulator network throttling (manual setup)
+ *   3. Mocking API responses with delays at the app level
  */
-export async function simulateSlowNetwork(latencyMs: number): Promise<void> {
-  // Note: Detox does not natively support network latency simulation
-  // For slow network testing, consider:
-  // 1. Using network link conditioner on iOS (manual setup)
-  // 2. Using Android emulator network throttling (manual setup)
-  // 3. Mocking API responses with delays at the app level
-  console.warn(
-    `simulateSlowNetwork(${latencyMs}ms) is not implemented. ` +
+export async function simulateSlowNetwork(_latencyMs: number): Promise<void> {
+  throw new Error(
+    'simulateSlowNetwork() is not implemented. ' +
       'Detox does not support network latency simulation. ' +
       'Consider using device-level network throttling or app-level mocks.'
   );
@@ -127,16 +129,11 @@ export const NetworkHelpers = {
   },
 
   /**
-   * Check if network is currently online
-   * Note: This checks the blacklist state, not actual connectivity
+   * Check if network is currently online based on tracked state
+   * Note: This returns the state set by simulateOffline/simulateOnline,
+   * not actual device connectivity
    */
-  async isOnline(): Promise<boolean> {
-    // Detox doesn't provide a way to read current blacklist state
-    // This is a limitation - consider tracking state in test code if needed
-    console.warn(
-      'NetworkHelpers.isOnline() cannot verify current network state. ' +
-        'Track network state in your test code instead.'
-    );
-    return true; // Assume online unless explicitly set offline
+  isOnline(): boolean {
+    return networkState === 'online';
   },
 };

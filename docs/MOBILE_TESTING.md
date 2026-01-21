@@ -100,7 +100,6 @@ npm run e2e:teardown       # Kill emulators/simulators and clean up
 
 Tests are organized by feature area:
 
-- **auth.e2e.ts** - Login, registration, password reset flows
 - **onboarding.e2e.ts** - Multi-step onboarding wizard
 - **transactions.e2e.ts** - Transaction list and filtering
 - **budgets.e2e.ts** - Budget display and month navigation
@@ -108,7 +107,6 @@ Tests are organized by feature area:
 - **navigation.e2e.ts** - Tab navigation and state persistence
 - **settings.e2e.ts** - Settings menu and logout
 - **errors.e2e.ts** - Error handling and network failures
-- **smoke.e2e.ts** - Critical path smoke tests
 
 ### Platform-Specific Notes
 
@@ -133,7 +131,7 @@ If automated setup fails, you can set up manually:
 
 **iOS Simulator**:
 ```bash
-xcrun simctl create "iPhone 15" "iPhone 15"
+xcrun simctl create "iPhone 15" "com.apple.CoreSimulator.SimDeviceType.iPhone-15"
 ```
 
 **Android AVD**:
@@ -230,7 +228,7 @@ cd mobile
 - Buttons: `onboarding.welcome.getStartedButton`, `transactions.addButton`
 - Inputs: `onboarding.budget.amountInput`
 - Lists: `transactions.list`, `budgets.categoryList`
-- States: `.emptyState`, `.loadingIndicator`, `.errorState`
+- States: `transactions.emptyState`, `budgets.loadingIndicator`, `sharing.errorState`
 
 ### Adding TestIDs to Components
 

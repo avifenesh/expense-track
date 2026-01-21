@@ -15,11 +15,11 @@ export type BiometricType = 'face' | 'fingerprint';
  * Enable biometric capability on the device
  * Must be called before biometric tests to ensure device supports biometrics
  */
-export async function mockBiometricAvailable(type: BiometricType = 'face'): Promise<void> {
+export async function mockBiometricAvailable(_type: BiometricType = 'face'): Promise<void> {
   // Enable biometric enrollment
   await device.setBiometricEnrollment(true);
 
-  // Note: The type parameter helps document test intent, but actual
+  // Note: The _type parameter helps document test intent, but actual
   // biometric type is determined by simulator/emulator configuration
   // iOS simulators can be configured for Face ID or Touch ID
   // Android emulators use Fingerprint by default

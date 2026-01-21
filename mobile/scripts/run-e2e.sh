@@ -154,11 +154,13 @@ run_ios_tests() {
 
   # Run tests
   print_status "info" "Running tests..."
-  local detox_args="--configuration $IOS_DETOX_CONFIG"
-  [ "$CLEANUP" = true ] && detox_args="$detox_args --cleanup"
-  [ -n "$SPEC" ] && detox_args="$detox_args $SPEC"
+  local detox_args=(--configuration "$IOS_DETOX_CONFIG")
+  [ "$CLEANUP" = true ] && detox_args+=(--cleanup)
+  if [ -n "$SPEC" ]; then
+    detox_args+=("$SPEC")
+  fi
 
-  if detox test $detox_args; then
+  if detox test "${detox_args[@]}"; then
     print_status "success" "Tests passed"
     return 0
   else
@@ -227,13 +229,15 @@ run_android_tests() {
 
   # Run tests
   print_status "info" "Running tests..."
-  local detox_args="--configuration $ANDROID_DETOX_CONFIG"
-  [ "$CLEANUP" = true ] && detox_args="$detox_args --cleanup"
-  [ "$HEADLESS" = true ] && detox_args="$detox_args --headless"
-  [ -n "$SPEC" ] && detox_args="$detox_args $SPEC"
+  local detox_args=(--configuration "$ANDROID_DETOX_CONFIG")
+  [ "$CLEANUP" = true ] && detox_args+=(--cleanup)
+  [ "$HEADLESS" = true ] && detox_args+=(--headless)
+  if [ -n "$SPEC" ]; then
+    detox_args+=("$SPEC")
+  fi
 
   local test_result=0
-  if detox test $detox_args; then
+  if detox test "${detox_args[@]}"; then
     print_status "success" "Tests passed"
   else
     print_status "error" "Tests failed"

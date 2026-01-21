@@ -93,7 +93,7 @@ describe('Error Handling', () => {
       try {
         await waitFor(element(by.id('transactions.errorState')))
           .toBeVisible()
-          .withTimeout(10000);
+          .withTimeout(5000);
         await expect(element(by.id('transactions.errorState'))).toBeVisible();
       } catch {
         // Error state might not be implemented yet
