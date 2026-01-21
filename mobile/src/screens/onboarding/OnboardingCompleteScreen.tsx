@@ -28,7 +28,7 @@ export function OnboardingCompleteScreen({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="onboarding.complete.screen">
       <View style={styles.content}>
         <Text style={styles.stepIndicator}>Step 5 of 6</Text>
         <View style={styles.successIcon}>
@@ -76,7 +76,7 @@ export function OnboardingCompleteScreen({
           style={[styles.button, isCompleting && styles.buttonDisabled]}
           onPress={handleComplete}
           disabled={isCompleting}
-          testID="continue-button"
+          testID="onboarding.complete.continueButton"
         >
           {isCompleting ? (
             <ActivityIndicator color="#0f172a" />

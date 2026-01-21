@@ -163,14 +163,21 @@ export async function isTransactionListEmpty(): Promise<boolean> {
  */
 export async function filterByType(type: 'all' | 'income' | 'expense'): Promise<void> {
   await element(by.id(`transactions.filter.${type}`)).tap();
-  // Wait for list to refresh
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // Wait for list to be visible after filter change
+  // This is deterministic - we wait for the list to be visible again
+  await waitFor(element(by.id('transactions.list')))
+    .toBeVisible()
+    .withTimeout(5000);
 }
 
 /**
  * Pull to refresh the transactions list
  */
 export async function refreshTransactions(): Promise<void> {
+  // Scroll down to trigger pull-to-refresh
   await element(by.id('transactions.list')).scroll(200, 'down');
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Wait for loading state to appear and then for list to be visible again
+  await waitFor(element(by.id('transactions.list')))
+    .toBeVisible()
+    .withTimeout(10000);
 }

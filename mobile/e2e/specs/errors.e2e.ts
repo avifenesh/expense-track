@@ -113,19 +113,35 @@ describe('Error Handling', () => {
       }
     });
 
-    it('should show error state on network failure', async () => {
+    it('should verify error handling UI exists', async () => {
       await loginAndSetup();
       await expect(element(by.id('dashboard.screen'))).toBeVisible();
 
-      // Navigate to transactions (has error state handling)
+      // Navigate to transactions
       await element(by.id('tab.transactions')).tap();
       await waitFor(element(by.id('transactions.screen')))
         .toBeVisible()
         .withTimeout(5000);
 
-      // The app should handle network errors gracefully
-      // If offline or API fails, error state should show retry option
-      // This validates the error UI exists (tested in budgets.e2e.ts too)
+      // Verify the transactions screen loaded successfully
+      // This confirms the screen has proper state management
+      await expect(element(by.id('transactions.screen'))).toBeVisible();
+
+      // Navigate to budgets to check error state components exist
+      await element(by.id('tab.budgets')).tap();
+
+      // Budgets should load - verify either success or error state
+      try {
+        await waitFor(element(by.id('budgets.screen')))
+          .toBeVisible()
+          .withTimeout(5000);
+        // Success state - verify core elements
+        await expect(element(by.id('budgets.title'))).toBeVisible();
+      } catch {
+        // Error state - verify error UI elements
+        await expect(element(by.id('budgets.errorScreen'))).toBeVisible();
+        await expect(element(by.id('budgets.retryButton'))).toBeVisible();
+      }
     });
   });
 

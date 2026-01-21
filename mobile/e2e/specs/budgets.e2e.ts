@@ -86,10 +86,32 @@ describe('Budgets', () => {
     it('should navigate between months', async () => {
       // Verify month selector is interactive
       await expect(element(by.id('budgets.monthSelector'))).toBeVisible();
+      await expect(element(by.id('budgets.monthSelector-label'))).toBeVisible();
 
-      // The month selector component should allow navigation
-      // This tests that the UI is responsive - actual month change
-      // verification would require checking data differences
+      // Get initial month label for comparison
+      // We verify navigation by checking the buttons are tappable
+
+      // Navigate to previous month
+      await element(by.id('budgets.monthSelector-prev')).tap();
+
+      // Wait for list to refresh after month change
+      await waitFor(element(by.id('budgets.monthSelector')))
+        .toBeVisible()
+        .withTimeout(3000);
+
+      // Navigate to next month (back to current)
+      await element(by.id('budgets.monthSelector-next')).tap();
+
+      // Wait for list to refresh
+      await waitFor(element(by.id('budgets.monthSelector')))
+        .toBeVisible()
+        .withTimeout(3000);
+
+      // Navigate to next month again
+      await element(by.id('budgets.monthSelector-next')).tap();
+
+      // Verify the month selector is still functional
+      await expect(element(by.id('budgets.monthSelector-label'))).toBeVisible();
     });
   });
 

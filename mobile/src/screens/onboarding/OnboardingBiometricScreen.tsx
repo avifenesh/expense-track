@@ -50,7 +50,7 @@ export function OnboardingBiometricScreen({
   const biometricAvailable = biometricCapability?.isAvailable;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="onboarding.biometric.screen">
       <View style={styles.content}>
         <Text style={styles.stepIndicator}>Step 6 of 6</Text>
         <View style={styles.iconContainer}>
@@ -77,7 +77,7 @@ export function OnboardingBiometricScreen({
               style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={handleEnable}
               disabled={isLoading}
-              testID="enable-biometric-button"
+              testID="onboarding.biometric.enableButton"
             >
               {isLoading ? (
                 <ActivityIndicator color="#0f172a" />
@@ -90,7 +90,7 @@ export function OnboardingBiometricScreen({
               style={styles.skipButton}
               onPress={handleSkip}
               disabled={isLoading}
-              testID="skip-button"
+              testID="onboarding.biometric.skipButton"
             >
               <Text style={styles.skipButtonText}>Skip for now</Text>
             </Pressable>
@@ -99,7 +99,7 @@ export function OnboardingBiometricScreen({
           <Pressable
             style={styles.button}
             onPress={handleSkip}
-            testID="continue-button"
+            testID="onboarding.biometric.continueButton"
           >
             <Text style={styles.buttonText}>Continue</Text>
           </Pressable>
