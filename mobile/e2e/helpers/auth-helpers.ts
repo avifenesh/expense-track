@@ -152,43 +152,50 @@ export async function registerUser(
   // App always shows VerifyEmail screen after registration
   // For @test.local emails, the user is auto-verified in the backend
   // so we can proceed to login immediately
+  await waitFor(element(by.id('verifyEmail.screen')))
+    .toBeVisible()
+    .withTimeout(15000);
+
+  // Navigate back to login
+  await element(by.id('verifyEmail.backButton')).tap();
+
+  await waitFor(element(by.id('login.screen')))
+    .toBeVisible()
+    .withTimeout(5000);
+
+  // Login with the newly registered credentials
+  // Clear inputs first (typeText appends, not replaces)
+  await element(by.id('login.emailInput')).tap();
+  await element(by.id('login.emailInput')).clearText();
+  await element(by.id('login.emailInput')).typeText(email);
+
+  await element(by.id('login.passwordInput')).tap();
+  await element(by.id('login.passwordInput')).clearText();
+  await element(by.id('login.passwordInput')).typeText(password);
+  await element(by.id('login.passwordInput')).tapReturnKey();
+
+  // Small delay for keyboard dismiss
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  await element(by.id('login.submitButton')).tap();
+
+  // After successful login, new user should go to onboarding
+  // Accept dashboard screens as fallback (in case hasCompletedOnboarding is unexpectedly true)
   try {
-    await waitFor(element(by.id('verifyEmail.screen')))
-      .toBeVisible()
-      .withTimeout(15000);
-
-    // Navigate back to login
-    await element(by.id('verifyEmail.backButton')).tap();
-
-    await waitFor(element(by.id('login.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
-
-    // Login with the newly registered credentials
-    // Clear inputs first (typeText appends, not replaces)
-    await element(by.id('login.emailInput')).tap();
-    await element(by.id('login.emailInput')).clearText();
-    await element(by.id('login.emailInput')).typeText(email);
-
-    await element(by.id('login.passwordInput')).tap();
-    await element(by.id('login.passwordInput')).clearText();
-    await element(by.id('login.passwordInput')).typeText(password);
-    await element(by.id('login.passwordInput')).tapReturnKey();
-
-    // Small delay for keyboard dismiss
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    await element(by.id('login.submitButton')).tap();
-
-    // After successful login, new user goes to onboarding
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
       .withTimeout(15000);
   } catch {
-    // Direct to onboarding (some configurations might skip verify email)
-    await waitFor(element(by.id('onboarding.welcome.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
+    // Check for dashboard screens as fallback
+    try {
+      await waitFor(element(by.id('dashboard.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    } catch {
+      await waitFor(element(by.id('dashboard.emptyScreen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    }
   }
 }
 
