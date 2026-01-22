@@ -95,3 +95,4 @@ export async function POST(request: NextRequest) {
     return serverError('Registration failed')
   }
 }
+
