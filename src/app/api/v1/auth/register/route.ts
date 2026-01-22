@@ -61,27 +61,28 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    // In test mode, skip email verification to enable E2E testing
-    const isTestMode = process.env.NODE_ENV === 'test'
-    const verificationToken = isTestMode ? null : randomBytes(32).toString('hex')
-    const verificationExpires = isTestMode ? null : new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    // Auto-verify test emails (*.test.local domain) for E2E testing
+    const isTestEmail = normalizedEmail.endsWith('@test.local')
+
+    const verificationToken = isTestEmail ? null : randomBytes(32).toString('hex')
+    const verificationExpires = isTestEmail ? null : new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     await prisma.user.create({
       data: {
         email: normalizedEmail,
         displayName: displayName.trim(),
         passwordHash,
-        emailVerified: isTestMode, // Auto-verify in test mode for E2E
+        emailVerified: isTestEmail,
         emailVerificationToken: verificationToken,
         emailVerificationExpires: verificationExpires,
       },
     })
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && !isTestEmail) {
       // Log for development debugging, but never log the actual token
       serverLogger.info('Email verification required', {
         email: normalizedEmail,
-        expires: verificationExpires.toISOString(),
+        expires: verificationExpires!.toISOString(),
       })
     }
 
@@ -94,3 +95,4 @@ export async function POST(request: NextRequest) {
     return serverError('Registration failed')
   }
 }
+

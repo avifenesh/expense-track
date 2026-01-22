@@ -50,3 +50,6 @@ export type {
   Currency,
   CategorySelection,
 } from './onboardingStore';
+
+export { useOfflineQueueStore } from './offlineQueueStore';
+export type { OfflineQueueStore, QueuedItem } from './offlineQueueStore';

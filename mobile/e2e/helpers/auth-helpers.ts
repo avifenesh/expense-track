@@ -110,8 +110,14 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Register a new user account
+ * Register a new user account and complete the full flow to onboarding
  * Note: RegisterScreen only has displayName, email, password - no confirm password field
+ *
+ * Flow:
+ * 1. Fill and submit registration form
+ * 2. If VerifyEmail screen shown, navigate back to login
+ * 3. Login with the new credentials (works because @test.local emails are auto-verified)
+ * 4. Navigate to onboarding
  */
 export async function registerUser(
   displayName: string,
@@ -143,24 +149,22 @@ export async function registerUser(
   // Submit registration
   await element(by.id('register.submitButton')).tap();
 
-  // Wait for verification screen
-  // In test mode, users are auto-verified, but the app still shows VerifyEmail screen
-  // We need to go back to login and sign in to proceed to onboarding
+  // App always shows VerifyEmail screen after registration
+  // For @test.local emails, the user is auto-verified in the backend
+  // so we can proceed to login immediately
   try {
     await waitFor(element(by.id('verifyEmail.screen')))
       .toBeVisible()
       .withTimeout(15000);
 
-    // Auto-verified users need to login to proceed
-    // Click "Back to Sign In" and login with the new credentials
+    // Navigate back to login
     await element(by.id('verifyEmail.backButton')).tap();
 
-    // Wait for login screen
     await waitFor(element(by.id('login.screen')))
       .toBeVisible()
       .withTimeout(5000);
 
-    // Login with the new user credentials
+    // Login with the newly registered credentials
     // Clear inputs first (typeText appends, not replaces)
     await element(by.id('login.emailInput')).tap();
     await element(by.id('login.emailInput')).clearText();
@@ -176,51 +180,11 @@ export async function registerUser(
 
     await element(by.id('login.submitButton')).tap();
 
-    // Wait a moment for navigation to complete after login
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // After login, new user should go to onboarding
-    // But might also go to dashboard if hasCompletedOnboarding is true
-    // Or might stay on login screen if login failed
-    try {
-      await waitFor(element(by.id('onboarding.welcome.screen')))
-        .toBeVisible()
-        .withTimeout(10000);
-    } catch {
-      // Check if still on login screen (login failed)
-      try {
-        await expect(element(by.id('login.screen'))).toBeVisible();
-        // Still on login - check for error message
-        try {
-          await expect(element(by.id('login.errorText'))).toBeVisible();
-          throw new Error('Login failed - error message displayed');
-        } catch {
-          throw new Error('Login failed - still on login screen');
-        }
-      } catch (loginCheckError) {
-        if (loginCheckError instanceof Error && loginCheckError.message.includes('Login failed')) {
-          throw loginCheckError;
-        }
-        // Not on login screen - check dashboard
-        try {
-          await waitFor(element(by.id('dashboard.screen')))
-            .toBeVisible()
-            .withTimeout(5000);
-          return;
-        } catch {
-          // Try empty dashboard
-          await waitFor(element(by.id('dashboard.emptyScreen')))
-            .toBeVisible()
-            .withTimeout(5000);
-          return;
-        }
-      }
-    }
-  } catch (outerError) {
-    // If inner flow failed with a specific error, rethrow
-    if (outerError instanceof Error && outerError.message.includes('Login failed')) {
-      throw outerError;
-    }
+    // After successful login, new user goes to onboarding
+    await waitFor(element(by.id('onboarding.welcome.screen')))
+      .toBeVisible()
+      .withTimeout(15000);
+  } catch {
     // Direct to onboarding (some configurations might skip verify email)
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
@@ -229,44 +193,15 @@ export async function registerUser(
 }
 
 /**
- * Wait for any dashboard state (full or empty)
- * Fresh users with no accounts see dashboard.emptyScreen
+ * Check if user is currently logged in
  */
-export async function waitForDashboard(timeout = 10000): Promise<void> {
-  try {
-    await waitFor(element(by.id('dashboard.screen')))
-      .toBeVisible()
-      .withTimeout(timeout);
-  } catch {
-    // Fresh users with no accounts see empty state
-    await waitFor(element(by.id('dashboard.emptyScreen')))
-      .toBeVisible()
-      .withTimeout(5000);
-  }
-}
-
-/**
- * Check if user is currently on dashboard (any state)
- */
-export async function isOnDashboard(): Promise<boolean> {
+export async function isLoggedIn(): Promise<boolean> {
   try {
     await expect(element(by.id('dashboard.screen'))).toBeVisible();
     return true;
   } catch {
-    try {
-      await expect(element(by.id('dashboard.emptyScreen'))).toBeVisible();
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }
-}
-
-/**
- * Check if user is currently logged in
- */
-export async function isLoggedIn(): Promise<boolean> {
-  return await isOnDashboard();
 }
 
 /**
@@ -378,7 +313,6 @@ export async function completeOnboarding(): Promise<void> {
   }
 
   // Wait for dashboard - may show empty state for fresh users with no accounts
-  // Try main dashboard first, fallback to empty state
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
