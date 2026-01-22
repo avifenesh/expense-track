@@ -40,11 +40,11 @@ export function OnboardingBiometricScreen({
   };
 
   const completeOnboarding = () => {
+    // Just update the user state - RootNavigator's conditional rendering
+    // will automatically switch from OnboardingStack to AppStack.
+    // Don't call navigation.reset() as it conflicts with the automatic stack switch
+    // and causes "Maximum update depth exceeded" errors.
     updateUser({ hasCompletedOnboarding: true });
-    navigation.getParent()?.reset({
-      index: 0,
-      routes: [{ name: 'App' }],
-    });
   };
 
   const biometricAvailable = biometricCapability?.isAvailable;
