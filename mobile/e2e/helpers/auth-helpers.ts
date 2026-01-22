@@ -44,6 +44,9 @@ export async function login(email: string, password: string): Promise<void> {
   // Dismiss keyboard before tapping submit
   await element(by.id('login.passwordInput')).tapReturnKey();
 
+  // Small delay to let keyboard dismiss (iOS needs this)
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Submit login form
   await element(by.id('login.submitButton')).tap();
 
@@ -133,6 +136,9 @@ export async function registerUser(
   await element(by.id('register.passwordInput')).tap();
   await element(by.id('register.passwordInput')).typeText(password);
   await element(by.id('register.passwordInput')).tapReturnKey();
+
+  // Small delay to let keyboard dismiss (iOS needs this)
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   // Submit registration
   await element(by.id('register.submitButton')).tap();
