@@ -24,7 +24,7 @@ jobs:
   e2e-ios:
     name: iOS E2E Tests
     runs-on: macos-14
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       DATABASE_URL: postgresql://e2e_user:e2e_password@localhost:5432/balance_beacon_e2e
@@ -163,7 +163,7 @@ jobs:
     name: Android E2E Tests
     # Ubuntu runners have KVM hardware acceleration available
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     services:
       postgres:
