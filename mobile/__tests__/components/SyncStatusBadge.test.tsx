@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { SyncStatusBadge } from '../../src/components/SyncStatusBadge';
 import { useOfflineQueueStore } from '../../src/stores';
@@ -32,7 +32,9 @@ describe('SyncStatusBadge', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useOfflineQueueStore as any).getState = jest.fn().mockReturnValue({
+    (
+      useOfflineQueueStore as unknown as { getState: jest.Mock }
+    ).getState = jest.fn().mockReturnValue({
       processQueue: mockProcessQueue,
     });
   });

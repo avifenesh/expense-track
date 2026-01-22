@@ -1,4 +1,4 @@
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { networkStatus } from '../../src/services/networkStatus';
 
 jest.mock('@react-native-community/netinfo');
@@ -7,6 +7,9 @@ const mockNetInfo = NetInfo as jest.Mocked<typeof NetInfo> & {
   __setMockState: (state: { isConnected: boolean; isInternetReachable: boolean | null }) => void;
   __resetMock: () => void;
 };
+
+// Helper type for partial NetInfoState mocks
+type MockNetInfoState = Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>;
 
 describe('networkStatus', () => {
   beforeEach(() => {
@@ -57,7 +60,7 @@ describe('networkStatus', () => {
       mockNetInfo.fetch.mockResolvedValueOnce({
         isConnected: true,
         isInternetReachable: true,
-      } as any);
+      } as MockNetInfoState as NetInfoState);
 
       networkStatus.initialize();
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -69,7 +72,7 @@ describe('networkStatus', () => {
       mockNetInfo.fetch.mockResolvedValueOnce({
         isConnected: true,
         isInternetReachable: null,
-      } as any);
+      } as MockNetInfoState as NetInfoState);
 
       networkStatus.initialize();
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -81,7 +84,7 @@ describe('networkStatus', () => {
       mockNetInfo.fetch.mockResolvedValueOnce({
         isConnected: false,
         isInternetReachable: false,
-      } as any);
+      } as MockNetInfoState as NetInfoState);
 
       networkStatus.initialize();
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -93,7 +96,7 @@ describe('networkStatus', () => {
       mockNetInfo.fetch.mockResolvedValueOnce({
         isConnected: true,
         isInternetReachable: false,
-      } as any);
+      } as MockNetInfoState as NetInfoState);
 
       networkStatus.initialize();
       await new Promise(resolve => setTimeout(resolve, 10));
