@@ -31,6 +31,7 @@ jobs:
       NODE_ENV: test
       JWT_SECRET: e2e-test-jwt-secret-32chars-minimum-for-validation
       AUTH_SESSION_SECRET: e2e-test-session-secret-32chars-minimum-valid
+      PORT: 3000
 
     steps:
       - name: Checkout code
@@ -85,8 +86,6 @@ jobs:
             echo "Waiting for backend... ($i/30)"
             sleep 2
           done
-        env:
-          PORT: 3000
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -186,6 +185,7 @@ jobs:
       NODE_ENV: test
       JWT_SECRET: e2e-test-jwt-secret-32chars-minimum-for-validation
       AUTH_SESSION_SECRET: e2e-test-session-secret-32chars-minimum-valid
+      PORT: 3000
 
     steps:
       - name: Enable KVM group perms
@@ -247,8 +247,6 @@ jobs:
             echo "Waiting for backend... ($i/30)"
             sleep 2
           done
-        env:
-          PORT: 3000
 
       - name: Setup Java
         uses: actions/setup-java@v4
