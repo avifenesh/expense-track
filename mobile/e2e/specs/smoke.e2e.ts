@@ -1,15 +1,9 @@
 /**
  * Smoke Tests
  * Basic app launch and screen rendering
- * Contracts: App launches, screens render correctly
  */
 
-import { device } from 'detox';
-import {
-  TestIDs,
-  waitForAppReady,
-  assertScreenDisplayed,
-} from '../helpers';
+import { device, element, by, expect, waitFor } from 'detox';
 
 describe('Smoke Tests', () => {
   beforeEach(async () => {
@@ -17,17 +11,17 @@ describe('Smoke Tests', () => {
   });
 
   it('app launches and shows login screen', async () => {
-    // Contract: App launch shows login screen for unauthenticated user
-    await waitForAppReady();
-    await assertScreenDisplayed(TestIDs.login.screen);
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(30000);
   });
 
-  it('login screen has required elements', async () => {
-    // Contract: LoginScreen has email, password, submit, and navigation links
-    await waitForAppReady();
-    await assertScreenDisplayed(TestIDs.login.screen);
-    await assertScreenDisplayed(TestIDs.login.emailInput);
-    await assertScreenDisplayed(TestIDs.login.passwordInput);
-    await assertScreenDisplayed(TestIDs.login.submitButton);
+  it('login screen has email and password inputs', async () => {
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(30000);
+    await expect(element(by.id('login.emailInput'))).toBeVisible();
+    await expect(element(by.id('login.passwordInput'))).toBeVisible();
+    await expect(element(by.id('login.submitButton'))).toBeVisible();
   });
 });

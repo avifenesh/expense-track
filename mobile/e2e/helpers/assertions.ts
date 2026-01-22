@@ -59,19 +59,11 @@ export async function assertHasText(
 }
 
 /**
- * Assert element contains text (label)
- */
-export async function assertContainsText(
-  testId: string,
-  text: string
-): Promise<void> {
-  await expect(element(by.id(testId))).toHaveLabel(text);
-}
-
-/**
  * Assert screen is displayed (element with testId is visible)
  */
-export async function assertScreenDisplayed(screenTestId: string): Promise<void> {
+export async function assertScreenDisplayed(
+  screenTestId: string
+): Promise<void> {
   await waitFor(element(by.id(screenTestId)))
     .toBeVisible()
     .withTimeout(Timeouts.medium);
@@ -89,44 +81,10 @@ export async function assertScreenNotDisplayed(
 /**
  * Assert error message is displayed
  */
-export async function assertErrorDisplayed(
-  errorText: string
-): Promise<void> {
+export async function assertErrorDisplayed(errorText: string): Promise<void> {
   await waitFor(element(by.text(errorText)))
     .toBeVisible()
     .withTimeout(Timeouts.medium);
-}
-
-/**
- * Assert loading indicator is visible
- */
-export async function assertLoading(): Promise<void> {
-  // ActivityIndicator usually has accessibilityRole='progressbar'
-  await expect(element(by.type('RCTActivityIndicatorView'))).toBeVisible();
-}
-
-/**
- * Assert loading indicator is not visible
- */
-export async function assertNotLoading(): Promise<void> {
-  await expect(element(by.type('RCTActivityIndicatorView'))).not.toBeVisible();
-}
-
-/**
- * Assert button is disabled
- */
-export async function assertButtonDisabled(testId: string): Promise<void> {
-  // In React Native, disabled buttons have accessibilityState.disabled = true
-  await expect(element(by.id(testId))).toHaveAccessibilityState({ disabled: true });
-}
-
-/**
- * Assert button is enabled
- */
-export async function assertButtonEnabled(testId: string): Promise<void> {
-  await expect(element(by.id(testId))).not.toHaveAccessibilityState({
-    disabled: true,
-  });
 }
 
 /**
@@ -137,31 +95,12 @@ export async function assertFocused(testId: string): Promise<void> {
 }
 
 /**
- * Assert list has items
- */
-export async function assertListNotEmpty(testId: string): Promise<void> {
-  // Scroll to trigger list rendering, then check content
-  await element(by.id(testId)).scroll(50, 'down');
-  // If we can scroll, there's content
-}
-
-/**
  * Assert empty state is shown
  */
 export async function assertEmptyState(emptyText: string): Promise<void> {
   await waitFor(element(by.text(emptyText)))
     .toBeVisible()
     .withTimeout(Timeouts.medium);
-}
-
-/**
- * Assert tab is selected
- */
-export async function assertTabSelected(tabName: string): Promise<void> {
-  // Selected tabs typically have accessibilityState.selected = true
-  await expect(element(by.text(tabName))).toHaveAccessibilityState({
-    selected: true,
-  });
 }
 
 /**
@@ -182,16 +121,6 @@ export async function assertTransactionNotInList(
   description: string
 ): Promise<void> {
   await expect(element(by.text(description))).not.toBeVisible();
-}
-
-/**
- * Assert amount is displayed
- */
-export async function assertAmountDisplayed(amount: string): Promise<void> {
-  // Amount might be formatted with currency symbol
-  await waitFor(element(by.text(amount)))
-    .toBeVisible()
-    .withTimeout(Timeouts.short);
 }
 
 /**

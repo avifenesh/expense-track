@@ -144,11 +144,11 @@ export const TestIDs = {
 } as const;
 
 /**
- * Timeouts for different operations
+ * Timeouts for different operations (in milliseconds)
  */
 export const Timeouts = {
-  short: 2000,
-  medium: 5000,
-  long: 10000,
-  veryLong: 30000,
-} as const;
+  short: 2000 as number,
+  medium: 5000 as number,
+  long: 10000 as number,
+  veryLong: 30000 as number,
+};

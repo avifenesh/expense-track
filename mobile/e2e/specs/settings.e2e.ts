@@ -1,66 +1,62 @@
 /**
  * Settings Tests
- * Biometric toggle, logout
- * Contracts: SET-001 through SET-003
+ * Settings screen and logout
  */
 
-import { device, element, by, waitFor } from 'detox';
-import {
-  TestIDs,
-  Timeouts,
-  waitForAppReady,
-  waitForElement,
-  loginAndWaitForDashboard,
-  navigateToTab,
-  logout,
-  assertScreenDisplayed,
-  assertVisible,
-  assertTextVisible,
-} from '../helpers';
+import { device, element, by, expect, waitFor } from 'detox';
+
+const TEST_USER = {
+  email: 'e2e-test@example.com',
+  password: 'TestPassword123!',
+};
+
+async function loginAndWaitForDashboard(): Promise<void> {
+  await waitFor(element(by.id('login.screen')))
+    .toBeVisible()
+    .withTimeout(30000);
+
+  await element(by.id('login.emailInput')).typeText(TEST_USER.email);
+  await element(by.id('login.passwordInput')).typeText(TEST_USER.password);
+  await element(by.id('login.passwordInput')).tapReturnKey();
+  await element(by.id('login.submitButton')).tap();
+
+  await waitFor(element(by.id('dashboard.screen')))
+    .toBeVisible()
+    .withTimeout(15000);
+}
 
 describe('Settings Tests', () => {
   beforeEach(async () => {
     await device.launchApp({ newInstance: true });
-    await waitForAppReady();
     await loginAndWaitForDashboard();
   });
 
-  /**
-   * SET-001: Settings screen
-   */
-  it('loads settings screen with sections', async () => {
-    await navigateToTab('Settings');
-    await assertScreenDisplayed(TestIDs.settings.screen);
-    await assertTextVisible('Settings');
+  it('shows settings screen', async () => {
+    await element(by.text('Settings')).tap();
+    await waitFor(element(by.id('settings.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
   });
 
-  /**
-   * SET-001: Settings has logout button
-   */
   it('shows logout button', async () => {
-    await navigateToTab('Settings');
-    await assertScreenDisplayed(TestIDs.settings.screen);
-    await assertVisible(TestIDs.settings.logoutButton);
+    await element(by.text('Settings')).tap();
+    await waitFor(element(by.id('settings.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+
+    await expect(element(by.id('settings.logoutButton'))).toBeVisible();
   });
 
-  /**
-   * SET-002: Toggle biometric (if available)
-   */
-  it.skip('toggles biometric setting', async () => {
-    await navigateToTab('Settings');
+  it('logs out and returns to login screen', async () => {
+    await element(by.text('Settings')).tap();
+    await waitFor(element(by.id('settings.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
 
-    // Check if biometric switch exists (device dependent)
-    await assertVisible(TestIDs.settings.biometricSwitch);
+    await element(by.id('settings.logoutButton')).tap();
 
-    // Toggle it
-    await element(by.id(TestIDs.settings.biometricSwitch)).tap();
-  });
-
-  /**
-   * SET-003: Sign out
-   */
-  it('signs out and returns to login', async () => {
-    await logout();
-    await assertScreenDisplayed(TestIDs.login.screen);
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(10000);
   });
 });

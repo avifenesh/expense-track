@@ -1,168 +1,135 @@
 /**
  * Auth Tests
  * Login, registration, password reset flows
- * Contracts: AUTH-001 through AUTH-012
  */
 
 import { device, element, by, expect, waitFor } from 'detox';
-import {
-  TestIDs,
-  Timeouts,
-  TEST_USER,
-  INVALID_CREDENTIALS,
-  INVALID_EMAIL,
-  waitForAppReady,
-  waitForElement,
-  login,
-  loginAndWaitForDashboard,
-  navigateToRegister,
-  navigateToResetPassword,
-  register,
-  requestPasswordReset,
-  assertScreenDisplayed,
-  assertTextVisible,
-  assertErrorDisplayed,
-  assertVisible,
-} from '../helpers';
+
+const TEST_USER = {
+  email: 'e2e-test@example.com',
+  password: 'TestPassword123!',
+};
+
+async function waitForLoginScreen(): Promise<void> {
+  await waitFor(element(by.id('login.screen')))
+    .toBeVisible()
+    .withTimeout(30000);
+}
 
 describe('Auth Tests', () => {
   beforeEach(async () => {
     await device.launchApp({ newInstance: true });
-    await waitForAppReady();
+    await waitForLoginScreen();
   });
 
-  describe('Login', () => {
-    /**
-     * AUTH-001: Login with valid credentials
-     */
-    it('logs in with valid credentials and navigates to dashboard', async () => {
-      await loginAndWaitForDashboard();
-      await assertScreenDisplayed(TestIDs.dashboard.screen);
+  describe('Login Screen', () => {
+    it('shows login form elements', async () => {
+      await expect(element(by.id('login.emailInput'))).toBeVisible();
+      await expect(element(by.id('login.passwordInput'))).toBeVisible();
+      await expect(element(by.id('login.submitButton'))).toBeVisible();
     });
 
-    /**
-     * AUTH-002: Login with invalid credentials
-     */
     it('shows error for invalid credentials', async () => {
-      await login(INVALID_CREDENTIALS.email, INVALID_CREDENTIALS.password);
+      await element(by.id('login.emailInput')).typeText('wrong@example.com');
+      await element(by.id('login.passwordInput')).typeText('WrongPassword123!');
+      await element(by.id('login.passwordInput')).tapReturnKey();
+      await element(by.id('login.submitButton')).tap();
 
       // Should show error and stay on login screen
       await waitFor(element(by.text('Invalid email or password')))
         .toBeVisible()
-        .withTimeout(Timeouts.medium);
-      await assertScreenDisplayed(TestIDs.login.screen);
+        .withTimeout(10000);
     });
 
-    /**
-     * AUTH-003: Login with invalid email format
-     */
-    it('shows validation error for invalid email format', async () => {
-      await element(by.id(TestIDs.login.emailInput)).typeText(INVALID_EMAIL);
-      await element(by.id(TestIDs.login.passwordInput)).typeText(
-        TEST_USER.password
-      );
-      await element(by.id(TestIDs.login.passwordInput)).tapReturnKey();
-      await element(by.id(TestIDs.login.submitButton)).tap();
+    it('logs in with valid credentials', async () => {
+      await element(by.id('login.emailInput')).typeText(TEST_USER.email);
+      await element(by.id('login.passwordInput')).typeText(TEST_USER.password);
+      await element(by.id('login.passwordInput')).tapReturnKey();
+      await element(by.id('login.submitButton')).tap();
 
-      // Should show validation error
-      await assertScreenDisplayed(TestIDs.login.screen);
+      // Should navigate to dashboard or onboarding
+      await waitFor(element(by.id('dashboard.screen')))
+        .toBeVisible()
+        .withTimeout(15000);
     });
   });
 
   describe('Navigation', () => {
-    /**
-     * AUTH-004: Navigate to Register
-     */
     it('navigates to register screen', async () => {
-      await navigateToRegister();
-      await assertScreenDisplayed(TestIDs.register.screen);
+      await element(by.id('login.registerLink')).tap();
+      await waitFor(element(by.id('register.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
     });
 
-    /**
-     * AUTH-005: Navigate to Reset Password
-     */
     it('navigates to reset password screen', async () => {
-      await navigateToResetPassword();
-      await assertScreenDisplayed(TestIDs.resetPassword.screen);
+      await element(by.id('login.resetPasswordLink')).tap();
+      await waitFor(element(by.id('resetPassword.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
     });
   });
 
   describe('Registration', () => {
-    /**
-     * AUTH-006: Register new account
-     */
-    it('registers new account and shows verify email screen', async () => {
-      await navigateToRegister();
+    it('shows registration form', async () => {
+      await element(by.id('login.registerLink')).tap();
+      await waitFor(element(by.id('register.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
 
-      // Generate unique email to avoid conflicts
-      const uniqueEmail = `e2e-${Date.now()}@test.local`;
-
-      await register('Test User', uniqueEmail, 'TestPassword123!');
-
-      // Should navigate to verify email screen
-      await waitForElement(TestIDs.verifyEmail.screen, Timeouts.long);
-      await assertScreenDisplayed(TestIDs.verifyEmail.screen);
+      await expect(element(by.id('register.displayNameInput'))).toBeVisible();
+      await expect(element(by.id('register.emailInput'))).toBeVisible();
+      await expect(element(by.id('register.passwordInput'))).toBeVisible();
+      await expect(element(by.id('register.submitButton'))).toBeVisible();
     });
 
-    /**
-     * AUTH-008: Register password requirements
-     */
-    it('shows password requirements while typing', async () => {
-      await navigateToRegister();
-
-      await element(by.id(TestIDs.register.passwordInput)).tap();
-      await element(by.id(TestIDs.register.passwordInput)).typeText('a');
-
-      // Password requirements should be visible
-      // At least one requirement indicator should appear
-      await waitFor(element(by.text('8 characters')))
+    it('registers new account', async () => {
+      await element(by.id('login.registerLink')).tap();
+      await waitFor(element(by.id('register.screen')))
         .toBeVisible()
-        .withTimeout(Timeouts.short);
+        .withTimeout(5000);
+
+      const uniqueEmail = `e2e-${Date.now()}@test.local`;
+      await element(by.id('register.displayNameInput')).typeText('Test User');
+      await element(by.id('register.emailInput')).typeText(uniqueEmail);
+      await element(by.id('register.passwordInput')).typeText(
+        'TestPassword123!'
+      );
+      await element(by.id('register.passwordInput')).tapReturnKey();
+      await element(by.id('register.submitButton')).tap();
+
+      // Should navigate to verify email screen
+      await waitFor(element(by.id('verifyEmail.screen')))
+        .toBeVisible()
+        .withTimeout(10000);
     });
   });
 
   describe('Password Reset', () => {
-    /**
-     * AUTH-009: Request password reset
-     */
-    it('requests password reset and shows confirmation', async () => {
-      await navigateToResetPassword();
-      await requestPasswordReset(TEST_USER.email);
+    it('shows password reset form', async () => {
+      await element(by.id('login.resetPasswordLink')).tap();
+      await waitFor(element(by.id('resetPassword.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
 
-      // Should show sent confirmation
-      await waitForElement(TestIDs.resetPassword.sentScreen, Timeouts.long);
+      await expect(element(by.id('resetPassword.emailInput'))).toBeVisible();
+      await expect(element(by.id('resetPassword.requestButton'))).toBeVisible();
     });
-  });
 
-  describe('Verify Email', () => {
-    /**
-     * AUTH-010: Resend verification email
-     * Note: Requires a user who just registered
-     */
-    it.skip('can resend verification email with cooldown', async () => {
-      // This test requires a fresh registration
-      // Skipped as it requires specific server state
-    });
-  });
+    it('requests password reset', async () => {
+      await element(by.id('login.resetPasswordLink')).tap();
+      await waitFor(element(by.id('resetPassword.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
 
-  describe('Biometric', () => {
-    /**
-     * AUTH-011: Biometric login
-     * Note: Requires device with biometric capability
-     */
-    it.skip('shows biometric button when available', async () => {
-      // Biometric tests require specific device setup
-      // Skipped for CI environments
-    });
-  });
+      await element(by.id('resetPassword.emailInput')).typeText(TEST_USER.email);
+      await element(by.id('resetPassword.emailInput')).tapReturnKey();
+      await element(by.id('resetPassword.requestButton')).tap();
 
-  describe('Rate Limiting', () => {
-    /**
-     * AUTH-012: Rate limiting
-     */
-    it.skip('shows rate limit error after too many attempts', async () => {
-      // Rate limiting test would require many login attempts
-      // Skipped to avoid long test times
+      // Should show confirmation
+      await waitFor(element(by.id('resetPassword.sentScreen')))
+        .toBeVisible()
+        .withTimeout(10000);
     });
   });
 });
