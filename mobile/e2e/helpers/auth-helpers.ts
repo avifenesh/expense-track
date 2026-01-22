@@ -161,10 +161,13 @@ export async function registerUser(
       .withTimeout(5000);
 
     // Login with the new user credentials
+    // Clear inputs first (typeText appends, not replaces)
     await element(by.id('login.emailInput')).tap();
+    await element(by.id('login.emailInput')).clearText();
     await element(by.id('login.emailInput')).typeText(email);
 
     await element(by.id('login.passwordInput')).tap();
+    await element(by.id('login.passwordInput')).clearText();
     await element(by.id('login.passwordInput')).typeText(password);
     await element(by.id('login.passwordInput')).tapReturnKey();
 
