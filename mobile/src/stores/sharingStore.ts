@@ -227,7 +227,7 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
 
     try {
       const response = await apiPatch<MarkPaidResponse>(
-        `/expenses/shares/${participantId}/paid`,
+        `/expenses/shares/participants/${participantId}/paid`,
         {},
         accessToken
       );
@@ -257,7 +257,7 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
 
     try {
       const response = await apiPost<DeclineShareResponse>(
-        `/expenses/shares/${participantId}/decline`,
+        `/expenses/shares/participants/${participantId}/decline`,
         {},
         accessToken
       );
@@ -300,7 +300,7 @@ export const useSharingStore = create<SharingStore>((set, _get) => ({
 
     try {
       await apiPost<{ message: string }>(
-        `/expenses/shares/${participantId}/remind`,
+        `/expenses/shares/participants/${participantId}/remind`,
         {},
         accessToken
       );

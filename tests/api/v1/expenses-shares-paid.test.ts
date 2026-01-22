@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { PATCH as MarkPaid } from '@/app/api/v1/expenses/shares/[participantId]/paid/route'
+import { PATCH as MarkPaid } from '@/app/api/v1/expenses/shares/participants/[participantId]/paid/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'

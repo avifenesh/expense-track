@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET as GetSharing } from '@/app/api/v1/sharing/route'
-import { POST as DeclineShare } from '@/app/api/v1/expenses/shares/[participantId]/decline/route'
+import { POST as DeclineShare } from '@/app/api/v1/expenses/shares/participants/[participantId]/decline/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'

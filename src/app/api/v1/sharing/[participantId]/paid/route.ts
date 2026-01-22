@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PATCH as PaidHandler } from '@/app/api/v1/expenses/shares/[participantId]/paid/route'
+import { PATCH as PaidHandler } from '@/app/api/v1/expenses/shares/participants/[participantId]/paid/route'
 
 type RouteParams = { params: Promise<{ participantId: string }> }
 
