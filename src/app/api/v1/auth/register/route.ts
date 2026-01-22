@@ -78,11 +78,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && !isTestEmail) {
       // Log for development debugging, but never log the actual token
       serverLogger.info('Email verification required', {
         email: normalizedEmail,
-        expires: verificationExpires.toISOString(),
+        expires: verificationExpires!.toISOString(),
       })
     }
 
