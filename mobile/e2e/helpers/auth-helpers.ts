@@ -181,28 +181,46 @@ export async function registerUser(
 
     // After login, new user should go to onboarding
     // But might also go to dashboard if hasCompletedOnboarding is true
+    // Or might stay on login screen if login failed
     try {
       await waitFor(element(by.id('onboarding.welcome.screen')))
         .toBeVisible()
         .withTimeout(10000);
     } catch {
-      // Maybe went to dashboard instead - check both states
+      // Check if still on login screen (login failed)
       try {
-        await waitFor(element(by.id('dashboard.screen')))
-          .toBeVisible()
-          .withTimeout(5000);
-        // If we're on dashboard, user already completed onboarding
-        // This is OK for the helper - just continue
-        return;
-      } catch {
-        // Try empty dashboard
-        await waitFor(element(by.id('dashboard.emptyScreen')))
-          .toBeVisible()
-          .withTimeout(5000);
-        return;
+        await expect(element(by.id('login.screen'))).toBeVisible();
+        // Still on login - check for error message
+        try {
+          await expect(element(by.id('login.errorText'))).toBeVisible();
+          throw new Error('Login failed - error message displayed');
+        } catch {
+          throw new Error('Login failed - still on login screen');
+        }
+      } catch (loginCheckError) {
+        if (loginCheckError instanceof Error && loginCheckError.message.includes('Login failed')) {
+          throw loginCheckError;
+        }
+        // Not on login screen - check dashboard
+        try {
+          await waitFor(element(by.id('dashboard.screen')))
+            .toBeVisible()
+            .withTimeout(5000);
+          return;
+        } catch {
+          // Try empty dashboard
+          await waitFor(element(by.id('dashboard.emptyScreen')))
+            .toBeVisible()
+            .withTimeout(5000);
+          return;
+        }
       }
     }
-  } catch {
+  } catch (outerError) {
+    // If inner flow failed with a specific error, rethrow
+    if (outerError instanceof Error && outerError.message.includes('Login failed')) {
+      throw outerError;
+    }
     // Direct to onboarding (some configurations might skip verify email)
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
