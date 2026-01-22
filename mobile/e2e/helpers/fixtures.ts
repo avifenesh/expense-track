@@ -8,17 +8,19 @@
 export const TEST_USERS = {
   // Primary test user - matches web E2E test user setup
   // Note: These credentials should match users seeded in CI workflow
+  // Password: TestPassword123! (same as web E2E)
   primary: {
     email: 'e2e-user1@test.local',
-    password: 'E2ETestPassword123!',
-    name: 'E2E Test User',
+    password: 'TestPassword123!',
+    name: 'TestUserOne',
   },
 
   // Secondary test user for multi-user scenarios
+  // Password: TestPassword123! (same as web E2E)
   secondary: {
     email: 'e2e-user2@test.local',
-    password: 'E2ETestPassword123!',
-    name: 'E2E Test User 2',
+    password: 'TestPassword123!',
+    name: 'TestUserTwo',
   },
 
   // New user for registration tests

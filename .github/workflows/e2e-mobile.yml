@@ -66,11 +66,11 @@ jobs:
         run: npm run db:seed:e2e
         env:
           AUTH_USER1_EMAIL: e2e-user1@test.local
-          AUTH_USER1_DISPLAY_NAME: E2E Test User
-          AUTH_USER1_PASSWORD_HASH: '$2b$10$EMmOLPQ/5Ei4WQyBKbOkmeJz8cHH/eB50wZ3m6KoIi0vBY2fvyQ4a'
+          AUTH_USER1_DISPLAY_NAME: TestUserOne
+          AUTH_USER1_PASSWORD_HASH: '$2b$10$BMCjssN3zQ1tNDpWJikcNeMa/wOxTlojZLSMrxiE82bPojvHFC5iy'
           AUTH_USER2_EMAIL: e2e-user2@test.local
-          AUTH_USER2_DISPLAY_NAME: E2E Test User 2
-          AUTH_USER2_PASSWORD_HASH: '$2b$10$EMmOLPQ/5Ei4WQyBKbOkmeJz8cHH/eB50wZ3m6KoIi0vBY2fvyQ4a'
+          AUTH_USER2_DISPLAY_NAME: TestUserTwo
+          AUTH_USER2_PASSWORD_HASH: '$2b$10$BMCjssN3zQ1tNDpWJikcNeMa/wOxTlojZLSMrxiE82bPojvHFC5iy'
 
       - name: Start backend server
         run: |
@@ -128,6 +128,8 @@ jobs:
       - name: Generate native projects (Expo prebuild)
         working-directory: mobile
         run: npx expo prebuild --clean --platform ios
+        env:
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1
 
       - name: Install CocoaPods dependencies
         working-directory: mobile/ios
@@ -136,6 +138,8 @@ jobs:
       - name: Build Detox (iOS release)
         working-directory: mobile
         run: npm run e2e:build:ios:release
+        env:
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1
 
       - name: Boot iOS Simulator
         run: |
@@ -224,11 +228,11 @@ jobs:
         run: npm run db:seed:e2e
         env:
           AUTH_USER1_EMAIL: e2e-user1@test.local
-          AUTH_USER1_DISPLAY_NAME: E2E Test User
-          AUTH_USER1_PASSWORD_HASH: '$2b$10$EMmOLPQ/5Ei4WQyBKbOkmeJz8cHH/eB50wZ3m6KoIi0vBY2fvyQ4a'
+          AUTH_USER1_DISPLAY_NAME: TestUserOne
+          AUTH_USER1_PASSWORD_HASH: '$2b$10$BMCjssN3zQ1tNDpWJikcNeMa/wOxTlojZLSMrxiE82bPojvHFC5iy'
           AUTH_USER2_EMAIL: e2e-user2@test.local
-          AUTH_USER2_DISPLAY_NAME: E2E Test User 2
-          AUTH_USER2_PASSWORD_HASH: '$2b$10$EMmOLPQ/5Ei4WQyBKbOkmeJz8cHH/eB50wZ3m6KoIi0vBY2fvyQ4a'
+          AUTH_USER2_DISPLAY_NAME: TestUserTwo
+          AUTH_USER2_PASSWORD_HASH: '$2b$10$BMCjssN3zQ1tNDpWJikcNeMa/wOxTlojZLSMrxiE82bPojvHFC5iy'
 
       - name: Start backend server
         run: |
@@ -297,10 +301,14 @@ jobs:
       - name: Generate native projects (Expo prebuild)
         working-directory: mobile
         run: npx expo prebuild --clean --platform android
+        env:
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1
 
       - name: Build Detox (Android release)
         working-directory: mobile
         run: npm run e2e:build:android:release
+        env:
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1
 
       - name: Clean ADB server
         run: |
