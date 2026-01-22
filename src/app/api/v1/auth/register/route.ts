@@ -61,15 +61,17 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    const verificationToken = randomBytes(32).toString('hex')
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    // In test mode, skip email verification to enable E2E testing
+    const isTestMode = process.env.NODE_ENV === 'test'
+    const verificationToken = isTestMode ? null : randomBytes(32).toString('hex')
+    const verificationExpires = isTestMode ? null : new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     await prisma.user.create({
       data: {
         email: normalizedEmail,
         displayName: displayName.trim(),
         passwordHash,
-        emailVerified: false,
+        emailVerified: isTestMode, // Auto-verify in test mode for E2E
         emailVerificationToken: verificationToken,
         emailVerificationExpires: verificationExpires,
       },
