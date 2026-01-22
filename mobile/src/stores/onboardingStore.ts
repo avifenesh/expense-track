@@ -161,7 +161,9 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         accessToken
       );
 
-      authStore.updateUser({ hasCompletedOnboarding: true });
+      // Note: hasCompletedOnboarding is set by BiometricScreen after user completes final step
+      // Setting it here would cause a navigation conflict (RootNavigator wants AppStack,
+      // but we still need to show BiometricScreen in OnboardingStack)
 
       set({ isCompleting: false });
       return true;
