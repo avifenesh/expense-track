@@ -1,4 +1,3 @@
-import { useShallow } from 'zustand/shallow';
 import { useAuthStore } from '../stores';
 
 interface AuthState {
@@ -11,21 +10,24 @@ interface AuthState {
 /**
  * Hook to access authentication state from Zustand store.
  * Used by navigation to determine which stack to show.
- * Uses shallow comparison to prevent unnecessary re-renders.
+ * Uses individual selectors for each primitive value to prevent
+ * unnecessary re-renders and avoid Maximum update depth exceeded errors.
  */
 export function useAuthState(): AuthState {
-  const { isAuthenticated, isLoading, user } = useAuthStore(
-    useShallow((state) => ({
-      isAuthenticated: state.isAuthenticated,
-      isLoading: state.isLoading,
-      user: state.user,
-    }))
+  // Use individual selectors for each primitive value
+  // This is more efficient than selecting an object and avoids
+  // potential issues with reference equality checks during rapid state changes
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const hasCompletedOnboarding = useAuthStore(
+    (state) => state.user?.hasCompletedOnboarding ?? false
   );
+  const userId = useAuthStore((state) => state.user?.id ?? null);
 
   return {
     isAuthenticated,
-    hasCompletedOnboarding: user?.hasCompletedOnboarding ?? false,
+    hasCompletedOnboarding,
     isLoading,
-    userId: user?.id ?? null,
+    userId,
   };
 }
