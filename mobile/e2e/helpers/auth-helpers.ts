@@ -1,4 +1,4 @@
-import { by, element, expect, waitFor } from 'detox';
+import { by, device, element, expect, waitFor } from 'detox';
 import { TEST_USERS } from './fixtures';
 
 /**
@@ -44,19 +44,31 @@ export async function login(email: string, password: string): Promise<void> {
   // Dismiss keyboard before tapping submit
   await element(by.id('login.passwordInput')).tapReturnKey();
 
+  // Small delay to let keyboard dismiss (iOS needs this)
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Submit login form
   await element(by.id('login.submitButton')).tap();
 
   // Wait for navigation to dashboard or onboarding
   // Note: Detox doesn't have .or() method - use try-catch pattern
+  // Fresh users may see empty dashboard if they have no accounts
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
       .withTimeout(15000);
   } catch {
-    await waitFor(element(by.id('onboarding.welcome.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
+    // Try empty dashboard (fresh users with no accounts)
+    try {
+      await waitFor(element(by.id('dashboard.emptyScreen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    } catch {
+      // Fall back to onboarding welcome screen
+      await waitFor(element(by.id('onboarding.welcome.screen')))
+        .toBeVisible()
+        .withTimeout(5000);
+    }
   }
 }
 
@@ -98,8 +110,14 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Register a new user account
+ * Register a new user account and complete the full flow to onboarding
  * Note: RegisterScreen only has displayName, email, password - no confirm password field
+ *
+ * Flow:
+ * 1. Fill and submit registration form
+ * 2. If VerifyEmail screen shown, navigate back to login
+ * 3. Login with the new credentials (works because @test.local emails are auto-verified)
+ * 4. Navigate to onboarding
  */
 export async function registerUser(
   displayName: string,
@@ -125,16 +143,49 @@ export async function registerUser(
   await element(by.id('register.passwordInput')).typeText(password);
   await element(by.id('register.passwordInput')).tapReturnKey();
 
+  // Small delay to let keyboard dismiss (iOS needs this)
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Submit registration
   await element(by.id('register.submitButton')).tap();
 
-  // Wait for verification screen or onboarding
-  // Note: Detox doesn't have .or() method - use try-catch pattern
+  // App always shows VerifyEmail screen after registration
+  // For @test.local emails, the user is auto-verified in the backend
+  // so we can proceed to login immediately
   try {
     await waitFor(element(by.id('verifyEmail.screen')))
       .toBeVisible()
       .withTimeout(15000);
+
+    // Navigate back to login
+    await element(by.id('verifyEmail.backButton')).tap();
+
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+
+    // Login with the newly registered credentials
+    // Clear inputs first (typeText appends, not replaces)
+    await element(by.id('login.emailInput')).tap();
+    await element(by.id('login.emailInput')).clearText();
+    await element(by.id('login.emailInput')).typeText(email);
+
+    await element(by.id('login.passwordInput')).tap();
+    await element(by.id('login.passwordInput')).clearText();
+    await element(by.id('login.passwordInput')).typeText(password);
+    await element(by.id('login.passwordInput')).tapReturnKey();
+
+    // Small delay for keyboard dismiss
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    await element(by.id('login.submitButton')).tap();
+
+    // After successful login, new user goes to onboarding
+    await waitFor(element(by.id('onboarding.welcome.screen')))
+      .toBeVisible()
+      .withTimeout(15000);
   } catch {
+    // Direct to onboarding (some configurations might skip verify email)
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
       .withTimeout(5000);
@@ -168,7 +219,6 @@ export async function ensureLoggedOut(): Promise<void> {
  * Handles app startup synchronization issues
  */
 export async function waitForAppReady(): Promise<void> {
-  const { device, waitFor, element, by } = await import('detox');
   await device.disableSynchronization();
   await new Promise((resolve) => setTimeout(resolve, 2000));
   await waitFor(element(by.id('login.screen')))
@@ -182,18 +232,24 @@ export async function waitForAppReady(): Promise<void> {
  * Use this at the start of tests that need a logged-in user
  */
 export async function setupLoggedInUser(): Promise<void> {
-  const { waitFor, element, by } = await import('detox');
-
   await waitForAppReady();
   await loginAsPrimaryUser();
 
-  // Handle onboarding if needed
+  // Handle onboarding if needed - check for dashboard (full or empty) first
   try {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
       .withTimeout(5000);
   } catch {
-    await completeOnboarding();
+    // Try empty dashboard (fresh users with no accounts)
+    try {
+      await waitFor(element(by.id('dashboard.emptyScreen')))
+        .toBeVisible()
+        .withTimeout(3000);
+    } catch {
+      // Not on dashboard - need to complete onboarding
+      await completeOnboarding();
+    }
   }
 }
 
@@ -256,8 +312,15 @@ export async function completeOnboarding(): Promise<void> {
     await element(by.id('onboarding.biometric.continueButton')).tap();
   }
 
-  // Wait for dashboard
-  await waitFor(element(by.id('dashboard.screen')))
-    .toBeVisible()
-    .withTimeout(5000);
+  // Wait for dashboard - may show empty state for fresh users with no accounts
+  try {
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  } catch {
+    // Fresh users with no accounts see empty state
+    await waitFor(element(by.id('dashboard.emptyScreen')))
+      .toBeVisible()
+      .withTimeout(5000);
+  }
 }

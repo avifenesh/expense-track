@@ -103,6 +103,82 @@ describe('POST /api/v1/auth/register', () => {
       expect(prisma.user.create).not.toHaveBeenCalled()
     })
 
+    it('auto-verifies @test.local emails for E2E testing', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+      vi.mocked(prisma.user.create).mockResolvedValueOnce({
+        id: 'new-user-id',
+        email: 'e2e-test@test.local',
+        displayName: 'Test User',
+        passwordHash: 'hashed',
+        emailVerified: true, // Should be auto-verified
+        emailVerificationToken: null, // No token needed
+        emailVerificationExpires: null, // No expiry needed
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        preferredCurrency: 'USD',
+        hasCompletedOnboarding: false,
+        activeAccountId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      await registerPost(
+        buildRequest({
+          email: 'e2e-test@test.local',
+          password: 'Password123',
+          displayName: 'Test User',
+        }),
+      )
+
+      // Verify user was created with auto-verification
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: 'e2e-test@test.local',
+          emailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+        }),
+      })
+    })
+
+    it('does NOT auto-verify non-test.local emails', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+      vi.mocked(prisma.user.create).mockResolvedValueOnce({
+        id: 'new-user-id',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        passwordHash: 'hashed',
+        emailVerified: false,
+        emailVerificationToken: 'token',
+        emailVerificationExpires: new Date(),
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        preferredCurrency: 'USD',
+        hasCompletedOnboarding: false,
+        activeAccountId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      await registerPost(
+        buildRequest({
+          email: 'test@example.com',
+          password: 'Password123',
+          displayName: 'Test User',
+        }),
+      )
+
+      // Verify user was created WITHOUT auto-verification
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: 'test@example.com',
+          emailVerified: false,
+          emailVerificationToken: expect.any(String),
+          emailVerificationExpires: expect.any(Date),
+        }),
+      })
+    })
+
     it('normalizes email to lowercase', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
       vi.mocked(prisma.user.create).mockResolvedValueOnce({
