@@ -143,13 +143,42 @@ export async function registerUser(
   // Submit registration
   await element(by.id('register.submitButton')).tap();
 
-  // Wait for verification screen or onboarding
-  // Note: Detox doesn't have .or() method - use try-catch pattern
+  // Wait for verification screen
+  // In test mode, users are auto-verified, but the app still shows VerifyEmail screen
+  // We need to go back to login and sign in to proceed to onboarding
   try {
     await waitFor(element(by.id('verifyEmail.screen')))
       .toBeVisible()
       .withTimeout(15000);
+
+    // Auto-verified users need to login to proceed
+    // Click "Back to Sign In" and login with the new credentials
+    await element(by.id('verifyEmail.backButton')).tap();
+
+    // Wait for login screen
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(5000);
+
+    // Login with the new user credentials
+    await element(by.id('login.emailInput')).tap();
+    await element(by.id('login.emailInput')).typeText(email);
+
+    await element(by.id('login.passwordInput')).tap();
+    await element(by.id('login.passwordInput')).typeText(password);
+    await element(by.id('login.passwordInput')).tapReturnKey();
+
+    // Small delay for keyboard dismiss
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    await element(by.id('login.submitButton')).tap();
+
+    // After login, should go to onboarding (new user hasn't completed it)
+    await waitFor(element(by.id('onboarding.welcome.screen')))
+      .toBeVisible()
+      .withTimeout(15000);
   } catch {
+    // Direct to onboarding (some configurations might skip verify email)
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
       .withTimeout(5000);
