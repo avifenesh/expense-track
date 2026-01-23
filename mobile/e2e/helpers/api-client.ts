@@ -213,7 +213,7 @@ export class TestApiClient {
   /**
    * Ensures test user exists and is ready for testing.
    * Registers if not exists, logs in, and completes onboarding.
-   * Always calls completeOnboarding for test users to ensure subscription exists.
+   * Also verifies an account exists (handles legacy users without accounts).
    */
   async ensureTestUser(
     user: typeof TEST_USER = TEST_USER,
@@ -229,6 +229,9 @@ export class TestApiClient {
         await this.completeOnboarding();
       }
 
+      // Verify account exists (legacy test users may not have one)
+      await this.ensureAccountExists();
+
       return loginResponse;
     } catch {
       // User doesn't exist, register first
@@ -240,6 +243,22 @@ export class TestApiClient {
       }
 
       return loginResponse;
+    }
+  }
+
+  /**
+   * Ensures at least one account exists for the user.
+   * Creates a default "Personal" account if none exists.
+   */
+  private async ensureAccountExists(): Promise<void> {
+    const { accounts } = await this.getAccounts();
+    if (accounts.length === 0) {
+      console.log('[TestApiClient] Creating default account for legacy test user');
+      await this.request<Account>('POST', '/api/v1/accounts', {
+        name: 'Personal',
+        type: 'PERSONAL',
+        preferredCurrency: 'USD',
+      });
     }
   }
 
