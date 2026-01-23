@@ -517,6 +517,46 @@ describe('BudgetsScreen', () => {
     });
   });
 
+  describe('FAB Button', () => {
+    it('renders FAB button', async () => {
+      renderBudgetsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('budgets.addButton')).toBeTruthy();
+      });
+    });
+
+    it('has correct accessibility label', async () => {
+      renderBudgetsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Add budget')).toBeTruthy();
+      });
+    });
+
+    it('navigates to CreateBudget when pressed', async () => {
+      const navigate = jest.fn();
+      const navWithNavigate = { ...mockNavigation, navigate };
+
+      render(
+        <NavigationContainer>
+          <BudgetsScreen
+            navigation={navWithNavigate as typeof mockNavigation}
+            route={mockRoute}
+          />
+        </NavigationContainer>
+      );
+
+      await waitFor(() => {
+        fireEvent.press(screen.getByTestId('budgets.addButton'));
+      });
+
+      await waitFor(() => {
+        expect(navigate).toHaveBeenCalledWith('CreateBudget');
+      });
+    });
+  });
+
   describe('Category Lookup', () => {
     it('falls back to budget.category when category not in store', async () => {
       // Categories store doesn't have the category
