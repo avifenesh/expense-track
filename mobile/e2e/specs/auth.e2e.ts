@@ -112,7 +112,7 @@ describe('Auth E2E Tests', () => {
   });
 
   describe('Registration Flow', () => {
-    it('registers new user and navigates to verify email', async () => {
+    it('registers new user and navigates to login (test users auto-verified)', async () => {
       // Generate unique email for this test run
       const uniqueEmail = `e2e-new-${Date.now()}@test.local`;
 
@@ -125,11 +125,9 @@ describe('Auth E2E Tests', () => {
       await element(by.id('register.screen')).tap(); // Dismiss keyboard
       await RegisterScreen.tapSubmit();
 
-      // For @test.local emails, should auto-verify and go to login
-      // or go to verify email screen
-      await waitFor(element(by.id('verifyEmail.screen')))
-        .toBeVisible()
-        .withTimeout(TIMEOUTS.LONG);
+      // Test users (@test.local) are auto-verified, so they go directly to login
+      await LoginScreen.waitForScreen();
+      await expect(element(by.id('login.screen'))).toBeVisible();
     });
 
     it('shows validation error for weak password', async () => {

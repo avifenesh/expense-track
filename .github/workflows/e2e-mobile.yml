@@ -148,6 +148,9 @@ jobs:
       - name: Generate native projects (Expo prebuild)
         working-directory: mobile
         run: npx expo prebuild --clean --platform ios
+        env:
+          # iOS simulator uses localhost to reach host
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Install CocoaPods dependencies
         working-directory: mobile/ios
@@ -339,6 +342,9 @@ jobs:
       - name: Generate native projects (Expo prebuild)
         working-directory: mobile
         run: npx expo prebuild --clean --platform android
+        env:
+          # Android emulator uses 10.0.2.2 to reach host localhost
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Build Detox (Android release)
         working-directory: mobile
