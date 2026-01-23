@@ -136,23 +136,13 @@ const STAT_VARIANT_STYLES: Record<
 
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
-  if (
-    normalized.includes('net') ||
-    normalized.includes('saved') ||
-    normalized.includes('income') ||
-    normalized.includes('inflow')
-  ) {
+  if (['net', 'saved', 'income', 'inflow'].some((kw) => normalized.includes(kw))) {
     return Wallet
   }
-  if (normalized.includes('spend') || normalized.includes('expense') || normalized.includes('outflow')) {
+  if (['spend', 'expense', 'outflow'].some((kw) => normalized.includes(kw))) {
     return PiggyBank
   }
-  if (
-    normalized.includes('target') ||
-    normalized.includes('goal') ||
-    normalized.includes('budget') ||
-    normalized.includes('track')
-  ) {
+  if (['target', 'goal', 'budget', 'track'].some((kw) => normalized.includes(kw))) {
     return Layers
   }
   return TrendingUp
