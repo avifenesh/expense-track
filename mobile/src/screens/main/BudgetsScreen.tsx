@@ -26,7 +26,7 @@ import {
 import { getMonthKey } from '../../utils/date';
 import type { Currency } from '../../types';
 
-export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
+export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -155,6 +155,10 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
     setSelectedMonth(month);
   }, []);
 
+  const handleAddBudget = useCallback(() => {
+    navigation.navigate('CreateBudget');
+  }, [navigation]);
+
   const isLoading =
     accountsLoading ||
     (activeAccountId && (transactionsLoading || budgetsLoading || categoriesLoading));
@@ -269,6 +273,17 @@ export function BudgetsScreen(_props: MainTabScreenProps<'Budgets'>) {
           )}
         </View>
       </ScrollView>
+
+      {/* FAB Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleAddBudget}
+        accessibilityRole="button"
+        accessibilityLabel="Add budget"
+        testID="budgets.addButton"
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -355,6 +370,27 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#0f172a',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#38bdf8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  fabIcon: {
+    fontSize: 28,
+    color: '#0f172a',
     fontWeight: '600',
   },
 });
