@@ -86,8 +86,13 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
     setIsLoading(true);
 
     try {
-      await register(email, password, displayName);
-      navigation.navigate('VerifyEmail', { email: email.trim().toLowerCase() });
+      const response = await register(email, password, displayName);
+      // Test users (@test.local) are auto-verified, go directly to login
+      if (response?.emailVerified) {
+        navigation.navigate('Login');
+      } else {
+        navigation.navigate('VerifyEmail', { email: email.trim().toLowerCase() });
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.code === 'RATE_LIMITED') {

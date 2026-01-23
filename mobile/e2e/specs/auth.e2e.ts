@@ -180,17 +180,10 @@ describe('Authentication', () => {
       // Navigate to registration
       await registerUser('New Test User', newEmail, 'NewUserPassword123!');
 
-      // Should redirect to verify email or onboarding
-      try {
-        await waitFor(element(by.id('verifyEmail.screen')))
-          .toBeVisible()
-          .withTimeout(10000);
-      } catch {
-        // Direct to onboarding (email verification disabled in test env)
-        await waitFor(element(by.id('onboarding.welcome.screen')))
-          .toBeVisible()
-          .withTimeout(5000);
-      }
+      // Test users (@test.local) are auto-verified, so they go back to login screen
+      await waitFor(element(by.id('login.screen')))
+        .toBeVisible()
+        .withTimeout(10000);
     });
 
     it('should reset password', async () => {

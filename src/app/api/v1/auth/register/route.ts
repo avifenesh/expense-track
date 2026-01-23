@@ -75,6 +75,13 @@ export async function POST(request: NextRequest) {
         emailVerified: isTestEmail,
         emailVerificationToken: verificationToken,
         emailVerificationExpires: verificationExpires,
+        // Create default account (same as web registration)
+        accounts: {
+          create: {
+            name: 'Personal',
+            type: 'SELF',
+          },
+        },
       },
     })
 
@@ -87,7 +94,10 @@ export async function POST(request: NextRequest) {
     }
 
     return successResponse(
-      { message: 'If this email is not registered, you will receive a verification email shortly.' },
+      {
+        message: 'If this email is not registered, you will receive a verification email shortly.',
+        emailVerified: isTestEmail,
+      },
       201,
     )
   } catch (error) {

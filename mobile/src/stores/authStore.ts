@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as authService from '../services/auth';
+import type { RegisterResponse } from '../services/auth';
 import * as biometricService from '../services/biometric';
 import { ApiError } from '../services/api';
 import type { BiometricCapability } from '../services/biometric';
@@ -26,7 +27,7 @@ interface AuthActions {
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<RegisterResponse>;
   refreshTokens: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   loginWithBiometric: () => Promise<void>;
@@ -69,13 +70,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const response = await authService.login(email, password);
 
+      // Fetch user profile to get actual hasCompletedOnboarding status
+      let userProfile;
+      try {
+        userProfile = await authService.getProfile(response.accessToken);
+      } catch {
+        // If profile fetch fails, use defaults (new user needs onboarding)
+        userProfile = null;
+      }
+
       set({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         user: {
-          id: null,
+          id: userProfile?.id ?? null,
           email: email.toLowerCase(),
-          hasCompletedOnboarding: false,
+          displayName: userProfile?.displayName ?? undefined,
+          hasCompletedOnboarding: userProfile?.hasCompletedOnboarding ?? false,
         },
         isAuthenticated: true,
       });
@@ -110,7 +121,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   register: async (email: string, password: string, displayName: string) => {
     try {
-      await authService.register(email, password, displayName);
+      const response = await authService.register(email, password, displayName);
+      return response;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -183,13 +195,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const tokens = await authService.refreshTokens(credentials.refreshToken);
       await biometricService.enableBiometric(tokens.refreshToken, credentials.email);
 
+      // Fetch user profile to get actual user data
+      let userProfile;
+      try {
+        userProfile = await authService.getProfile(tokens.accessToken);
+      } catch {
+        userProfile = null;
+      }
+
       set({
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         user: {
-          id: null,
+          id: userProfile?.id ?? null,
           email: credentials.email,
-          hasCompletedOnboarding: true,
+          displayName: userProfile?.displayName ?? undefined,
+          hasCompletedOnboarding: userProfile?.hasCompletedOnboarding ?? true,
         },
         isAuthenticated: true,
       });
