@@ -64,7 +64,6 @@ export function AddBudgetScreen({
     fetchCategories('EXPENSE');
   }, [fetchCategories]);
 
-  // Filter available categories: expense, not archived, and no existing budget for selected month
   const availableCategories = useMemo(() => {
     const existingBudgetCategoryIds = new Set(
       budgets
@@ -80,7 +79,6 @@ export function AddBudgetScreen({
     );
   }, [categories, budgets, selectedMonth]);
 
-  // Reset category selection when month changes and selected category is no longer available
   useEffect(() => {
     if (categoryId && !availableCategories.find((c) => c.id === categoryId)) {
       setCategoryId(null);
@@ -233,7 +231,6 @@ export function AddBudgetScreen({
           keyboardShouldPersistTaps="handled"
           testID="addBudget.scrollView"
         >
-          {/* Month Selector */}
           <View style={styles.section} testID="addBudget.monthSection">
             <Text style={styles.sectionLabel}>Month</Text>
             <MonthSelector
@@ -244,7 +241,6 @@ export function AddBudgetScreen({
             />
           </View>
 
-          {/* Amount Input */}
           <View style={styles.section} testID="addBudget.amountSection">
             <Text style={styles.sectionLabel}>Budget Amount</Text>
             <View
@@ -270,7 +266,6 @@ export function AddBudgetScreen({
             )}
           </View>
 
-          {/* Category Selector */}
           <View style={styles.section} testID="addBudget.categorySection">
             <Text style={styles.sectionLabel}>Category</Text>
             {categoriesLoading ? (
@@ -291,7 +286,6 @@ export function AddBudgetScreen({
             )}
           </View>
 
-          {/* Preview */}
           {amount && categoryId && selectedCategory && (
             <View style={styles.previewSection} testID="addBudget.previewSection">
               <Text style={styles.sectionLabel}>Preview</Text>
@@ -324,7 +318,6 @@ export function AddBudgetScreen({
           )}
         </ScrollView>
 
-        {/* Submit Button */}
         <View style={styles.footer} testID="addBudget.footer">
           <Pressable
             style={[

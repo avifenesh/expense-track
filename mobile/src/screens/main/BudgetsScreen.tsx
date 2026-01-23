@@ -164,7 +164,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     (activeAccountId && (transactionsLoading || budgetsLoading || categoriesLoading));
   const error = accountsError || transactionsError || budgetsError || categoriesError;
 
-  // Loading state (initial load only)
   if (accountsLoading && accounts.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.loadingScreen">
@@ -253,8 +252,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
           ) : (
             <View testID="budgets.categoryList">
               {budgets.map((budget, index) => {
-                // Prefer category from categoryMap, fall back to budget.category
-                // when not in map (e.g., categories not loaded yet or category deleted)
                 const category = categoryMap.get(budget.categoryId) || budget.category;
                 const spent = spentByCategory.get(budget.categoryId) || 0;
                 return (
@@ -274,7 +271,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
         </View>
       </ScrollView>
 
-      {/* FAB Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={handleAddBudget}

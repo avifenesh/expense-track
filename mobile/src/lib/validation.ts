@@ -120,7 +120,6 @@ export function validateTransactionDescription(
     return 'Description is too long (max 200 characters)';
   }
 
-  // XSS prevention (allow optional whitespace in event handlers)
   const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
   if (dangerousPattern.test(description)) {
     return 'Description contains invalid characters';
@@ -154,7 +153,6 @@ export function validateTransactionDate(date: Date | null): string | null {
     return 'Date cannot be in the future';
   }
 
-  // Don't allow dates >10 years old
   const tenYearsAgo = new Date();
   tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
   if (date < tenYearsAgo) {
@@ -169,14 +167,13 @@ const MAX_SHARE_DESCRIPTION_LENGTH = 240;
 
 export function validateShareDescription(description: string | null | undefined): string | null {
   if (!description || description.trim().length === 0) {
-    return null; // Description is optional
+    return null;
   }
 
   if (description.length > MAX_SHARE_DESCRIPTION_LENGTH) {
     return `Description is too long (max ${MAX_SHARE_DESCRIPTION_LENGTH} characters)`;
   }
 
-  // XSS prevention - block script tags, javascript: URLs, and event handlers
   const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
   if (dangerousPattern.test(description)) {
     return 'Description contains invalid characters';
