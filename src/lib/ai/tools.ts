@@ -84,7 +84,7 @@ export function buildTools(ctx: ToolContext) {
 
         const formatted = budgets.map((b) => {
           const progress = getBudgetProgress(b)
-          const percentUsed = Math.min(Math.max(Math.round(progress * 100), 0), 100)
+          const percentUsed = Math.round(progress * 100)
 
           return {
             category: b.categoryName,
