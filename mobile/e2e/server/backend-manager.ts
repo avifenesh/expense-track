@@ -2,6 +2,7 @@
  * Backend Server Manager
  * Spawns Next.js backend for E2E tests, handles health checks and cleanup
  */
+/* eslint-disable no-console */
 
 import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';

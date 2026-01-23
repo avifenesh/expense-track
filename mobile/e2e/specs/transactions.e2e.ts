@@ -107,8 +107,7 @@ describe('Transaction E2E Tests', () => {
           .toBeVisible()
           .withTimeout(TIMEOUTS.MEDIUM);
       } catch {
-        // No transactions to tap - this is OK
-        console.log('No transactions to tap');
+        // No transactions to tap - this is OK for this test
       }
     });
   });

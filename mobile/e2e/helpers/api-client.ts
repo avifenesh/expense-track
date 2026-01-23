@@ -2,6 +2,7 @@
  * E2E Test API Client
  * Direct API calls for test setup and teardown
  */
+/* eslint-disable no-console */
 
 import { TEST_USER } from './fixtures';
 

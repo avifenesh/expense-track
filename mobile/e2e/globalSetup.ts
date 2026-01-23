@@ -2,11 +2,9 @@
  * Global Setup for E2E Tests
  * Starts backend server before Detox setup
  */
+/* eslint-disable no-console */
 
 import { getBackendManager } from './server/backend-manager';
-
-// Import Detox's global setup
-const detoxGlobalSetup = require('detox/runners/jest/globalSetup');
 
 export default async function globalSetup() {
   console.log('\n[GlobalSetup] Starting E2E test environment...\n');
@@ -19,6 +17,8 @@ export default async function globalSetup() {
   process.env.E2E_API_BASE_URL = backend.getBaseUrl();
 
   // 2. Run Detox global setup
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const detoxGlobalSetup = require('detox/runners/jest/globalSetup');
   await detoxGlobalSetup();
 
   console.log('\n[GlobalSetup] E2E test environment ready\n');

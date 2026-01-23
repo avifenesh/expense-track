@@ -5,13 +5,12 @@
 
 import { device, element, by, expect, waitFor } from 'detox';
 import { TestApiClient } from '../helpers/api-client';
-import { TEST_USER, TEST_USER_2, INVALID_USER, TIMEOUTS } from '../helpers/fixtures';
+import { TEST_USER, INVALID_USER, TIMEOUTS } from '../helpers/fixtures';
 import {
   LoginScreen,
   RegisterScreen,
   ResetPasswordScreen,
   DashboardScreen,
-  OnboardingWelcomeScreen,
 } from '../contracts/ui-contracts';
 
 describe('Auth E2E Tests', () => {
