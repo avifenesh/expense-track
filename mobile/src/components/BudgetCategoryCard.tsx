@@ -1,16 +1,17 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import type { Currency } from '../types';
-import { formatCurrency } from '../utils/format';
+import React from 'react'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import type { Currency } from '../types'
+import { formatCurrency } from '../utils/format'
+import { getBudgetProgress, isBudgetOver } from '../utils/budget'
 
 export interface BudgetCategoryCardProps {
-  categoryName: string;
-  categoryColor: string;
-  planned: number;
-  spent: number;
-  currency: Currency;
-  onPress?: () => void;
-  testID?: string;
+  categoryName: string
+  categoryColor: string
+  planned: number
+  spent: number
+  currency: Currency
+  onPress?: () => void
+  testID?: string
 }
 
 export function BudgetCategoryCard({
@@ -22,11 +23,11 @@ export function BudgetCategoryCard({
   onPress,
   testID,
 }: BudgetCategoryCardProps) {
-  const isOverBudget = spent > planned && planned > 0;
-  const progress = planned > 0 ? Math.min(spent / planned, 1) : 0;
-  const progressColor = isOverBudget ? '#ef4444' : '#38bdf8';
-  const formattedSpent = formatCurrency(spent, currency);
-  const formattedPlanned = formatCurrency(planned, currency);
+  const isOverBudget = isBudgetOver(planned, spent)
+  const progress = getBudgetProgress(planned, spent)
+  const progressColor = isOverBudget ? '#ef4444' : '#38bdf8'
+  const formattedSpent = formatCurrency(spent, currency)
+  const formattedPlanned = formatCurrency(planned, currency)
 
   const content = (
     <View style={styles.container} testID={testID}>
@@ -38,9 +39,7 @@ export function BudgetCategoryCard({
           </Text>
         </View>
         <View style={styles.amounts}>
-          <Text style={[styles.spentAmount, isOverBudget && styles.overBudgetText]}>
-            {formattedSpent}
-          </Text>
+          <Text style={[styles.spentAmount, isOverBudget && styles.overBudgetText]}>{formattedSpent}</Text>
           <Text style={styles.separator}> / </Text>
           <Text style={styles.plannedAmount}>{formattedPlanned}</Text>
         </View>
@@ -57,7 +56,7 @@ export function BudgetCategoryCard({
         />
       </View>
     </View>
-  );
+  )
 
   if (onPress) {
     return (
@@ -69,10 +68,10 @@ export function BudgetCategoryCard({
       >
         {content}
       </TouchableOpacity>
-    );
+    )
   }
 
-  return content;
+  return content
 }
 
 const styles = StyleSheet.create({
@@ -136,4 +135,4 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
-});
+})

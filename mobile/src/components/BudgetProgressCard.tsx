@@ -1,35 +1,30 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import type { Currency } from '../types';
-import { formatCurrency } from '../utils/format';
+import React from 'react'
+import { View, Text, StyleSheet } from 'react-native'
+import type { Currency } from '../types'
+import { formatCurrency } from '../utils/format'
+import { getBudgetProgress, isBudgetOver } from '../utils/budget'
 
 interface BudgetProgressCardProps {
-  totalPlanned: number;
-  totalSpent: number;
-  currency: Currency;
-  testID?: string;
+  totalPlanned: number
+  totalSpent: number
+  currency: Currency
+  testID?: string
 }
 
-export function BudgetProgressCard({
-  totalPlanned,
-  totalSpent,
-  currency,
-  testID,
-}: BudgetProgressCardProps) {
-  const progress = totalPlanned > 0 ? Math.min(totalSpent / totalPlanned, 1) : 0;
-  const isOverBudget = totalSpent > totalPlanned && totalPlanned > 0;
-  const progressColor = isOverBudget ? '#ef4444' : '#38bdf8';
-  const remaining = totalPlanned - totalSpent;
+export function BudgetProgressCard({ totalPlanned, totalSpent, currency, testID }: BudgetProgressCardProps) {
+  const progress = getBudgetProgress(totalPlanned, totalSpent)
+  const isOverBudget = isBudgetOver(totalPlanned, totalSpent)
+  const progressColor = isOverBudget ? '#ef4444' : '#38bdf8'
+  const remaining = totalPlanned - totalSpent
+  const showBudgetDetails = totalPlanned > 0 || totalSpent > 0
 
   return (
     <View style={styles.container} testID={testID}>
       <Text style={styles.label}>This Month</Text>
       <Text style={styles.spent}>{formatCurrency(totalSpent, currency)}</Text>
-      {totalPlanned > 0 ? (
+      {showBudgetDetails ? (
         <>
-          <Text style={styles.budgetText}>
-            of {formatCurrency(totalPlanned, currency)} budget
-          </Text>
+          <Text style={styles.budgetText}>of {formatCurrency(totalPlanned, currency)} budget</Text>
           <View style={styles.progressContainer}>
             <View
               style={[
@@ -51,7 +46,7 @@ export function BudgetProgressCard({
         <Text style={styles.noBudgetText}>No budget set for this month</Text>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -100,4 +95,4 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 4,
   },
-});
+})

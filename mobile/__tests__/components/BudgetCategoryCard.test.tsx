@@ -166,6 +166,47 @@ describe('BudgetCategoryCard', () => {
     });
   });
 
+  describe('Planned <= 0 edge cases', () => {
+    it('shows over budget when planned is 0 but has spending', () => {
+      const { toJSON } = render(
+        <BudgetCategoryCard {...defaultProps} spent={100} planned={0} />
+      );
+
+      // Should render with over-budget styling (100% progress, red text)
+      expect(toJSON()).toBeTruthy();
+      expect(screen.getByText('$100.00')).toBeTruthy();
+      expect(screen.getByText('$0.00')).toBeTruthy();
+    });
+
+    it('shows no over budget when planned is 0 and no spending', () => {
+      const { toJSON } = render(
+        <BudgetCategoryCard {...defaultProps} spent={0} planned={0} />
+      );
+
+      // Should not show over-budget styling
+      expect(toJSON()).toBeTruthy();
+    });
+
+    it('shows over budget when planned is negative but has spending', () => {
+      const { toJSON } = render(
+        <BudgetCategoryCard {...defaultProps} spent={50} planned={-100} />
+      );
+
+      // Negative planned with spending should be over budget
+      expect(toJSON()).toBeTruthy();
+      expect(screen.getByText('$50.00')).toBeTruthy();
+    });
+
+    it('caps progress at 100% when planned is zero with spending', () => {
+      // When planned is 0 but spent > 0, progress should be 100%
+      const { toJSON } = render(
+        <BudgetCategoryCard {...defaultProps} spent={1000} planned={0} />
+      );
+
+      expect(toJSON()).toBeTruthy();
+    });
+  });
+
   describe('Edge cases', () => {
     it('handles zero spent amount', () => {
       render(<BudgetCategoryCard {...defaultProps} spent={0} />);
