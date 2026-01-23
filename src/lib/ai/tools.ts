@@ -2,12 +2,8 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { Currency } from '@prisma/client'
 import { getCachedDashboardData } from '@/lib/dashboard-cache'
-import {
-  getTransactionsForMonth,
-  getHoldingsWithPrices,
-  getSettlementBalance,
-  getSharedExpenses,
-} from '@/lib/finance'
+import { getBudgetProgress } from '@/lib/dashboard-ux'
+import { getTransactionsForMonth, getHoldingsWithPrices, getSettlementBalance, getSharedExpenses } from '@/lib/finance'
 
 export interface ToolContext {
   accountId: string
@@ -34,8 +30,7 @@ function formatCurrency(amount: number, currency: Currency): string {
 export function buildTools(ctx: ToolContext) {
   return {
     getMonthSummary: tool({
-      description:
-        'Get the current month summary including total income, expenses, net flow, and budget status',
+      description: 'Get the current month summary including total income, expenses, net flow, and budget status',
       inputSchema: z.object({}),
       execute: async () => {
         const data = await getCachedDashboardData({
@@ -69,10 +64,7 @@ export function buildTools(ctx: ToolContext) {
     getBudgetStatus: tool({
       description: 'Get budget vs actual spending for all categories this month',
       inputSchema: z.object({
-        categoryType: z
-          .enum(['INCOME', 'EXPENSE', 'ALL'])
-          .optional()
-          .describe('Filter by category type'),
+        categoryType: z.enum(['INCOME', 'EXPENSE', 'ALL']).optional().describe('Filter by category type'),
       }),
       execute: async ({ categoryType }: { categoryType?: 'INCOME' | 'EXPENSE' | 'ALL' }) => {
         const data = await getCachedDashboardData({
@@ -90,15 +82,20 @@ export function buildTools(ctx: ToolContext) {
           return { message: 'No budgets set for this month', budgets: [] }
         }
 
-        const formatted = budgets.map((b) => ({
-          category: b.categoryName,
-          type: b.categoryType,
-          planned: formatCurrency(b.planned, ctx.preferredCurrency),
-          actual: formatCurrency(b.actual, ctx.preferredCurrency),
-          remaining: formatCurrency(b.remaining, ctx.preferredCurrency),
-          percentUsed: b.planned > 0 ? Math.round((b.actual / b.planned) * 100) : 0,
-          status: b.remaining < 0 ? 'OVER_BUDGET' : b.remaining === 0 ? 'ON_BUDGET' : 'UNDER_BUDGET',
-        }))
+        const formatted = budgets.map((b) => {
+          const progress = getBudgetProgress(b)
+          const percentUsed = Math.min(Math.max(Math.round(progress * 100), 0), 100)
+
+          return {
+            category: b.categoryName,
+            type: b.categoryType,
+            planned: formatCurrency(b.planned, ctx.preferredCurrency),
+            actual: formatCurrency(b.actual, ctx.preferredCurrency),
+            remaining: formatCurrency(b.remaining, ctx.preferredCurrency),
+            percentUsed,
+            status: b.remaining < 0 ? 'OVER_BUDGET' : b.remaining === 0 ? 'ON_BUDGET' : 'UNDER_BUDGET',
+          }
+        })
 
         const totalPlanned = budgets.reduce((sum, b) => sum + b.planned, 0)
         const totalActual = budgets.reduce((sum, b) => sum + b.actual, 0)
@@ -244,7 +241,9 @@ export function buildTools(ctx: ToolContext) {
             totalCost: formatCurrency(totalCost, ctx.preferredCurrency),
             totalGainLoss: formatCurrency(totalGainLoss, ctx.preferredCurrency),
             totalGainLossPercent:
-              totalCost > 0 ? `${totalGainLoss >= 0 ? '+' : ''}${((totalGainLoss / totalCost) * 100).toFixed(2)}%` : 'N/A',
+              totalCost > 0
+                ? `${totalGainLoss >= 0 ? '+' : ''}${((totalGainLoss / totalCost) * 100).toFixed(2)}%`
+                : 'N/A',
           },
         }
       },
