@@ -5,9 +5,7 @@ import { useAuthStore } from '../../stores';
 import { getBiometricTypeLabel } from '../../services/biometric';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
-export function OnboardingBiometricScreen({
-  navigation,
-}: OnboardingScreenProps<'OnboardingBiometric'>) {
+export function OnboardingBiometricScreen(_props: OnboardingScreenProps<'OnboardingBiometric'>) {
   const biometricCapability = useAuthStore((state) => state.biometricCapability);
   const enableBiometric = useAuthStore((state) => state.enableBiometric);
   const updateUser = useAuthStore((state) => state.updateUser);
