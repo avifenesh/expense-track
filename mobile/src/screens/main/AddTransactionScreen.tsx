@@ -86,13 +86,13 @@ function formatDateToLocalISO(date: Date): string {
 export function AddTransactionScreen({
   navigation,
 }: AppStackScreenProps<'CreateTransaction'>) {
-  const { accounts, activeAccountId } = useAccountsStore();
-  const { createTransaction } = useTransactionsStore();
-  const {
-    categories,
-    isLoading: categoriesLoading,
-    fetchCategories,
-  } = useCategoriesStore();
+  // Use individual selectors to prevent unnecessary re-renders
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const createTransaction = useTransactionsStore((state) => state.createTransaction);
+  const categories = useCategoriesStore((state) => state.categories);
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
+  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
