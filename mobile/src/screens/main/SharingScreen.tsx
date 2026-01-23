@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -9,79 +9,101 @@ import {
   TouchableOpacity,
   Pressable,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { MainTabScreenProps } from '../../navigation/types';
-import { useSharingStore, useTransactionsStore, useAccountsStore } from '../../stores';
-import { EmptyState, TransactionPickerModal } from '../../components';
-import { formatCurrency } from '../../utils/format';
-import type { Currency } from '../../types';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { MainTabScreenProps } from '../../navigation/types'
+import { useSharingStore, useTransactionsStore, useAccountsStore } from '../../stores'
+import { EmptyState, TransactionPickerModal } from '../../components'
+import { formatCurrency } from '../../utils/format'
+import type { Currency } from '../../types'
 import type {
   SharedExpense,
   SharedWithMeParticipation,
   SettlementBalance,
   ShareParticipant,
-} from '../../stores/sharingStore';
+} from '../../stores/sharingStore'
 
 function getDisplayName(user: { email: string; displayName?: string | null }): string {
-  return user.displayName || user.email.split('@')[0];
+  return user.displayName || user.email.split('@')[0]
 }
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+  const date = new Date(dateString)
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-  });
+  })
 }
 
 interface BalanceSummaryProps {
-  balances: SettlementBalance[];
+  balances: SettlementBalance[]
 }
 
 function BalanceSummary({ balances }: BalanceSummaryProps) {
-  const totalOwed = balances.reduce((sum, b) => sum + parseFloat(b.theyOwe), 0);
-  const totalOwe = balances.reduce((sum, b) => sum + parseFloat(b.youOwe), 0);
-  const netBalance = totalOwed - totalOwe;
+  if (balances.length === 0) {
+    return (
+      <View style={styles.balanceGroup}>
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Net Balance</Text>
+          <Text style={styles.balanceSubtext}>No balances yet</Text>
+        </View>
+      </View>
+    )
+  }
 
-  const primaryCurrency: Currency = balances[0]?.currency || 'USD';
+  const totalsByCurrency = balances.reduce<Record<Currency, { currency: Currency; youOwe: number; theyOwe: number }>>(
+    (acc, balance) => {
+      const currency = balance.currency
+      if (!acc[currency]) {
+        acc[currency] = { currency, youOwe: 0, theyOwe: 0 }
+      }
+      acc[currency].youOwe += Number.parseFloat(balance.youOwe)
+      acc[currency].theyOwe += Number.parseFloat(balance.theyOwe)
+      return acc
+    },
+    {} as Record<Currency, { currency: Currency; youOwe: number; theyOwe: number }>,
+  )
 
-  const isPositive = netBalance >= 0;
-  const balanceText = isPositive
-    ? `+${formatCurrency(netBalance, primaryCurrency)}`
-    : `-${formatCurrency(Math.abs(netBalance), primaryCurrency)}`;
-
-  const subtext = isPositive
-    ? netBalance === 0
-      ? 'All settled up'
-      : 'You are owed overall'
-    : 'You owe overall';
+  const totals = Object.values(totalsByCurrency)
 
   return (
-    <View style={styles.balanceCard}>
-      <Text style={styles.balanceLabel}>Net Balance</Text>
-      <Text
-        style={[
-          styles.balanceAmount,
-          isPositive ? styles.positiveBalance : styles.negativeBalance,
-        ]}
-      >
-        {balanceText}
-      </Text>
-      <Text style={styles.balanceSubtext}>{subtext}</Text>
+    <View style={styles.balanceGroup}>
+      {totals.map((currencyTotals, index) => {
+        const netBalance = currencyTotals.theyOwe - currencyTotals.youOwe
+        const isPositive = netBalance >= 0
+        const balanceText = isPositive
+          ? `+${formatCurrency(netBalance, currencyTotals.currency)}`
+          : `-${formatCurrency(Math.abs(netBalance), currencyTotals.currency)}`
+
+        const subtext = isPositive ? (netBalance === 0 ? 'All settled up' : 'You are owed overall') : 'You owe overall'
+
+        return (
+          <View
+            key={currencyTotals.currency}
+            style={[styles.balanceCard, index < totals.length - 1 && styles.balanceCardSpacing]}
+          >
+            <Text style={styles.balanceLabel}>Net Balance</Text>
+            {totals.length > 1 && <Text style={styles.balanceCurrencyLabel}>{currencyTotals.currency}</Text>}
+            <Text style={[styles.balanceAmount, isPositive ? styles.positiveBalance : styles.negativeBalance]}>
+              {balanceText}
+            </Text>
+            <Text style={styles.balanceSubtext}>{subtext}</Text>
+          </View>
+        )
+      })}
     </View>
-  );
+  )
 }
 
 interface SharedWithMeCardProps {
-  participation: SharedWithMeParticipation;
+  participation: SharedWithMeParticipation
 }
 
 function SharedWithMeCard({ participation }: SharedWithMeCardProps) {
-  const { sharedExpense } = participation;
-  const ownerName = getDisplayName(sharedExpense.owner);
-  const amount = formatCurrency(participation.shareAmount, sharedExpense.currency);
-  const isPending = participation.status === 'PENDING';
+  const { sharedExpense } = participation
+  const ownerName = getDisplayName(sharedExpense.owner)
+  const amount = formatCurrency(participation.shareAmount, sharedExpense.currency)
+  const isPending = participation.status === 'PENDING'
 
   return (
     <View style={styles.card}>
@@ -103,19 +125,19 @@ function SharedWithMeCard({ participation }: SharedWithMeCardProps) {
         <Text style={[styles.amountText, styles.negativeAmount]}>You owe {amount}</Text>
       </View>
     </View>
-  );
+  )
 }
 
 interface SharedByMeCardProps {
-  expense: SharedExpense;
-  onMarkPaid: (participantId: string) => void;
-  loadingParticipantId: string | null;
+  expense: SharedExpense
+  onMarkPaid: (participantId: string) => void
+  loadingParticipantId: string | null
 }
 
 function SharedByMeCard({ expense, onMarkPaid, loadingParticipantId }: SharedByMeCardProps) {
-  const totalOwed = formatCurrency(expense.totalOwed, expense.currency);
-  const pendingParticipants = expense.participants.filter((p) => p.status === 'PENDING');
-  const paidParticipants = expense.participants.filter((p) => p.status === 'PAID');
+  const totalOwed = formatCurrency(expense.totalOwed, expense.currency)
+  const pendingParticipants = expense.participants.filter((p) => p.status === 'PENDING')
+  const paidParticipants = expense.participants.filter((p) => p.status === 'PAID')
 
   return (
     <View style={styles.card}>
@@ -157,20 +179,20 @@ function SharedByMeCard({ expense, onMarkPaid, loadingParticipantId }: SharedByM
         </View>
       )}
     </View>
-  );
+  )
 }
 
 interface ParticipantRowProps {
-  participant: ShareParticipant;
-  currency: Currency;
-  isPaid?: boolean;
-  isLoading?: boolean;
-  onMarkPaid?: (participantId: string) => void;
+  participant: ShareParticipant
+  currency: Currency
+  isPaid?: boolean
+  isLoading?: boolean
+  onMarkPaid?: (participantId: string) => void
 }
 
 function ParticipantRow({ participant, currency, isPaid, isLoading, onMarkPaid }: ParticipantRowProps) {
-  const name = getDisplayName(participant.participant);
-  const amount = formatCurrency(participant.shareAmount, currency);
+  const name = getDisplayName(participant.participant)
+  const amount = formatCurrency(participant.shareAmount, currency)
 
   return (
     <View style={styles.participantRow}>
@@ -194,13 +216,13 @@ function ParticipantRow({ participant, currency, isPaid, isLoading, onMarkPaid }
         </TouchableOpacity>
       ) : null}
     </View>
-  );
+  )
 }
 
 export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
-  const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
+  const [isPickerVisible, setIsPickerVisible] = useState(false)
 
   const {
     sharedByMe,
@@ -211,83 +233,80 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
     fetchSharing,
     markParticipantPaid,
     clearError,
-  } = useSharingStore();
+  } = useSharingStore()
 
-  const { fetchTransactions, filters, setFilters } = useTransactionsStore();
-  const { activeAccountId } = useAccountsStore();
+  const { fetchTransactions, filters, setFilters } = useTransactionsStore()
+  const { activeAccountId } = useAccountsStore()
 
   useEffect(() => {
-    fetchSharing();
-  }, [fetchSharing]);
+    fetchSharing()
+  }, [fetchSharing])
 
   // Ensure transactions are loaded for picker
   useEffect(() => {
     if (activeAccountId && activeAccountId !== filters.accountId) {
-      setFilters({ accountId: activeAccountId });
+      setFilters({ accountId: activeAccountId })
     }
-  }, [activeAccountId, filters.accountId, setFilters]);
+  }, [activeAccountId, filters.accountId, setFilters])
 
   useEffect(() => {
     if (filters.accountId) {
-      fetchTransactions();
+      fetchTransactions()
     }
-  }, [filters.accountId, fetchTransactions]);
+  }, [filters.accountId, fetchTransactions])
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await fetchSharing();
-    setIsRefreshing(false);
-  }, [fetchSharing]);
+    setIsRefreshing(true)
+    await fetchSharing()
+    setIsRefreshing(false)
+  }, [fetchSharing])
 
   const handleMarkPaid = useCallback(
     async (participantId: string) => {
-      if (markingPaidId) return;
-      setMarkingPaidId(participantId);
+      if (markingPaidId) return
+      setMarkingPaidId(participantId)
       try {
-        await markParticipantPaid(participantId);
+        await markParticipantPaid(participantId)
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to mark as paid';
-        Alert.alert('Error', message);
+        const message = err instanceof Error ? err.message : 'Failed to mark as paid'
+        Alert.alert('Error', message)
       } finally {
-        setMarkingPaidId(null);
+        setMarkingPaidId(null)
       }
     },
-    [markParticipantPaid, markingPaidId]
-  );
+    [markParticipantPaid, markingPaidId],
+  )
 
   const handleSharePress = useCallback(() => {
-    setIsPickerVisible(true);
-  }, []);
+    setIsPickerVisible(true)
+  }, [])
 
   const handleTransactionSelect = useCallback(
     (transactionId: string) => {
-      setIsPickerVisible(false);
-      navigation.navigate('ShareExpense', { transactionId });
+      setIsPickerVisible(false)
+      navigation.navigate('ShareExpense', { transactionId })
     },
-    [navigation]
-  );
+    [navigation],
+  )
 
   const handlePickerClose = useCallback(() => {
-    setIsPickerVisible(false);
-  }, []);
+    setIsPickerVisible(false)
+  }, [])
 
-  const pendingSharedWithMe = useMemo(
-    () => sharedWithMe.filter((p) => p.status === 'PENDING'),
-    [sharedWithMe]
-  );
+  const pendingSharedWithMe = useMemo(() => sharedWithMe.filter((p) => p.status === 'PENDING'), [sharedWithMe])
 
   const sortedSharedByMe = useMemo(
     () =>
       [...sharedByMe].sort((a, b) => {
         if (a.allSettled !== b.allSettled) {
-          return a.allSettled ? 1 : -1;
+          return a.allSettled ? 1 : -1
         }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       }),
-    [sharedByMe]
-  );
+    [sharedByMe],
+  )
 
-  const hasNoData = sharedByMe.length === 0 && sharedWithMe.length === 0;
+  const hasNoData = sharedByMe.length === 0 && sharedWithMe.length === 0
 
   if (isLoading && hasNoData && !isRefreshing) {
     return (
@@ -297,7 +316,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           <Text style={styles.loadingText}>Loading sharing data...</Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   if (error && !isRefreshing) {
@@ -309,15 +328,15 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => {
-              clearError();
-              fetchSharing();
+              clearError()
+              fetchSharing()
             }}
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
@@ -408,7 +427,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
         onSelect={handleTransactionSelect}
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -455,13 +474,25 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#1e293b',
     borderRadius: 16,
-    marginBottom: 24,
     alignItems: 'center',
+  },
+  balanceGroup: {
+    marginBottom: 24,
+  },
+  balanceCardSpacing: {
+    marginBottom: 16,
   },
   balanceLabel: {
     fontSize: 14,
     color: '#94a3b8',
     marginBottom: 8,
+  },
+  balanceCurrencyLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+    marginBottom: 6,
+    letterSpacing: 0.5,
   },
   balanceAmount: {
     fontSize: 36,
@@ -639,4 +670,4 @@ const styles = StyleSheet.create({
     color: '#38bdf8',
     fontWeight: '600',
   },
-});
+})
