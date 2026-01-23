@@ -18,6 +18,10 @@ vi.mock('@/lib/server-logger', () => ({
   },
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  createTrialSubscription: vi.fn().mockResolvedValue(undefined),
+}))
+
 import { POST as registerPost } from '@/app/api/v1/auth/register/route'
 import { prisma } from '@/lib/prisma'
 
