@@ -63,7 +63,7 @@ export class TestApiClient {
   constructor(baseUrl?: string) {
     // Android emulator uses 10.0.2.2 to reach host, iOS uses localhost
     // For direct API calls during test setup, use localhost
-    this.baseUrl = baseUrl || process.env.E2E_API_BASE_URL || 'http://localhost:4300';
+    this.baseUrl = baseUrl || process.env.E2E_API_BASE_URL || 'http://localhost:3000';
   }
 
   private async request<T>(
