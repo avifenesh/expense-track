@@ -6,7 +6,7 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';
 
-const DEFAULT_PORT = 4300;
+const DEFAULT_PORT = 3000;
 const HEALTH_CHECK_INTERVAL = 1000;
 const STARTUP_TIMEOUT = 60000;
 

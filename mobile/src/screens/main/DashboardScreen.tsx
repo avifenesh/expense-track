@@ -163,7 +163,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   // No accounts state
   if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.emptyScreen">
+      <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.screen">
         <View style={styles.centerContainer}>
           <Text style={styles.emptyTitle} testID="dashboard.emptyTitle">No Accounts Found</Text>
           <Text style={styles.emptyText} testID="dashboard.emptyText">
