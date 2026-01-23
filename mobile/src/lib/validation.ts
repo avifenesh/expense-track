@@ -256,3 +256,39 @@ export function validateTotalFixedAmount(amounts: number[], totalAmount: number)
 
   return null;
 }
+
+
+export function validateBudgetAmount(amount: string): string | null {
+  if (!amount || amount.trim().length === 0) {
+    return 'Amount is required';
+  }
+
+  const numAmount = parseFloat(amount);
+
+  if (isNaN(numAmount)) {
+    return 'Please enter a valid amount';
+  }
+
+  if (numAmount <= 0) {
+    return 'Amount must be greater than zero';
+  }
+
+  if (numAmount > 999999999.99) {
+    return 'Amount is too large';
+  }
+
+  const parts = amount.split('.');
+  if (parts[1] && parts[1].length > 2) {
+    return 'Amount can have at most 2 decimal places';
+  }
+
+  return null;
+}
+
+export function validateBudgetCategory(categoryId: string | null): string | null {
+  if (!categoryId || categoryId.trim().length === 0) {
+    return 'Please select a category';
+  }
+
+  return null;
+}
