@@ -2,7 +2,7 @@
 module.exports = {
   testRunner: {
     args: {
-      $0: 'jest',
+      $0: process.platform === 'win32' ? 'npx jest' : 'jest',
       config: 'e2e/jest.config.js',
     },
     jest: {
@@ -57,7 +57,9 @@ module.exports = {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
       build:
-        'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..',
+        process.platform === 'win32'
+          ? 'cd android && gradlew.bat assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..'
+          : 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..',
       reversePorts: [8081],
     },
     'android.release': {
@@ -80,9 +82,7 @@ module.exports = {
     },
     emulator: {
       type: 'android.emulator',
-      // In CI, reactivecircus/android-emulator-runner creates AVD named 'test'
-      // For local development, create AVD with: avdmanager create avd -n test -k "system-images;android-31;google_apis;x86_64" -d "pixel_5"
-      device: { avdName: 'test' },
+      device: { avdName: 'test_avd' },
     },
   },
 
