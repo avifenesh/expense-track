@@ -51,7 +51,7 @@ __tests__/
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
-    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets)
+    main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets, AddBudget)
   services/        # Service tests (api, auth)
   stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories, sharing)
 ```
@@ -66,7 +66,7 @@ src/
   screens/      # Screen components
     auth/       # Authentication screens (Login, Register, ResetPassword, VerifyEmail)
     onboarding/ # Onboarding flow screens
-    main/       # Main app screens (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets)
+    main/       # Main app screens (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets, AddBudget)
   hooks/        # Custom React hooks (useAuthState)
   navigation/   # React Navigation setup
     types.ts    # Navigation type definitions
@@ -462,7 +462,7 @@ The app uses React Navigation with conditional routing:
   - Welcome, Currency, Categories, Budget, SampleData, Complete
 - **AppStack** - Main app with bottom tabs and modals
   - **Bottom Tabs**: Dashboard, Transactions, Budgets, Sharing, Settings
-  - **Modals**: CreateTransaction (AddTransactionScreen)
+  - **Modals**: CreateTransaction (AddTransactionScreen), CreateBudget (AddBudgetScreen)
   - **Screens**: EditTransaction (EditTransactionScreen)
 
 ## Main App Features
@@ -566,6 +566,51 @@ The `lib/validation.ts` module provides client-side validation for all forms:
 - `validateEmail(email: string)` - Email format validation
 - `validatePassword(password: string)` - Password strength validation
 - `validatePasswordMatch(password: string, confirmPassword: string)` - Password confirmation
+
+**Budget Validation:**
+- `validateBudgetAmount(amount: string | null)` - Budget amount validation (greater than 0, max 999,999,999.99)
+- `validateBudgetCategory(categoryId: string | null)` - Budget category validation
+
+### Budget Management
+
+#### AddBudgetScreen
+
+Modal screen for creating or updating budgets with intuitive form:
+
+**Features:**
+- Month selector for choosing budget period
+- Category selector showing only expense categories with color indicators
+- Amount input with currency symbol display (USD: $, EUR: €, ILS: ₪)
+- Real-time form validation with inline error messages
+- Auto-population when editing existing budget
+- Preview of current budget if exists
+- Loading states and error handling
+- Keyboard-aware scrolling for smooth UX
+
+**Access:**
+- FAB (Floating Action Button) on Budgets screen
+
+**Navigation:**
+- Presented as modal with slide-from-bottom animation
+- Cancel button returns to previous screen
+- Auto-dismisses on successful creation/update
+
+**Validation:**
+- Amount: Required, positive (greater than zero), max 2 decimals, max value 999,999,999.99
+- Category: Required, must be an expense category
+- Month: Automatically selected from BudgetsScreen context
+
+**Integration:**
+- Uses `POST /api/v1/budgets` endpoint for create/update
+- Syncs with budgets store on success
+- Updates budget list automatically
+
+**User Experience:**
+- Categories filtered to show only expense categories
+- Existing budgets are automatically updated (upsert behavior)
+- Clear visual feedback for form state and errors
+- Currency formatting based on user's preferred currency
+
 
 ## State Management
 

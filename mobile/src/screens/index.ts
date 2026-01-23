@@ -19,6 +19,7 @@ export { TransactionsScreen } from './main/TransactionsScreen';
 export { AddTransactionScreen } from './main/AddTransactionScreen';
 export { EditTransactionScreen } from './main/EditTransactionScreen';
 export { BudgetsScreen } from './main/BudgetsScreen';
+export { AddBudgetScreen } from './main/AddBudgetScreen';
 export { SharingScreen } from './main/SharingScreen';
 export { ShareExpenseScreen } from './main/ShareExpenseScreen';
 export { SettingsScreen } from './main/SettingsScreen';

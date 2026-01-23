@@ -39,6 +39,7 @@ export type AppStackParamList = {
   TransactionDetail: { transactionId: string };
   EditTransaction: { transactionId: string };
   CreateTransaction: undefined;
+  CreateBudget: { initialMonth?: string } | undefined;
   ShareExpense: { transactionId: string };
   BudgetDetail: { budgetId: string };
   CategoryPicker: undefined;

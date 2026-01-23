@@ -120,7 +120,6 @@ export function validateTransactionDescription(
     return 'Description is too long (max 200 characters)';
   }
 
-  // XSS prevention (allow optional whitespace in event handlers)
   const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
   if (dangerousPattern.test(description)) {
     return 'Description contains invalid characters';
@@ -154,7 +153,6 @@ export function validateTransactionDate(date: Date | null): string | null {
     return 'Date cannot be in the future';
   }
 
-  // Don't allow dates >10 years old
   const tenYearsAgo = new Date();
   tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
   if (date < tenYearsAgo) {
@@ -169,14 +167,13 @@ const MAX_SHARE_DESCRIPTION_LENGTH = 240;
 
 export function validateShareDescription(description: string | null | undefined): string | null {
   if (!description || description.trim().length === 0) {
-    return null; // Description is optional
+    return null;
   }
 
   if (description.length > MAX_SHARE_DESCRIPTION_LENGTH) {
     return `Description is too long (max ${MAX_SHARE_DESCRIPTION_LENGTH} characters)`;
   }
 
-  // XSS prevention - block script tags, javascript: URLs, and event handlers
   const dangerousPattern = /<script|javascript:|on\w+\s*=/i;
   if (dangerousPattern.test(description)) {
     return 'Description contains invalid characters';
@@ -210,7 +207,7 @@ export function validateSharePercentage(percentage: number): string | null {
 }
 
 export function validateParticipantsList(
-  participants: Array<{ email: string }>
+  participants: { email: string }[]
 ): string | null {
   if (!participants || participants.length === 0) {
     return 'At least one participant is required';
@@ -252,6 +249,42 @@ export function validateTotalFixedAmount(amounts: number[], totalAmount: number)
 
   if (total > totalAmount) {
     return `Total amounts ($${total.toFixed(2)}) cannot exceed expense total ($${totalAmount.toFixed(2)})`;
+  }
+
+  return null;
+}
+
+
+export function validateBudgetAmount(amount: string): string | null {
+  if (!amount || amount.trim().length === 0) {
+    return 'Amount is required';
+  }
+
+  const numAmount = parseFloat(amount);
+
+  if (isNaN(numAmount)) {
+    return 'Please enter a valid amount';
+  }
+
+  if (numAmount <= 0) {
+    return 'Amount must be greater than zero';
+  }
+
+  if (numAmount > 999999999.99) {
+    return 'Amount is too large';
+  }
+
+  const parts = amount.split('.');
+  if (parts[1] && parts[1].length > 2) {
+    return 'Amount can have at most 2 decimal places';
+  }
+
+  return null;
+}
+
+export function validateBudgetCategory(categoryId: string | null): string | null {
+  if (!categoryId || categoryId.trim().length === 0) {
+    return 'Please select a category';
   }
 
   return null;

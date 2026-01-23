@@ -5,6 +5,7 @@ import { MainTabNavigator } from './MainTabNavigator';
 import {
   AddTransactionScreen,
   EditTransactionScreen,
+  AddBudgetScreen,
   ShareExpenseScreen,
 } from '../screens';
 
@@ -30,6 +31,14 @@ export function AppStack() {
       <Stack.Screen
         name="EditTransaction"
         component={EditTransactionScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="CreateBudget"
+        component={AddBudgetScreen}
         options={{
           presentation: 'modal',
           animation: 'slide_from_bottom',
