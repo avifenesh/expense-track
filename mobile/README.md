@@ -568,7 +568,7 @@ The `lib/validation.ts` module provides client-side validation for all forms:
 - `validatePasswordMatch(password: string, confirmPassword: string)` - Password confirmation
 
 **Budget Validation:**
-- `validateBudgetAmount(amount: string | null)` - Budget amount validation (min 0, max 999,999,999.99)
+- `validateBudgetAmount(amount: string | null)` - Budget amount validation (greater than 0, max 999,999,999.99)
 - `validateBudgetCategory(categoryId: string | null)` - Budget category validation
 
 ### Budget Management
@@ -596,7 +596,7 @@ Modal screen for creating or updating budgets with intuitive form:
 - Auto-dismisses on successful creation/update
 
 **Validation:**
-- Amount: Required, non-negative, max 2 decimals, max value 999,999,999.99
+- Amount: Required, positive (greater than zero), max 2 decimals, max value 999,999,999.99
 - Category: Required, must be an expense category
 - Month: Automatically selected from BudgetsScreen context
 
