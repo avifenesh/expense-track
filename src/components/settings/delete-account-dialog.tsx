@@ -158,7 +158,7 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
             variant="ghost"
             className="flex-1"
             onClick={onClose}
-            disabled={isPending || Boolean(csrfError)}
+            disabled={isPending}
           >
             Cancel
           </Button>

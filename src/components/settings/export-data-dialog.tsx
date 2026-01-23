@@ -132,7 +132,7 @@ export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
             variant="ghost"
             className="flex-1"
             onClick={onClose}
-            disabled={isPending || Boolean(csrfError)}
+            disabled={isPending}
           >
             Cancel
           </Button>
