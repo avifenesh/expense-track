@@ -10,17 +10,18 @@ import {
 import { PaymentStatus } from '@prisma/client'
 import { serverLogger } from '@/lib/server-logger'
 
-type RouteParams = { params: Promise<{ participantId: string }> }
+type RouteParams = { params: Promise<{ id: string }> }
 
 /**
- * PATCH /api/v1/expenses/shares/[participantId]/paid
+ * PATCH /api/v1/expenses/shares/[id]/paid
  * Mark a participant's share as paid (owner only).
+ * Note: [id] here refers to the participantId.
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(
     request,
     async (user) => {
-      const { participantId } = await params
+      const { id: participantId } = await params
 
       // 1. Get participant
       const participant = await prisma.expenseParticipant.findFirst({
@@ -66,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       serverLogger.info('Marked participant share as paid', {
-        action: 'PATCH /api/v1/expenses/shares/[participantId]/paid',
+        action: 'PATCH /api/v1/expenses/shares/[id]/paid',
         userId: user.userId,
         participantId,
       })
