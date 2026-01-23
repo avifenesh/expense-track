@@ -327,7 +327,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31-x86_64-linux-${{ hashFiles('mobile/detox.config.*') }}-v2
+          key: avd-31-x86_64-linux-test_avd-${{ hashFiles('mobile/detox.config.*') }}-v3
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -356,6 +356,7 @@ jobs:
           api-level: 31
           target: google_apis
           arch: x86_64
+          avd-name: test_avd
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
@@ -367,6 +368,7 @@ jobs:
           api-level: 31
           target: google_apis
           arch: x86_64
+          avd-name: test_avd
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
