@@ -24,7 +24,10 @@ jobs:
   e2e-ios:
     name: iOS E2E Tests
     runs-on: macos-14
-    timeout-minutes: 45
+    timeout-minutes: 60
+
+    # Note: GitHub Actions services don't work on macOS runners
+    # PostgreSQL is installed via Homebrew below
 
     steps:
       - name: Checkout code
@@ -35,7 +38,75 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: mobile/package-lock.json
+
+      # Install and start PostgreSQL on macOS
+      - name: Setup PostgreSQL
+        run: |
+          brew install postgresql@16
+          brew services start postgresql@16
+          sleep 5
+          /opt/homebrew/opt/postgresql@16/bin/createdb expense_track_test || true
+          /opt/homebrew/opt/postgresql@16/bin/psql -d expense_track_test -c "ALTER USER $(whoami) WITH PASSWORD 'postgres';" || true
+
+      # Install root dependencies for backend
+      - name: Install root dependencies
+        run: npm ci
+
+      # Setup database and build backend
+      - name: Setup database and build backend
+        run: |
+          npx prisma db push
+          npm run build
+        env:
+          DATABASE_URL: postgresql://runner@localhost:5432/expense_track_test
+          JWT_SECRET: e2e-test-secret-key-for-jwt-signing
+          JWT_REFRESH_SECRET: e2e-test-refresh-secret-key
+          AUTH_SESSION_SECRET: e2e-test-session-secret-at-least-32-chars
+          NEXTAUTH_SECRET: e2e-test-nextauth-secret
+          APP_URL: https://e2e-test.local:3000
+
+      # Seed test users
+      - name: Seed test users
+        run: npm run db:seed:e2e
+        env:
+          DATABASE_URL: postgresql://runner@localhost:5432/expense_track_test
+          AUTH_USER1_EMAIL: e2e-user1@test.local
+          AUTH_USER1_DISPLAY_NAME: E2E Test User
+          AUTH_USER1_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
+          AUTH_USER2_EMAIL: e2e-user2@test.local
+          AUTH_USER2_DISPLAY_NAME: E2E Test User 2
+          AUTH_USER2_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
+
+      # Start backend server in background
+      - name: Start backend server
+        run: |
+          nohup npm start > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+          for i in {1..60}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/users/me || echo "000")
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "200" ] || [ "$STATUS" = "403" ]; then
+              echo "Server is ready (status: $STATUS)"
+              break
+            fi
+            echo "Waiting for server... (status: $STATUS)"
+            sleep 1
+          done
+          FINAL_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/users/me || echo "000")
+          if [ "$FINAL_STATUS" != "401" ] && [ "$FINAL_STATUS" != "200" ] && [ "$FINAL_STATUS" != "403" ]; then
+            echo "Server not healthy. Status: $FINAL_STATUS"
+            echo "Backend log:"
+            cat /tmp/backend.log
+            exit 1
+          fi
+          echo "Server healthy with status: $FINAL_STATUS"
+        env:
+          DATABASE_URL: postgresql://runner@localhost:5432/expense_track_test
+          JWT_SECRET: e2e-test-secret-key-for-jwt-signing
+          JWT_REFRESH_SECRET: e2e-test-refresh-secret-key
+          AUTH_SESSION_SECRET: e2e-test-session-secret-at-least-32-chars
+          NEXTAUTH_SECRET: e2e-test-nextauth-secret
+          APP_URL: https://e2e-test.local:3000
+          NODE_ENV: production
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -95,7 +166,10 @@ jobs:
         working-directory: mobile
         run: npm run e2e:test:ios:release -- --cleanup --headless
         env:
+          # For mobile app connecting to backend
           E2E_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          # For test API client
+          E2E_API_BASE_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload iOS test artifacts
         if: failure()
@@ -109,7 +183,22 @@ jobs:
     name: Android E2E Tests
     # Ubuntu runners have KVM hardware acceleration available
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: expense_track_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Enable KVM group perms
@@ -138,7 +227,66 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: mobile/package-lock.json
+
+      # Install root dependencies for backend
+      - name: Install root dependencies
+        run: npm ci
+
+      # Setup database and build backend
+      - name: Setup database and build backend
+        run: |
+          npx prisma db push
+          npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/expense_track_test
+          JWT_SECRET: e2e-test-secret-key-for-jwt-signing
+          JWT_REFRESH_SECRET: e2e-test-refresh-secret-key
+          AUTH_SESSION_SECRET: e2e-test-session-secret-at-least-32-chars
+          NEXTAUTH_SECRET: e2e-test-nextauth-secret
+          APP_URL: https://e2e-test.local:3000
+
+      # Seed test users
+      - name: Seed test users
+        run: npm run db:seed:e2e
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/expense_track_test
+          AUTH_USER1_EMAIL: e2e-user1@test.local
+          AUTH_USER1_DISPLAY_NAME: E2E Test User
+          AUTH_USER1_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
+          AUTH_USER2_EMAIL: e2e-user2@test.local
+          AUTH_USER2_DISPLAY_NAME: E2E Test User 2
+          AUTH_USER2_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
+
+      # Start backend server in background
+      - name: Start backend server
+        run: |
+          nohup npm start > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+          for i in {1..60}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/users/me || echo "000")
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "200" ] || [ "$STATUS" = "403" ]; then
+              echo "Server is ready (status: $STATUS)"
+              break
+            fi
+            echo "Waiting for server... (status: $STATUS)"
+            sleep 1
+          done
+          FINAL_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/users/me || echo "000")
+          if [ "$FINAL_STATUS" != "401" ] && [ "$FINAL_STATUS" != "200" ] && [ "$FINAL_STATUS" != "403" ]; then
+            echo "Server not healthy. Status: $FINAL_STATUS"
+            echo "Backend log:"
+            cat /tmp/backend.log
+            exit 1
+          fi
+          echo "Server healthy with status: $FINAL_STATUS"
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/expense_track_test
+          JWT_SECRET: e2e-test-secret-key-for-jwt-signing
+          JWT_REFRESH_SECRET: e2e-test-refresh-secret-key
+          AUTH_SESSION_SECRET: e2e-test-session-secret-at-least-32-chars
+          NEXTAUTH_SECRET: e2e-test-nextauth-secret
+          APP_URL: https://e2e-test.local:3000
+          NODE_ENV: production
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -230,8 +378,10 @@ jobs:
             adb devices -l
             npm run e2e:test:android:release -- --cleanup --headless --record-logs all
         env:
-          # 10.0.2.2 is Android emulator's alias for host localhost
+          # 10.0.2.2 is Android emulator's alias for host localhost (for mobile app)
           E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          # For test API client (runs on host, not in emulator)
+          E2E_API_BASE_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload Android test artifacts
         if: failure()
