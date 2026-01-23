@@ -4,7 +4,7 @@ import { POST as CreateTransaction } from '@/app/api/v1/transactions/route'
 import { POST as CreateTransactionRequest } from '@/app/api/v1/transactions/requests/route'
 import { POST as ApproveTransactionRequest } from '@/app/api/v1/transactions/requests/[id]/approve/route'
 import { POST as RejectTransactionRequest } from '@/app/api/v1/transactions/requests/[id]/reject/route'
-import { PATCH as MarkSharePaid } from '@/app/api/v1/expenses/shares/[participantId]/paid/route'
+import { PATCH as MarkSharePaid } from '@/app/api/v1/expenses/shares/[id]/paid/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
@@ -580,7 +580,7 @@ describe('Subscription Enforcement on API Routes', () => {
       )
 
       const response = await MarkSharePaid(request, {
-        params: Promise.resolve({ participantId }),
+        params: Promise.resolve({ id: participantId }),
       })
       const data = await response.json()
 
@@ -610,7 +610,7 @@ describe('Subscription Enforcement on API Routes', () => {
       )
 
       const response = await MarkSharePaid(request, {
-        params: Promise.resolve({ participantId }),
+        params: Promise.resolve({ id: participantId }),
       })
 
       expect(response.status).toBe(200)
