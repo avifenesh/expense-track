@@ -156,7 +156,9 @@ export class BackendManager {
 
   private async waitForHealthy(): Promise<void> {
     const startTime = Date.now();
-    const healthUrl = `${this.baseUrl}/api/v1/auth/session`;
+    // Use /api/v1/users/me which returns 401 when not authenticated
+    // This confirms the API is working
+    const healthUrl = `${this.baseUrl}/api/v1/users/me`;
 
     console.log(`[BackendManager] Waiting for health check at ${healthUrl}...`);
 
@@ -167,10 +169,11 @@ export class BackendManager {
           headers: { 'Content-Type': 'application/json' },
         });
 
-        // Session endpoint returns 401 when not authenticated, which means server is up
-        if (response.status === 200 || response.status === 401) {
+        // users/me returns 401 when not authenticated, which means server is up
+        // Any response (200, 401, 403) indicates the server is healthy
+        if (response.status === 200 || response.status === 401 || response.status === 403) {
           console.log(
-            `[BackendManager] Server healthy (${Date.now() - startTime}ms)`
+            `[BackendManager] Server healthy (status: ${response.status}, ${Date.now() - startTime}ms)`
           );
           return;
         }
