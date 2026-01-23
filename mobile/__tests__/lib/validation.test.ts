@@ -15,6 +15,8 @@ import {
   validateParticipantsList,
   validateTotalPercentage,
   validateTotalFixedAmount,
+  validateBudgetAmount,
+  validateBudgetCategory,
 } from '../../src/lib/validation';
 
 describe('validateEmail', () => {
@@ -470,5 +472,64 @@ describe('validateTotalFixedAmount', () => {
 
   it('allows zero total for zero expense', () => {
     expect(validateTotalFixedAmount([0, 0], 0)).toBeNull();
+  });
+});
+
+describe('validateBudgetAmount', () => {
+  it('returns null for valid amount', () => {
+    expect(validateBudgetAmount('100')).toBeNull();
+    expect(validateBudgetAmount('100.50')).toBeNull();
+    expect(validateBudgetAmount('0.01')).toBeNull();
+  });
+
+  it('returns error for empty amount', () => {
+    expect(validateBudgetAmount('')).toBe('Amount is required');
+    expect(validateBudgetAmount('   ')).toBe('Amount is required');
+  });
+
+  it('returns error for invalid amount format', () => {
+    expect(validateBudgetAmount('abc')).toBe('Please enter a valid amount');
+    expect(validateBudgetAmount('NaN')).toBe('Please enter a valid amount');
+    // Note: '12.34.56' is sanitized by input handler before validation
+  });
+
+  it('returns error for zero or negative amount', () => {
+    expect(validateBudgetAmount('0')).toBe('Amount must be greater than zero');
+    expect(validateBudgetAmount('-50')).toBe('Amount must be greater than zero');
+  });
+
+  it('returns error for amount too large', () => {
+    expect(validateBudgetAmount('1000000000')).toBe('Amount is too large');
+    expect(validateBudgetAmount('9999999999.99')).toBe('Amount is too large');
+  });
+
+  it('returns error for too many decimal places', () => {
+    expect(validateBudgetAmount('100.123')).toBe(
+      'Amount can have at most 2 decimal places'
+    );
+    expect(validateBudgetAmount('50.1234')).toBe(
+      'Amount can have at most 2 decimal places'
+    );
+  });
+
+  it('allows exactly two decimal places', () => {
+    expect(validateBudgetAmount('100.00')).toBeNull();
+    expect(validateBudgetAmount('99.99')).toBeNull();
+  });
+});
+
+describe('validateBudgetCategory', () => {
+  it('returns null for valid category ID', () => {
+    expect(validateBudgetCategory('cat-123')).toBeNull();
+    expect(validateBudgetCategory('category-uuid-here')).toBeNull();
+  });
+
+  it('returns error for empty category', () => {
+    expect(validateBudgetCategory('')).toBe('Please select a category');
+    expect(validateBudgetCategory('   ')).toBe('Please select a category');
+  });
+
+  it('returns error for null category', () => {
+    expect(validateBudgetCategory(null)).toBe('Please select a category');
   });
 });

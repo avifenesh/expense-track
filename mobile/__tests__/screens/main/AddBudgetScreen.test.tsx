@@ -707,7 +707,7 @@ describe('AddBudgetScreen', () => {
       renderAddBudgetScreen();
 
       await waitFor(() => {
-        expect(screen.getByText('\u20AC')).toBeTruthy();
+        expect(screen.getByText('€')).toBeTruthy();
       });
     });
 
@@ -720,7 +720,7 @@ describe('AddBudgetScreen', () => {
       renderAddBudgetScreen();
 
       await waitFor(() => {
-        expect(screen.getByText('\u20AA')).toBeTruthy();
+        expect(screen.getByText('₪')).toBeTruthy();
       });
     });
   });

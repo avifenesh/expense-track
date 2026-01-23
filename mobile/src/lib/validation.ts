@@ -207,7 +207,7 @@ export function validateSharePercentage(percentage: number): string | null {
 }
 
 export function validateParticipantsList(
-  participants: Array<{ email: string }>
+  participants: { email: string }[]
 ): string | null {
   if (!participants || participants.length === 0) {
     return 'At least one participant is required';

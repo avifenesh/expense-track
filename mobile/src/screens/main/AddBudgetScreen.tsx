@@ -36,8 +36,8 @@ type FormErrors = {
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: '$',
-  EUR: '\u20AC',
-  ILS: '\u20AA',
+  EUR: '€',
+  ILS: '₪',
 };
 
 export function AddBudgetScreen({
@@ -312,7 +312,7 @@ export function AddBudgetScreen({
           )}
 
           {errors.general && (
-            <View style={styles.generalErrorContainer}>
+            <View style={styles.generalErrorContainer} testID="addBudget.generalErrorContainer">
               <Text style={styles.generalErrorText} testID="addBudget.generalError">{errors.general}</Text>
             </View>
           )}

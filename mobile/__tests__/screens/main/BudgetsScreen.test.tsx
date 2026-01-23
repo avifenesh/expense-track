@@ -14,7 +14,9 @@ jest.mock('../../../src/stores/transactionsStore');
 jest.mock('../../../src/stores/budgetsStore');
 jest.mock('../../../src/stores/categoriesStore');
 
-const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore>;
+const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore> & {
+  getState: jest.MockedFunction<() => ReturnType<typeof useAccountsStore>>;
+};
 const mockUseTransactionsStore = useTransactionsStore as jest.MockedFunction<typeof useTransactionsStore>;
 const mockUseBudgetsStore = useBudgetsStore as jest.MockedFunction<typeof useBudgetsStore>;
 const mockUseCategoriesStore = useCategoriesStore as jest.MockedFunction<typeof useCategoriesStore>;
@@ -178,6 +180,7 @@ describe('BudgetsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAccountsStore.mockReturnValue(defaultAccountsState);
+    mockUseAccountsStore.getState = jest.fn().mockReturnValue(defaultAccountsState);
     mockUseTransactionsStore.mockReturnValue(defaultTransactionsState);
     mockUseBudgetsStore.mockReturnValue(defaultBudgetsState);
     mockUseCategoriesStore.mockReturnValue(defaultCategoriesState);
@@ -285,14 +288,16 @@ describe('BudgetsScreen', () => {
 
     it('calls refresh handlers when retry is pressed', async () => {
       const fetchAccounts = jest.fn().mockResolvedValue(true);
-      mockUseAccountsStore.mockReturnValue({
+      const errorState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
         error: 'Network error',
         fetchAccounts,
-      });
+      };
+      mockUseAccountsStore.mockReturnValue(errorState);
+      mockUseAccountsStore.getState = jest.fn().mockReturnValue(errorState);
 
       renderBudgetsScreen();
 
