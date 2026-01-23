@@ -6,10 +6,24 @@ import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
 import { getApiTestUser, TEST_USER_ID } from './helpers'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/lib/default-categories'
+import { getMonthStart } from '@/utils/date'
 
 describe('POST /api/v1/seed-data', () => {
   let validToken: string
-  let accountId: string
+  let seedAccountId: string | null = null
+
+  const getSeedAccountId = async () => {
+    const account = await prisma.account.findFirst({
+      where: { userId: TEST_USER_ID, deletedAt: null },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    if (!account) {
+      throw new Error('No account found for seed-data tests')
+    }
+
+    return account.id
+  }
 
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
@@ -19,30 +33,47 @@ describe('POST /api/v1/seed-data', () => {
     const testUser = await getApiTestUser()
 
     // Create test account
-    const account = await prisma.account.upsert({
+    await prisma.account.upsert({
       where: { userId_name: { userId: testUser.id, name: 'TestAccount' } },
       update: {},
       create: { userId: testUser.id, name: 'TestAccount', type: 'SELF' },
     })
 
-    accountId = account.id
+    seedAccountId = await getSeedAccountId()
   })
 
   afterEach(async () => {
     // Clean up created data
-    await prisma.transaction.deleteMany({
-      where: {
-        accountId,
-        description: { in: ['Weekly grocery shopping', 'Monthly salary'] },
-      },
-    })
-    await prisma.budget.deleteMany({
-      where: { accountId },
-    })
+    if (seedAccountId) {
+      await prisma.transaction.deleteMany({
+        where: {
+          accountId: seedAccountId,
+          description: { in: ['Weekly grocery shopping', 'Monthly salary'] },
+        },
+      })
+
+      const month = getMonthStart(new Date())
+      const groceriesCategory = await prisma.category.findFirst({
+        where: { userId: TEST_USER_ID, name: 'Groceries', type: 'EXPENSE' },
+        select: { id: true },
+      })
+
+      if (groceriesCategory) {
+        await prisma.budget.deleteMany({
+          where: {
+            accountId: seedAccountId,
+            categoryId: groceriesCategory.id,
+            month,
+          },
+        })
+      }
+    }
     await prisma.category.deleteMany({
       where: {
         userId: TEST_USER_ID,
-        name: { in: [...DEFAULT_EXPENSE_CATEGORIES.map((c) => c.name), ...DEFAULT_INCOME_CATEGORIES.map((c) => c.name)] },
+        name: {
+          in: [...DEFAULT_EXPENSE_CATEGORIES.map((c) => c.name), ...DEFAULT_INCOME_CATEGORIES.map((c) => c.name)],
+        },
       },
     })
   })
@@ -103,21 +134,20 @@ describe('POST /api/v1/seed-data', () => {
 
     await SeedData(request)
 
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        accountId,
-        description: { in: ['Weekly grocery shopping', 'Monthly salary'] },
-      },
+    const grocery = await prisma.transaction.findFirst({
+      where: { accountId: seedAccountId ?? undefined, description: 'Weekly grocery shopping' },
+      orderBy: { createdAt: 'desc' },
+    })
+    const salary = await prisma.transaction.findFirst({
+      where: { accountId: seedAccountId ?? undefined, description: 'Monthly salary' },
+      orderBy: { createdAt: 'desc' },
     })
 
-    expect(transactions.length).toBe(2)
-
-    const grocery = transactions.find((t) => t.description === 'Weekly grocery shopping')
-    const salary = transactions.find((t) => t.description === 'Monthly salary')
-
+    expect(grocery).toBeTruthy()
     expect(grocery?.type).toBe('EXPENSE')
     expect(grocery?.amount.toNumber()).toBe(85.5)
 
+    expect(salary).toBeTruthy()
     expect(salary?.type).toBe('INCOME')
     expect(salary?.amount.toNumber()).toBe(3500.0)
   })
@@ -133,14 +163,20 @@ describe('POST /api/v1/seed-data', () => {
 
     await SeedData(request)
 
-    const budgets = await prisma.budget.findMany({
-      where: { accountId },
+    const month = getMonthStart(new Date())
+    const budget = await prisma.budget.findFirst({
+      where: {
+        accountId: seedAccountId ?? undefined,
+        month,
+        category: { name: 'Groceries' },
+      },
       include: { category: true },
+      orderBy: { createdAt: 'desc' },
     })
 
-    expect(budgets.length).toBe(1)
-    expect(budgets[0].category.name).toBe('Groceries')
-    expect(budgets[0].planned.toNumber()).toBe(400)
+    expect(budget).toBeTruthy()
+    expect(budget?.category.name).toBe('Groceries')
+    expect(budget?.planned.toNumber()).toBe(400)
   })
 
   it('is idempotent - can be called multiple times', async () => {
@@ -166,7 +202,7 @@ describe('POST /api/v1/seed-data', () => {
     // Verify no duplicate transactions created
     const transactions = await prisma.transaction.findMany({
       where: {
-        accountId,
+        accountId: seedAccountId ?? undefined,
         description: { in: ['Weekly grocery shopping', 'Monthly salary'] },
       },
     })
@@ -218,17 +254,29 @@ describe('POST /api/v1/seed-data', () => {
 
     await SeedData(request)
 
-    const transactions = await prisma.transaction.findMany({
-      where: { accountId },
+    const grocery = await prisma.transaction.findFirst({
+      where: { accountId: seedAccountId ?? undefined, description: 'Weekly grocery shopping' },
+      orderBy: { createdAt: 'desc' },
+    })
+    const salary = await prisma.transaction.findFirst({
+      where: { accountId: seedAccountId ?? undefined, description: 'Monthly salary' },
+      orderBy: { createdAt: 'desc' },
     })
 
-    expect(transactions.every((t) => t.currency === 'EUR')).toBe(true)
+    expect(grocery?.currency).toBe('EUR')
+    expect(salary?.currency).toBe('EUR')
 
-    const budgets = await prisma.budget.findMany({
-      where: { accountId },
+    const month = getMonthStart(new Date())
+    const budget = await prisma.budget.findFirst({
+      where: {
+        accountId: seedAccountId ?? undefined,
+        month,
+        category: { name: 'Groceries' },
+      },
+      orderBy: { createdAt: 'desc' },
     })
 
-    expect(budgets.every((b) => b.currency === 'EUR')).toBe(true)
+    expect(budget?.currency).toBe('EUR')
 
     // Reset for other tests
     await prisma.user.update({

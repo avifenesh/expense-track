@@ -47,30 +47,31 @@ Tokens are obtained from `/api/v1/auth/login` and refreshed via `/api/v1/auth/re
 ## ID Format
 
 All resource IDs use CUID (Collision-resistant Unique Identifier) format:
+
 - Example: `clx1234567890abcdefghij`
 - 25 characters, URL-safe, sortable by creation time
 - Generated server-side, never client-provided
 
 ## HTTP Status Codes
 
-| Code | Meaning |
-|------|---------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request (validation error) |
-| 401 | Unauthorized (invalid/expired token) |
-| 402 | Payment Required (subscription expired/inactive) |
-| 403 | Forbidden (insufficient permissions) |
-| 404 | Not Found |
-| 429 | Rate Limited |
-| 500 | Server Error |
-
+| Code | Meaning                                          |
+| ---- | ------------------------------------------------ |
+| 200  | Success                                          |
+| 201  | Created                                          |
+| 400  | Bad Request (validation error)                   |
+| 401  | Unauthorized (invalid/expired token)             |
+| 402  | Payment Required (subscription expired/inactive) |
+| 403  | Forbidden (insufficient permissions)             |
+| 404  | Not Found                                        |
+| 429  | Rate Limited                                     |
+| 500  | Server Error                                     |
 
 ## Subscription Enforcement
 
 **All mutating endpoints require an active subscription.** Endpoints that create, update, or delete resources will return 402 if the user's subscription is expired or inactive.
 
 **402 Response Format:**
+
 ```json
 {
   "error": "Active subscription required",
@@ -79,6 +80,7 @@ All resource IDs use CUID (Collision-resistant Unique Identifier) format:
 ```
 
 **Protected Endpoints:**
+
 - Transaction creation and modification
 - Transaction requests (create, approve, reject)
 - Budget management
@@ -88,6 +90,7 @@ All resource IDs use CUID (Collision-resistant Unique Identifier) format:
 - Expense sharing
 
 Mobile apps should:
+
 1. Check subscription status on app launch via `GET /api/v1/subscriptions`
 2. Handle 402 responses by prompting user to upgrade
 3. Retry the request after successful subscription activation
@@ -101,6 +104,7 @@ Mobile apps should:
 Authenticate user and obtain tokens.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -109,6 +113,7 @@ Authenticate user and obtain tokens.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -121,6 +126,7 @@ Authenticate user and obtain tokens.
 ```
 
 **Errors:**
+
 - 401: Invalid credentials
 - 403: Email not verified
 
@@ -131,6 +137,7 @@ Authenticate user and obtain tokens.
 Refresh access token using refresh token.
 
 **Request:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
@@ -138,6 +145,7 @@ Refresh access token using refresh token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -150,6 +158,7 @@ Refresh access token using refresh token.
 ```
 
 **Errors:**
+
 - 401: Invalid or expired refresh token
 
 ---
@@ -159,6 +168,7 @@ Refresh access token using refresh token.
 Invalidate refresh token.
 
 **Request:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
@@ -166,6 +176,7 @@ Invalidate refresh token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -182,6 +193,7 @@ Invalidate refresh token.
 Register a new user account.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -191,6 +203,7 @@ Register a new user account.
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -201,6 +214,7 @@ Register a new user account.
 ```
 
 **Errors:**
+
 - 400: Validation error (weak password, invalid email)
 - 409: Email already registered
 
@@ -211,6 +225,7 @@ Register a new user account.
 Verify email address with token.
 
 **Request:**
+
 ```json
 {
   "token": "verification_token_here"
@@ -218,6 +233,7 @@ Verify email address with token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -228,6 +244,7 @@ Verify email address with token.
 ```
 
 **Errors:**
+
 - 400: Invalid or expired token
 
 ---
@@ -237,6 +254,7 @@ Verify email address with token.
 Resend verification email.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com"
@@ -244,6 +262,7 @@ Resend verification email.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -260,6 +279,7 @@ Resend verification email.
 Request password reset email.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com"
@@ -267,6 +287,7 @@ Request password reset email.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -283,6 +304,7 @@ Request password reset email.
 Reset password using token.
 
 **Request:**
+
 ```json
 {
   "token": "reset_token_here",
@@ -291,6 +313,7 @@ Reset password using token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -301,6 +324,7 @@ Reset password using token.
 ```
 
 **Errors:**
+
 - 400: Invalid or expired token
 - 400: Password too weak
 
@@ -315,6 +339,7 @@ Delete user account (GDPR compliance).
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "confirmEmail": "user@example.com"
@@ -322,6 +347,7 @@ Delete user account (GDPR compliance).
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -332,6 +358,7 @@ Delete user account (GDPR compliance).
 ```
 
 **Errors:**
+
 - 400: Email confirmation does not match
 
 ---
@@ -345,9 +372,11 @@ Export all user data (GDPR compliance).
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `format`: `json` (default) or `csv`
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -375,6 +404,7 @@ List transactions with filters.
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `accountId`: Filter by account (required)
 - `month`: Filter by month (YYYY-MM format)
 - `categoryId`: Filter by category
@@ -383,6 +413,7 @@ List transactions with filters.
 - `offset`: Pagination offset
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -422,12 +453,13 @@ Create a new transaction.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx...",
   "categoryId": "clx...",
   "type": "EXPENSE",
-  "amount": 125.50,
+  "amount": 125.5,
   "currency": "USD",
   "date": "2024-01-15",
   "description": "Grocery shopping",
@@ -436,6 +468,7 @@ Create a new transaction.
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -463,12 +496,13 @@ Update a transaction.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx...",
   "categoryId": "clx...",
   "type": "EXPENSE",
-  "amount": 130.00,
+  "amount": 130.0,
   "currency": "USD",
   "date": "2024-01-15",
   "description": "Grocery shopping (updated)",
@@ -477,6 +511,7 @@ Update a transaction.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -496,6 +531,7 @@ Delete a transaction.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -516,10 +552,12 @@ List budgets.
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `accountId`: Filter by account (required)
 - `month`: Filter by month (YYYY-MM format)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -554,18 +592,20 @@ Create or update a budget.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx...",
   "categoryId": "clx...",
   "monthKey": "2024-01",
-  "planned": 500.00,
+  "planned": 500.0,
   "currency": "USD",
   "notes": "Monthly food budget"
 }
 ```
 
 **Response (200/201):**
+
 ```json
 {
   "success": true,
@@ -590,11 +630,13 @@ Delete a budget.
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `accountId`: Account ID (required)
 - `categoryId`: Category ID (required)
 - `monthKey`: Month key in YYYY-MM format (required)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -615,10 +657,12 @@ List user categories.
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `type`: Filter by type (`INCOME` or `EXPENSE`)
 - `includeArchived`: Include archived categories (default: false)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -646,6 +690,7 @@ Create a new category.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "name": "Entertainment",
@@ -655,6 +700,7 @@ Create a new category.
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -679,6 +725,7 @@ Archive or unarchive a category.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "isArchived": true
@@ -686,6 +733,7 @@ Archive or unarchive a category.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -710,6 +758,7 @@ Retrieves all sharing data for the authenticated user including expenses they sh
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -799,16 +848,19 @@ Retrieves all sharing data for the authenticated user including expenses they sh
 ```
 
 **Split Types:**
+
 - `EQUAL` - Split equally among participants
 - `PERCENTAGE` - Split by percentage
 - `FIXED` - Fixed amounts per participant
 
 **Payment Status:**
+
 - `PENDING` - Awaiting payment
 - `PAID` - Payment confirmed
 - `DECLINED` - Participant declined
 
 **Errors:**
+
 - 401: Unauthorized - Invalid or missing auth token
 - 429: Rate limited - Too many requests
 - 500: Server error
@@ -822,6 +874,7 @@ List expenses shared by the authenticated user with others. Supports filtering b
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `status`: Optional. Filter by status: `pending`, `settled`, or `all` (default: `all`)
   - `pending`: Expenses with at least one participant still pending payment
   - `settled`: Expenses where all participants have paid or declined
@@ -830,6 +883,7 @@ List expenses shared by the authenticated user with others. Supports filtering b
 - `offset`: Optional. Pagination offset (default: 0)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -879,6 +933,7 @@ List expenses shared by the authenticated user with others. Supports filtering b
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid status, limit, or offset parameter
 - 401: Unauthorized - Invalid or missing auth token
 - 429: Rate limited - Too many requests
@@ -890,6 +945,7 @@ List expenses shared with the authenticated user by others. Supports filtering b
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `status`: Optional. Filter by status: `pending`, `paid`, `declined`, or `all` (default: `all`)
   - `pending`: Expenses where the user has not yet paid
   - `paid`: Expenses where the user has paid
@@ -899,6 +955,7 @@ List expenses shared with the authenticated user by others. Supports filtering b
 - `offset`: Optional. Pagination offset (default: 0)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -941,6 +998,7 @@ List expenses shared with the authenticated user by others. Supports filtering b
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid status, limit, or offset parameter
 - 401: Unauthorized - Invalid or missing auth token
 - 429: Rate limited - Too many requests
@@ -955,6 +1013,7 @@ Share an expense with other users. Creates a shared expense from an existing tra
 **Subscription:** Active subscription required (returns 402 if expired)
 
 **Request:**
+
 ```json
 {
   "transactionId": "clx...",
@@ -970,22 +1029,24 @@ Share an expense with other users. Creates a shared expense from an existing tra
 
 **Request Fields:**
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| transactionId | string | Yes | ID of the transaction to share |
-| splitType | string | No | `EQUAL` (default), `PERCENTAGE`, or `FIXED` |
-| description | string | No | Optional description (max 240 chars) |
-| participants | array | Yes | At least one participant |
-| participants[].email | string | Yes | Participant's email address |
-| participants[].shareAmount | number | Conditional | Required for `FIXED` splits |
-| participants[].sharePercentage | number | Conditional | Required for `PERCENTAGE` splits (0-100) |
+| Field                          | Type   | Required    | Description                                 |
+| ------------------------------ | ------ | ----------- | ------------------------------------------- |
+| transactionId                  | string | Yes         | ID of the transaction to share              |
+| splitType                      | string | No          | `EQUAL` (default), `PERCENTAGE`, or `FIXED` |
+| description                    | string | No          | Optional description (max 240 chars)        |
+| participants                   | array  | Yes         | At least one participant                    |
+| participants[].email           | string | Yes         | Participant's email address                 |
+| participants[].shareAmount     | number | Conditional | Required for `FIXED` splits                 |
+| participants[].sharePercentage | number | Conditional | Required for `PERCENTAGE` splits (0-100)    |
 
 **Split Type Behavior:**
+
 - `EQUAL`: Amount divided equally among all participants + owner
 - `PERCENTAGE`: Each participant gets their specified percentage of the total
 - `FIXED`: Each participant gets their specified fixed amount
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -1014,17 +1075,18 @@ Share an expense with other users. Creates a shared expense from an existing tra
 
 **Errors:**
 
-| Code | Condition |
-|------|-----------|
-| 400 | Validation error (invalid email, missing fields, self-sharing, etc.) |
-| 401 | Invalid or missing auth token |
-| 402 | Subscription required |
-| 403 | User does not own the transaction |
-| 404 | Transaction not found |
-| 409 | Transaction is already shared |
-| 429 | Rate limited |
+| Code | Condition                                                            |
+| ---- | -------------------------------------------------------------------- |
+| 400  | Validation error (invalid email, missing fields, self-sharing, etc.) |
+| 401  | Invalid or missing auth token                                        |
+| 402  | Subscription required                                                |
+| 403  | User does not own the transaction                                    |
+| 404  | Transaction not found                                                |
+| 409  | Transaction is already shared                                        |
+| 429  | Rate limited                                                         |
 
 **Example Error (400 - Participant not found):**
+
 ```json
 {
   "error": "Validation failed",
@@ -1035,12 +1097,12 @@ Share an expense with other users. Creates a shared expense from an existing tra
 ```
 
 **Notes:**
+
 - User cannot share an expense with themselves
 - All participant emails must belong to registered users
 - For `FIXED` splits, total share amounts cannot exceed transaction amount
 - For `PERCENTAGE` splits, total percentage cannot exceed 100%
 - Email notifications are sent to participants (asynchronous)
-
 
 ### POST /api/v1/expenses/shares/[participantId]/decline
 
@@ -1053,6 +1115,7 @@ Decline a shared expense assigned to you.
 **Status Requirements:** Share must be in PENDING status. Cannot decline shares that are already PAID or DECLINED.
 
 **Request (optional):**
+
 ```json
 {
   "reason": "I was not part of this expense"
@@ -1060,9 +1123,11 @@ Decline a shared expense assigned to you.
 ```
 
 **Request Fields:**
+
 - `reason`: Optional decline explanation
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1075,11 +1140,13 @@ Decline a shared expense assigned to you.
 ```
 
 **Response Fields:**
+
 - `id`: The participant ID
 - `status`: Always "DECLINED" on success
 - `declinedAt`: Decline timestamp
 
 **Errors:**
+
 - 400: Validation error - Share is not in PENDING status (already paid or declined), or reason is not a string
 - 401: Unauthorized - Invalid or missing auth token
 - 403: Forbidden - You can only decline shares assigned to you
@@ -1099,6 +1166,7 @@ Mark a participant's share as paid (owner only).
 **Status Requirements:** Share must be in PENDING status. Cannot mark shares that are already PAID or DECLINED.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1111,11 +1179,13 @@ Mark a participant's share as paid (owner only).
 ```
 
 **Response Fields:**
+
 - `id`: The participant ID
 - `status`: Always "PAID" on success
 - `paidAt`: Payment confirmation timestamp
 
 **Errors:**
+
 - 400: Validation error - Share is not in PENDING status (already paid or declined)
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1134,13 +1204,16 @@ Delete a shared expense (owner only). Cannot delete if any participant has alrea
 **Authorization:** Only the expense owner can delete a shared expense. Participants cannot delete expenses shared with them.
 
 **Path Parameters:**
+
 - `id`: The shared expense ID (CUID format)
 
 **State Requirements:**
+
 - Cannot delete if any participant has `status: PAID`
 - Can delete if all participants are `PENDING` or `DECLINED`
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1151,6 +1224,7 @@ Delete a shared expense (owner only). Cannot delete if any participant has alrea
 ```
 
 **Errors:**
+
 - 400: Validation error - Cannot delete when participants have already paid
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1159,6 +1233,7 @@ Delete a shared expense (owner only). Cannot delete if any participant has alrea
 - 429: Rate limited - Too many requests
 
 **Example Error (400 - Participant already paid):**
+
 ```json
 {
   "error": "Validation failed",
@@ -1169,6 +1244,7 @@ Delete a shared expense (owner only). Cannot delete if any participant has alrea
 ```
 
 **Notes:**
+
 - Performs a soft delete (records are not permanently removed)
 - Both the SharedExpense and all ExpenseParticipant records are soft-deleted atomically
 - Soft-deleted records will not appear in list endpoints
@@ -1184,6 +1260,7 @@ Send payment reminder to participant.
 **Auth:** Bearer token required (must be owner)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1202,9 +1279,11 @@ Lookup user by email for expense sharing.
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `email`: Email to lookup (required)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1219,6 +1298,7 @@ Lookup user by email for expense sharing.
 ```
 
 **Response (404):**
+
 ```json
 {
   "success": false,
@@ -1227,17 +1307,21 @@ Lookup user by email for expense sharing.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid email format or trying to lookup own email
 - 401: Unauthorized - Invalid or missing auth token
 - 404: Not found - User with specified email does not exist
 - 429: Rate limited - Too many requests
 
 **Security:**
+
 - Cannot lookup your own email address
 - Email is case-insensitive
 - Maximum email length: 255 characters
 - Rate limited using login rate limits (5 requests per minute)
+
 ---
+
 ---
 
 ## User & Account Endpoints
@@ -1249,6 +1333,7 @@ Get current user profile including subscription status.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1272,6 +1357,7 @@ Get current user profile including subscription status.
 ```
 
 **Subscription Status Values:**
+
 - `TRIALING` - User is in trial period, `trialEndsAt` shows end date
 - `ACTIVE` - Paid subscription, `currentPeriodEnd` shows renewal date
 - `PAST_DUE` - Payment failed, user retains access temporarily
@@ -1279,6 +1365,7 @@ Get current user profile including subscription status.
 - `EXPIRED` - No access, trial/subscription ended
 
 **Error Responses:**
+
 - 401: Invalid or missing auth token
 - 429: Rate limited
 
@@ -1291,6 +1378,7 @@ List user's accounts.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1321,10 +1409,12 @@ Get dashboard summary data including budget progress, recent transactions, and s
 **Auth:** Bearer token required
 
 **Query Parameters:**
+
 - `accountId`: Account ID (required)
 - `month`: Month in YYYY-MM format (default: current month)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1363,6 +1453,7 @@ Get dashboard summary data including budget progress, recent transactions, and s
 ```
 
 **Errors:**
+
 - 400: Validation error - Missing accountId or invalid month format
 - 401: Unauthorized - Invalid or missing auth token
 - 403: Forbidden - User doesn't own the account
@@ -1382,6 +1473,7 @@ Mark onboarding as complete.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1392,6 +1484,7 @@ Mark onboarding as complete.
 ```
 
 **Errors:**
+
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
 - 429: Rate limited - Too many requests
@@ -1407,6 +1500,7 @@ Skip onboarding flow.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1425,6 +1519,7 @@ Update preferred currency.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "currency": "EUR"
@@ -1432,9 +1527,11 @@ Update preferred currency.
 ```
 
 **Validation:**
+
 - `currency`: Required. One of: USD, EUR, ILS.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1445,6 +1542,7 @@ Update preferred currency.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid currency
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1459,6 +1557,7 @@ Bulk create categories (or reactivate existing archived ones).
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "categories": [
@@ -1469,31 +1568,33 @@ Bulk create categories (or reactivate existing archived ones).
 ```
 
 **Validation:**
+
 - `categories`: Required. Array of category objects (minimum 1).
 - `name`: Required. Min 2 characters.
 - `type`: Required. One of: INCOME, EXPENSE.
 - `color`: Optional. Hex color code.
 
 **Response (201):**
+
 ```json
 {
   "success": true,
   "data": {
     "categoriesCreated": 2,
     "categories": [
-      { 
-        "id": "clx...", 
-        "name": "Food", 
-        "type": "EXPENSE", 
+      {
+        "id": "clx...",
+        "name": "Food",
+        "type": "EXPENSE",
         "color": "#4CAF50",
         "isArchived": false,
         "isHolding": false,
         "userId": "clx..."
       },
-      { 
-        "id": "clx...", 
-        "name": "Salary", 
-        "type": "INCOME", 
+      {
+        "id": "clx...",
+        "name": "Salary",
+        "type": "INCOME",
         "color": "#2196F3",
         "isArchived": false,
         "isHolding": false,
@@ -1505,6 +1606,7 @@ Bulk create categories (or reactivate existing archived ones).
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1519,17 +1621,19 @@ Create a budget for specified account, category, and month (used during onboardi
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx...",
   "categoryId": "clx...",
   "monthKey": "2024-01",
-  "planned": 500.00,
+  "planned": 500.0,
   "currency": "USD"
 }
 ```
 
 **Validation:**
+
 - `accountId`: Required. User must own the account.
 - `categoryId`: Required. User must own the category.
 - `monthKey`: Required. YYYY-MM format.
@@ -1537,6 +1641,7 @@ Create a budget for specified account, category, and month (used during onboardi
 - `currency`: Optional. Defaults to USD. One of: USD, EUR, ILS.
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -1547,6 +1652,7 @@ Create a budget for specified account, category, and month (used during onboardi
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired or access denied
@@ -1561,6 +1667,7 @@ Seed user's account with sample data (default categories, sample transactions, s
 **Auth:** Bearer token required
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -1573,11 +1680,13 @@ Seed user's account with sample data (default categories, sample transactions, s
 ```
 
 **Sample Data:**
+
 - **Categories**: 8 expense categories (Groceries, Transportation, etc.) + 6 income categories (Salary, etc.)
 - **Transactions**: 1 grocery expense ($85.50) + 1 salary income ($3500)
 - **Budgets**: 1 grocery budget ($400)
 
 **Errors:**
+
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired or no account found
 - 429: Rate limited - Too many requests
@@ -1593,6 +1702,7 @@ Get current user's subscription state and Paddle checkout settings.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1624,6 +1734,7 @@ Get current user's subscription state and Paddle checkout settings.
 ```
 
 **Subscription Status Values:**
+
 - `TRIALING` - Active trial period
 - `ACTIVE` - Paid and active
 - `PAST_DUE` - Payment failed, grace period
@@ -1631,6 +1742,7 @@ Get current user's subscription state and Paddle checkout settings.
 - `EXPIRED` - No longer has access
 
 **Notes:**
+
 - `checkout` will be `null` if Paddle is not configured
 - `canAccessApp` determines if user can access features
 - Mobile apps should check this endpoint on launch
@@ -1646,6 +1758,7 @@ Retrieves all accounts for the authenticated user.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1666,6 +1779,7 @@ Retrieves all accounts for the authenticated user.
 ```
 
 **Errors:**
+
 - 401: Unauthorized - Invalid or missing auth token
 - 429: Rate limited - Too many requests
 - 500: Server error - Unable to fetch accounts
@@ -1679,9 +1793,11 @@ Switch the active account for the authenticated user. Updates the user's `active
 **Auth:** Bearer token required
 
 **Path Parameters:**
+
 - `id`: Account ID to activate (required)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1692,12 +1808,14 @@ Switch the active account for the authenticated user. Updates the user's `active
 ```
 
 **Errors:**
+
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
 - 404: Not found - Account does not exist or user does not own it
 - 429: Rate limited - Too many requests
 
 **Security:**
+
 - Users can only activate accounts they own
 - Account ownership verified server-side
 - Requires active subscription
@@ -1713,6 +1831,7 @@ Creates a new stock/investment holding.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx...",
@@ -1726,6 +1845,7 @@ Creates a new stock/investment holding.
 ```
 
 **Validation:**
+
 - `accountId`: Required. User must own the account.
 - `categoryId`: Required. Category must have `isHolding=true`.
 - `symbol`: Required. 1-5 uppercase letters. Validated against external stock API.
@@ -1735,6 +1855,7 @@ Creates a new stock/investment holding.
 - `notes`: Optional. Max 240 characters.
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -1752,6 +1873,7 @@ Creates a new stock/investment holding.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input, symbol, or category
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1769,20 +1891,23 @@ Updates an existing holding.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "quantity": 15.0,
-  "averageCost": 145.00,
+  "averageCost": 145.0,
   "notes": "Updated position"
 }
 ```
 
 **Validation:**
+
 - `quantity`: Required. Min 0.000001, max 999999999.
 - `averageCost`: Required. Min 0.
 - `notes`: Optional. Max 240 characters.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1800,6 +1925,7 @@ Updates an existing holding.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1815,6 +1941,7 @@ Deletes an existing holding.
 **Auth:** Bearer token required
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1825,6 +1952,7 @@ Deletes an existing holding.
 ```
 
 **Errors:**
+
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
 - 404: Not found - Holding does not exist
@@ -1839,6 +1967,7 @@ Refreshes stock prices for all holdings in an account from external API.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx..."
@@ -1846,17 +1975,20 @@ Refreshes stock prices for all holdings in an account from external API.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
   "data": {
     "updated": 5,
+    "skipped": 1,
     "errors": []
   }
 }
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1875,13 +2007,14 @@ Creates or updates a recurring transaction template.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "id": "clx...",
   "accountId": "clx...",
   "categoryId": "clx...",
   "type": "EXPENSE",
-  "amount": 50.00,
+  "amount": 50.0,
   "currency": "USD",
   "dayOfMonth": 15,
   "description": "Netflix subscription",
@@ -1892,6 +2025,7 @@ Creates or updates a recurring transaction template.
 ```
 
 **Validation:**
+
 - `id`: Optional. Template ID for updates. If omitted, creates new template.
 - `accountId`: Required. User must own the account.
 - `categoryId`: Required. Category for generated transactions.
@@ -1905,6 +2039,7 @@ Creates or updates a recurring transaction template.
 - `isActive`: Optional. Default true.
 
 **Response (200/201):**
+
 ```json
 {
   "success": true,
@@ -1925,6 +2060,7 @@ Creates or updates a recurring transaction template.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1941,6 +2077,7 @@ Toggles a recurring template's active status.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "isActive": false
@@ -1948,6 +2085,7 @@ Toggles a recurring template's active status.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1959,6 +2097,7 @@ Toggles a recurring template's active status.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -1974,6 +2113,7 @@ Applies recurring templates to generate transactions for a specific month.
 **Auth:** Bearer token required
 
 **Request:**
+
 ```json
 {
   "accountId": "clx...",
@@ -1983,11 +2123,13 @@ Applies recurring templates to generate transactions for a specific month.
 ```
 
 **Validation:**
+
 - `accountId`: Required. User must own the account.
 - `monthKey`: Required. YYYY-MM format. Target month for transaction generation.
 - `templateIds`: Optional. Specific template IDs to apply. If omitted, applies all active templates.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -2000,6 +2142,7 @@ Applies recurring templates to generate transactions for a specific month.
 ```
 
 **Errors:**
+
 - 400: Validation error - Invalid input data
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
@@ -2013,17 +2156,18 @@ Applies recurring templates to generate transactions for a specific month.
 
 Endpoints are rate-limited per user/identifier with sliding window:
 
-| Endpoint Type | Limit | Window |
-|---------------|-------|--------|
-| Default (general API) | 100 requests | 1 minute |
-| Login | 5 requests | 1 minute |
-| Registration | 3 requests | 1 minute |
-| Password reset | 3 requests | 1 hour |
-| Resend verification | 3 requests | 15 minutes |
-| Account deletion | 3 requests | 1 hour |
-| Data export | 3 requests | 1 hour |
+| Endpoint Type         | Limit        | Window     |
+| --------------------- | ------------ | ---------- |
+| Default (general API) | 100 requests | 1 minute   |
+| Login                 | 5 requests   | 1 minute   |
+| Registration          | 3 requests   | 1 minute   |
+| Password reset        | 3 requests   | 1 hour     |
+| Resend verification   | 3 requests   | 15 minutes |
+| Account deletion      | 3 requests   | 1 hour     |
+| Data export           | 3 requests   | 1 hour     |
 
 Rate limit headers:
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
@@ -2037,10 +2181,12 @@ X-RateLimit-Reset: 1705334400
 List endpoints support pagination:
 
 **Query Parameters:**
+
 - `limit`: Number of items (default: 50, max: 100)
 - `offset`: Skip N items
 
 **Response includes:**
+
 ```json
 {
   "data": {
