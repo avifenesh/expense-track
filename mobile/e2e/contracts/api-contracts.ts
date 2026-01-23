@@ -27,6 +27,7 @@ export const RegisterRequestContract = z.object({
 
 export const RegisterResponseContract = z.object({
   message: z.string(),
+  emailVerified: z.boolean().optional(),
 });
 
 // ============ User Contracts ============
