@@ -6,7 +6,7 @@ import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { deleteAccountAction } from '@/app/actions/account'
-import { useCsrfToken } from '@/hooks/useCsrfToken'
+import { useCsrfTokenWithState } from '@/hooks/useCsrfToken'
 
 type DeleteAccountDialogProps = {
   userEmail: string
@@ -15,7 +15,7 @@ type DeleteAccountDialogProps = {
 
 export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogProps) {
   const router = useRouter()
-  const csrfToken = useCsrfToken()
+  const { token, isLoading, error: csrfError } = useCsrfTokenWithState()
   const [confirmEmail, setConfirmEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -80,7 +80,7 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
     startTransition(async () => {
       const result = await deleteAccountAction({
         confirmEmail,
-        csrfToken,
+        csrfToken: token,
       })
 
       if ('error' in result && result.error) {
@@ -94,8 +94,6 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
       router.refresh()
     })
   }
-
-  const isLoading = !csrfToken
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -146,11 +144,22 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
         </div>
 
         {/* Error message */}
+        {csrfError && (
+          <div className="mb-4 rounded-lg bg-rose-500/20 px-3 py-2 text-sm text-rose-300">
+            Unable to load security token. Please refresh.
+          </div>
+        )}
         {error && <div className="mb-4 rounded-lg bg-rose-500/20 px-3 py-2 text-sm text-rose-300">{error}</div>}
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <Button type="button" variant="ghost" className="flex-1" onClick={onClose} disabled={isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1"
+            onClick={onClose}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button
@@ -158,7 +167,7 @@ export function DeleteAccountDialog({ userEmail, onClose }: DeleteAccountDialogP
             variant="primary"
             className="flex-1 bg-rose-600 hover:bg-rose-700"
             onClick={handleDelete}
-            disabled={!isEmailMatch || isPending || isLoading}
+            disabled={!isEmailMatch || isPending || isLoading || Boolean(csrfError)}
             loading={isPending || isLoading}
             title={isLoading ? 'Loading security token...' : undefined}
           >

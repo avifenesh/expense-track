@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { Download, X, FileJson, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { exportUserDataAction } from '@/app/actions/account'
-import { useCsrfToken } from '@/hooks/useCsrfToken'
+import { useCsrfTokenWithState } from '@/hooks/useCsrfToken'
 
 type ExportFormat = 'json' | 'csv'
 
@@ -13,7 +13,7 @@ type ExportDataDialogProps = {
 }
 
 export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
-  const csrfToken = useCsrfToken()
+  const { token, isLoading, error: csrfError } = useCsrfTokenWithState()
   const [format, setFormat] = useState<ExportFormat>('json')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -23,7 +23,7 @@ export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
     startTransition(async () => {
       const result = await exportUserDataAction({
         format,
-        csrfToken,
+        csrfToken: token,
       })
 
       if ('error' in result && result.error) {
@@ -52,8 +52,6 @@ export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
       }
     })
   }
-
-  const isLoading = !csrfToken
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -120,11 +118,22 @@ export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
         </div>
 
         {/* Error message */}
+        {csrfError && (
+          <div className="mb-4 rounded-lg bg-rose-500/20 px-3 py-2 text-sm text-rose-300">
+            Unable to load security token. Please refresh.
+          </div>
+        )}
         {error && <div className="mb-4 rounded-lg bg-rose-500/20 px-3 py-2 text-sm text-rose-300">{error}</div>}
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <Button type="button" variant="ghost" className="flex-1" onClick={onClose} disabled={isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1"
+            onClick={onClose}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button
@@ -132,7 +141,7 @@ export function ExportDataDialog({ onClose }: ExportDataDialogProps) {
             variant="primary"
             className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             onClick={handleExport}
-            disabled={isPending || isLoading}
+            disabled={isPending || isLoading || Boolean(csrfError)}
             loading={isPending || isLoading}
             title={isLoading ? 'Loading security token...' : undefined}
           >
