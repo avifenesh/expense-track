@@ -2,9 +2,16 @@ import { create } from 'zustand';
 import * as authService from '../services/auth';
 import type { RegisterResponse } from '../services/auth';
 import * as biometricService from '../services/biometric';
-import { ApiError } from '../services/api';
+import { ApiError, apiGet } from '../services/api';
 import type { BiometricCapability } from '../services/biometric';
 import { resetAllStores } from './storeRegistry';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  displayName: string | null;
+  hasCompletedOnboarding: boolean;
+}
 
 export interface User {
   id: string | null;

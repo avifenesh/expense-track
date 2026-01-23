@@ -212,7 +212,8 @@ export class TestApiClient {
 
   /**
    * Ensures test user exists and is ready for testing.
-   * Registers if not exists, logs in, and optionally completes onboarding.
+   * Registers if not exists, logs in, and completes onboarding.
+   * Always calls completeOnboarding for test users to ensure subscription exists.
    */
   async ensureTestUser(
     user: typeof TEST_USER = TEST_USER,
@@ -223,10 +224,9 @@ export class TestApiClient {
       const loginResponse = await this.login(user.email, user.password);
 
       if (completeOnboarding) {
-        const profile = await this.getProfile();
-        if (!profile.hasCompletedOnboarding) {
-          await this.completeOnboarding();
-        }
+        // Always call completeOnboarding for test users to ensure subscription exists
+        // The endpoint is idempotent and creates subscription if missing
+        await this.completeOnboarding();
       }
 
       return loginResponse;

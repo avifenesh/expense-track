@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
 import { rateLimitError, validationError, successResponse, serverError } from '@/lib/api-helpers'
 import { serverLogger } from '@/lib/server-logger'
+import { createTrialSubscription } from '@/lib/subscription'
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     const verificationToken = isTestEmail ? null : randomBytes(32).toString('hex')
     const verificationExpires = isTestEmail ? null : new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email: normalizedEmail,
         displayName: displayName.trim(),
@@ -84,6 +85,11 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    // Auto-create trial subscription for test users so they can access subscription-required features
+    if (isTestEmail) {
+      await createTrialSubscription(newUser.id)
+    }
 
     if (process.env.NODE_ENV === 'development' && !isTestEmail) {
       // Log for development debugging, but never log the actual token
