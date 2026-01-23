@@ -29,6 +29,13 @@ export class BackendManager {
       return;
     }
 
+    // Check if a server is already running on this port (from previous test run)
+    const existingServer = await this.checkExistingServer();
+    if (existingServer) {
+      console.log('[BackendManager] Reusing existing server on port', this.port);
+      return;
+    }
+
     console.log(`[BackendManager] Starting backend at ${this.baseUrl}...`);
     console.log(`[BackendManager] Project root: ${this.projectRoot}`);
 
@@ -152,6 +159,27 @@ export class BackendManager {
 
   isRunning(): boolean {
     return this.process !== null;
+  }
+
+  /**
+   * Check if a server is already running on the port.
+   * Returns true if healthy, false if not running or unhealthy.
+   */
+  private async checkExistingServer(): Promise<boolean> {
+    const healthUrl = `${this.baseUrl}/api/v1/users/me`;
+    try {
+      const response = await fetch(healthUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      // Any response means server is running
+      if (response.status === 200 || response.status === 401 || response.status === 403) {
+        return true;
+      }
+    } catch {
+      // Server not running
+    }
+    return false;
   }
 
   private async waitForHealthy(): Promise<void> {
