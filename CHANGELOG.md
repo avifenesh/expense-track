@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- Mobile: AddBudgetScreen for creating and updating budgets (#216)
+  - Modal screen for budget creation with month selector and category picker
+  - Amount input with currency formatting and real-time validation
+  - Auto-population for editing existing budgets (upsert behavior)
+  - Filtered category list showing only expense categories
+  - Integration with budgetsStore.createOrUpdateBudget
+  - Navigation from BudgetsScreen FAB
+  - Budget validation utilities (validateBudgetAmount, validateBudgetCategory)
+  - Comprehensive test suite with 95%+ coverage
 - Mobile: ShareExpenseScreen for creating shared expenses (#218)
   - Multi-step form: expense details, participant selection, split configuration
   - User lookup by email (GET /api/v1/users/lookup)
@@ -49,6 +58,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Added
+- Mobile: AddBudgetScreen for creating and updating budgets (#216)
+  - Modal screen for budget creation with month selector and category picker
+  - Amount input with currency formatting and real-time validation
+  - Auto-population for editing existing budgets (upsert behavior)
+  - Filtered category list showing only expense categories
+  - Integration with budgetsStore.createOrUpdateBudget
+  - Navigation from BudgetsScreen FAB
+  - Budget validation utilities (validateBudgetAmount, validateBudgetCategory)
+  - Comprehensive test suite with 95%+ coverage
 - Web: Comprehensive E2E test suite with Playwright (#261)
   - 45 web E2E tests covering authentication, onboarding, transactions, budgets, sharing, dashboard, settings, subscription
   - Page Object Model pattern for test organization
