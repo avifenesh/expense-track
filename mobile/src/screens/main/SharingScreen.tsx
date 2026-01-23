@@ -51,39 +51,39 @@ function BalanceSummary({ balances }: BalanceSummaryProps) {
     )
   }
 
-  const totalsByCurrency = balances.reduce<Record<Currency, { currency: Currency; youOwe: number; theyOwe: number }>>(
+  const totalsByCurrency = balances.reduce<Record<Currency, { youOwe: number; theyOwe: number }>>(
     (acc, balance) => {
-      const currency = balance.currency
+      const { currency } = balance
       if (!acc[currency]) {
-        acc[currency] = { currency, youOwe: 0, theyOwe: 0 }
+        acc[currency] = { youOwe: 0, theyOwe: 0 }
       }
-      acc[currency].youOwe += Number.parseFloat(balance.youOwe)
-      acc[currency].theyOwe += Number.parseFloat(balance.theyOwe)
+      acc[currency].youOwe += parseFloat(balance.youOwe)
+      acc[currency].theyOwe += parseFloat(balance.theyOwe)
       return acc
     },
-    {} as Record<Currency, { currency: Currency; youOwe: number; theyOwe: number }>,
+    {} as Record<Currency, { youOwe: number; theyOwe: number }>,
   )
 
-  const totals = Object.values(totalsByCurrency)
+  const totals = Object.entries(totalsByCurrency)
 
   return (
     <View style={styles.balanceGroup}>
-      {totals.map((currencyTotals, index) => {
+      {totals.map(([currency, currencyTotals], index) => {
         const netBalance = currencyTotals.theyOwe - currencyTotals.youOwe
         const isPositive = netBalance >= 0
         const balanceText = isPositive
-          ? `+${formatCurrency(netBalance, currencyTotals.currency)}`
-          : `-${formatCurrency(Math.abs(netBalance), currencyTotals.currency)}`
+          ? `+${formatCurrency(netBalance, currency as Currency)}`
+          : `-${formatCurrency(Math.abs(netBalance), currency as Currency)}`
 
         const subtext = isPositive ? (netBalance === 0 ? 'All settled up' : 'You are owed overall') : 'You owe overall'
 
         return (
           <View
-            key={currencyTotals.currency}
+            key={currency}
             style={[styles.balanceCard, index < totals.length - 1 && styles.balanceCardSpacing]}
           >
             <Text style={styles.balanceLabel}>Net Balance</Text>
-            {totals.length > 1 && <Text style={styles.balanceCurrencyLabel}>{currencyTotals.currency}</Text>}
+            {totals.length > 1 && <Text style={styles.balanceCurrencyLabel}>{currency}</Text>}
             <Text style={[styles.balanceAmount, isPositive ? styles.positiveBalance : styles.negativeBalance]}>
               {balanceText}
             </Text>

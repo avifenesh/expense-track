@@ -500,4 +500,106 @@ describe('SharingScreen', () => {
       });
     });
   });
+
+  describe('Multi-Currency Balance Display', () => {
+    it('groups balances by currency and displays separate cards', async () => {
+      const usdBalance = {
+        userId: 'user-2',
+        userEmail: 'friend@example.com',
+        userDisplayName: 'Friend',
+        currency: 'USD' as const,
+        youOwe: '0.00',
+        theyOwe: '50.00',
+        netBalance: '50.00',
+      };
+      const eurBalance = {
+        userId: 'user-3',
+        userEmail: 'another@example.com',
+        userDisplayName: 'Another',
+        currency: 'EUR' as const,
+        youOwe: '30.00',
+        theyOwe: '0.00',
+        netBalance: '-30.00',
+      };
+
+      mockUseSharingStore.mockReturnValue({
+        ...defaultSharingState,
+        settlementBalances: [usdBalance, eurBalance],
+      });
+
+      renderSharingScreen();
+
+      await waitFor(() => {
+        // Both currencies should be displayed
+        expect(screen.getByText('USD')).toBeTruthy();
+        expect(screen.getByText('EUR')).toBeTruthy();
+        // Both balances should be shown
+        expect(screen.getByText('+$50.00')).toBeTruthy();
+        expect(screen.getByText(/-€30/)).toBeTruthy();
+      });
+    });
+
+    it('shows currency labels only when multiple currencies exist', async () => {
+      mockUseSharingStore.mockReturnValue({
+        ...defaultSharingState,
+        settlementBalances: [mockSettlementBalance], // Single USD balance
+      });
+
+      renderSharingScreen();
+
+      await waitFor(() => {
+        // Should not show currency label for single currency
+        expect(screen.queryByText('USD')).toBeNull();
+        // But should show the balance
+        expect(screen.getByText('+$50.00')).toBeTruthy();
+      });
+    });
+
+    it('aggregates multiple balances of the same currency', async () => {
+      const usdBalance1 = {
+        userId: 'user-2',
+        userEmail: 'friend1@example.com',
+        userDisplayName: 'Friend1',
+        currency: 'USD' as const,
+        youOwe: '0.00',
+        theyOwe: '50.00',
+        netBalance: '50.00',
+      };
+      const usdBalance2 = {
+        userId: 'user-3',
+        userEmail: 'friend2@example.com',
+        userDisplayName: 'Friend2',
+        currency: 'USD' as const,
+        youOwe: '20.00',
+        theyOwe: '0.00',
+        netBalance: '-20.00',
+      };
+
+      mockUseSharingStore.mockReturnValue({
+        ...defaultSharingState,
+        settlementBalances: [usdBalance1, usdBalance2],
+      });
+
+      renderSharingScreen();
+
+      await waitFor(() => {
+        // Net balance should be aggregated: 50 - 20 = 30 (they owe 50, you owe 20)
+        expect(screen.getByText('+$30.00')).toBeTruthy();
+        expect(screen.getByText('You are owed overall')).toBeTruthy();
+      });
+    });
+
+    it('shows empty state when no balances exist', async () => {
+      mockUseSharingStore.mockReturnValue({
+        ...defaultSharingState,
+        settlementBalances: [],
+      });
+
+      renderSharingScreen();
+
+      await waitFor(() => {
+        expect(screen.getByText('No balances yet')).toBeTruthy();
+      });
+    });
+  });
 });
