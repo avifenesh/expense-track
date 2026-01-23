@@ -38,7 +38,7 @@ import { DashboardData } from '@/lib/finance'
 import { formatCurrency, formatRelativeAmount } from '@/utils/format'
 import { formatMonthLabel, shiftMonth } from '@/utils/date'
 import { cn } from '@/utils/cn'
-import { useCsrfToken } from '@/hooks/useCsrfToken'
+import { useCsrfTokenWithState } from '@/hooks/useCsrfToken'
 import { ChatWidget } from '@/components/ai/chat-widget'
 import {
   BudgetsTab,
@@ -136,13 +136,23 @@ const STAT_VARIANT_STYLES: Record<
 
 function resolveStatIcon(label: string) {
   const normalized = label.toLowerCase()
-  if (normalized.includes('net') || normalized.includes('saved') || normalized.includes('income') || normalized.includes('inflow')) {
+  if (
+    normalized.includes('net') ||
+    normalized.includes('saved') ||
+    normalized.includes('income') ||
+    normalized.includes('inflow')
+  ) {
     return Wallet
   }
   if (normalized.includes('spend') || normalized.includes('expense') || normalized.includes('outflow')) {
     return PiggyBank
   }
-  if (normalized.includes('target') || normalized.includes('goal') || normalized.includes('budget') || normalized.includes('track')) {
+  if (
+    normalized.includes('target') ||
+    normalized.includes('goal') ||
+    normalized.includes('budget') ||
+    normalized.includes('track')
+  ) {
     return Layers
   }
   return TrendingUp
@@ -152,7 +162,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const csrfToken = useCsrfToken()
+  const { token: csrfToken, isLoading: isCsrfLoading } = useCsrfTokenWithState()
 
   // Get user's preferred currency for formatting
   const preferredCurrency = data.preferredCurrency || Currency.USD
@@ -194,58 +204,52 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   }, [])
 
   // Settings menu keyboard navigation with arrow keys and focus trap
-  const handleMenuKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      // Get only enabled menu items (skip disabled ones)
-      const menuItems = settingsMenuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])')
-      if (!menuItems || menuItems.length === 0) return
+  const handleMenuKeyDown = useCallback((event: KeyboardEvent) => {
+    // Get only enabled menu items (skip disabled ones)
+    const menuItems = settingsMenuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])')
+    if (!menuItems || menuItems.length === 0) return
 
-      const itemCount = menuItems.length
+    const itemCount = menuItems.length
 
-      // Find current index among enabled items
-      const currentEnabledIndex = Array.from(menuItems).findIndex(
-        (item) => item === document.activeElement,
-      )
+    // Find current index among enabled items
+    const currentEnabledIndex = Array.from(menuItems).findIndex((item) => item === document.activeElement)
 
-      switch (event.key) {
-        case 'ArrowDown':
-          event.preventDefault()
-          {
-            const nextIndex = currentEnabledIndex < 0 ? 0 : (currentEnabledIndex + 1) % itemCount
-            ;(menuItems[nextIndex] as HTMLElement)?.focus()
-          }
-          break
-        case 'ArrowUp':
-          event.preventDefault()
-          {
-            const prevIndex =
-              currentEnabledIndex < 0 ? itemCount - 1 : (currentEnabledIndex - 1 + itemCount) % itemCount
-            ;(menuItems[prevIndex] as HTMLElement)?.focus()
-          }
-          break
-        case 'Escape':
-          event.preventDefault()
-          setShowSettingsMenu(false)
-          settingsButtonRef.current?.focus()
-          break
-        case 'Tab':
-          // Close menu on Tab to prevent double focus movement
-          event.preventDefault()
-          setShowSettingsMenu(false)
-          settingsButtonRef.current?.focus()
-          break
-        case 'Home':
-          event.preventDefault()
-          ;(menuItems[0] as HTMLElement)?.focus()
-          break
-        case 'End':
-          event.preventDefault()
-          ;(menuItems[itemCount - 1] as HTMLElement)?.focus()
-          break
-      }
-    },
-    [],
-  )
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault()
+        {
+          const nextIndex = currentEnabledIndex < 0 ? 0 : (currentEnabledIndex + 1) % itemCount
+          ;(menuItems[nextIndex] as HTMLElement)?.focus()
+        }
+        break
+      case 'ArrowUp':
+        event.preventDefault()
+        {
+          const prevIndex = currentEnabledIndex < 0 ? itemCount - 1 : (currentEnabledIndex - 1 + itemCount) % itemCount
+          ;(menuItems[prevIndex] as HTMLElement)?.focus()
+        }
+        break
+      case 'Escape':
+        event.preventDefault()
+        setShowSettingsMenu(false)
+        settingsButtonRef.current?.focus()
+        break
+      case 'Tab':
+        // Close menu on Tab to prevent double focus movement
+        event.preventDefault()
+        setShowSettingsMenu(false)
+        settingsButtonRef.current?.focus()
+        break
+      case 'Home':
+        event.preventDefault()
+        ;(menuItems[0] as HTMLElement)?.focus()
+        break
+      case 'End':
+        event.preventDefault()
+        ;(menuItems[itemCount - 1] as HTMLElement)?.focus()
+        break
+    }
+  }, [])
 
   // Focus management and position calculation when menu opens
   useEffect(() => {
@@ -362,11 +366,21 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
   }
 
   const handleRefreshRates = () => {
+    if (!csrfToken) {
+      return
+    }
     startRates(async () => {
       await refreshExchangeRatesAction({ csrfToken })
       router.refresh()
     })
   }
+
+  const isRefreshRatesDisabled = isPendingRates || isCsrfLoading || !csrfToken
+  const refreshRatesLabel = isCsrfLoading
+    ? 'Loading security token…'
+    : !csrfToken
+      ? 'Security token unavailable'
+      : 'Refresh exchange rates'
 
   const netDeltaVariant = netDelta >= 0 ? 'text-emerald-300' : 'text-rose-300'
 
@@ -438,11 +452,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             </Button>
             {showSettingsMenu && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowSettingsMenu(false)}
-                  aria-hidden="true"
-                />
+                <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} aria-hidden="true" />
                 <div
                   ref={settingsMenuRef}
                   id="settings-menu"
@@ -660,9 +670,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
             return (
               <div className="relative z-10 mt-2 rounded-xl border border-white/15 bg-white/5 p-4 backdrop-blur">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-300">
-                    {expandedStat} breakdown
-                  </p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-300">{expandedStat} breakdown</p>
                   <button
                     type="button"
                     onClick={() => setExpandedStat(null)}
@@ -692,8 +700,9 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
               variant="ghost"
               className="h-6 px-2 text-xs text-slate-300 hover:bg-white/10"
               onClick={handleRefreshRates}
-              disabled={isPendingRates}
-              title="Refresh exchange rates"
+              disabled={isRefreshRatesDisabled}
+              title={refreshRatesLabel}
+              aria-label={refreshRatesLabel}
             >
               <RefreshCcw className={cn('h-3 w-3', isPendingRates && 'animate-spin')} />
             </Button>
