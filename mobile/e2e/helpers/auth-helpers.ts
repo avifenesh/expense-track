@@ -149,23 +149,18 @@ export async function registerUser(
   // Submit registration
   await element(by.id('register.submitButton')).tap();
 
-  // App always shows VerifyEmail screen after registration
   // For @test.local emails, the user is auto-verified in the backend
-  // so we can proceed to login immediately
-  try {
-    await waitFor(element(by.id('verifyEmail.screen')))
+  // and the app navigates directly to Login screen.
+  // For regular emails, VerifyEmail screen is shown.
+  const isTestEmail = email.toLowerCase().endsWith('@test.local');
+
+  if (isTestEmail) {
+    // Test users go directly to login screen after registration
+    await waitFor(element(by.id('login.screen')))
       .toBeVisible()
       .withTimeout(15000);
 
-    // Navigate back to login
-    await element(by.id('verifyEmail.backButton')).tap();
-
-    await waitFor(element(by.id('login.screen')))
-      .toBeVisible()
-      .withTimeout(5000);
-
     // Login with the newly registered credentials
-    // Clear inputs first (typeText appends, not replaces)
     await element(by.id('login.emailInput')).tap();
     await element(by.id('login.emailInput')).clearText();
     await element(by.id('login.emailInput')).typeText(email);
@@ -184,11 +179,11 @@ export async function registerUser(
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
       .withTimeout(15000);
-  } catch {
-    // Direct to onboarding (some configurations might skip verify email)
-    await waitFor(element(by.id('onboarding.welcome.screen')))
+  } else {
+    // Regular emails show VerifyEmail screen
+    await waitFor(element(by.id('verifyEmail.screen')))
       .toBeVisible()
-      .withTimeout(5000);
+      .withTimeout(15000);
   }
 }
 

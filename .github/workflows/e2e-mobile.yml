@@ -128,7 +128,7 @@ jobs:
       - name: Install emulator dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libvulkan1 libx11-6 libx11-xcb1
+          sudo apt-get install -y libvulkan1 libx11-6 libx11-xcb1 libxcb1 libxcb-render0 libxcb-shm0
 
       - name: Checkout code
         uses: actions/checkout@v4

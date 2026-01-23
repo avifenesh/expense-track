@@ -66,6 +66,47 @@ describe('POST /api/v1/auth/register', () => {
       expect(response.status).toBe(201)
       expect(data.success).toBe(true)
       expect(data.data.message).toContain('verification email')
+      expect(data.data.emailVerified).toBe(false)
+    })
+
+    it('creates default Personal account for new user', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+      vi.mocked(prisma.user.create).mockResolvedValueOnce({
+        id: 'new-user-id',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        passwordHash: 'hashed',
+        emailVerified: false,
+        emailVerificationToken: 'token',
+        emailVerificationExpires: new Date(),
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        preferredCurrency: 'USD',
+        hasCompletedOnboarding: false,
+        activeAccountId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      await registerPost(
+        buildRequest({
+          email: 'test@example.com',
+          password: 'Password123',
+          displayName: 'Test User',
+        }),
+      )
+
+      // Verify user was created with default account
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          accounts: {
+            create: {
+              name: 'Personal',
+              type: 'SELF',
+            },
+          },
+        }),
+      })
     })
 
     it('returns success even for existing email (email enumeration protection)', async () => {
@@ -122,7 +163,7 @@ describe('POST /api/v1/auth/register', () => {
         updatedAt: new Date(),
       })
 
-      await registerPost(
+      const response = await registerPost(
         buildRequest({
           email: 'e2e-test@test.local',
           password: 'Password123',
@@ -130,13 +171,23 @@ describe('POST /api/v1/auth/register', () => {
         }),
       )
 
-      // Verify user was created with auto-verification
+      const data = await response.json()
+      // Response should indicate emailVerified: true for test users
+      expect(data.data.emailVerified).toBe(true)
+
+      // Verify user was created with auto-verification and default account
       expect(prisma.user.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           email: 'e2e-test@test.local',
           emailVerified: true,
           emailVerificationToken: null,
           emailVerificationExpires: null,
+          accounts: {
+            create: {
+              name: 'Personal',
+              type: 'SELF',
+            },
+          },
         }),
       })
     })
