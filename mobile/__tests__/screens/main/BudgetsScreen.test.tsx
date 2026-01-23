@@ -557,7 +557,9 @@ describe('BudgetsScreen', () => {
       });
 
       await waitFor(() => {
-        expect(navigate).toHaveBeenCalledWith('CreateBudget');
+        expect(navigate).toHaveBeenCalledWith('CreateBudget', {
+          initialMonth: expect.any(String),
+        });
       });
     });
   });

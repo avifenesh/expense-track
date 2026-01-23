@@ -156,8 +156,8 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   }, []);
 
   const handleAddBudget = useCallback(() => {
-    navigation.navigate('CreateBudget');
-  }, [navigation]);
+    navigation.navigate('CreateBudget', { initialMonth: selectedMonth });
+  }, [navigation, selectedMonth]);
 
   const isLoading =
     accountsLoading ||

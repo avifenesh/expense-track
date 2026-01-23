@@ -42,6 +42,7 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 
 export function AddBudgetScreen({
   navigation,
+  route,
 }: AppStackScreenProps<'CreateBudget'>) {
   const { accounts, activeAccountId } = useAccountsStore();
   const { budgets, createOrUpdateBudget } = useBudgetsStore();
@@ -56,7 +57,9 @@ export function AddBudgetScreen({
 
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
+  const [selectedMonth, setSelectedMonth] = useState(
+    route.params?.initialMonth || getMonthKey()
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 

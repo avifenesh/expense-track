@@ -735,6 +735,26 @@ describe('AddBudgetScreen', () => {
         expect(nextButton.props.accessibilityState?.disabled).toBeFalsy();
       });
     });
+
+    it('uses initialMonth from navigation params when provided', async () => {
+      const customMonth = '2025-06';
+      const routeWithMonth = {
+        key: 'CreateBudget',
+        name: 'CreateBudget' as const,
+        params: { initialMonth: customMonth },
+      } as AppStackScreenProps<'CreateBudget'>['route'];
+
+      render(
+        <NavigationContainer>
+          <AddBudgetScreen navigation={mockNavigation} route={routeWithMonth} />
+        </NavigationContainer>
+      );
+
+      await waitFor(() => {
+        // The month selector should show June 2025
+        expect(screen.getByText('June 2025')).toBeTruthy();
+      });
+    });
   });
 
   describe('Accessibility', () => {
