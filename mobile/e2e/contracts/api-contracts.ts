@@ -52,8 +52,8 @@ export const UserProfileContract = z.object({
 export const AccountContract = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum(['CHECKING', 'SAVINGS', 'CREDIT', 'CASH', 'INVESTMENT', 'OTHER']),
-  preferredCurrency: z.enum(['USD', 'EUR', 'ILS']),
+  type: z.enum(['SELF', 'PARTNER', 'OTHER']),
+  preferredCurrency: z.enum(['USD', 'EUR', 'ILS']).nullable(),
   color: z.string().nullable(),
   icon: z.string().nullable(),
   description: z.string().nullable(),
@@ -135,13 +135,11 @@ export const SeedDataResponseContract = z.object({
 
 // ============ Error Contract ============
 
+// API errors return { error: string, code?: string, fields?: Record<string, string[]> }
 export const ApiErrorContract = z.object({
-  success: z.literal(false),
-  error: z.object({
-    message: z.string(),
-    code: z.string().optional(),
-    details: z.record(z.array(z.string())).optional(),
-  }),
+  error: z.string(),
+  code: z.string().optional(),
+  fields: z.record(z.array(z.string())).optional(),
 });
 
 // ============ Type Exports ============
