@@ -129,23 +129,25 @@ describe('POST /api/v1/onboarding/skip', () => {
       data: { status: 'EXPIRED' },
     })
 
-    const request = new NextRequest('http://localhost/api/v1/onboarding/skip', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${validToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
+    try {
+      const request = new NextRequest('http://localhost/api/v1/onboarding/skip', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
 
-    const response = await SkipOnboarding(request)
-    expect(response.status).toBe(200)
-
-    const trialEndsAt = new Date()
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14)
-    await prisma.subscription.update({
-      where: { userId: TEST_USER_ID },
-      data: { status: 'TRIALING', trialEndsAt },
-    })
+      const response = await SkipOnboarding(request)
+      expect(response.status).toBe(200)
+    } finally {
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      await prisma.subscription.update({
+        where: { userId: TEST_USER_ID },
+        data: { status: 'TRIALING', trialEndsAt },
+      })
+    }
   })
 
   it('does not require request body', async () => {
