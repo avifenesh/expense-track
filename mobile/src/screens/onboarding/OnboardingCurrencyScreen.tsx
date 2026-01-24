@@ -1,25 +1,24 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { OnboardingScreenProps } from '../../navigation/types';
-import { useOnboardingStore, type Currency } from '../../stores';
+import React from 'react'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { OnboardingScreenProps } from '../../navigation/types'
+import { useOnboardingStore } from '../../stores'
+import { CURRENCIES } from '../../constants/currencies'
 
-const CURRENCIES = [
-  { code: 'USD' as Currency, symbol: '$', name: 'USD - US Dollar' },
-  { code: 'EUR' as Currency, symbol: '€', name: 'EUR - Euro' },
-  { code: 'ILS' as Currency, symbol: '₪', name: 'ILS - Israeli Shekel' },
-];
-
-export function OnboardingCurrencyScreen({
-  navigation,
-}: OnboardingScreenProps<'OnboardingCurrency'>) {
-  const { selectedCurrency, setCurrency } = useOnboardingStore();
+export function OnboardingCurrencyScreen({ navigation }: OnboardingScreenProps<'OnboardingCurrency'>) {
+  // Use individual selectors to prevent infinite re-render loops
+  const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency)
+  const setCurrency = useOnboardingStore((state) => state.setCurrency)
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.currency.screen">
       <View style={styles.content} testID="onboarding.currency.content">
-        <Text style={styles.stepIndicator} testID="onboarding.currency.stepIndicator">Step 1 of 5</Text>
-        <Text style={styles.title} testID="onboarding.currency.title">Choose Currency</Text>
+        <Text style={styles.stepIndicator} testID="onboarding.currency.stepIndicator">
+          Step 1 of 5
+        </Text>
+        <Text style={styles.title} testID="onboarding.currency.title">
+          Choose Currency
+        </Text>
         <Text style={styles.subtitle} testID="onboarding.currency.subtitle">
           Select your preferred currency for tracking expenses
         </Text>
@@ -28,15 +27,12 @@ export function OnboardingCurrencyScreen({
           {CURRENCIES.map((currency) => (
             <Pressable
               key={currency.code}
-              style={[
-                styles.option,
-                selectedCurrency === currency.code && styles.optionSelected,
-              ]}
+              style={[styles.option, selectedCurrency === currency.code && styles.optionSelected]}
               onPress={() => setCurrency(currency.code)}
               testID={`onboarding.currency.option.${currency.code}`}
             >
               <Text style={styles.optionSymbol}>{currency.symbol}</Text>
-              <Text style={styles.optionText}>{currency.name}</Text>
+              <Text style={styles.optionText}>{`${currency.code} - ${currency.name}`}</Text>
             </Pressable>
           ))}
         </View>
@@ -50,7 +46,7 @@ export function OnboardingCurrencyScreen({
         </Pressable>
       </View>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -118,4 +114,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

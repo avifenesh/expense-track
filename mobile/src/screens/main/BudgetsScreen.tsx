@@ -30,37 +30,30 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const {
-    accounts,
-    activeAccountId,
-    isLoading: accountsLoading,
-    error: accountsError,
-    fetchAccounts,
-  } = useAccountsStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const accountsLoading = useAccountsStore((state) => state.isLoading);
+  const accountsError = useAccountsStore((state) => state.error);
+  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
 
-  const {
-    transactions,
-    isLoading: transactionsLoading,
-    error: transactionsError,
-    setFilters: setTransactionFilters,
-    fetchTransactions,
-  } = useTransactionsStore();
+  const transactions = useTransactionsStore((state) => state.transactions);
+  const transactionsLoading = useTransactionsStore((state) => state.isLoading);
+  const transactionsError = useTransactionsStore((state) => state.error);
+  const setTransactionFilters = useTransactionsStore((state) => state.setFilters);
+  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
 
-  const {
-    budgets,
-    isLoading: budgetsLoading,
-    error: budgetsError,
-    setFilters: setBudgetFilters,
-    setSelectedMonth: setBudgetSelectedMonth,
-    fetchBudgets,
-  } = useBudgetsStore();
+  const budgets = useBudgetsStore((state) => state.budgets);
+  const budgetsLoading = useBudgetsStore((state) => state.isLoading);
+  const budgetsError = useBudgetsStore((state) => state.error);
+  const setBudgetFilters = useBudgetsStore((state) => state.setFilters);
+  const setBudgetSelectedMonth = useBudgetsStore((state) => state.setSelectedMonth);
+  const fetchBudgets = useBudgetsStore((state) => state.fetchBudgets);
 
-  const {
-    categories,
-    isLoading: categoriesLoading,
-    error: categoriesError,
-    fetchCategories,
-  } = useCategoriesStore();
+  const categories = useCategoriesStore((state) => state.categories);
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
+  const categoriesError = useCategoriesStore((state) => state.error);
+  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';

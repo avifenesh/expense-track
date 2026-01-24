@@ -1,66 +1,70 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { MainTabScreenProps } from '../../navigation/types';
-import { APP_NAME, APP_VERSION } from '../../constants';
-import { useAuthStore } from '../../stores';
-import { getBiometricTypeLabel } from '../../services/biometric';
+import React, { useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { MainTabScreenProps } from '../../navigation/types'
+import { APP_NAME, APP_VERSION } from '../../constants'
+import { useAuthStore } from '../../stores'
+import { getBiometricTypeLabel } from '../../services/biometric'
 
-export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
-  const logout = useAuthStore((state) => state.logout);
-  const biometricCapability = useAuthStore((state) => state.biometricCapability);
-  const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled);
-  const enableBiometric = useAuthStore((state) => state.enableBiometric);
-  const disableBiometric = useAuthStore((state) => state.disableBiometric);
+export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
+  const logout = useAuthStore((state) => state.logout)
+  const biometricCapability = useAuthStore((state) => state.biometricCapability)
+  const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled)
+  const enableBiometric = useAuthStore((state) => state.enableBiometric)
+  const disableBiometric = useAuthStore((state) => state.disableBiometric)
 
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
-  const [biometricError, setBiometricError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false)
+  const [biometricError, setBiometricError] = useState<string | null>(null)
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
+    setIsLoggingOut(true)
     try {
-      await logout();
+      await logout()
     } finally {
-      setIsLoggingOut(false);
+      setIsLoggingOut(false)
     }
-  };
+  }
 
   const handleToggleBiometric = async () => {
-    setBiometricError(null);
-    setIsBiometricLoading(true);
+    setBiometricError(null)
+    setIsBiometricLoading(true)
     try {
       if (isBiometricEnabled) {
-        await disableBiometric();
+        await disableBiometric()
       } else {
-        await enableBiometric();
+        await enableBiometric()
       }
     } catch (err) {
       if (err instanceof Error) {
-        setBiometricError(err.message);
+        setBiometricError(err.message)
       } else {
-        setBiometricError('Failed to update biometric settings');
+        setBiometricError('Failed to update biometric settings')
       }
     } finally {
-      setIsBiometricLoading(false);
+      setIsBiometricLoading(false)
     }
-  };
+  }
 
-  const biometricLabel = biometricCapability
-    ? getBiometricTypeLabel(biometricCapability.biometricType)
-    : 'Biometric';
+  const biometricLabel = biometricCapability ? getBiometricTypeLabel(biometricCapability.biometricType) : 'Biometric'
 
-  const showBiometricOption = biometricCapability?.isAvailable;
+  const showBiometricOption = biometricCapability?.isAvailable
 
   return (
     <SafeAreaView style={styles.container} edges={['top']} testID="settings.screen">
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} testID="settings.scrollView">
-        <Text style={styles.title} testID="settings.title">Settings</Text>
+        <Text style={styles.title} testID="settings.title">
+          Settings
+        </Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.menuGroup}>
-            <Pressable style={styles.menuItem}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('Profile')}
+              testID="settings.profileButton"
+            >
               <Text style={styles.menuText}>Profile</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
@@ -145,19 +149,15 @@ export function SettingsScreen(_props: MainTabScreenProps<'Settings'>) {
           style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
           onPress={handleLogout}
           disabled={isLoggingOut}
-          testID="settings.logoutButton"
+          testID="logout-button"
         >
-          {isLoggingOut ? (
-            <ActivityIndicator color="#ef4444" />
-          ) : (
-            <Text style={styles.logoutText}>Sign Out</Text>
-          )}
+          {isLoggingOut ? <ActivityIndicator color="#ef4444" /> : <Text style={styles.logoutText}>Sign Out</Text>}
         </Pressable>
 
         <Text style={styles.appName}>{APP_NAME}</Text>
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -255,4 +255,4 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontSize: 14,
   },
-});
+})

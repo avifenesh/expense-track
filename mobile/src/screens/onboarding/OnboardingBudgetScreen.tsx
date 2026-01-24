@@ -8,7 +8,10 @@ import { CURRENCY_SYMBOLS } from '../../constants/categories';
 export function OnboardingBudgetScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingBudget'>) {
-  const { selectedCurrency, monthlyBudget, setBudget } = useOnboardingStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency);
+  const monthlyBudget = useOnboardingStore((state) => state.monthlyBudget);
+  const setBudget = useOnboardingStore((state) => state.setBudget);
   const [inputValue, setInputValue] = useState(
     monthlyBudget ? monthlyBudget.toString() : ''
   );

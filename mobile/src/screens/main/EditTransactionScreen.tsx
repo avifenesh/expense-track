@@ -94,13 +94,15 @@ export function EditTransactionScreen({
 }: AppStackScreenProps<'EditTransaction'>) {
   const { transactionId } = route.params;
 
-  const { accounts, activeAccountId } = useAccountsStore();
-  const { transactions, updateTransaction, deleteTransaction } = useTransactionsStore();
-  const {
-    categories,
-    isLoading: categoriesLoading,
-    fetchCategories,
-  } = useCategoriesStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const transactions = useTransactionsStore((state) => state.transactions);
+  const updateTransaction = useTransactionsStore((state) => state.updateTransaction);
+  const deleteTransaction = useTransactionsStore((state) => state.deleteTransaction);
+  const categories = useCategoriesStore((state) => state.categories);
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
+  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const transaction = useMemo(
     () => transactions.find((t) => t.id === transactionId),

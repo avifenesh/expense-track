@@ -224,19 +224,20 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
 
-  const {
-    sharedByMe,
-    sharedWithMe,
-    settlementBalances,
-    isLoading,
-    error,
-    fetchSharing,
-    markParticipantPaid,
-    clearError,
-  } = useSharingStore()
+  // Use individual selectors to prevent infinite re-render loops
+  const sharedByMe = useSharingStore((state) => state.sharedByMe)
+  const sharedWithMe = useSharingStore((state) => state.sharedWithMe)
+  const settlementBalances = useSharingStore((state) => state.settlementBalances)
+  const isLoading = useSharingStore((state) => state.isLoading)
+  const error = useSharingStore((state) => state.error)
+  const fetchSharing = useSharingStore((state) => state.fetchSharing)
+  const markParticipantPaid = useSharingStore((state) => state.markParticipantPaid)
+  const clearError = useSharingStore((state) => state.clearError)
 
-  const { fetchTransactions, filters, setFilters } = useTransactionsStore()
-  const { activeAccountId } = useAccountsStore()
+  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions)
+  const filters = useTransactionsStore((state) => state.filters)
+  const setFilters = useTransactionsStore((state) => state.setFilters)
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
   useEffect(() => {
     fetchSharing()
