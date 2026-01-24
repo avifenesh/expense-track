@@ -62,10 +62,12 @@ export function ShareExpenseScreen({
 }: AppStackScreenProps<'ShareExpense'>) {
   const { transactionId } = route.params;
 
-  // Stores
-  const { transactions } = useTransactionsStore();
-  const { accounts, activeAccountId } = useAccountsStore();
-  const { createSharedExpense, lookupUser } = useSharingStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const transactions = useTransactionsStore((state) => state.transactions);
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const createSharedExpense = useSharingStore((state) => state.createSharedExpense);
+  const lookupUser = useSharingStore((state) => state.lookupUser);
 
   // Find the transaction
   const transaction = useMemo(

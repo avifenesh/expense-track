@@ -51,25 +51,21 @@ function groupTransactionsByDate(transactions: Transaction[]): DateSection[] {
 
 export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transactions'>) {
   const [filterType, setFilterType] = useState<FilterType>('all');
-
-  const {
-    transactions,
-    isLoading,
-    error,
-    hasMore,
-    fetchTransactions,
-    fetchMoreTransactions,
-    setFilters,
-  } = useTransactionsStore();
-
-  const {
-    accounts,
-    activeAccountId,
-    isLoading: isLoadingAccounts,
-    fetchAccounts,
-  } = useAccountsStore();
-
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Use individual selectors to prevent infinite re-render loops
+  const transactions = useTransactionsStore((state) => state.transactions);
+  const isLoading = useTransactionsStore((state) => state.isLoading);
+  const error = useTransactionsStore((state) => state.error);
+  const hasMore = useTransactionsStore((state) => state.hasMore);
+  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
+  const fetchMoreTransactions = useTransactionsStore((state) => state.fetchMoreTransactions);
+  const setFilters = useTransactionsStore((state) => state.setFilters);
+
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const isLoadingAccounts = useAccountsStore((state) => state.isLoading);
+  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
 
   useEffect(() => {
     async function init() {

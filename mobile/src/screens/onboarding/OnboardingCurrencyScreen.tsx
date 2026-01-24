@@ -13,7 +13,9 @@ const CURRENCIES = [
 export function OnboardingCurrencyScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingCurrency'>) {
-  const { selectedCurrency, setCurrency } = useOnboardingStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency);
+  const setCurrency = useOnboardingStore((state) => state.setCurrency);
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.currency.screen">

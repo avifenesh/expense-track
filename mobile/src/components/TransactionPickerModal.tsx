@@ -37,9 +37,12 @@ export function TransactionPickerModal({
 }: TransactionPickerModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { transactions, isLoading } = useTransactionsStore();
-  const { sharedByMe } = useSharingStore();
-  const { accounts, activeAccountId } = useAccountsStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const transactions = useTransactionsStore((state) => state.transactions);
+  const isLoading = useTransactionsStore((state) => state.isLoading);
+  const sharedByMe = useSharingStore((state) => state.sharedByMe);
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
