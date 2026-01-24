@@ -15,6 +15,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
   },
 }))
@@ -35,6 +36,7 @@ vi.mock('@/lib/server-logger', () => ({
 }))
 
 import { GET } from '@/app/api/v1/users/me/route'
+import { PATCH } from '@/app/api/v1/users/me/route'
 import { requireJwtAuth } from '@/lib/api-auth'
 import { getSubscriptionState } from '@/lib/subscription'
 import { prisma } from '@/lib/prisma'
@@ -139,7 +141,7 @@ describe('GET /api/v1/users/me', () => {
         displayName: 'Test User',
         preferredCurrency: 'USD',
         hasCompletedOnboarding: true,
-    activeAccountId: null,
+        activeAccountId: null,
         subscription: {
           status: 'TRIALING',
           isActive: true,
@@ -327,7 +329,7 @@ describe('GET /api/v1/users/me', () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({
         ...mockUser,
         hasCompletedOnboarding: false,
-    activeAccountId: null,
+        activeAccountId: null,
       })
       vi.mocked(getSubscriptionState).mockResolvedValue(mockSubscriptionState)
 
@@ -368,6 +370,211 @@ describe('GET /api/v1/users/me', () => {
 
       const request = new NextRequest('http://localhost/api/v1/users/me')
       const response = await GET(request)
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.error).toBe('An unexpected error occurred')
+    })
+  })
+})
+
+describe('PATCH /api/v1/users/me', () => {
+  const mockUser = {
+    id: 'user-123',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    preferredCurrency: Currency.USD,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(checkRateLimitTyped).mockReturnValue({ allowed: true, limit: 100, remaining: 99, resetAt: new Date() })
+  })
+
+  describe('authentication', () => {
+    it('should return 401 if not authenticated', async () => {
+      vi.mocked(requireJwtAuth).mockImplementation(() => {
+        throw new Error('Unauthorized')
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: 'New Name' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(401)
+      const body = await response.json()
+      expect(body.error).toBe('Unauthorized')
+    })
+  })
+
+  describe('validation', () => {
+    it('should return 400 for invalid JSON', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: 'invalid json',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.fields?.body).toBeDefined()
+    })
+
+    it('should return 400 when displayName is missing', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.fields?.displayName).toBeDefined()
+    })
+
+    it('should return 400 when displayName is empty', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: '' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.fields?.displayName).toBeDefined()
+    })
+
+    it('should return 400 when displayName is only whitespace', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: '   ' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.fields?.displayName).toBeDefined()
+    })
+
+    it('should return 400 when displayName exceeds 100 characters', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: 'a'.repeat(101) }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.fields?.displayName).toBeDefined()
+    })
+  })
+
+  describe('profile update', () => {
+    it('should update display name successfully', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      vi.mocked(prisma.user.update).mockResolvedValue({
+        ...mockUser,
+        displayName: 'Updated Name',
+      } as never)
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: 'Updated Name' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.data.displayName).toBe('Updated Name')
+      expect(body.data.id).toBe('user-123')
+      expect(body.data.email).toBe('test@example.com')
+    })
+
+    it('should trim whitespace from display name', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      vi.mocked(prisma.user.update).mockResolvedValue({
+        ...mockUser,
+        displayName: 'Trimmed Name',
+      } as never)
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: '  Trimmed Name  ' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
+
+      expect(response.status).toBe(200)
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-123' },
+        data: { displayName: 'Trimmed Name' },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          preferredCurrency: true,
+        },
+      })
+    })
+  })
+
+  describe('error handling', () => {
+    it('should return 500 when database update fails', async () => {
+      vi.mocked(requireJwtAuth).mockReturnValue({
+        userId: 'user-123',
+        email: 'test@example.com',
+      })
+
+      vi.mocked(prisma.user.update).mockRejectedValue(new Error('Database error'))
+
+      const request = new NextRequest('http://localhost/api/v1/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: 'New Name' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const response = await PATCH(request)
 
       expect(response.status).toBe(500)
       const body = await response.json()
