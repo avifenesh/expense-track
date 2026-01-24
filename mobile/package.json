@@ -21,7 +21,8 @@
     "e2e:build:ios:release": "detox build --configuration ios.sim.release",
     "e2e:build:android:release": "detox build --configuration android.emu.release",
     "e2e:test:ios:release": "detox test --configuration ios.sim.release",
-    "e2e:test:android:release": "node scripts/run-e2e.js --configuration android.emu.release"
+    "e2e:test:android:release": "node scripts/run-e2e.js --configuration android.emu.release",
+    "e2e:test:android:attached": "node scripts/run-e2e.js --configuration android.att.release"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
