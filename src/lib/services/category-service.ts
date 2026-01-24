@@ -136,13 +136,20 @@ export async function updateCategory(input: UpdateCategoryInput): Promise<Update
     return { success: false, error: 'DUPLICATE' }
   }
 
-  const category = await prisma.category.update({
-    where: { id: input.id, userId: input.userId },
-    data: {
-      name: input.name,
-      color: input.color !== undefined ? input.color : undefined,
-    },
-  })
+  try {
+    const category = await prisma.category.update({
+      where: { id: input.id, userId: input.userId },
+      data: {
+        name: input.name,
+        color: input.color !== undefined ? input.color : undefined,
+      },
+    })
 
-  return { success: true, category }
+    return { success: true, category }
+  } catch (error) {
+    if (isPrismaUniqueConstraintError(error)) {
+      return { success: false, error: 'DUPLICATE' }
+    }
+    throw error
+  }
 }

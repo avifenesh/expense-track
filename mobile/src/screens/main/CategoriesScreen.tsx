@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useReducer } from 'react'
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { AppStackScreenProps } from '../../navigation/types'
 import { useCategoriesStore, useToastStore, type Category, type TransactionType } from '../../stores'
+import { validateCategoryName } from '../../utils/validation'
 
 const EXPENSE_COLORS = [
   '#22c55e',
@@ -35,26 +36,114 @@ const INCOME_COLORS = ['#10b981', '#06b6d4', '#8b5cf6', '#6b7280']
 
 type TabType = 'EXPENSE' | 'INCOME'
 
+interface CreateModalState {
+  visible: boolean
+  name: string
+  color: string
+  type: TransactionType
+  error: string | null
+  isSubmitting: boolean
+}
+
+type CreateModalAction =
+  | { type: 'OPEN'; payload: { type: TransactionType; color: string } }
+  | { type: 'CLOSE' }
+  | { type: 'SET_NAME'; payload: string }
+  | { type: 'SET_COLOR'; payload: string }
+  | { type: 'SET_TYPE'; payload: { type: TransactionType; color: string } }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_SUBMITTING'; payload: boolean }
+
+const createInitialState: CreateModalState = {
+  visible: false,
+  name: '',
+  color: EXPENSE_COLORS[0],
+  type: 'EXPENSE',
+  error: null,
+  isSubmitting: false,
+}
+
+function createReducer(state: CreateModalState, action: CreateModalAction): CreateModalState {
+  switch (action.type) {
+    case 'OPEN':
+      return { ...createInitialState, visible: true, type: action.payload.type, color: action.payload.color }
+    case 'CLOSE':
+      return { ...state, visible: false }
+    case 'SET_NAME':
+      return { ...state, name: action.payload, error: null }
+    case 'SET_COLOR':
+      return { ...state, color: action.payload }
+    case 'SET_TYPE':
+      return { ...state, type: action.payload.type, color: action.payload.color }
+    case 'SET_ERROR':
+      return { ...state, error: action.payload }
+    case 'SET_SUBMITTING':
+      return { ...state, isSubmitting: action.payload }
+    default:
+      return state
+  }
+}
+
+interface EditModalState {
+  visible: boolean
+  category: Category | null
+  name: string
+  color: string
+  error: string | null
+  isSubmitting: boolean
+}
+
+type EditModalAction =
+  | { type: 'OPEN'; payload: { category: Category; color: string } }
+  | { type: 'CLOSE' }
+  | { type: 'SET_NAME'; payload: string }
+  | { type: 'SET_COLOR'; payload: string }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_SUBMITTING'; payload: boolean }
+
+const editInitialState: EditModalState = {
+  visible: false,
+  category: null,
+  name: '',
+  color: '',
+  error: null,
+  isSubmitting: false,
+}
+
+function editReducer(state: EditModalState, action: EditModalAction): EditModalState {
+  switch (action.type) {
+    case 'OPEN':
+      return {
+        visible: true,
+        category: action.payload.category,
+        name: action.payload.category.name,
+        color: action.payload.color,
+        error: null,
+        isSubmitting: false,
+      }
+    case 'CLOSE':
+      return editInitialState
+    case 'SET_NAME':
+      return { ...state, name: action.payload, error: null }
+    case 'SET_COLOR':
+      return { ...state, color: action.payload }
+    case 'SET_ERROR':
+      return { ...state, error: action.payload }
+    case 'SET_SUBMITTING':
+      return { ...state, isSubmitting: action.payload }
+    default:
+      return state
+  }
+}
+
 export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories'>) {
   const categories = useCategoriesStore((state) => state.categories)
   const isLoading = useCategoriesStore((state) => state.isLoading)
   const error = useCategoriesStore((state) => state.error)
 
   const [activeTab, setActiveTab] = useState<TabType>('EXPENSE')
-
-  const [createModalVisible, setCreateModalVisible] = useState(false)
-  const [createName, setCreateName] = useState('')
-  const [createColor, setCreateColor] = useState(EXPENSE_COLORS[0])
-  const [createType, setCreateType] = useState<TransactionType>('EXPENSE')
-  const [createError, setCreateError] = useState<string | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
-
-  const [editModalVisible, setEditModalVisible] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editColor, setEditColor] = useState('')
-  const [editError, setEditError] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
+  const [createState, createDispatch] = useReducer(createReducer, createInitialState)
+  const [editState, editDispatch] = useReducer(editReducer, editInitialState)
 
   useEffect(() => {
     useCategoriesStore.getState().fetchCategories(undefined, true)
@@ -74,108 +163,75 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     return type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS
   }
 
-  const validateName = (name: string): string | null => {
-    const trimmed = name.trim()
-    if (!trimmed) return 'Name is required'
-    if (trimmed.length < 2) return 'Name must be at least 2 characters'
-    if (trimmed.length > 100) return 'Name must be 100 characters or less'
-    // Must start and end with alphanumeric characters (matches server validation)
-    const validNamePattern = /^[\p{L}\p{N}](?:.*\S.*)?[\p{L}\p{N}]$|^[\p{L}\p{N}]{2}$/u
-    if (!validNamePattern.test(trimmed)) {
-      return 'Name must start and end with a letter or number'
-    }
-    return null
-  }
-
   const handleOpenCreate = useCallback(() => {
-    setCreateName('')
-    setCreateColor(activeTab === 'EXPENSE' ? EXPENSE_COLORS[0] : INCOME_COLORS[0])
-    setCreateType(activeTab)
-    setCreateError(null)
-    setCreateModalVisible(true)
+    const color = activeTab === 'EXPENSE' ? EXPENSE_COLORS[0] : INCOME_COLORS[0]
+    createDispatch({ type: 'OPEN', payload: { type: activeTab, color } })
   }, [activeTab])
 
   const handleCreateCancel = useCallback(() => {
-    setCreateModalVisible(false)
-    setCreateName('')
-    setCreateError(null)
+    createDispatch({ type: 'CLOSE' })
   }, [])
 
   const handleCreateSave = useCallback(async () => {
-    const validationError = validateName(createName)
-    if (validationError) {
-      setCreateError(validationError)
+    const validation = validateCategoryName(createState.name)
+    if (!validation.valid) {
+      createDispatch({ type: 'SET_ERROR', payload: validation.error || 'Invalid name' })
       return
     }
 
-    setIsCreating(true)
-    setCreateError(null)
+    createDispatch({ type: 'SET_SUBMITTING', payload: true })
 
     try {
       await useCategoriesStore.getState().createCategory({
-        name: createName.trim(),
-        type: createType,
-        color: createColor,
+        name: createState.name.trim(),
+        type: createState.type,
+        color: createState.color,
       })
       useToastStore.getState().success('Category created')
       handleCreateCancel()
     } catch (err) {
-      if (err instanceof Error) {
-        setCreateError(err.message)
-      } else {
-        setCreateError('Failed to create category')
-      }
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create category'
+      createDispatch({ type: 'SET_ERROR', payload: errorMsg })
     } finally {
-      setIsCreating(false)
+      createDispatch({ type: 'SET_SUBMITTING', payload: false })
     }
-  }, [createName, createType, createColor, handleCreateCancel])
+  }, [createState.name, createState.type, createState.color, handleCreateCancel])
 
   const handleEditPress = useCallback((category: Category) => {
-    setEditingCategory(category)
-    setEditName(category.name)
-    setEditColor(category.color || (category.type === 'EXPENSE' ? EXPENSE_COLORS[0] : INCOME_COLORS[0]))
-    setEditError(null)
-    setEditModalVisible(true)
+    const color = category.color || (category.type === 'EXPENSE' ? EXPENSE_COLORS[0] : INCOME_COLORS[0])
+    editDispatch({ type: 'OPEN', payload: { category, color } })
   }, [])
 
   const handleEditCancel = useCallback(() => {
-    setEditModalVisible(false)
-    setEditingCategory(null)
-    setEditName('')
-    setEditColor('')
-    setEditError(null)
+    editDispatch({ type: 'CLOSE' })
   }, [])
 
   const handleEditSave = useCallback(async () => {
-    if (!editingCategory) return
+    if (!editState.category) return
 
-    const validationError = validateName(editName)
-    if (validationError) {
-      setEditError(validationError)
+    const validation = validateCategoryName(editState.name)
+    if (!validation.valid) {
+      editDispatch({ type: 'SET_ERROR', payload: validation.error || 'Invalid name' })
       return
     }
 
-    setIsEditing(true)
-    setEditError(null)
+    editDispatch({ type: 'SET_SUBMITTING', payload: true })
 
     try {
       await useCategoriesStore.getState().updateCategory({
-        id: editingCategory.id,
-        name: editName.trim(),
-        color: editColor,
+        id: editState.category.id,
+        name: editState.name.trim(),
+        color: editState.color,
       })
       useToastStore.getState().success('Category updated')
       handleEditCancel()
     } catch (err) {
-      if (err instanceof Error) {
-        setEditError(err.message)
-      } else {
-        setEditError('Failed to update category')
-      }
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update category'
+      editDispatch({ type: 'SET_ERROR', payload: errorMsg })
     } finally {
-      setIsEditing(false)
+      editDispatch({ type: 'SET_SUBMITTING', payload: false })
     }
-  }, [editingCategory, editName, editColor, handleEditCancel])
+  }, [editState.category, editState.name, editState.color, handleEditCancel])
 
   const handleArchivePress = useCallback((category: Category) => {
     const action = category.isArchived ? 'unarchive' : 'archive'
@@ -347,24 +403,18 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
       <Text style={styles.inputLabel}>Type</Text>
       <View style={styles.typeSelector}>
         <Pressable
-          style={[styles.typeOption, createType === 'EXPENSE' && styles.typeOptionSelected]}
-          onPress={() => {
-            setCreateType('EXPENSE')
-            setCreateColor(EXPENSE_COLORS[0])
-          }}
+          style={[styles.typeOption, createState.type === 'EXPENSE' && styles.typeOptionSelected]}
+          onPress={() => createDispatch({ type: 'SET_TYPE', payload: { type: 'EXPENSE', color: EXPENSE_COLORS[0] } })}
           testID="categories.createModal.typeExpense"
         >
-          <Text style={[styles.typeOptionText, createType === 'EXPENSE' && styles.typeOptionTextSelected]}>Expense</Text>
+          <Text style={[styles.typeOptionText, createState.type === 'EXPENSE' && styles.typeOptionTextSelected]}>Expense</Text>
         </Pressable>
         <Pressable
-          style={[styles.typeOption, createType === 'INCOME' && styles.typeOptionSelected]}
-          onPress={() => {
-            setCreateType('INCOME')
-            setCreateColor(INCOME_COLORS[0])
-          }}
+          style={[styles.typeOption, createState.type === 'INCOME' && styles.typeOptionSelected]}
+          onPress={() => createDispatch({ type: 'SET_TYPE', payload: { type: 'INCOME', color: INCOME_COLORS[0] } })}
           testID="categories.createModal.typeIncome"
         >
-          <Text style={[styles.typeOptionText, createType === 'INCOME' && styles.typeOptionTextSelected]}>Income</Text>
+          <Text style={[styles.typeOptionText, createState.type === 'INCOME' && styles.typeOptionTextSelected]}>Income</Text>
         </Pressable>
       </View>
     </View>
@@ -427,7 +477,7 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
       )}
 
       {/* Create Modal */}
-      <Modal visible={createModalVisible} transparent animationType="fade" onRequestClose={handleCreateCancel}>
+      <Modal visible={createState.visible} transparent animationType="fade" onRequestClose={handleCreateCancel}>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <Pressable style={styles.modalBackdrop} onPress={handleCreateCancel} />
           <View style={styles.modalContent} testID="categories.createModal">
@@ -436,41 +486,43 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Name</Text>
               <TextInput
-                style={[styles.input, createError && styles.inputError]}
-                value={createName}
-                onChangeText={(text) => {
-                  setCreateName(text)
-                  setCreateError(null)
-                }}
+                style={[styles.input, createState.error && styles.inputError]}
+                value={createState.name}
+                onChangeText={(text) => createDispatch({ type: 'SET_NAME', payload: text })}
                 placeholder="Enter category name"
                 placeholderTextColor="#64748b"
                 maxLength={100}
                 autoFocus
                 testID="categories.createModal.nameInput"
               />
-              {createError && <Text style={styles.fieldError}>{createError}</Text>}
-              <Text style={styles.charCount}>{createName.length}/100</Text>
+              {createState.error && <Text style={styles.fieldError}>{createState.error}</Text>}
+              <Text style={styles.charCount}>{createState.name.length}/100</Text>
             </View>
 
             {renderTypeSelector()}
-            {renderColorPicker(createColor, setCreateColor, createType, 'categories.createModal')}
+            {renderColorPicker(
+              createState.color,
+              (color) => createDispatch({ type: 'SET_COLOR', payload: color }),
+              createState.type,
+              'categories.createModal'
+            )}
 
             <View style={styles.modalActions}>
               <Pressable
                 style={styles.modalCancelButton}
                 onPress={handleCreateCancel}
-                disabled={isCreating}
+                disabled={createState.isSubmitting}
                 testID="categories.createModal.cancelButton"
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={[styles.modalSaveButton, isCreating && styles.modalSaveButtonDisabled]}
+                style={[styles.modalSaveButton, createState.isSubmitting && styles.modalSaveButtonDisabled]}
                 onPress={handleCreateSave}
-                disabled={isCreating}
+                disabled={createState.isSubmitting}
                 testID="categories.createModal.saveButton"
               >
-                {isCreating ? (
+                {createState.isSubmitting ? (
                   <ActivityIndicator size="small" color="#0f172a" />
                 ) : (
                   <Text style={styles.modalSaveText}>Create</Text>
@@ -482,7 +534,7 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
       </Modal>
 
       {/* Edit Modal */}
-      <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={handleEditCancel}>
+      <Modal visible={editState.visible} transparent animationType="fade" onRequestClose={handleEditCancel}>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <Pressable style={styles.modalBackdrop} onPress={handleEditCancel} />
           <View style={styles.modalContent} testID="categories.editModal">
@@ -491,41 +543,43 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Name</Text>
               <TextInput
-                style={[styles.input, editError && styles.inputError]}
-                value={editName}
-                onChangeText={(text) => {
-                  setEditName(text)
-                  setEditError(null)
-                }}
+                style={[styles.input, editState.error && styles.inputError]}
+                value={editState.name}
+                onChangeText={(text) => editDispatch({ type: 'SET_NAME', payload: text })}
                 placeholder="Enter category name"
                 placeholderTextColor="#64748b"
                 maxLength={100}
                 autoFocus
                 testID="categories.editModal.nameInput"
               />
-              {editError && <Text style={styles.fieldError}>{editError}</Text>}
-              <Text style={styles.charCount}>{editName.length}/100</Text>
+              {editState.error && <Text style={styles.fieldError}>{editState.error}</Text>}
+              <Text style={styles.charCount}>{editState.name.length}/100</Text>
             </View>
 
-            {editingCategory &&
-              renderColorPicker(editColor, setEditColor, editingCategory.type, 'categories.editModal')}
+            {editState.category &&
+              renderColorPicker(
+                editState.color,
+                (color) => editDispatch({ type: 'SET_COLOR', payload: color }),
+                editState.category.type,
+                'categories.editModal'
+              )}
 
             <View style={styles.modalActions}>
               <Pressable
                 style={styles.modalCancelButton}
                 onPress={handleEditCancel}
-                disabled={isEditing}
+                disabled={editState.isSubmitting}
                 testID="categories.editModal.cancelButton"
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={[styles.modalSaveButton, isEditing && styles.modalSaveButtonDisabled]}
+                style={[styles.modalSaveButton, editState.isSubmitting && styles.modalSaveButtonDisabled]}
                 onPress={handleEditSave}
-                disabled={isEditing}
+                disabled={editState.isSubmitting}
                 testID="categories.editModal.saveButton"
               >
-                {isEditing ? (
+                {editState.isSubmitting ? (
                   <ActivityIndicator size="small" color="#0f172a" />
                 ) : (
                   <Text style={styles.modalSaveText}>Save</Text>
