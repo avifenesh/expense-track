@@ -31,16 +31,26 @@ describe('Skeleton', () => {
   })
 
   describe('Accessibility', () => {
-    it('has progressbar accessibilityRole', () => {
+    it('is not accessible by default (for nested skeletons)', () => {
       const { toJSON } = render(<Skeleton width={100} height={20} testID="skeleton" />)
 
       const json = toJSON()
       expect(json).toBeTruthy()
+      expect(json?.props?.accessible).toBe(false)
+      expect(json?.props?.accessibilityRole).toBeUndefined()
+    })
+
+    it('has progressbar accessibilityRole when accessible is true', () => {
+      const { toJSON } = render(<Skeleton width={100} height={20} testID="skeleton" accessible={true} />)
+
+      const json = toJSON()
+      expect(json).toBeTruthy()
+      expect(json?.props?.accessible).toBe(true)
       expect(json?.props?.accessibilityRole).toBe('progressbar')
     })
 
-    it('has Loading accessibility label', () => {
-      render(<Skeleton width={100} height={20} testID="skeleton" />)
+    it('has Loading accessibility label when accessible is true', () => {
+      render(<Skeleton width={100} height={20} testID="skeleton" accessible={true} />)
 
       expect(screen.getByLabelText('Loading')).toBeTruthy()
     })

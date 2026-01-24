@@ -9,7 +9,13 @@ interface SharingScreenSkeletonProps {
 
 export function SharingScreenSkeleton({ testID }: SharingScreenSkeletonProps) {
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={styles.container}
+      testID={testID}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading sharing"
+    >
       <View style={styles.balanceGroup}>
         <SkeletonBalanceCard testID={testID ? `${testID}.balanceCard` : undefined} />
       </View>

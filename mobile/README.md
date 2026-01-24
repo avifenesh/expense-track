@@ -782,7 +782,7 @@ The mobile app includes skeleton loading components for smooth loading states. A
 
 Skeleton components follow a two-tier architecture:
 
-1. **Base Skeleton Component** - Animated shimmer effect primitive
+1. **Base Skeleton Component** - Animated pulsing opacity primitive
 2. **Composed Screen Skeletons** - Full-screen layouts matching actual content
 
 ### Base Skeleton
@@ -826,8 +826,8 @@ import { DashboardScreenSkeleton } from '@/components/skeleton';
 ```
 
 **Features:**
-- Month selector skeleton
-- Three stat card skeletons (Spent, Income, Balance)
+- Month selector placeholder
+- Two stat card skeletons (Income, Expense)
 - Budget progress card skeleton
 - Recent transactions list with 5 transaction item skeletons
 
@@ -842,8 +842,8 @@ import { TransactionsScreenSkeleton } from '@/components/skeleton';
 ```
 
 **Features:**
-- Month selector skeleton
-- Two date sections with 3 transaction items each (6 total)
+- Two date section headers
+- Three transaction item skeletons per section (6 total)
 - Matches grouped transaction list structure
 
 #### BudgetsScreenSkeleton
@@ -857,9 +857,9 @@ import { BudgetsScreenSkeleton } from '@/components/skeleton';
 ```
 
 **Features:**
-- Month selector skeleton
+- Month selector placeholder
 - Budget progress card skeleton (overall budget summary)
-- Five category budget card skeletons
+- Four category budget card skeletons
 - Matches budget list structure
 
 #### SharingScreenSkeleton
@@ -873,9 +873,9 @@ import { SharingScreenSkeleton } from '@/components/skeleton';
 ```
 
 **Features:**
-- Three balance card skeletons (net balances with contacts)
-- "Shared by Me" section with 2 expense card skeletons
-- "Shared with Me" section with 2 expense card skeletons
+- One balance card skeleton (net balance summary)
+- "Shared With You" section with 2 expense card skeletons
+- "You Shared" section with 2 expense card skeletons
 - Matches sharing screen structure
 
 ### Atomic Skeleton Components

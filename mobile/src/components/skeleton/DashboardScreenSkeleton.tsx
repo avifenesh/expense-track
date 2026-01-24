@@ -10,7 +10,13 @@ interface DashboardScreenSkeletonProps {
 
 export function DashboardScreenSkeleton({ testID }: DashboardScreenSkeletonProps) {
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={styles.container}
+      testID={testID}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading dashboard"
+    >
       <View style={styles.monthSelector}>
         <Text style={styles.monthPlaceholder}>Loading...</Text>
       </View>

@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive unit tests for comparison table
 
 - Mobile: Skeleton loading components for all main screens (#227)
-  - Base Skeleton component with animated shimmer effect (pulsing opacity)
+  - Base Skeleton component with animated pulsing opacity effect
   - DashboardScreenSkeleton with stat cards and transactions
   - TransactionsScreenSkeleton with date sections and transaction items
   - BudgetsScreenSkeleton with budget progress and category cards
@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Atomic skeleton components (SkeletonStatCard, SkeletonBudgetCategoryCard, etc.)
   - Integrated into Dashboard, Transactions, Budgets, and Sharing screens
   - Consistent loading experience matching actual content structure
-  - Comprehensive test suite with 90%+ coverage
+  - Comprehensive test suite with 100% coverage for skeleton components
 
 ### Fixed
 - Web: E2E test locator fixes and improvements (#263)

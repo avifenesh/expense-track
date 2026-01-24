@@ -7,13 +7,15 @@ interface SkeletonProps {
   borderRadius?: number
   style?: StyleProp<ViewStyle>
   testID?: string
+  /** Set to false to hide from accessibility tree (for nested skeletons) */
+  accessible?: boolean
 }
 
 const ANIMATION_DURATION = 800
 const MIN_OPACITY = 0.3
 const MAX_OPACITY = 0.7
 
-export function Skeleton({ width, height, borderRadius = 4, style, testID }: SkeletonProps) {
+export function Skeleton({ width, height, borderRadius = 4, style, testID, accessible = false }: SkeletonProps) {
   const opacity = useRef(new Animated.Value(MIN_OPACITY)).current
 
   useEffect(() => {
@@ -52,8 +54,9 @@ export function Skeleton({ width, height, borderRadius = 4, style, testID }: Ske
         style,
       ]}
       testID={testID}
-      accessibilityRole="progressbar"
-      accessibilityLabel="Loading"
+      accessible={accessible}
+      accessibilityRole={accessible ? 'progressbar' : undefined}
+      accessibilityLabel={accessible ? 'Loading' : undefined}
     />
   )
 }

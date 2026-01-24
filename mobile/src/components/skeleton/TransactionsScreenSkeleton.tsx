@@ -9,7 +9,13 @@ interface TransactionsScreenSkeletonProps {
 
 export function TransactionsScreenSkeleton({ testID }: TransactionsScreenSkeletonProps) {
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={styles.container}
+      testID={testID}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading transactions"
+    >
       <SkeletonDateSectionHeader testID={testID ? `${testID}.section.0.header` : undefined} />
       {[0, 1, 2].map((index) => (
         <SkeletonTransactionItem

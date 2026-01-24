@@ -9,7 +9,13 @@ interface BudgetsScreenSkeletonProps {
 
 export function BudgetsScreenSkeleton({ testID }: BudgetsScreenSkeletonProps) {
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={styles.container}
+      testID={testID}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading budgets"
+    >
       <View style={styles.monthSelector}>
         <Text style={styles.monthPlaceholder}>Loading...</Text>
       </View>
