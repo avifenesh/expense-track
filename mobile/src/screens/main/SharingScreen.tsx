@@ -239,22 +239,30 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const setFilters = useTransactionsStore((state) => state.setFilters)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
+  // Initial load - fetch sharing data (runs once on mount)
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     fetchSharing()
-  }, [fetchSharing])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Ensure transactions are loaded for picker
+  // Ensure transactions are loaded for picker when account changes
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     if (activeAccountId && activeAccountId !== filters.accountId) {
       setFilters({ accountId: activeAccountId })
     }
-  }, [activeAccountId, filters.accountId, setFilters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccountId, filters.accountId])
 
+  // Fetch transactions when filters change
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     if (filters.accountId) {
       fetchTransactions()
     }
-  }, [filters.accountId, fetchTransactions])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.accountId])
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)

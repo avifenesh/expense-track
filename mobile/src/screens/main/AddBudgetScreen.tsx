@@ -64,9 +64,12 @@ export function AddBudgetScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Fetch expense categories (runs once on mount)
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     fetchCategories('EXPENSE');
-  }, [fetchCategories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const availableCategories = useMemo(() => {
     const existingBudgetCategoryIds = new Set(

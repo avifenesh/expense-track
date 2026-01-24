@@ -68,6 +68,7 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Initial load - fetch accounts if needed (runs once on mount)
   useEffect(() => {
     async function init() {
       if (accounts.length === 0) {
@@ -75,8 +76,11 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
       }
     }
     init();
-  }, [accounts.length, fetchAccounts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // When account changes, update filters and fetch transactions
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     async function loadTransactions() {
       if (activeAccountId) {
@@ -85,7 +89,8 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
       }
     }
     loadTransactions();
-  }, [activeAccountId, fetchTransactions, setFilters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccountId]);
 
   const handleFilterChange = useCallback(
     async (type: FilterType) => {

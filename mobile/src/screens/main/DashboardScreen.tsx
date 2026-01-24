@@ -79,13 +79,14 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
 
   const recentTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT);
 
-  // Initial load - fetch accounts
+  // Initial load - fetch accounts (runs once on mount)
   useEffect(() => {
     fetchAccounts();
-  }, [fetchAccounts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // When account or month changes, update filters and fetch data in one effect
-  // This prevents race conditions between setting filters and fetching data
+  // When account or month changes, update filters and fetch data
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     if (activeAccountId) {
       setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
@@ -94,15 +95,8 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
       fetchTransactions();
       fetchBudgets();
     }
-  }, [
-    activeAccountId,
-    selectedMonth,
-    setTransactionFilters,
-    setBudgetFilters,
-    setBudgetSelectedMonth,
-    fetchTransactions,
-    fetchBudgets,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccountId, selectedMonth]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

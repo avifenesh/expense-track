@@ -106,9 +106,12 @@ export function AddTransactionScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Fetch categories when type changes
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     fetchCategories(type);
-  }, [fetchCategories, type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type]);
 
   useEffect(() => {
     setCategoryId(null);

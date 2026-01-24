@@ -138,9 +138,12 @@ export function EditTransactionScreen({
     }
   }, [transaction, isInitialized]);
 
+  // Fetch categories when type changes
+  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     fetchCategories(type);
-  }, [fetchCategories, type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type]);
 
   const filteredCategories = useMemo(() => {
     return categories.filter((c) => c.type === type && !c.isArchived);
