@@ -133,6 +133,7 @@ Server actions and REST API endpoints audit for Issue #64.
 |----------|--------|---------|------|
 | `/api/v1/categories` | POST | Create category | JWT Bearer |
 | `/api/v1/categories/[id]/archive` | PATCH | Archive category | JWT Bearer |
+| `/api/v1/categories/[id]` | PUT | Update category | JWT Bearer |
 
 ### Holdings Endpoints (`/api/v1/holdings/`)
 

@@ -751,6 +751,90 @@ Archive or unarchive a category.
 
 ---
 
+### PUT /api/v1/categories/[id]
+
+Update a category's name and/or color.
+
+**Auth:** Bearer token required
+
+**Path Parameters:**
+
+- `id`: Category ID to update (required)
+
+**Request:**
+
+```json
+{
+  "name": "Updated Category Name",
+  "color": "#22c55e"
+}
+```
+
+**Validation:**
+
+- `name`: Required. Min 2 characters, max 100 characters. Must start and end with alphanumeric characters.
+- `color`: Optional. Hex color code (e.g., #4CAF50).
+- Category must be owned by the authenticated user.
+- Name must be unique across user's non-archived categories.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "name": "Updated Category Name",
+    "type": "EXPENSE",
+    "color": "#22c55e",
+    "isArchived": false,
+    "isHolding": false,
+    "userId": "clx..."
+  }
+}
+```
+
+**Errors:**
+
+- 400: Validation error - Invalid name, duplicate category name, or missing required fields
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - User does not own the category
+- 404: Not found - Category does not exist
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to update category
+
+**Example Error (400 - Duplicate name):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "name": ["A category with this name already exists"]
+  }
+}
+```
+
+**Example Error (400 - Invalid name):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "name": ["Name must be at least 2 characters"]
+  }
+}
+```
+
+**Notes:**
+
+- Cannot change category type (INCOME/EXPENSE)
+- Cannot modify holding categories' special properties
+- Color is optional; omit to keep existing color
+- Name validation matches server-side rules (alphanumeric start/end)
+
+---
+
 ## Expense Sharing Endpoints
 
 ### GET /api/v1/sharing
