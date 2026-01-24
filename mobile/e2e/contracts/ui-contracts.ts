@@ -84,6 +84,7 @@ export const LoginScreen = {
 export const RegisterScreen = {
   testIds: {
     screen: 'register.screen',
+    scrollView: 'register.scrollView',
     displayNameInput: 'register.displayNameInput',
     emailInput: 'register.emailInput',
     passwordInput: 'register.passwordInput',
@@ -120,10 +121,12 @@ export const RegisterScreen = {
   },
 
   async tapSubmit(): Promise<void> {
+    // Dismiss any selection menus by tapping outside
+    await element(by.id('register.screen')).tap();
     // Scroll to ensure button is visible (may be hidden by keyboard or validation hints)
     await waitFor(element(by.id('register.submitButton')))
       .toBeVisible()
-      .whileElement(by.id('register.screen'))
+      .whileElement(by.id('register.scrollView'))
       .scroll(100, 'down');
     await element(by.id('register.submitButton')).tap();
   },
