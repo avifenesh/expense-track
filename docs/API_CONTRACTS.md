@@ -208,15 +208,17 @@ Register a new user account.
 {
   "success": true,
   "data": {
-    "message": "Registration successful. Please check your email to verify your account."
+    "message": "If this email is not registered, you will receive a verification email shortly.",
+    "emailVerified": false
   }
 }
 ```
 
+> **Note:** To prevent email enumeration, this endpoint always returns a 201 response with the generic success message above, even if the email is already registered.
+
 **Errors:**
 
 - 400: Validation error (weak password, invalid email)
-- 409: Email already registered
 
 ---
 
