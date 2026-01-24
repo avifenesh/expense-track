@@ -5,13 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * POST /api/v1/onboarding/skip
- *
- * Marks the user's onboarding as skipped (complete without going through full flow).
- * This allows users to skip onboarding and access the app directly.
- *
- * @returns {Object} { hasCompletedOnboarding: true }
- * @throws {401} Unauthorized - Invalid or missing auth token
- * @throws {429} Rate limited - Too many requests
+ * Marks user's onboarding as complete.
  */
 export async function POST(request: NextRequest) {
   return withApiAuth(
@@ -24,6 +18,6 @@ export async function POST(request: NextRequest) {
 
       return successResponse({ hasCompletedOnboarding: true })
     },
-    // Note: No subscription required - this is used during onboarding before user subscribes
+    { requireSubscription: false }, // Used during onboarding before subscription
   )
 }

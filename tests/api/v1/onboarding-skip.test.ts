@@ -16,7 +16,6 @@ describe('POST /api/v1/onboarding/skip', () => {
 
     await getApiTestUser()
 
-    // Reset onboarding status before each test
     await prisma.user.update({
       where: { id: TEST_USER_ID },
       data: { hasCompletedOnboarding: false },
@@ -24,7 +23,6 @@ describe('POST /api/v1/onboarding/skip', () => {
   })
 
   afterEach(async () => {
-    // Reset onboarding status
     await prisma.user.update({
       where: { id: TEST_USER_ID },
       data: { hasCompletedOnboarding: false },
@@ -47,7 +45,6 @@ describe('POST /api/v1/onboarding/skip', () => {
     expect(data.success).toBe(true)
     expect(data.data.hasCompletedOnboarding).toBe(true)
 
-    // Verify in database
     const user = await prisma.user.findUnique({
       where: { id: TEST_USER_ID },
       select: { hasCompletedOnboarding: true },
@@ -68,7 +65,6 @@ describe('POST /api/v1/onboarding/skip', () => {
     const response1 = await SkipOnboarding(request1)
     expect(response1.status).toBe(200)
 
-    // Call again
     const request2 = new NextRequest('http://localhost/api/v1/onboarding/skip', {
       method: 'POST',
       headers: {
@@ -83,7 +79,6 @@ describe('POST /api/v1/onboarding/skip', () => {
     expect(response2.status).toBe(200)
     expect(data2.data.hasCompletedOnboarding).toBe(true)
 
-    // Verify still true in database
     const user = await prisma.user.findUnique({
       where: { id: TEST_USER_ID },
       select: { hasCompletedOnboarding: true },
@@ -129,7 +124,6 @@ describe('POST /api/v1/onboarding/skip', () => {
   })
 
   it('works without active subscription (onboarding flow)', async () => {
-    // Set subscription to EXPIRED
     await prisma.subscription.update({
       where: { userId: TEST_USER_ID },
       data: { status: 'EXPIRED' },
@@ -144,9 +138,8 @@ describe('POST /api/v1/onboarding/skip', () => {
     })
 
     const response = await SkipOnboarding(request)
-    expect(response.status).toBe(200) // Should succeed even without subscription
+    expect(response.status).toBe(200)
 
-    // Reset subscription for other tests
     const trialEndsAt = new Date()
     trialEndsAt.setDate(trialEndsAt.getDate() + 14)
     await prisma.subscription.update({
@@ -162,7 +155,6 @@ describe('POST /api/v1/onboarding/skip', () => {
         Authorization: `Bearer ${validToken}`,
         'Content-Type': 'application/json',
       },
-      // No body provided
     })
 
     const response = await SkipOnboarding(request)
