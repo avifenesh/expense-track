@@ -2,10 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET as GetCategories, POST as CreateCategory } from '@/app/api/v1/categories/route'
 import { PATCH as ArchiveCategory } from '@/app/api/v1/categories/[id]/archive/route'
+import { PUT as UpdateCategory } from '@/app/api/v1/categories/[id]/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
-import { getApiTestUser, TEST_USER_ID } from './helpers'
+import { getApiTestUser, TEST_USER_ID, OTHER_USER_ID, getOtherTestUser } from './helpers'
 
 describe('Category API Routes', () => {
   let validToken: string
@@ -432,6 +433,249 @@ describe('Category API Routes', () => {
       })
 
       const response = await ArchiveCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(400)
+    })
+  })
+
+  describe('PUT /api/v1/categories/[id]', () => {
+    let categoryId: string
+
+    beforeEach(async () => {
+      // Find or create the test category
+      let category = await prisma.category.findFirst({
+        where: { name: 'TEST_ToUpdate', type: 'EXPENSE', userId: testUserId },
+      })
+      if (!category) {
+        category = await prisma.category.create({
+          data: {
+            userId: testUserId,
+            name: 'TEST_ToUpdate',
+            type: 'EXPENSE',
+            color: '#FF0000',
+          },
+        })
+      }
+      categoryId = category.id
+    })
+
+    it('updates category with valid JWT', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_Updated',
+          color: '#00FF00',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data.name).toBe('TEST_Updated')
+      expect(data.data.color).toBe('#00FF00')
+
+      // Verify category was updated in database
+      const category = await prisma.category.findUnique({ where: { id: categoryId } })
+      expect(category?.name).toBe('TEST_Updated')
+      expect(category?.color).toBe('#00FF00')
+    })
+
+    it('updates category name only', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_NameOnly',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data.name).toBe('TEST_NameOnly')
+    })
+
+    it('returns 401 with missing token', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'TEST_Updated',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(401)
+    })
+
+    it('returns 404 for non-existent category', async () => {
+      const request = new NextRequest('http://localhost/api/v1/categories/nonexistent', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_Updated',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: 'nonexistent' }) })
+      expect(response.status).toBe(404)
+    })
+
+    it('returns 404 for category owned by another user', async () => {
+      // Create category for other user
+      await getOtherTestUser()
+      const otherCategory = await prisma.category.create({
+        data: {
+          userId: OTHER_USER_ID,
+          name: 'TEST_OtherUser',
+          type: 'EXPENSE',
+        },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/categories/${otherCategory.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_Hacked',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: otherCategory.id }) })
+      expect(response.status).toBe(404)
+
+      // Cleanup
+      await prisma.category.delete({ where: { id: otherCategory.id } })
+    })
+
+    it('returns 400 with invalid name (too short)', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'T', // Too short (min 2 chars)
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(400)
+    })
+
+    it('returns 400 with invalid name (too long)', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'T'.repeat(101), // Too long (max 100 chars)
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(400)
+    })
+
+    it('returns 400 with invalid color format', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_Valid',
+          color: 'not-a-hex-color',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(400)
+    })
+
+    it('returns 400 for duplicate category name within same type', async () => {
+      // Create another category with the target name
+      await prisma.category.create({
+        data: {
+          userId: testUserId,
+          name: 'TEST_ExistingName',
+          type: 'EXPENSE',
+        },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_ExistingName',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(400)
+
+      const data = await response.json()
+      expect(data.fields?.name).toContain('A category with this name already exists')
+    })
+
+    it('allows same name for different category types', async () => {
+      // Create an income category with the same name
+      await prisma.category.create({
+        data: {
+          userId: testUserId,
+          name: 'TEST_SameName',
+          type: 'INCOME',
+        },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'TEST_SameName',
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(200)
+    })
+
+    it('returns 400 with malformed JSON', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: 'invalid json',
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
       expect(response.status).toBe(400)
     })
   })
