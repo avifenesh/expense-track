@@ -60,6 +60,8 @@ describe('Transaction E2E Tests', () => {
       await AddTransactionScreen.waitForScreen();
 
       await expect(element(by.id('addTransaction.amountInput'))).toBeVisible();
+      // Description input is below the fold - scroll to it first
+      await element(by.id('addTransaction.scrollView')).scrollTo('bottom');
       await expect(element(by.id('addTransaction.descriptionInput'))).toBeVisible();
       await expect(element(by.id('addTransaction.submitButton'))).toBeVisible();
     });
@@ -72,6 +74,16 @@ describe('Transaction E2E Tests', () => {
 
       // Enter amount
       await AddTransactionScreen.enterAmount('42.50');
+
+      // Select a category (required for validation)
+      // Categories are seeded by setupTestData() - tap Groceries
+      await waitFor(element(by.id('addTransaction.category.groceries')))
+        .toBeVisible()
+        .withTimeout(TIMEOUTS.MEDIUM);
+      await element(by.id('addTransaction.category.groceries')).tap();
+
+      // Scroll to description (below the fold)
+      await element(by.id('addTransaction.scrollView')).scrollTo('bottom');
 
       // Enter description
       await AddTransactionScreen.enterDescription(testDescription);
@@ -95,6 +107,8 @@ describe('Transaction E2E Tests', () => {
 
   describe('Transaction List', () => {
     it('displays recent transactions on dashboard', async () => {
+      // Scroll down to see recent transactions section (below budget progress and stats)
+      await element(by.id('dashboard.scrollView')).scrollTo('bottom');
       // Dashboard should have transactions list
       await expect(element(by.id('dashboard.recentTransactionsSection'))).toBeVisible();
     });
