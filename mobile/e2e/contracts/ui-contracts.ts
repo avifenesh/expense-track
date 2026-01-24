@@ -109,9 +109,14 @@ export const RegisterScreen = {
   },
 
   async enterPassword(password: string): Promise<void> {
-    // Use replaceText to bypass iOS automatic password suggestion
-    // typeText triggers iOS autofill which blocks password entry
-    await element(by.id('register.passwordInput')).replaceText(password);
+    // Tap outside first to dismiss any iOS keyboard suggestions
+    await element(by.id('register.screen')).tap();
+    // Then tap password field to focus
+    await element(by.id('register.passwordInput')).tap();
+    // Clear any existing text
+    await element(by.id('register.passwordInput')).clearText();
+    // Type password slowly to avoid iOS autofill
+    await element(by.id('register.passwordInput')).typeText(password);
   },
 
   async tapSubmit(): Promise<void> {
@@ -392,8 +397,8 @@ export const AddTransactionScreen = {
       .scroll(200, 'down');
     await element(by.id('addTransaction.descriptionInput')).clearText();
     await element(by.id('addTransaction.descriptionInput')).typeText(description);
-    // Dismiss keyboard after typing description
-    await element(by.id('addTransaction.descriptionInput')).tapReturnKey();
+    // Tap outside to dismiss keyboard (tapReturnKey adds newline in multiline fields)
+    await element(by.id('addTransaction.screen')).tap();
   },
 
   async tapSubmit(): Promise<void> {
