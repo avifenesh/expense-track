@@ -49,31 +49,35 @@ export async function registerUser({
     : new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
 
   try {
-    const newUser = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        displayName: displayName.trim(),
-        passwordHash,
-        emailVerified: shouldAutoVerify,
-        emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpires,
-        accounts: {
-          create: {
-            name: 'Personal',
-            type: 'SELF',
+    const newUser = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          displayName: displayName.trim(),
+          passwordHash,
+          emailVerified: shouldAutoVerify,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
+          accounts: {
+            create: {
+              name: 'Personal',
+              type: 'SELF',
+            },
           },
         },
-      },
-      select: {
-        id: true,
-        email: true,
-        emailVerified: true,
-        emailVerificationToken: true,
-        emailVerificationExpires: true,
-      },
-    })
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          emailVerificationToken: true,
+          emailVerificationExpires: true,
+        },
+      })
 
-    await createTrialSubscription(newUser.id)
+      await createTrialSubscription(createdUser.id, tx)
+
+      return createdUser
+    })
 
     return {
       success: true,
