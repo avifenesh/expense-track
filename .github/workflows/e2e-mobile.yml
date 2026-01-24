@@ -162,6 +162,9 @@ jobs:
       - name: Build Detox (iOS release)
         working-directory: mobile
         run: npm run e2e:build:ios:release
+        env:
+          # EXPO_PUBLIC_* vars are embedded during JS bundling (happens at build time)
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Boot iOS Simulator
         run: |
@@ -355,6 +358,9 @@ jobs:
       - name: Build Detox (Android release)
         working-directory: mobile
         run: npm run e2e:build:android:release
+        env:
+          # EXPO_PUBLIC_* vars are embedded during JS bundling (happens at build time)
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Clean ADB server
         run: |
