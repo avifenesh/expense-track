@@ -6,6 +6,7 @@
 # testing
 /coverage
 /test-results
+e2e-artifacts-temp/
 
 # next.js
 /.next/
@@ -26,9 +27,11 @@ yarn-error.log*
 
 # local env files
 .env*.local
+mobile/.env.backup
 
 # platform tooling
 .railway
+.opencode/
 
 # typescript
 *.tsbuildinfo
