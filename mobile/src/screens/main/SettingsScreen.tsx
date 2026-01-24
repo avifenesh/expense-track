@@ -79,7 +79,11 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
               <Text style={styles.menuText}>Accounts</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('Categories')}
+              testID="settings.categoriesButton"
+            >
               <Text style={styles.menuText}>Categories</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>

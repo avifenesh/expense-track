@@ -42,6 +42,7 @@ export type AppStackParamList = {
   CategoryPicker: undefined
   Profile: undefined
   Accounts: undefined
+  Categories: undefined
 }
 
 // Root Navigator

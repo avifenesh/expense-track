@@ -1,12 +1,3 @@
-/**
- * API-specific schemas without CSRF tokens.
- * These schemas are used by API routes that authenticate via JWT instead of session cookies.
- *
- * Pattern:
- * - Server actions use schemas with csrfToken (from index.ts)
- * - API routes use schemas without csrfToken (from this file)
- */
-
 import { z } from 'zod'
 import { TransactionType, Currency, SplitType } from '@prisma/client'
 
@@ -124,6 +115,23 @@ export const archiveCategoryApiSchema = z.object({
   id: z.string().min(1),
   isArchived: z.boolean(),
 })
+
+export const updateCategoryApiSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Category name must be at least 2 characters')
+    .max(100, 'Category name must be at most 100 characters')
+    .regex(
+      /^[\p{L}\p{N}](?:.*\S.*)?[\p{L}\p{N}]$|^[\p{L}\p{N}]{2}$/u,
+      'Category name must start and end with alphanumeric characters and contain non-whitespace',
+    ),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g., #FF0000)')
+    .nullish(),
+})
+
+export type UpdateCategoryApiInput = z.infer<typeof updateCategoryApiSchema>
 
 // ============================================
 // Holdings Schemas (API)

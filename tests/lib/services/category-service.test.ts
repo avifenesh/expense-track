@@ -25,9 +25,12 @@ import {
   createOrReactivateCategory,
   archiveCategory,
   getCategoryById,
+  updateCategory,
   type CreateCategoryInput,
   type ArchiveCategoryInput,
+  type UpdateCategoryInput,
 } from '@/lib/services/category-service'
+import { ServiceError } from '@/lib/services/errors'
 
 describe('category-service.ts', () => {
   beforeEach(() => {
@@ -344,7 +347,312 @@ describe('category-service.ts', () => {
     })
   })
 
-  describe('Phase 3: getCategoryById()', () => {
+  describe('Phase 3: updateCategory()', () => {
+    it('should update category name and color', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Updated Name',
+        color: '#00FF00',
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Old Name',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const updatedCategory = {
+        ...existingCategory,
+        name: 'Updated Name',
+        color: '#00FF00',
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory) // Find existing
+        .mockResolvedValueOnce(null) // No duplicate
+      vi.mocked(prisma.category.update).mockResolvedValue(updatedCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result).toEqual({ success: true, category: updatedCategory })
+      expect(prisma.category.update).toHaveBeenCalledWith({
+        where: { id: 'cat-1', userId: 'test-user' },
+        data: { name: 'Updated Name', color: '#00FF00' },
+      })
+    })
+
+    it('should update name only when color is undefined', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'New Name',
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Old Name',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const updatedCategory = {
+        ...existingCategory,
+        name: 'New Name',
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory)
+        .mockResolvedValueOnce(null)
+      vi.mocked(prisma.category.update).mockResolvedValue(updatedCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result.success).toBe(true)
+      expect(prisma.category.update).toHaveBeenCalledWith({
+        where: { id: 'cat-1', userId: 'test-user' },
+        data: { name: 'New Name', color: undefined },
+      })
+    })
+
+    it('should set color to null when color is null', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Category',
+        color: null,
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Category',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const updatedCategory = {
+        ...existingCategory,
+        color: null,
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory)
+        .mockResolvedValueOnce(null)
+      vi.mocked(prisma.category.update).mockResolvedValue(updatedCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result.success).toBe(true)
+      expect(prisma.category.update).toHaveBeenCalledWith({
+        where: { id: 'cat-1', userId: 'test-user' },
+        data: { name: 'Category', color: null },
+      })
+    })
+
+    it('should throw ServiceError when category not found', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'nonexistent',
+        userId: 'test-user',
+        name: 'New Name',
+      }
+
+      vi.mocked(prisma.category.findFirst).mockResolvedValue(null)
+
+      try {
+        await updateCategory(input)
+        expect.fail('Expected ServiceError to be thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(ServiceError)
+        expect((error as ServiceError).statusCode).toBe(404)
+        expect((error as ServiceError).code).toBe('NOT_FOUND')
+      }
+    })
+
+    it('should return DUPLICATE when name conflicts within same type', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Existing Category',
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Original Name',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const duplicateCategory = {
+        id: 'cat-2',
+        userId: 'test-user',
+        name: 'Existing Category',
+        type: TransactionType.EXPENSE,
+        color: '#00FF00',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory)
+        .mockResolvedValueOnce(duplicateCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result).toEqual({ success: false, error: 'DUPLICATE' })
+      expect(prisma.category.update).not.toHaveBeenCalled()
+    })
+
+    it('should allow same name for different category types', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Shared Name',
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Old Name',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const updatedCategory = {
+        ...existingCategory,
+        name: 'Shared Name',
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory)
+        .mockResolvedValueOnce(null)
+      vi.mocked(prisma.category.update).mockResolvedValue(updatedCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result.success).toBe(true)
+      expect(prisma.category.findFirst).toHaveBeenLastCalledWith({
+        where: {
+          userId: 'test-user',
+          name: 'Shared Name',
+          type: TransactionType.EXPENSE,
+          id: { not: 'cat-1' },
+          isArchived: false,
+        },
+      })
+    })
+
+    it('should exclude archived categories from duplicate check', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Archived Name',
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Old Name',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const updatedCategory = {
+        ...existingCategory,
+        name: 'Archived Name',
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory)
+        .mockResolvedValueOnce(null)
+      vi.mocked(prisma.category.update).mockResolvedValue(updatedCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result.success).toBe(true)
+      expect(prisma.category.findFirst).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isArchived: false,
+          }),
+        })
+      )
+    })
+
+    it('should allow updating to same name (self-reference)', async () => {
+      const input: UpdateCategoryInput = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Same Name',
+        color: '#00FF00',
+      }
+
+      const existingCategory = {
+        id: 'cat-1',
+        userId: 'test-user',
+        name: 'Same Name',
+        type: TransactionType.EXPENSE,
+        color: '#FF0000',
+        isHolding: false,
+        isArchived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const updatedCategory = {
+        ...existingCategory,
+        color: '#00FF00',
+      }
+
+      vi.mocked(prisma.category.findFirst)
+        .mockResolvedValueOnce(existingCategory)
+        .mockResolvedValueOnce(null)
+      vi.mocked(prisma.category.update).mockResolvedValue(updatedCategory)
+
+      const result = await updateCategory(input)
+
+      expect(result.success).toBe(true)
+      expect(prisma.category.findFirst).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: { not: 'cat-1' },
+          }),
+        })
+      )
+    })
+  })
+
+  describe('Phase 4: getCategoryById()', () => {
     it('should find existing category', async () => {
       const mockCategory = {
         id: 'cat-1',

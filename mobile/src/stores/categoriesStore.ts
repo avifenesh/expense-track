@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiGet, apiPost, apiPatch, ApiError } from '../services/api';
+import { apiGet, apiPost, apiPatch, apiPut, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import { registerStoreReset } from './storeRegistry';
 
@@ -20,6 +20,12 @@ export interface CreateCategoryInput {
   color: string;
 }
 
+export interface UpdateCategoryInput {
+  id: string;
+  name: string;
+  color?: string | null;
+}
+
 interface CategoriesResponse {
   categories: Category[];
 }
@@ -33,6 +39,7 @@ interface CategoriesState {
 interface CategoriesActions {
   fetchCategories: (type?: TransactionType, includeArchived?: boolean) => Promise<void>;
   createCategory: (data: CreateCategoryInput) => Promise<Category>;
+  updateCategory: (data: UpdateCategoryInput) => Promise<Category>;
   archiveCategory: (id: string) => Promise<void>;
   unarchiveCategory: (id: string) => Promise<void>;
   getCategoriesByType: (type: TransactionType) => Category[];
@@ -88,7 +95,6 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       const category = await apiPost<Category>('/categories', data, accessToken);
 
       set((state) => {
-        // Handle reactivation: if category ID already exists, update it instead of appending
         const existingIndex = state.categories.findIndex((c) => c.id === category.id);
         if (existingIndex >= 0) {
           const updatedCategories = [...state.categories];
@@ -104,6 +110,31 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
         throw error;
       }
       throw new ApiError('Failed to create category', 'CREATE_FAILED', 0);
+    }
+  },
+
+  updateCategory: async (data: UpdateCategoryInput) => {
+    const accessToken = useAuthStore.getState().accessToken;
+
+    try {
+      const category = await apiPut<Category>(
+        `/categories/${data.id}`,
+        { name: data.name, color: data.color },
+        accessToken
+      );
+
+      set((state) => ({
+        categories: state.categories.map((c) =>
+          c.id === data.id ? category : c
+        ),
+      }));
+
+      return category;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Failed to update category', 'UPDATE_FAILED', 0);
     }
   },
 

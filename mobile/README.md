@@ -571,6 +571,79 @@ The `lib/validation.ts` module provides client-side validation for all forms:
 - `validateBudgetAmount(amount: string | null)` - Budget amount validation (greater than 0, max 999,999,999.99)
 - `validateBudgetCategory(categoryId: string | null)` - Budget category validation
 
+### Category Management
+
+#### CategoriesScreen
+
+Full-screen category management interface for creating, editing, archiving, and organizing categories.
+
+**Features:**
+- Tab-based filtering (Expense/Income categories)
+- Create new categories with name, type, and color selection
+- Edit existing categories (name and color)
+- Archive/unarchive categories with confirmation dialog
+- Visual indicators for archived and holding categories
+- Inline validation with error messages
+- Pull-to-refresh support
+- Empty state with create prompt
+- Loading states with activity indicators
+
+**Access:**
+- Navigation link from Settings screen
+- Dedicated full-screen view in AppStack
+
+**Category Colors:**
+- **Expense categories:** 10 color options (green, orange, blue, purple, pink, cyan, red, lime, indigo, teal)
+- **Income categories:** 4 color options (emerald, cyan, purple, gray)
+
+**Create Category:**
+- Name input (2-100 characters, must start/end with alphanumeric)
+- Type selector (Expense/Income)
+- Color picker with preset palette
+- Real-time validation
+- Character counter (max 100)
+
+**Edit Category:**
+- Update category name
+- Change category color
+- Type is immutable (cannot change after creation)
+- Same validation rules as create
+
+**Archive Category:**
+- Soft delete with confirmation dialog
+- Archived categories appear with reduced opacity
+- Can be unarchived later
+- Holding categories cannot be deleted (system-managed)
+
+**UI Components:**
+- Category cards with color dot indicator
+- Archived badge for archived categories
+- Holding badge for investment categories
+- Action buttons (Edit, Archive/Unarchive, Delete)
+
+**Validation:**
+- Name: Required, 2-100 chars, alphanumeric start/end
+- Color: Optional, hex color format
+- Duplicate name prevention
+- Real-time error feedback
+
+**Integration:**
+- Uses `PUT /api/v1/categories/[id]` for updates
+- Uses `POST /api/v1/categories` for creation
+- Uses `PATCH /api/v1/categories/[id]/archive` for archive/unarchive
+- Syncs with categoriesStore on success
+- Toast notifications for user feedback
+
+**User Experience:**
+- Tab switching preserves scroll position
+- Modals with backdrop dismiss
+- Loading spinners during network requests
+- Error messages for validation and network failures
+- Disabled state for holding category deletion
+- Confirmation dialogs for destructive actions
+
+
+
 ### Budget Management
 
 #### AddBudgetScreen

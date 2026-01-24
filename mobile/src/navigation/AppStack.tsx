@@ -9,6 +9,7 @@ import {
   ShareExpenseScreen,
   ProfileScreen,
   AccountsScreen,
+  CategoriesScreen,
 } from '../screens'
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
@@ -65,6 +66,14 @@ export function AppStack() {
       <Stack.Screen
         name="Accounts"
         component={AccountsScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="Categories"
+        component={CategoriesScreen}
         options={{
           presentation: 'modal',
           animation: 'slide_from_bottom',
