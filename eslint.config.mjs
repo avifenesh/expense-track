@@ -58,6 +58,14 @@ export default [
     },
   },
   {
+    // React Navigation requires namespace augmentation for type-safe useNavigation hook
+    files: ['mobile/src/navigation/types.ts'],
+    rules: {
+      '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+    },
+  },
+  {
     ignores: ['.next/**', 'node_modules/**', 'coverage/**', '*.config.*', 'scripts/**'],
   },
 ]
