@@ -128,13 +128,14 @@ jobs:
             ${{ runner.os }}-pods-
 
       # Cache iOS build (DerivedData) - significantly speeds up rebuilds
+      # Note: Cache key includes src hash to bust cache when source files change
       - name: Cache iOS Build
         uses: actions/cache@v4
         with:
           path: |
             ~/Library/Developer/Xcode/DerivedData
             mobile/ios/build
-          key: ${{ runner.os }}-ios-build-${{ hashFiles('mobile/ios/Podfile.lock', 'mobile/package.json') }}
+          key: ${{ runner.os }}-ios-build-${{ hashFiles('mobile/ios/Podfile.lock', 'mobile/package.json', 'mobile/src/**/*.tsx', 'mobile/src/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-ios-build-
 
@@ -312,13 +313,14 @@ jobs:
             ${{ runner.os }}-gradle-
 
       # Cache Android build outputs
+      # Note: Cache key includes src hash to bust cache when source files change
       - name: Cache Android Build
         uses: actions/cache@v4
         with:
           path: |
             mobile/android/.gradle
             mobile/android/app/build
-          key: ${{ runner.os }}-android-build-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/package.json') }}
+          key: ${{ runner.os }}-android-build-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/package.json', 'mobile/src/**/*.tsx', 'mobile/src/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-android-build-
 
