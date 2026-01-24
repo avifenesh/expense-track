@@ -12,7 +12,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import { useSharingStore, useTransactionsStore, useAccountsStore, useToastStore } from '../../stores'
-import { EmptyState, TransactionPickerModal } from '../../components'
+import {
+  EmptyState,
+  TransactionPickerModal,
+  SharingScreenSkeleton,
+  SkeletonSharedExpenseCard,
+} from '../../components'
 import { formatCurrency } from '../../utils/format'
 import type { Currency } from '../../types'
 import type {
@@ -21,6 +26,8 @@ import type {
   SettlementBalance,
   ShareParticipant,
 } from '../../stores/sharingStore'
+
+const SKELETON_SHARED_ITEM_COUNT = 2
 
 function getDisplayName(user: { email: string; displayName?: string | null }): string {
   return user.displayName || user.email.split('@')[0]
@@ -220,8 +227,6 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
 
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const sharedByMe = useSharingStore((state) => state.sharedByMe)
   const sharedWithMe = useSharingStore((state) => state.sharedWithMe)
   const settlementBalances = useSharingStore((state) => state.settlementBalances)
@@ -231,19 +236,16 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const filters = useTransactionsStore((state) => state.filters)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
-  // Initial load - fetch sharing data (runs once on mount)
   useEffect(() => {
     useSharingStore.getState().fetchSharing()
   }, [])
 
-  // Ensure transactions are loaded for picker when account changes
   useEffect(() => {
     if (activeAccountId && activeAccountId !== filters.accountId) {
       useTransactionsStore.getState().setFilters({ accountId: activeAccountId })
     }
   }, [activeAccountId, filters.accountId])
 
-  // Fetch transactions when filters change
   useEffect(() => {
     if (filters.accountId) {
       useTransactionsStore.getState().fetchTransactions()
@@ -306,11 +308,13 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
 
   if (isLoading && hasNoData && !isRefreshing) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" />
-          <Text style={styles.loadingText}>Loading sharing data...</Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={['top']} testID="sharing.loadingScreen">
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Sharing</Text>
+          </View>
+          <SharingScreenSkeleton testID="sharing.skeleton" />
+        </ScrollView>
       </SafeAreaView>
     )
   }
@@ -370,8 +374,10 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
         <View style={styles.section} testID="sharing.sharedWithMe">
           <Text style={styles.sectionTitle}>Shared With You</Text>
           {isLoading && pendingSharedWithMe.length === 0 ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="sharing.sharedWithMe.loading">
+              {Array.from({ length: SKELETON_SHARED_ITEM_COUNT }).map((_, index) => (
+                <SkeletonSharedExpenseCard key={index} testID={`sharing.skeleton.sharedWithMe.${index}`} />
+              ))}
             </View>
           ) : pendingSharedWithMe.length === 0 ? (
             <EmptyState
@@ -392,8 +398,10 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
         <View style={styles.section} testID="sharing.sharedByMe">
           <Text style={styles.sectionTitle}>You Shared</Text>
           {isLoading && sortedSharedByMe.length === 0 ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="sharing.sharedByMe.loading">
+              {Array.from({ length: SKELETON_SHARED_ITEM_COUNT }).map((_, index) => (
+                <SkeletonSharedExpenseCard key={index} testID={`sharing.skeleton.sharedByMe.${index}`} />
+              ))}
             </View>
           ) : sortedSharedByMe.length === 0 ? (
             <EmptyState

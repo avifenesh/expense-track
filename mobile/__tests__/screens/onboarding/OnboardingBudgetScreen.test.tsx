@@ -50,10 +50,12 @@ describe('OnboardingBudgetScreen', () => {
     expect(screen.getByText('Set your monthly budget to track spending')).toBeTruthy();
   });
 
-  it('renders budget amount', () => {
+  it('renders budget input', () => {
     render(<OnboardingBudgetScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(screen.getByText('2,000')).toBeTruthy();
+    // Budget input is empty by default
+    const budgetInput = screen.getByTestId('onboarding.budget.amountInput');
+    expect(budgetInput).toBeTruthy();
   });
 
   it('renders currency symbol', () => {
@@ -99,12 +101,16 @@ describe('OnboardingBudgetScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('OnboardingSampleData');
   });
 
-  it('navigates to OnboardingSampleData when Set Budget button is pressed', () => {
+  it('navigates to OnboardingSampleData when Set Budget button is pressed with valid input', () => {
     render(<OnboardingBudgetScreen navigation={mockNavigation} route={mockRoute} />);
 
-    // Get all "Set Budget" text elements - second one is the button
-    const setBudgetElements = screen.getAllByText('Set Budget');
-    fireEvent.press(setBudgetElements[1]);
+    // Enter a valid budget amount first
+    const budgetInput = screen.getByTestId('onboarding.budget.amountInput');
+    fireEvent.changeText(budgetInput, '2000');
+
+    // Press the Set Budget button
+    const setBudgetButton = screen.getByTestId('onboarding.budget.setBudgetButton');
+    fireEvent.press(setBudgetButton);
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('OnboardingSampleData');
   });
@@ -121,9 +127,9 @@ describe('OnboardingBudgetScreen', () => {
   it('renders budget display with correct format', () => {
     render(<OnboardingBudgetScreen navigation={mockNavigation} route={mockRoute} />);
 
-    // Check budget display elements
+    // Check budget display elements (input is empty by default)
     expect(screen.getByText('$')).toBeTruthy();
-    expect(screen.getByText('2,000')).toBeTruthy();
+    expect(screen.getByTestId('onboarding.budget.amountInput')).toBeTruthy();
     expect(screen.getByText('/month')).toBeTruthy();
   });
 });

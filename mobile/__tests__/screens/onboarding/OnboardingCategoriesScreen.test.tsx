@@ -48,10 +48,10 @@ describe('OnboardingCategoriesScreen', () => {
     expect(screen.getByText('Select the expense categories you want to track')).toBeTruthy();
   });
 
-  it('renders Food & Dining category', () => {
+  it('renders Groceries category', () => {
     render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(screen.getByText('Food & Dining')).toBeTruthy();
+    expect(screen.getByText('Groceries')).toBeTruthy();
   });
 
   it('renders Transportation category', () => {
@@ -72,45 +72,60 @@ describe('OnboardingCategoriesScreen', () => {
     expect(screen.getByText('Entertainment')).toBeTruthy();
   });
 
-  it('renders Bills & Utilities category', () => {
+  it('renders Utilities category', () => {
     render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(screen.getByText('Bills & Utilities')).toBeTruthy();
+    expect(screen.getByText('Utilities')).toBeTruthy();
   });
 
-  it('renders Healthcare category', () => {
+  it('renders Health category', () => {
     render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(screen.getByText('Healthcare')).toBeTruthy();
+    expect(screen.getByText('Health')).toBeTruthy();
   });
 
-  it('renders Education category', () => {
+  it('renders Housing category', () => {
     render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(screen.getByText('Education')).toBeTruthy();
+    expect(screen.getByText('Housing')).toBeTruthy();
   });
 
-  it('renders Travel category', () => {
+  it('renders Salary category', () => {
     render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
-    expect(screen.getByText('Travel')).toBeTruthy();
+    expect(screen.getByText('Salary')).toBeTruthy();
   });
 
-  it('renders all 8 default categories', () => {
+  it('renders all default categories', () => {
     render(<OnboardingCategoriesScreen navigation={mockNavigation} route={mockRoute} />);
 
-    const categories = [
-      'Food & Dining',
+    // Expense categories from DEFAULT_EXPENSE_CATEGORIES
+    const expenseCategories = [
+      'Groceries',
+      'Dining Out',
       'Transportation',
-      'Shopping',
+      'Utilities',
       'Entertainment',
-      'Bills & Utilities',
-      'Healthcare',
-      'Education',
-      'Travel',
+      'Shopping',
+      'Health',
+      'Housing',
+      'Insurance',
+      'Subscriptions',
     ];
 
-    categories.forEach((category) => {
+    // Income categories from DEFAULT_INCOME_CATEGORIES
+    const incomeCategories = [
+      'Salary',
+      'Freelance',
+      'Investments',
+      'Other Income',
+    ];
+
+    expenseCategories.forEach((category) => {
+      expect(screen.getByText(category)).toBeTruthy();
+    });
+
+    incomeCategories.forEach((category) => {
       expect(screen.getByText(category)).toBeTruthy();
     });
   });

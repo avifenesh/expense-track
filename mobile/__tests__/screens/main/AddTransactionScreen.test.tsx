@@ -5,6 +5,7 @@ import { AddTransactionScreen } from '../../../src/screens/main/AddTransactionSc
 import { useAccountsStore } from '../../../src/stores/accountsStore'
 import { useTransactionsStore } from '../../../src/stores/transactionsStore'
 import { useCategoriesStore } from '../../../src/stores/categoriesStore'
+import { createMockStoreImplementation } from '../../utils/mockZustandStore'
 import type { AppStackScreenProps } from '../../../src/navigation/types'
 
 // Mock stores
@@ -141,11 +142,16 @@ describe('AddTransactionScreen', () => {
     reset: jest.fn(),
   }
 
+  const setupStoreMock = <T extends object>(mock: jest.Mock, state: T) => {
+    mock.mockImplementation(createMockStoreImplementation(state))
+    ;(mock as jest.Mock & { getState: () => T }).getState = jest.fn(() => state)
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState)
-    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState)
-    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState)
+    setupStoreMock(mockUseAccountsStore, defaultAccountsState)
+    setupStoreMock(mockUseTransactionsStore, defaultTransactionsState)
+    setupStoreMock(mockUseCategoriesStore, defaultCategoriesState)
   })
 
   describe('Rendering', () => {
@@ -248,7 +254,7 @@ describe('AddTransactionScreen', () => {
 
     it('fetches categories when type changes', async () => {
       const fetchCategories = jest.fn().mockResolvedValue(undefined)
-      mockUseCategoriesStore.mockReturnValue({
+      setupStoreMock(mockUseCategoriesStore, {
         ...defaultCategoriesState,
         fetchCategories,
       })
@@ -283,7 +289,7 @@ describe('AddTransactionScreen', () => {
     })
 
     it('shows loading indicator when categories are loading', async () => {
-      mockUseCategoriesStore.mockReturnValue({
+      setupStoreMock(mockUseCategoriesStore, {
         ...defaultCategoriesState,
         categories: [],
         isLoading: true,
@@ -298,7 +304,7 @@ describe('AddTransactionScreen', () => {
     })
 
     it('shows empty message when no categories available', async () => {
-      mockUseCategoriesStore.mockReturnValue({
+      setupStoreMock(mockUseCategoriesStore, {
         ...defaultCategoriesState,
         categories: [],
         isLoading: false,
@@ -511,7 +517,7 @@ describe('AddTransactionScreen', () => {
         category: mockExpenseCategory,
       })
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         createTransaction,
       })
@@ -603,7 +609,7 @@ describe('AddTransactionScreen', () => {
     it('shows error toast on submission failure', async () => {
       const createTransaction = jest.fn().mockRejectedValue(new Error('Network error'))
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         createTransaction,
       })
@@ -637,7 +643,7 @@ describe('AddTransactionScreen', () => {
           }),
       )
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         createTransaction,
       })
@@ -690,7 +696,7 @@ describe('AddTransactionScreen', () => {
 
   describe('No Account Selected', () => {
     it('shows error when no account is selected', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         activeAccountId: null,
       })
@@ -718,7 +724,7 @@ describe('AddTransactionScreen', () => {
 
   describe('Currency Display', () => {
     it('shows EUR symbol for EUR accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'EUR' as const }],
       })
@@ -731,7 +737,7 @@ describe('AddTransactionScreen', () => {
     })
 
     it('shows ILS symbol for ILS accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'ILS' as const }],
       })

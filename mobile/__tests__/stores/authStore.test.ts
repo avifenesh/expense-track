@@ -18,7 +18,7 @@ describe('authStore', () => {
   describe('initial state', () => {
     it('has correct initial values', () => {
       const state = useAuthStore.getState();
-      expect(state.isLoading).toBe(true);
+      expect(state.isLoading).toBe(false); // Starts false - biometric check happens in background
       expect(state.isAuthenticated).toBe(false);
       expect(state.user).toBeNull();
       expect(state.accessToken).toBeNull();
@@ -416,7 +416,7 @@ describe('authStore', () => {
       useAuthStore.getState().reset();
 
       const state = useAuthStore.getState();
-      expect(state.isLoading).toBe(true);
+      expect(state.isLoading).toBe(false); // Initial state has isLoading: false
       expect(state.isAuthenticated).toBe(false);
       expect(state.user).toBeNull();
     });

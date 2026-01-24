@@ -1,50 +1,43 @@
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { renderHook } from '@testing-library/react-native';
 import { useAuthState } from '../../src/hooks/useAuthState';
-import { AuthProvider } from '../../src/contexts/AuthContext';
-import { tokenStorage } from '../../src/lib/tokenStorage';
+import { useAuthStore } from '../../src/stores/authStore';
 
-jest.mock('../../src/lib/tokenStorage');
-jest.mock('../../src/services/auth');
+jest.mock('../../src/stores/authStore');
 
-const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
-
-// Wrapper component that provides AuthProvider
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <AuthProvider>{children}</AuthProvider>
-);
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
 describe('useAuthState', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockTokenStorage.getStoredCredentials.mockResolvedValue({
-      accessToken: null,
-      refreshToken: null,
-      email: null,
-      hasCompletedOnboarding: false,
-    });
-    mockTokenStorage.setStoredCredentials.mockResolvedValue(undefined);
-    mockTokenStorage.setTokens.mockResolvedValue(undefined);
-    mockTokenStorage.clearTokens.mockResolvedValue(undefined);
-    mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
   });
 
   it('returns initial loading state', () => {
-    const { result } = renderHook(() => useAuthState(), { wrapper });
+    mockUseAuthStore.mockImplementation((selector: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        isAuthenticated: false,
+        isLoading: true,
+        user: null,
+      };
+      return selector(state);
+    });
+
+    const { result } = renderHook(() => useAuthState());
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.isAuthenticated).toBe(false);
   });
 
-  it('transitions to unauthenticated state after async check', async () => {
-    const { result } = renderHook(() => useAuthState(), { wrapper });
-
-    // Initial state should be loading
-    expect(result.current.isLoading).toBe(true);
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+  it('returns unauthenticated state after loading complete', () => {
+    mockUseAuthStore.mockImplementation((selector: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+      };
+      return selector(state);
     });
+
+    const { result } = renderHook(() => useAuthState());
 
     expect(result.current).toEqual({
       isAuthenticated: false,
@@ -54,12 +47,65 @@ describe('useAuthState', () => {
     });
   });
 
-  it('returns correct final state structure', async () => {
-    const { result } = renderHook(() => useAuthState(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+  it('returns authenticated state with user data', () => {
+    mockUseAuthStore.mockImplementation((selector: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          hasCompletedOnboarding: true,
+        },
+      };
+      return selector(state);
     });
+
+    const { result } = renderHook(() => useAuthState());
+
+    expect(result.current).toEqual({
+      isAuthenticated: true,
+      hasCompletedOnboarding: true,
+      isLoading: false,
+      userId: 'user-123',
+    });
+  });
+
+  it('returns correct state when user has not completed onboarding', () => {
+    mockUseAuthStore.mockImplementation((selector: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: {
+          id: 'user-456',
+          email: 'new@example.com',
+          hasCompletedOnboarding: false,
+        },
+      };
+      return selector(state);
+    });
+
+    const { result } = renderHook(() => useAuthState());
+
+    expect(result.current).toEqual({
+      isAuthenticated: true,
+      hasCompletedOnboarding: false,
+      isLoading: false,
+      userId: 'user-456',
+    });
+  });
+
+  it('returns correct final state structure', () => {
+    mockUseAuthStore.mockImplementation((selector: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+      };
+      return selector(state);
+    });
+
+    const { result } = renderHook(() => useAuthState());
 
     // Verify all properties exist and have correct types
     expect(typeof result.current.isAuthenticated).toBe('boolean');

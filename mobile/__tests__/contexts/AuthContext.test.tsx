@@ -119,11 +119,11 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
-      expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
-      expect(screen.getByTestID('user-email')).toHaveTextContent('no-email');
-      expect(screen.getByTestID('access-token')).toHaveTextContent('no-token');
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
+      expect(screen.getByTestId('user-email')).toHaveTextContent('no-email');
+      expect(screen.getByTestId('access-token')).toHaveTextContent('no-token');
     });
 
     it('throws error when useAuth is used outside provider', () => {
@@ -154,9 +154,9 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
-      expect(screen.getByTestID('biometric-type')).toHaveTextContent('faceId');
+      expect(screen.getByTestId('biometric-type')).toHaveTextContent('faceId');
     });
 
     it('does not auto-prompt on init (requires user action)', async () => {
@@ -174,12 +174,12 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
       // Should not auto-prompt - user must initiate biometric login
       expect(mockBiometricService.promptBiometric).not.toHaveBeenCalled();
-      expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
-      expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('enabled');
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
+      expect(screen.getByTestId('biometric-enabled')).toHaveTextContent('enabled');
     });
   });
 
@@ -198,15 +198,15 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
-        expect(screen.getByTestID('user-email')).toHaveTextContent('test@example.com');
-        expect(screen.getByTestID('access-token')).toHaveTextContent('access-123');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('access-123');
       });
 
       expect(mockAuthService.login).toHaveBeenCalledWith('test@example.com', 'password123');
@@ -223,13 +223,13 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
 
@@ -243,13 +243,13 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
   });
@@ -269,21 +269,21 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('logout-btn'));
+      fireEvent.press(screen.getByTestId('logout-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
-        expect(screen.getByTestID('user-email')).toHaveTextContent('no-email');
-        expect(screen.getByTestID('access-token')).toHaveTextContent('no-token');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('user-email')).toHaveTextContent('no-email');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('no-token');
       });
     });
 
@@ -301,16 +301,16 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('logout-btn'));
+      fireEvent.press(screen.getByTestId('logout-btn'));
 
       await waitFor(() => {
         expect(mockBiometricService.clearStoredCredentials).toHaveBeenCalled();
@@ -333,19 +333,19 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('logout-btn'));
+      fireEvent.press(screen.getByTestId('logout-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
 
@@ -363,19 +363,19 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('logout-btn'));
+      fireEvent.press(screen.getByTestId('logout-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
 
       expect(mockAuthService.logout).toHaveBeenCalledWith('refresh-456');
@@ -395,10 +395,10 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('register-btn'));
+      fireEvent.press(screen.getByTestId('register-btn'));
 
       await waitFor(() => {
         expect(mockAuthService.register).toHaveBeenCalledWith(
@@ -425,10 +425,10 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('register-btn'));
+      fireEvent.press(screen.getByTestId('register-btn'));
 
       await waitFor(() => {
         expect(mockAuthService.register).toHaveBeenCalled();
@@ -445,10 +445,10 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('register-btn'));
+      fireEvent.press(screen.getByTestId('register-btn'));
 
       await waitFor(() => {
         expect(mockAuthService.register).toHaveBeenCalled();
@@ -477,19 +477,19 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('access-token')).toHaveTextContent('access-123');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('access-123');
       });
 
-      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+      fireEvent.press(screen.getByTestId('refresh-token-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('access-token')).toHaveTextContent('new-access-789');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('new-access-789');
       });
 
       expect(mockAuthService.refreshTokens).toHaveBeenCalledWith('refresh-456');
@@ -513,20 +513,20 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+      fireEvent.press(screen.getByTestId('refresh-token-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
-        expect(screen.getByTestID('access-token')).toHaveTextContent('no-token');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('no-token');
       });
     });
 
@@ -538,10 +538,10 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+      fireEvent.press(screen.getByTestId('refresh-token-btn'));
 
       await waitFor(() => {
         expect(mockAuthService.refreshTokens).not.toHaveBeenCalled();
@@ -569,31 +569,31 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('access-token')).toHaveTextContent('access-123');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('access-123');
       });
 
       // Enable biometric after login
       mockBiometricService.promptBiometric.mockResolvedValue({ success: true });
-      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+      fireEvent.press(screen.getByTestId('enable-biometric-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('enabled');
+        expect(screen.getByTestId('biometric-enabled')).toHaveTextContent('enabled');
       });
 
       // Clear the mock call from enableBiometric
       mockBiometricService.enableBiometric.mockClear();
 
       // Now refresh token - should update stored credentials
-      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+      fireEvent.press(screen.getByTestId('refresh-token-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('access-token')).toHaveTextContent('new-access-789');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('new-access-789');
       });
 
       // Verify stored credentials are updated with new rotated token
@@ -619,16 +619,16 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('update-user-btn'));
+      fireEvent.press(screen.getByTestId('update-user-btn'));
 
       expect(mockAuthService.login).toHaveBeenCalled();
     });
@@ -641,12 +641,12 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('update-user-btn'));
+      fireEvent.press(screen.getByTestId('update-user-btn'));
 
-      expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
     });
   });
 
@@ -665,15 +665,15 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
     });
   });
@@ -693,10 +693,10 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
         expect(mockTokenStorage.setStoredCredentials).toHaveBeenCalledWith(
@@ -722,16 +722,16 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('logout-btn'));
+      fireEvent.press(screen.getByTestId('logout-btn'));
 
       await waitFor(() => {
         expect(mockTokenStorage.clearTokens).toHaveBeenCalled();
@@ -759,9 +759,9 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
-        expect(screen.getByTestID('access-token')).toHaveTextContent('new-access-789');
-        expect(screen.getByTestID('user-email')).toHaveTextContent('stored@example.com');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('access-token')).toHaveTextContent('new-access-789');
+        expect(screen.getByTestId('user-email')).toHaveTextContent('stored@example.com');
       });
 
       expect(mockAuthService.refreshTokens).toHaveBeenCalledWith('stored-refresh-456');
@@ -792,8 +792,8 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
 
       expect(mockTokenStorage.clearTokens).toHaveBeenCalled();
@@ -814,8 +814,8 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
 
       expect(mockAuthService.refreshTokens).not.toHaveBeenCalled();
@@ -841,18 +841,18 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
       mockTokenStorage.setTokens.mockClear();
 
-      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+      fireEvent.press(screen.getByTestId('refresh-token-btn'));
 
       await waitFor(() => {
         expect(mockTokenStorage.setTokens).toHaveBeenCalledWith('new-access-789', 'new-refresh-012');
@@ -877,18 +877,18 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
       mockTokenStorage.clearTokens.mockClear();
 
-      fireEvent.press(screen.getByTestID('refresh-token-btn'));
+      fireEvent.press(screen.getByTestId('refresh-token-btn'));
 
       await waitFor(() => {
         expect(mockTokenStorage.clearTokens).toHaveBeenCalled();
@@ -905,8 +905,8 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
 
@@ -925,14 +925,14 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       // Should remain not authenticated because storage failed
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
 
@@ -951,20 +951,20 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('logout-btn'));
+      fireEvent.press(screen.getByTestId('logout-btn'));
 
       // Should still log out even if clearTokens fails
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
   });
@@ -989,14 +989,14 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+      fireEvent.press(screen.getByTestId('biometric-login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
-        expect(screen.getByTestID('user-email')).toHaveTextContent('biometric@example.com');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('user-email')).toHaveTextContent('biometric@example.com');
       });
     });
 
@@ -1013,13 +1013,13 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+      fireEvent.press(screen.getByTestId('biometric-login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
 
@@ -1034,13 +1034,13 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+      fireEvent.press(screen.getByTestId('biometric-login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('not-authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('not-authenticated');
       });
     });
 
@@ -1059,14 +1059,14 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+      fireEvent.press(screen.getByTestId('biometric-login-btn'));
 
       await waitFor(() => {
         expect(mockBiometricService.clearStoredCredentials).toHaveBeenCalled();
-        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('disabled');
+        expect(screen.getByTestId('biometric-enabled')).toHaveTextContent('disabled');
       });
     });
 
@@ -1089,13 +1089,13 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('biometric-login-btn'));
+      fireEvent.press(screen.getByTestId('biometric-login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
       // Verify stored credentials are updated with new rotated token
@@ -1122,19 +1122,19 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+      fireEvent.press(screen.getByTestId('enable-biometric-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('enabled');
+        expect(screen.getByTestId('biometric-enabled')).toHaveTextContent('enabled');
       });
       expect(mockBiometricService.enableBiometric).toHaveBeenCalledWith('refresh-456', 'test@example.com');
     });
@@ -1147,10 +1147,10 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+      fireEvent.press(screen.getByTestId('enable-biometric-btn'));
 
       await waitFor(() => {
         expect(mockBiometricService.enableBiometric).not.toHaveBeenCalled();
@@ -1175,20 +1175,20 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('login-btn'));
+      fireEvent.press(screen.getByTestId('login-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-authenticated')).toHaveTextContent('authenticated');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('authenticated');
       });
 
-      fireEvent.press(screen.getByTestID('enable-biometric-btn'));
+      fireEvent.press(screen.getByTestId('enable-biometric-btn'));
 
       await waitFor(() => {
         expect(mockBiometricService.enableBiometric).not.toHaveBeenCalled();
-        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('disabled');
+        expect(screen.getByTestId('biometric-enabled')).toHaveTextContent('disabled');
       });
     });
   });
@@ -1204,13 +1204,13 @@ describe('AuthContext', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestID('is-loading')).toHaveTextContent('ready');
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('ready');
       });
 
-      fireEvent.press(screen.getByTestID('disable-biometric-btn'));
+      fireEvent.press(screen.getByTestId('disable-biometric-btn'));
 
       await waitFor(() => {
-        expect(screen.getByTestID('biometric-enabled')).toHaveTextContent('disabled');
+        expect(screen.getByTestId('biometric-enabled')).toHaveTextContent('disabled');
       });
       expect(mockBiometricService.disableBiometric).toHaveBeenCalled();
     });

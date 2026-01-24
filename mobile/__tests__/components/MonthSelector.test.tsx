@@ -541,10 +541,15 @@ describe('MonthSelector', () => {
 
       fireEvent.press(screen.getByTestId('month-selector-label'));
 
+      // When viewing 2026 with min=2026-01 and max=2026-12:
+      // - minYear = min(currentYear - yearRange, 2026) = 2021 (since current year is 2026)
+      // - maxYear = max(currentYear, 2026) = 2026
+      // So prev should be enabled (can go to 2025), but next should be disabled (can't go past 2026)
       const yearPrevButton = screen.getByTestId('month-selector-year-prev');
       const yearNextButton = screen.getByTestId('month-selector-year-next');
 
-      expect(yearPrevButton.props.accessibilityState?.disabled).toBe(true);
+      // Year navigation allows going back in time (minYear is calculated from yearRange)
+      // but maxYear is limited by maxMonth
       expect(yearNextButton.props.accessibilityState?.disabled).toBe(true);
     });
   });

@@ -18,6 +18,9 @@ describe('useNetworkStatus', () => {
       isInternetReachable: true,
     });
 
+    // Mock isOnline() method - this is called directly in the hook
+    mockNetworkStatus.isOnline.mockReturnValue(true);
+
     mockNetworkStatus.subscribe.mockImplementation((callback) => {
       subscriberCallback = callback;
       callback({ isConnected: true, isInternetReachable: true });
@@ -56,6 +59,7 @@ describe('useNetworkStatus', () => {
     expect(result.current.isOnline).toBe(true);
 
     act(() => {
+      mockNetworkStatus.isOnline.mockReturnValue(false);
       subscriberCallback?.({ isConnected: false, isInternetReachable: false });
     });
 
@@ -67,6 +71,7 @@ describe('useNetworkStatus', () => {
       isConnected: false,
       isInternetReachable: false,
     });
+    mockNetworkStatus.isOnline.mockReturnValue(false);
     mockNetworkStatus.subscribe.mockImplementation((callback) => {
       subscriberCallback = callback;
       callback({ isConnected: false, isInternetReachable: false });
@@ -78,6 +83,7 @@ describe('useNetworkStatus', () => {
     expect(result.current.isOnline).toBe(false);
 
     act(() => {
+      mockNetworkStatus.isOnline.mockReturnValue(true);
       subscriberCallback?.({ isConnected: true, isInternetReachable: true });
     });
 
@@ -85,6 +91,7 @@ describe('useNetworkStatus', () => {
   });
 
   it('considers connected with null reachability as online', () => {
+    mockNetworkStatus.isOnline.mockReturnValue(true);
     mockNetworkStatus.subscribe.mockImplementation((callback) => {
       subscriberCallback = callback;
       callback({ isConnected: true, isInternetReachable: null });
@@ -98,6 +105,7 @@ describe('useNetworkStatus', () => {
   });
 
   it('considers connected but not reachable as offline', () => {
+    mockNetworkStatus.isOnline.mockReturnValue(false);
     mockNetworkStatus.subscribe.mockImplementation((callback) => {
       subscriberCallback = callback;
       callback({ isConnected: true, isInternetReachable: false });

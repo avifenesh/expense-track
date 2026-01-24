@@ -773,3 +773,163 @@ function SharingScreen() {
 - `GET /api/v1/users/lookup` - Lookup user by email
 
 See `docs/API_CONTRACTS.md` for detailed API documentation.
+
+## Skeleton Loading Components
+
+The mobile app includes skeleton loading components for smooth loading states. All screens use skeletons during data fetching to provide visual feedback and reduce perceived loading time.
+
+### Architecture
+
+Skeleton components follow a two-tier architecture:
+
+1. **Base Skeleton Component** - Animated pulsing opacity primitive
+2. **Composed Screen Skeletons** - Full-screen layouts matching actual content
+
+### Base Skeleton
+
+The `Skeleton` component provides a simple animated loading placeholder with a pulsing opacity effect.
+
+```tsx
+import { Skeleton } from '@/components/skeleton';
+
+<Skeleton
+  width={200}
+  height={20}
+  borderRadius={8}
+/>
+```
+
+**Props:**
+- `width` - Width in pixels or string (e.g., '100%')
+- `height` - Height in pixels (required)
+- `borderRadius` - Corner radius in pixels (default: 4)
+- `style` - Optional additional styles
+- `testID` - Test ID for testing library queries
+
+**Animation:**
+- Loops between 30% and 70% opacity
+- 800ms duration per cycle
+- Uses native driver for smooth performance
+
+### Screen Skeleton Components
+
+Each main screen has a dedicated skeleton component that mirrors its layout structure:
+
+#### DashboardScreenSkeleton
+
+Shows skeleton version of dashboard with stat cards and recent transactions.
+
+```tsx
+import { DashboardScreenSkeleton } from '@/components/skeleton';
+
+{isLoading ? <DashboardScreenSkeleton /> : <DashboardContent />}
+```
+
+**Features:**
+- Month selector placeholder
+- Two stat card skeletons (Income, Expense)
+- Budget progress card skeleton
+- Recent transactions list with 5 transaction item skeletons
+
+#### TransactionsScreenSkeleton
+
+Shows skeleton version of transactions list with date section headers.
+
+```tsx
+import { TransactionsScreenSkeleton } from '@/components/skeleton';
+
+{isLoading ? <TransactionsScreenSkeleton /> : <TransactionsList />}
+```
+
+**Features:**
+- Two date section headers
+- Three transaction item skeletons per section (6 total)
+- Matches grouped transaction list structure
+
+#### BudgetsScreenSkeleton
+
+Shows skeleton version of budgets list with category budget cards.
+
+```tsx
+import { BudgetsScreenSkeleton } from '@/components/skeleton';
+
+{isLoading ? <BudgetsScreenSkeleton /> : <BudgetsList />}
+```
+
+**Features:**
+- Month selector placeholder
+- Budget progress card skeleton (overall budget summary)
+- Four category budget card skeletons
+- Matches budget list structure
+
+#### SharingScreenSkeleton
+
+Shows skeleton version of sharing screen with balance cards and shared expense cards.
+
+```tsx
+import { SharingScreenSkeleton } from '@/components/skeleton';
+
+{isLoading ? <SharingScreenSkeleton /> : <SharingContent />}
+```
+
+**Features:**
+- One balance card skeleton (net balance summary)
+- "Shared With You" section with 2 expense card skeletons
+- "You Shared" section with 2 expense card skeletons
+- Matches sharing screen structure
+
+### Atomic Skeleton Components
+
+Individual skeleton components for specific UI elements:
+
+- **SkeletonStatCard** - Dashboard stat card (Spent, Income, Balance)
+- **SkeletonBudgetProgressCard** - Overall budget progress card
+- **SkeletonBudgetCategoryCard** - Category-specific budget card
+- **SkeletonTransactionItem** - Transaction list item
+- **SkeletonDateSectionHeader** - Date section divider
+- **SkeletonSharedExpenseCard** - Shared expense card
+- **SkeletonBalanceCard** - Contact balance card
+
+These components can be used independently for loading states in custom screens or components.
+
+### Implementation Pattern
+
+All main screens follow this pattern:
+
+```tsx
+import { DashboardScreenSkeleton } from '@/components/skeleton';
+
+function DashboardScreen() {
+  const { isLoading, data } = useStore();
+
+  if (isLoading) {
+    return <DashboardScreenSkeleton />;
+  }
+
+  return <DashboardContent data={data} />;
+}
+```
+
+**Benefits:**
+- Immediate visual feedback during data fetching
+- Reduced perceived loading time
+- Consistent loading experience across screens
+- Matches actual content structure for smooth transitions
+
+### Testing
+
+All skeleton components have comprehensive test coverage:
+
+```bash
+npm test -- Skeleton.test.tsx                     # Base skeleton tests
+npm test -- DashboardScreenSkeleton.test.tsx      # Dashboard skeleton tests
+npm test -- TransactionsScreenSkeleton.test.tsx   # Transactions skeleton tests
+npm test -- BudgetsScreenSkeleton.test.tsx        # Budgets skeleton tests
+npm test -- SharingScreenSkeleton.test.tsx        # Sharing skeleton tests
+```
+
+Test coverage includes:
+- Rendering with correct structure
+- Animation setup and cleanup
+- Accessibility attributes (progressbar role, loading label)
+- Proper testID propagation for integration tests

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import {
@@ -9,16 +9,23 @@ import {
   useCategoriesStore,
   type Category,
 } from '../../stores'
-import { MonthSelector, BudgetProgressCard, BudgetCategoryCard, EmptyState } from '../../components'
+import {
+  MonthSelector,
+  BudgetProgressCard,
+  BudgetCategoryCard,
+  EmptyState,
+  BudgetsScreenSkeleton,
+  SkeletonBudgetCategoryCard,
+} from '../../components'
 import { getMonthKey } from '../../utils/date'
 import type { Currency } from '../../types'
+
+const SKELETON_CATEGORY_COUNT = 4
 
 export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey())
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
   const accountsLoading = useAccountsStore((state) => state.isLoading)
@@ -69,12 +76,10 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     return map
   }, [categories])
 
-  // Initial load - fetch accounts (runs once on mount)
   useEffect(() => {
     useAccountsStore.getState().fetchAccounts()
   }, [])
 
-  // When account or month changes, update filters and fetch data
   useEffect(() => {
     if (activeAccountId) {
       const txStore = useTransactionsStore.getState()
@@ -124,15 +129,19 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   if (accountsLoading && accounts.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.loadingScreen">
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" testID="budgets.loadingIndicator" />
-          <Text style={styles.loadingText}>Loading budgets...</Text>
-        </View>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <Text style={styles.title} testID="budgets.title">
+            Budgets
+          </Text>
+          <Text style={styles.subtitle} testID="budgets.subtitle">
+            Track your spending by category
+          </Text>
+          <BudgetsScreenSkeleton testID="budgets.skeleton" />
+        </ScrollView>
       </SafeAreaView>
     )
   }
 
-  // Error state
   if (error && !isRefreshing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.errorScreen">
@@ -151,7 +160,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     )
   }
 
-  // No accounts state
   if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.noAccountsScreen">
@@ -204,8 +212,10 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
             Category Budgets
           </Text>
           {budgetsLoading && budgets.length === 0 ? (
-            <View style={styles.loadingContainer} testID="budgets.categoryLoading">
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="budgets.categoryLoading">
+              {Array.from({ length: SKELETON_CATEGORY_COUNT }).map((_, index) => (
+                <SkeletonBudgetCategoryCard key={index} testID={`budgets.skeleton.categoryCard.${index}`} />
+              ))}
             </View>
           ) : budgets.length === 0 ? (
             <EmptyState
