@@ -46,8 +46,10 @@ export async function POST(request: NextRequest) {
     }
     incrementRateLimitTyped(normalizedEmail, 'registration')
 
-    // Auto-verify test emails only in test environment
-    const isTestEmail = process.env.NODE_ENV === 'test' && normalizedEmail.endsWith('@test.local')
+    // Auto-verify test emails in test environment or E2E testing
+    const isE2ETest = process.env.E2E_TEST === 'true'
+    const isTestEnv = process.env.NODE_ENV === 'test'
+    const isTestEmail = (isTestEnv || isE2ETest) && normalizedEmail.endsWith('@test.local')
 
     const registerResult = await registerUser({
       email: normalizedEmail,

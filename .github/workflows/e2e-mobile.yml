@@ -109,6 +109,7 @@ jobs:
           NEXTAUTH_SECRET: e2e-test-nextauth-secret
           APP_URL: https://e2e-test.local:3000
           NODE_ENV: production
+          E2E_TEST: 'true'
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -298,6 +299,7 @@ jobs:
           NEXTAUTH_SECRET: e2e-test-nextauth-secret
           APP_URL: https://e2e-test.local:3000
           NODE_ENV: production
+          E2E_TEST: 'true'
 
       - name: Setup Java
         uses: actions/setup-java@v4

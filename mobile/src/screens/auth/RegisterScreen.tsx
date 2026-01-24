@@ -189,8 +189,8 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                   placeholderTextColor="#64748b"
                   secureTextEntry
                   autoCapitalize="none"
-                  autoComplete="password-new"
-                  textContentType="none"
+                  autoComplete="off"
+                  textContentType="oneTimeCode"
                   editable={!isLoading}
                   testID="register.passwordInput"
                 />

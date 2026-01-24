@@ -87,9 +87,11 @@ describe('Transaction E2E Tests', () => {
       // Submit (tapSubmit scrolls to button first)
       await AddTransactionScreen.tapSubmit();
 
-      // Should return to dashboard
-      await DashboardScreen.waitForScreen();
-      await expect(element(by.id('dashboard.screen'))).toBeVisible();
+      // Wait for navigation back to dashboard - wait for FAB which is always visible
+      // (toast may cover part of dashboard.screen, failing 75% visibility check)
+      await waitFor(element(by.id('dashboard.addTransactionFab')))
+        .toBeVisible()
+        .withTimeout(TIMEOUTS.LONG);
 
       // Transaction should appear in the list
       await waitFor(element(by.text('$42.50')))
