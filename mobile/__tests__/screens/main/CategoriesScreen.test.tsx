@@ -561,22 +561,34 @@ describe('CategoriesScreen', () => {
       expect(Alert.alert).not.toHaveBeenCalled()
     })
 
-    it('shows delete confirmation for non-holding categories', async () => {
+    it('shows archive confirmation for non-holding categories', async () => {
       renderCategoriesScreen()
 
       fireEvent.press(screen.getByTestId('categories.delete.cat-1'))
 
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Delete Category',
-        'Are you sure you want to delete "Groceries"? This action cannot be undone.',
+        'Archive Category',
+        'Are you sure you want to archive "Groceries"? Archived categories can be restored later.',
         expect.arrayContaining([
           expect.objectContaining({ text: 'Cancel', style: 'cancel' }),
-          expect.objectContaining({ text: 'Delete', style: 'destructive' }),
+          expect.objectContaining({ text: 'Archive', style: 'destructive' }),
         ]),
       )
     })
 
-    it('calls archiveCategory on delete confirmation', async () => {
+    it('shows already archived message for archived categories', async () => {
+      renderCategoriesScreen()
+
+      fireEvent.press(screen.getByTestId('categories.delete.cat-2'))
+
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Already Archived',
+        '"Dining Out" is already archived. Use "Unarchive" to restore it.',
+        expect.arrayContaining([expect.objectContaining({ text: 'OK' })]),
+      )
+    })
+
+    it('calls archiveCategory on archive confirmation', async () => {
       const mockArchiveCategory = jest.fn().mockResolvedValue(undefined)
       const originalGetState = useCategoriesStore.getState
       useCategoriesStore.getState = () => ({
@@ -589,8 +601,8 @@ describe('CategoriesScreen', () => {
       fireEvent.press(screen.getByTestId('categories.delete.cat-1'))
 
       const alertCall = (Alert.alert as jest.Mock).mock.calls[0]
-      const deleteButton = alertCall[2].find((btn: { text: string }) => btn.text === 'Delete')
-      await deleteButton.onPress()
+      const archiveButton = alertCall[2].find((btn: { text: string }) => btn.text === 'Archive')
+      await archiveButton.onPress()
 
       expect(mockArchiveCategory).toHaveBeenCalledWith('cat-1')
 

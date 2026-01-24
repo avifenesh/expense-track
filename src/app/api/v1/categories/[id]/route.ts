@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requireJwtAuth } from '@/lib/api-auth'
-import { getCategoryById, updateCategory } from '@/lib/services/category-service'
+import { updateCategory } from '@/lib/services/category-service'
+import { ServiceError } from '@/lib/services/errors'
 import { updateCategoryApiSchema } from '@/schemas/api'
 import {
   validationError,
@@ -47,11 +48,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const data = parsed.data
 
-  const existing = await getCategoryById(id, user.userId)
-  if (!existing) {
-    return notFoundError('Category not found')
-  }
-
   try {
     const result = await updateCategory({
       id,
@@ -74,7 +70,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       isHolding: category.isHolding,
       userId: category.userId,
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof ServiceError && error.code === 'NOT_FOUND') {
+      return notFoundError('Category not found')
+    }
     return serverError('Unable to update category')
   }
 }

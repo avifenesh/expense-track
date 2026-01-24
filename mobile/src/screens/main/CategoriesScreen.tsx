@@ -79,6 +79,11 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     if (!trimmed) return 'Name is required'
     if (trimmed.length < 2) return 'Name must be at least 2 characters'
     if (trimmed.length > 100) return 'Name must be 100 characters or less'
+    // Must start and end with alphanumeric characters (matches server validation)
+    const validNamePattern = /^[\p{L}\p{N}](?:.*\S.*)?[\p{L}\p{N}]$|^[\p{L}\p{N}]{2}$/u
+    if (!validNamePattern.test(trimmed)) {
+      return 'Name must start and end with a letter or number'
+    }
     return null
   }
 
@@ -210,20 +215,29 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
       return
     }
 
+    if (category.isArchived) {
+      Alert.alert(
+        'Already Archived',
+        `"${category.name}" is already archived. Use "Unarchive" to restore it.`,
+        [{ text: 'OK' }]
+      )
+      return
+    }
+
     Alert.alert(
-      'Delete Category',
-      `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
+      'Archive Category',
+      `Are you sure you want to archive "${category.name}"? Archived categories can be restored later.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Archive',
           style: 'destructive',
           onPress: async () => {
             try {
               await useCategoriesStore.getState().archiveCategory(category.id)
-              useToastStore.getState().success('Category deleted')
+              useToastStore.getState().success('Category archived')
             } catch (err) {
-              const errorMsg = err instanceof Error ? err.message : 'Failed to delete category'
+              const errorMsg = err instanceof Error ? err.message : 'Failed to archive category'
               useToastStore.getState().error(errorMsg)
             }
           },
