@@ -1576,11 +1576,9 @@ Mark onboarding as complete.
 
 ---
 
-### POST /api/v1/onboarding/skip (PLANNED - Issue #199)
+### POST /api/v1/onboarding/skip
 
-> ⚠️ **Not yet implemented.** Planned for future release.
-
-Skip onboarding flow.
+Skip onboarding flow and mark user as having completed onboarding.
 
 **Auth:** Bearer token required
 
@@ -1590,10 +1588,15 @@ Skip onboarding flow.
 {
   "success": true,
   "data": {
-    "message": "Onboarding skipped"
+    "hasCompletedOnboarding": true
   }
 }
 ```
+
+**Errors:**
+
+- 401: Unauthorized - Invalid or missing auth token
+- 429: Rate limited - Too many requests
 
 ---
 
