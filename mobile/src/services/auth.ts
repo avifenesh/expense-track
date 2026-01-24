@@ -24,9 +24,11 @@ export interface UserProfile {
   createdAt: string
   subscription: {
     status: string
-    plan: string
-    trialDaysRemaining: number | null
-    cancelAtPeriodEnd: boolean
+    isActive: boolean
+    trialEndsAt: string | null
+    currentPeriodEnd: string | null
+    daysRemaining: number | null
+    canAccessApp: boolean
   }
 }
 
