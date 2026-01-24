@@ -53,7 +53,7 @@ export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
         setInitialDisplayName(profile.displayName || '')
         setSelectedCurrency(profile.preferredCurrency || 'USD')
         setInitialCurrency(profile.preferredCurrency || 'USD')
-      } catch (err) {
+      } catch {
         // Fall back to auth store data if profile fetch fails
         if (user?.displayName) {
           setDisplayName(user.displayName)
