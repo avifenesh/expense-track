@@ -4,20 +4,19 @@
  */
 /* eslint-disable no-console */
 
-import { getBackendManager, resetBackendManager } from './server/backend-manager';
+import { getBackendManager, resetBackendManager } from './server/backend-manager'
 
 export default async function globalTeardown() {
-  console.log('\n[GlobalTeardown] Cleaning up E2E test environment...\n');
+  console.log('\n[GlobalTeardown] Cleaning up E2E test environment...\n')
 
   // 1. Run Detox global teardown first
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const detoxGlobalTeardown = require('detox/runners/jest/globalTeardown');
-  await detoxGlobalTeardown();
+  const { default: detoxGlobalTeardown } = await import('detox/runners/jest/globalTeardown')
+  await detoxGlobalTeardown()
 
   // 2. Stop backend server
-  const backend = getBackendManager();
-  await backend.stop();
-  resetBackendManager();
+  const backend = getBackendManager()
+  await backend.stop()
+  resetBackendManager()
 
-  console.log('\n[GlobalTeardown] E2E test environment cleaned up\n');
+  console.log('\n[GlobalTeardown] E2E test environment cleaned up\n')
 }

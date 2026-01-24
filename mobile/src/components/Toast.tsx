@@ -13,7 +13,12 @@ const ANIMATION_DURATION = 250
 
 export function Toast() {
   const insets = useSafeAreaInsets()
-  const { visible, message, type, duration, hideToast } = useToastStore()
+  // Use individual selectors to prevent unnecessary re-renders
+  const visible = useToastStore((state) => state.visible)
+  const message = useToastStore((state) => state.message)
+  const type = useToastStore((state) => state.type)
+  const duration = useToastStore((state) => state.duration)
+  const hideToast = useToastStore((state) => state.hideToast)
 
   const translateY = useRef(new Animated.Value(-100)).current
   const opacity = useRef(new Animated.Value(0)).current

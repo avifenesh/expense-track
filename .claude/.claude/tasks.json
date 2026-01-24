@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "tasks": [
+    {
+      "id": "local-20260123-auth-refresh",
+      "source": "manual",
+      "title": "Fix auth API gaps + refresh handling",
+      "description": "Fix review findings + prod holdings refresh handling",
+      "status": "in_progress",
+      "worktreePath": "C:\\\\Users\\\\avife\\\\expense-track-worktrees\\\\auth-refresh-fixes",
+      "branch": "task/auth-refresh-fixes",
+      "createdAt": "2026-01-23T21:11:48.9912106+02:00",
+      "lastActivityAt": "2026-01-23T23:20:10.315Z",
+      "currentStep": "project-review"
+    },
+    {
+      "id": "gh-220",
+      "source": "github",
+      "title": "mobile: Create ProfileScreen in Settings",
+      "description": "Create profile editing screen with display name and currency picker",
+      "status": "in_progress",
+      "worktreePath": "C:\\\\Users\\\\avife\\\\expense-track-worktrees\\\\profile-screen-220",
+      "branch": "task/profile-screen-220",
+      "createdAt": "2026-01-24T00:00:00.000Z",
+      "lastActivityAt": "2026-01-24T00:00:00.000Z",
+      "currentStep": "worktree-setup"
+    }
+  ]
+}
