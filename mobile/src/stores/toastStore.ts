@@ -7,6 +7,7 @@ interface ToastState {
   message: string
   type: ToastType
   duration: number
+  toastId: number // Version tracking to prevent race conditions
 }
 
 interface ToastActions {
@@ -27,13 +28,14 @@ const initialState: ToastState = {
   message: '',
   type: 'info',
   duration: DEFAULT_DURATION,
+  toastId: 0,
 }
 
 export const useToastStore = create<ToastStore>((set) => ({
   ...initialState,
 
   showToast: (message, type, duration = DEFAULT_DURATION) => {
-    set({ visible: true, message, type, duration })
+    set((state) => ({ visible: true, message, type, duration, toastId: state.toastId + 1 }))
   },
 
   hideToast: () => {
@@ -41,15 +43,33 @@ export const useToastStore = create<ToastStore>((set) => ({
   },
 
   success: (message, duration) => {
-    set({ visible: true, message, type: 'success', duration: duration ?? DEFAULT_DURATION })
+    set((state) => ({
+      visible: true,
+      message,
+      type: 'success',
+      duration: duration ?? DEFAULT_DURATION,
+      toastId: state.toastId + 1,
+    }))
   },
 
   error: (message, duration) => {
-    set({ visible: true, message, type: 'error', duration: duration ?? DEFAULT_DURATION })
+    set((state) => ({
+      visible: true,
+      message,
+      type: 'error',
+      duration: duration ?? DEFAULT_DURATION,
+      toastId: state.toastId + 1,
+    }))
   },
 
   info: (message, duration) => {
-    set({ visible: true, message, type: 'info', duration: duration ?? DEFAULT_DURATION })
+    set((state) => ({
+      visible: true,
+      message,
+      type: 'info',
+      duration: duration ?? DEFAULT_DURATION,
+      toastId: state.toastId + 1,
+    }))
   },
 
   reset: () => {

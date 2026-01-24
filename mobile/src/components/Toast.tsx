@@ -18,14 +18,17 @@ export function Toast() {
   const message = useToastStore((state) => state.message)
   const type = useToastStore((state) => state.type)
   const duration = useToastStore((state) => state.duration)
-  const hideToast = useToastStore((state) => state.hideToast)
+  const toastId = useToastStore((state) => state.toastId)
 
   const translateY = useRef(new Animated.Value(-100)).current
   const opacity = useRef(new Animated.Value(0)).current
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const toastIdRef = useRef(toastId) // Track which toast we're animating
   const [isRendered, setIsRendered] = useState(false)
 
   const animateOut = useCallback(() => {
+    // Capture current toast ID to check in animation callback
+    const animatingToastId = toastIdRef.current
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: -100,
@@ -38,10 +41,18 @@ export function Toast() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setIsRendered(false)
-      hideToast()
+      // Only hide if this is still the current toast (no newer toast was shown)
+      if (useToastStore.getState().toastId === animatingToastId) {
+        setIsRendered(false)
+        useToastStore.getState().hideToast()
+      }
     })
-  }, [translateY, opacity, hideToast])
+  }, [translateY, opacity])
+
+  useEffect(() => {
+    // Keep the ref in sync with the current toast ID
+    toastIdRef.current = toastId
+  }, [toastId])
 
   useEffect(() => {
     if (visible) {
@@ -77,7 +88,7 @@ export function Toast() {
         clearTimeout(timeoutRef.current)
       }
     }
-  }, [visible, duration, message, type, translateY, opacity, animateOut])
+  }, [visible, duration, toastId, translateY, opacity, animateOut])
 
   const handlePress = useCallback(() => {
     if (timeoutRef.current) {

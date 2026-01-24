@@ -12,6 +12,7 @@ describe('toastStore', () => {
       expect(state.message).toBe('')
       expect(state.type).toBe('info')
       expect(state.duration).toBe(3000)
+      expect(state.toastId).toBe(0)
     })
   })
 
@@ -143,6 +144,30 @@ describe('toastStore', () => {
       const state = useToastStore.getState()
       expect(state.message).toBe('Second toast')
       expect(state.type).toBe('error')
+    })
+
+    it('increments toastId for each new toast to track versions', () => {
+      expect(useToastStore.getState().toastId).toBe(0)
+
+      useToastStore.getState().success('First')
+      expect(useToastStore.getState().toastId).toBe(1)
+
+      useToastStore.getState().error('Second')
+      expect(useToastStore.getState().toastId).toBe(2)
+
+      useToastStore.getState().info('Third')
+      expect(useToastStore.getState().toastId).toBe(3)
+
+      useToastStore.getState().showToast('Fourth', 'success')
+      expect(useToastStore.getState().toastId).toBe(4)
+    })
+
+    it('preserves toastId when hiding toast', () => {
+      useToastStore.getState().success('Toast')
+      const idBefore = useToastStore.getState().toastId
+
+      useToastStore.getState().hideToast()
+      expect(useToastStore.getState().toastId).toBe(idBefore)
     })
   })
 })
