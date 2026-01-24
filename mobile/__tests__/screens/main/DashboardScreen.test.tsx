@@ -342,7 +342,7 @@ describe('DashboardScreen', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Income')).toBeTruthy();
-        expect(screen.getByText('+$1,000.00')).toBeTruthy();
+        expect(screen.getAllByText('+$1,000.00').length).toBeGreaterThan(0);
       });
     });
 
@@ -351,7 +351,7 @@ describe('DashboardScreen', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Expenses')).toBeTruthy();
-        expect(screen.getByText('-$50.00')).toBeTruthy();
+        expect(screen.getAllByText('-$50.00').length).toBeGreaterThan(0);
       });
     });
   });

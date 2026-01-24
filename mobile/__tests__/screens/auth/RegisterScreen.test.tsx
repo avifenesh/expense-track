@@ -6,13 +6,47 @@ import { AuthProvider } from '../../../src/contexts';
 import { ApiError } from '../../../src/services/api';
 import * as authService from '../../../src/services/auth';
 import { tokenStorage } from '../../../src/lib/tokenStorage';
+import { useAuthStore } from '../../../src/stores/authStore';
+import { createMockStoreImplementation } from '../../utils/mockZustandStore';
 import type { AuthScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/auth');
 jest.mock('../../../src/lib/tokenStorage');
+jest.mock('../../../src/stores/authStore');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+
+const mockRegister = jest.fn();
+
+const setupAuthStoreMock = () => {
+  const state = {
+    user: null,
+    accessToken: null,
+    refreshToken: null,
+    isAuthenticated: false,
+    hasCompletedOnboarding: false,
+    biometricCapability: null,
+    isBiometricEnabled: false,
+    isLoading: false,
+    error: null,
+    login: jest.fn(),
+    loginWithBiometric: jest.fn(),
+    logout: jest.fn(),
+    register: mockRegister,
+    setOnboardingComplete: jest.fn(),
+    checkBiometric: jest.fn(),
+    enableBiometric: jest.fn(),
+    disableBiometric: jest.fn(),
+    refreshTokens: jest.fn(),
+    setCredentials: jest.fn(),
+    clearError: jest.fn(),
+    reset: jest.fn(),
+  };
+  mockUseAuthStore.mockImplementation(createMockStoreImplementation(state));
+  (mockUseAuthStore as jest.Mock & { getState: () => typeof state }).getState = jest.fn(() => state);
+};
 
 const mockNavigate = jest.fn();
 const mockNavigation = {
@@ -42,6 +76,7 @@ const renderRegisterScreen = () => {
 describe('RegisterScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    setupAuthStoreMock();
     mockTokenStorage.getStoredCredentials.mockResolvedValue({
       accessToken: null,
       refreshToken: null,
@@ -58,7 +93,7 @@ describe('RegisterScreen', () => {
     it('renders all form fields', () => {
       renderRegisterScreen();
 
-      expect(screen.getByText('Create Account')).toBeTruthy();
+      expect(screen.getAllByText('Create Account').length).toBeGreaterThan(0);
       expect(screen.getByText('Start tracking your expenses')).toBeTruthy();
       expect(screen.getByPlaceholderText('Enter your name')).toBeTruthy();
       expect(screen.getByPlaceholderText('Enter your email')).toBeTruthy();
@@ -74,7 +109,7 @@ describe('RegisterScreen', () => {
     it('renders Create Account button', () => {
       renderRegisterScreen();
 
-      expect(screen.getByText('Create Account')).toBeTruthy();
+      expect(screen.getByTestId('register.submitButton')).toBeTruthy();
     });
   });
 
@@ -83,7 +118,7 @@ describe('RegisterScreen', () => {
       renderRegisterScreen();
 
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      fireEvent.focus(passwordInput);
+      fireEvent(passwordInput, 'focus');
 
       await waitFor(() => {
         expect(screen.getByText(/At least 8 characters/i)).toBeTruthy();
@@ -94,13 +129,13 @@ describe('RegisterScreen', () => {
       renderRegisterScreen();
 
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      fireEvent.focus(passwordInput);
+      fireEvent(passwordInput, 'focus');
 
       await waitFor(() => {
         expect(screen.getByText(/At least 8 characters/i)).toBeTruthy();
       });
 
-      fireEvent.blur(passwordInput);
+      fireEvent(passwordInput, 'blur');
 
       await waitFor(() => {
         const requirements = screen.queryAllByText(/At least 8 characters/i);
@@ -126,7 +161,7 @@ describe('RegisterScreen', () => {
 
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'Password123!');
@@ -143,7 +178,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(emailInput, 'test@example.com');
       fireEvent.changeText(passwordInput, 'Password123!');
@@ -170,7 +205,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'invalid-email');
@@ -188,7 +223,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'invalid');
@@ -215,7 +250,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -233,7 +268,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -256,7 +291,7 @@ describe('RegisterScreen', () => {
 
   describe('Registration Success', () => {
     it('calls register with all credentials', async () => {
-      mockAuthService.register.mockResolvedValueOnce({
+      mockRegister.mockResolvedValueOnce({
         message: 'Registration successful',
       });
 
@@ -265,7 +300,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -273,7 +308,7 @@ describe('RegisterScreen', () => {
       fireEvent.press(createButton);
 
       await waitFor(() => {
-        expect(mockAuthService.register).toHaveBeenCalledWith(
+        expect(mockRegister).toHaveBeenCalledWith(
           'test@example.com',
           'Password123!',
           'Test User'
@@ -282,7 +317,7 @@ describe('RegisterScreen', () => {
     });
 
     it('navigates to VerifyEmail on successful registration', async () => {
-      mockAuthService.register.mockResolvedValueOnce({
+      mockRegister.mockResolvedValueOnce({
         message: 'Registration successful',
       });
 
@@ -291,7 +326,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -306,7 +341,7 @@ describe('RegisterScreen', () => {
     });
 
     it('disables button during registration', async () => {
-      mockAuthService.register.mockImplementation(
+      mockRegister.mockImplementation(
         () => new Promise(resolve =>
           setTimeout(() =>
             resolve({ message: 'Registration successful' }),
@@ -320,7 +355,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -328,14 +363,14 @@ describe('RegisterScreen', () => {
       fireEvent.press(createButton);
 
       await waitFor(() => {
-        expect(mockAuthService.register).toHaveBeenCalled();
+        expect(mockRegister).toHaveBeenCalled();
       });
     });
   });
 
   describe('API Error Handling', () => {
     it('displays rate limit error', async () => {
-      mockAuthService.register.mockRejectedValueOnce(
+      mockRegister.mockRejectedValueOnce(
         new ApiError('Too many attempts', 'RATE_LIMITED', 429)
       );
 
@@ -344,7 +379,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -357,7 +392,7 @@ describe('RegisterScreen', () => {
     });
 
     it('displays email error from API details', async () => {
-      mockAuthService.register.mockRejectedValueOnce(
+      mockRegister.mockRejectedValueOnce(
         new ApiError('Email already exists', 'EMAIL_EXISTS', 400, {
           email: ['Email is already registered'],
         })
@@ -368,7 +403,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'existing@example.com');
@@ -381,7 +416,7 @@ describe('RegisterScreen', () => {
     });
 
     it('displays password error from API details', async () => {
-      mockAuthService.register.mockRejectedValueOnce(
+      mockRegister.mockRejectedValueOnce(
         new ApiError('Invalid password', 'INVALID_PASSWORD', 400, {
           password: ['Password must contain uppercase letter'],
         })
@@ -392,7 +427,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -405,7 +440,7 @@ describe('RegisterScreen', () => {
     });
 
     it('displays display name error from API details', async () => {
-      mockAuthService.register.mockRejectedValueOnce(
+      mockRegister.mockRejectedValueOnce(
         new ApiError('Invalid name', 'INVALID_NAME', 400, {
           displayName: ['Display name must be 2-50 characters'],
         })
@@ -416,7 +451,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'T');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -429,14 +464,14 @@ describe('RegisterScreen', () => {
     });
 
     it('displays generic error message for unexpected errors', async () => {
-      mockAuthService.register.mockRejectedValueOnce(new Error('Network error'));
+      mockRegister.mockRejectedValueOnce(new Error('Network error'));
 
       renderRegisterScreen();
 
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');
@@ -460,7 +495,7 @@ describe('RegisterScreen', () => {
     });
 
     it('disables navigation link during registration', async () => {
-      mockAuthService.register.mockImplementation(
+      mockRegister.mockImplementation(
         () => new Promise(resolve =>
           setTimeout(() =>
             resolve({ message: 'Registration successful' }),
@@ -474,7 +509,7 @@ describe('RegisterScreen', () => {
       const nameInput = screen.getByPlaceholderText('Enter your name');
       const emailInput = screen.getByPlaceholderText('Enter your email');
       const passwordInput = screen.getByPlaceholderText('Create a password');
-      const createButton = screen.getByText('Create Account');
+      const createButton = screen.getByTestId('register.submitButton');
 
       fireEvent.changeText(nameInput, 'Test User');
       fireEvent.changeText(emailInput, 'test@example.com');

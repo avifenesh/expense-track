@@ -5,6 +5,7 @@ import { EditTransactionScreen } from '../../../src/screens/main/EditTransaction
 import { useAccountsStore } from '../../../src/stores/accountsStore'
 import { useTransactionsStore } from '../../../src/stores/transactionsStore'
 import { useCategoriesStore } from '../../../src/stores/categoriesStore'
+import { createMockStoreImplementation } from '../../utils/mockZustandStore'
 import type { AppStackScreenProps } from '../../../src/navigation/types'
 import { Alert } from 'react-native'
 
@@ -152,11 +153,16 @@ describe('EditTransactionScreen', () => {
     reset: jest.fn(),
   }
 
+  const setupStoreMock = <T extends object>(mock: jest.Mock, state: T) => {
+    mock.mockImplementation(createMockStoreImplementation(state))
+    ;(mock as jest.Mock & { getState: () => T }).getState = jest.fn(() => state)
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState)
-    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState)
-    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState)
+    setupStoreMock(mockUseAccountsStore, defaultAccountsState)
+    setupStoreMock(mockUseTransactionsStore, defaultTransactionsState)
+    setupStoreMock(mockUseCategoriesStore, defaultCategoriesState)
   })
 
   describe('Rendering', () => {
@@ -196,8 +202,8 @@ describe('EditTransactionScreen', () => {
       renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Expense')).toBeTruthy()
-        expect(screen.getByText('Income')).toBeTruthy()
+        expect(screen.getByLabelText('Expense')).toBeTruthy()
+        expect(screen.getByLabelText('Income')).toBeTruthy()
       })
     })
 
@@ -244,7 +250,7 @@ describe('EditTransactionScreen', () => {
 
   describe('Loading State', () => {
     it('shows loading indicator when transaction is being loaded', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         transactions: [],
       })
@@ -259,7 +265,7 @@ describe('EditTransactionScreen', () => {
 
   describe('Error State - Transaction Not Found', () => {
     it('shows error when transaction is not found', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         transactions: [],
       })
@@ -276,7 +282,7 @@ describe('EditTransactionScreen', () => {
     })
 
     it('shows go back button when transaction not found', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         transactions: [],
       })
@@ -295,7 +301,7 @@ describe('EditTransactionScreen', () => {
       const goBack = jest.fn()
       const navWithGoBack = { ...mockNavigation, goBack }
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         transactions: [],
       })
@@ -372,7 +378,7 @@ describe('EditTransactionScreen', () => {
     it('calls updateTransaction with correct data', async () => {
       const updateTransaction = jest.fn().mockResolvedValue(mockTransaction)
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         updateTransaction,
       })
@@ -450,7 +456,7 @@ describe('EditTransactionScreen', () => {
     it('shows error toast on update failure', async () => {
       const updateTransaction = jest.fn().mockRejectedValue(new Error('Network error'))
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         updateTransaction,
       })
@@ -481,7 +487,7 @@ describe('EditTransactionScreen', () => {
           }),
       )
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         updateTransaction,
       })
@@ -535,7 +541,7 @@ describe('EditTransactionScreen', () => {
     it('calls deleteTransaction when confirm is pressed', async () => {
       const deleteTransaction = jest.fn().mockResolvedValue(undefined)
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         deleteTransaction,
       })
@@ -566,7 +572,7 @@ describe('EditTransactionScreen', () => {
       const deleteTransaction = jest.fn().mockResolvedValue(undefined)
       const navWithGoBack = { ...mockNavigation, goBack }
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         deleteTransaction,
       })
@@ -595,7 +601,7 @@ describe('EditTransactionScreen', () => {
     it('shows success toast on successful delete', async () => {
       const deleteTransaction = jest.fn().mockResolvedValue(undefined)
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         deleteTransaction,
       })
@@ -624,7 +630,7 @@ describe('EditTransactionScreen', () => {
     it('shows error toast on delete failure', async () => {
       const deleteTransaction = jest.fn().mockRejectedValue(new Error('Delete failed'))
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         deleteTransaction,
       })
@@ -662,7 +668,7 @@ describe('EditTransactionScreen', () => {
     it('does not delete when cancel is pressed', async () => {
       const deleteTransaction = jest.fn()
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         deleteTransaction,
       })
@@ -696,7 +702,7 @@ describe('EditTransactionScreen', () => {
           }),
       )
 
-      mockUseTransactionsStore.mockReturnValue({
+      setupStoreMock(mockUseTransactionsStore, {
         ...defaultTransactionsState,
         deleteTransaction,
       })
@@ -889,7 +895,7 @@ describe('EditTransactionScreen', () => {
 
   describe('No Account Selected', () => {
     it('shows error when no account is selected', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         activeAccountId: null,
       })
@@ -914,7 +920,7 @@ describe('EditTransactionScreen', () => {
 
   describe('Currency Display', () => {
     it('shows EUR symbol for EUR accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'EUR' as const }],
       })
@@ -927,7 +933,7 @@ describe('EditTransactionScreen', () => {
     })
 
     it('shows ILS symbol for ILS accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'ILS' as const }],
       })
@@ -963,7 +969,7 @@ describe('EditTransactionScreen', () => {
 
     it('fetches categories when type changes', async () => {
       const fetchCategories = jest.fn().mockResolvedValue(undefined)
-      mockUseCategoriesStore.mockReturnValue({
+      setupStoreMock(mockUseCategoriesStore, {
         ...defaultCategoriesState,
         fetchCategories,
       })

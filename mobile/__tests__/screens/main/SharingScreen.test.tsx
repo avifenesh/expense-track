@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react-nativ
 import { NavigationContainer } from '@react-navigation/native'
 import { SharingScreen } from '../../../src/screens/main/SharingScreen'
 import { useSharingStore } from '../../../src/stores/sharingStore'
+import { createMockStoreImplementation } from '../../utils/mockZustandStore'
 import type { MainTabScreenProps } from '../../../src/navigation/types'
 
 // Mock the store
@@ -135,9 +136,14 @@ describe('SharingScreen', () => {
     reset: jest.fn(),
   }
 
+  const setupStoreMock = <T extends object>(mock: jest.Mock, state: T) => {
+    mock.mockImplementation(createMockStoreImplementation(state))
+    ;(mock as jest.Mock & { getState: () => T }).getState = jest.fn(() => state)
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
-    mockUseSharingStore.mockReturnValue(defaultSharingState)
+    setupStoreMock(mockUseSharingStore, defaultSharingState)
   })
 
   describe('Rendering', () => {
@@ -176,8 +182,8 @@ describe('SharingScreen', () => {
   })
 
   describe('Loading State', () => {
-    it('shows loading spinner during initial load', async () => {
-      mockUseSharingStore.mockReturnValue({
+    it('shows loading skeleton during initial load', async () => {
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [],
         sharedWithMe: [],
@@ -188,14 +194,14 @@ describe('SharingScreen', () => {
       renderSharingScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Loading sharing data...')).toBeTruthy()
+        expect(screen.getByTestId('sharing.skeleton')).toBeTruthy()
       })
     })
   })
 
   describe('Error State', () => {
     it('shows error message when data fails to load', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [],
         sharedWithMe: [],
@@ -212,7 +218,7 @@ describe('SharingScreen', () => {
     })
 
     it('shows retry button on error', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [],
         sharedWithMe: [],
@@ -230,7 +236,7 @@ describe('SharingScreen', () => {
     it('calls clearError and fetchSharing when retry is pressed', async () => {
       const clearError = jest.fn()
       const fetchSharing = jest.fn().mockResolvedValue(undefined)
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [],
         sharedWithMe: [],
@@ -257,7 +263,7 @@ describe('SharingScreen', () => {
 
   describe('Empty States', () => {
     it('shows empty state when no expenses shared with user', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedWithMe: [],
       })
@@ -271,7 +277,7 @@ describe('SharingScreen', () => {
     })
 
     it('shows empty state when user has not shared any expenses', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [],
       })
@@ -341,7 +347,7 @@ describe('SharingScreen', () => {
     })
 
     it('shows negative balance when owing money', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         settlementBalances: [
           {
@@ -362,7 +368,7 @@ describe('SharingScreen', () => {
     })
 
     it('shows settled message when balance is zero', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         settlementBalances: [
           {
@@ -397,7 +403,7 @@ describe('SharingScreen', () => {
         status: 'PAID',
         paidAt: '2026-01-16T14:00:00Z',
       })
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         markParticipantPaid,
       })
@@ -421,7 +427,7 @@ describe('SharingScreen', () => {
         status: 'PAID',
         paidAt: '2026-01-16T14:00:00Z',
       })
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         markParticipantPaid,
       })
@@ -441,7 +447,7 @@ describe('SharingScreen', () => {
 
     it('shows error toast when marking as paid fails', async () => {
       const markParticipantPaid = jest.fn().mockRejectedValue(new Error('Network error'))
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         markParticipantPaid,
       })
@@ -460,7 +466,7 @@ describe('SharingScreen', () => {
     })
 
     it('shows paid label for paid participants', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [
           {
@@ -507,7 +513,7 @@ describe('SharingScreen', () => {
   describe('Initial Data Fetch', () => {
     it('fetches sharing data on mount', async () => {
       const fetchSharing = jest.fn().mockResolvedValue(undefined)
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         fetchSharing,
       })
@@ -537,7 +543,7 @@ describe('SharingScreen', () => {
         createdAt: '2026-01-14T12:00:00Z', // Older
       }
 
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         sharedByMe: [settledExpense, unsettledExpense],
       })
@@ -559,7 +565,7 @@ describe('SharingScreen', () => {
       renderSharingScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Food')).toBeTruthy()
+        expect(screen.getByText(/Food/)).toBeTruthy()
         expect(screen.getByText('Entertainment')).toBeTruthy()
       })
     })
@@ -586,7 +592,7 @@ describe('SharingScreen', () => {
         netBalance: '-30.00',
       }
 
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         settlementBalances: [usdBalance, eurBalance],
       })
@@ -599,12 +605,12 @@ describe('SharingScreen', () => {
         expect(screen.getByText('EUR')).toBeTruthy()
         // Both balances should be shown
         expect(screen.getByText('+$50.00')).toBeTruthy()
-        expect(screen.getByText(/-€30/)).toBeTruthy()
+        expect(screen.getByText(/-30.*€/)).toBeTruthy()
       })
     })
 
     it('shows currency labels only when multiple currencies exist', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         settlementBalances: [mockSettlementBalance], // Single USD balance
       })
@@ -639,7 +645,7 @@ describe('SharingScreen', () => {
         netBalance: '-20.00',
       }
 
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         settlementBalances: [usdBalance1, usdBalance2],
       })
@@ -654,7 +660,7 @@ describe('SharingScreen', () => {
     })
 
     it('shows empty state when no balances exist', async () => {
-      mockUseSharingStore.mockReturnValue({
+      setupStoreMock(mockUseSharingStore, {
         ...defaultSharingState,
         settlementBalances: [],
       })

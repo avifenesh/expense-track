@@ -5,6 +5,7 @@ import { AddBudgetScreen } from '../../../src/screens/main/AddBudgetScreen'
 import { useAccountsStore } from '../../../src/stores/accountsStore'
 import { useBudgetsStore } from '../../../src/stores/budgetsStore'
 import { useCategoriesStore } from '../../../src/stores/categoriesStore'
+import { createMockStoreImplementation } from '../../utils/mockZustandStore'
 import type { AppStackScreenProps } from '../../../src/navigation/types'
 
 // Mock stores
@@ -154,11 +155,16 @@ describe('AddBudgetScreen', () => {
     reset: jest.fn(),
   }
 
+  const setupStoreMock = <T extends object>(mock: jest.Mock, state: T) => {
+    mock.mockImplementation(createMockStoreImplementation(state))
+    ;(mock as jest.Mock & { getState: () => T }).getState = jest.fn(() => state)
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState)
-    mockUseBudgetsStore.mockReturnValue(defaultBudgetsState)
-    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState)
+    setupStoreMock(mockUseAccountsStore, defaultAccountsState)
+    setupStoreMock(mockUseBudgetsStore, defaultBudgetsState)
+    setupStoreMock(mockUseCategoriesStore, defaultCategoriesState)
   })
 
   describe('Rendering', () => {
@@ -242,7 +248,7 @@ describe('AddBudgetScreen', () => {
     })
 
     it('filters out categories with existing budgets for selected month', async () => {
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         budgets: [mockExistingBudget],
       })
@@ -268,7 +274,7 @@ describe('AddBudgetScreen', () => {
         },
       ]
 
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         budgets: budgetForAll,
       })
@@ -283,7 +289,7 @@ describe('AddBudgetScreen', () => {
     })
 
     it('shows loading indicator when categories are loading', async () => {
-      mockUseCategoriesStore.mockReturnValue({
+      setupStoreMock(mockUseCategoriesStore, {
         ...defaultCategoriesState,
         categories: [],
         isLoading: true,
@@ -313,7 +319,7 @@ describe('AddBudgetScreen', () => {
 
     it('resets category selection when month changes and category becomes unavailable', async () => {
       // Start with no budgets
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         budgets: [],
       })
@@ -332,7 +338,7 @@ describe('AddBudgetScreen', () => {
       })
 
       // Now simulate month change where Food has a budget
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         budgets: [mockExistingBudget],
       })
@@ -503,7 +509,7 @@ describe('AddBudgetScreen', () => {
         category: mockExpenseCategory,
       })
 
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         createOrUpdateBudget,
       })
@@ -587,7 +593,7 @@ describe('AddBudgetScreen', () => {
     it('shows error toast on submission failure', async () => {
       const createOrUpdateBudget = jest.fn().mockRejectedValue(new Error('Network error'))
 
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         createOrUpdateBudget,
       })
@@ -621,7 +627,7 @@ describe('AddBudgetScreen', () => {
           }),
       )
 
-      mockUseBudgetsStore.mockReturnValue({
+      setupStoreMock(mockUseBudgetsStore, {
         ...defaultBudgetsState,
         createOrUpdateBudget,
       })
@@ -674,7 +680,7 @@ describe('AddBudgetScreen', () => {
 
   describe('No Account Selected', () => {
     it('shows error when no account is selected', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         activeAccountId: null,
       })
@@ -702,7 +708,7 @@ describe('AddBudgetScreen', () => {
 
   describe('Currency Display', () => {
     it('shows EUR symbol for EUR accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'EUR' as const }],
       })
@@ -715,7 +721,7 @@ describe('AddBudgetScreen', () => {
     })
 
     it('shows ILS symbol for ILS accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      setupStoreMock(mockUseAccountsStore, {
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'ILS' as const }],
       })
@@ -801,7 +807,7 @@ describe('AddBudgetScreen', () => {
   describe('Initial Data Fetch', () => {
     it('fetches expense categories on mount', async () => {
       const fetchCategories = jest.fn().mockResolvedValue(undefined)
-      mockUseCategoriesStore.mockReturnValue({
+      setupStoreMock(mockUseCategoriesStore, {
         ...defaultCategoriesState,
         fetchCategories,
       })

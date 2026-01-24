@@ -5,13 +5,52 @@ import { SettingsScreen } from '../../../src/screens/main/SettingsScreen';
 import { AuthProvider } from '../../../src/contexts';
 import * as biometricService from '../../../src/services/biometric';
 import * as authService from '../../../src/services/auth';
+import { useAuthStore } from '../../../src/stores/authStore';
+import { createMockStoreImplementation } from '../../utils/mockZustandStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/biometric');
 jest.mock('../../../src/services/auth');
+jest.mock('../../../src/stores/authStore');
 
 const mockBiometricService = biometricService as jest.Mocked<typeof biometricService>;
 const mockAuthService = authService as jest.Mocked<typeof authService>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+
+const mockLogout = jest.fn();
+const mockEnableBiometric = jest.fn();
+const mockDisableBiometric = jest.fn();
+
+const setupAuthStoreMock = (overrides: Partial<{
+  biometricCapability: { isAvailable: boolean; biometricType: string; isEnrolled: boolean } | null;
+  isBiometricEnabled: boolean;
+}> = {}) => {
+  const state = {
+    user: null,
+    accessToken: null,
+    refreshToken: null,
+    isAuthenticated: false,
+    hasCompletedOnboarding: false,
+    biometricCapability: overrides.biometricCapability ?? null,
+    isBiometricEnabled: overrides.isBiometricEnabled ?? false,
+    isLoading: false,
+    error: null,
+    login: jest.fn(),
+    loginWithBiometric: jest.fn(),
+    logout: mockLogout,
+    register: jest.fn(),
+    setOnboardingComplete: jest.fn(),
+    checkBiometric: jest.fn(),
+    enableBiometric: mockEnableBiometric,
+    disableBiometric: mockDisableBiometric,
+    refreshTokens: jest.fn(),
+    setCredentials: jest.fn(),
+    clearError: jest.fn(),
+    reset: jest.fn(),
+  };
+  mockUseAuthStore.mockImplementation(createMockStoreImplementation(state));
+  (mockUseAuthStore as jest.Mock & { getState: () => typeof state }).getState = jest.fn(() => state);
+};
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -40,6 +79,7 @@ const renderSettingsScreen = () => {
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    setupAuthStoreMock();
     // Default biometric mocks - not available
     mockBiometricService.checkBiometricCapability.mockResolvedValue({
       isAvailable: false,
@@ -129,12 +169,14 @@ describe('SettingsScreen', () => {
     });
 
     it('shows biometric toggle when available', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: false,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
 
       renderSettingsScreen();
 
@@ -147,12 +189,14 @@ describe('SettingsScreen', () => {
     });
 
     it('shows fingerprint label for fingerprint type', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'fingerprint',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'fingerprint',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: false,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
 
       renderSettingsScreen();
 
@@ -163,12 +207,14 @@ describe('SettingsScreen', () => {
     });
 
     it('shows switch as on when biometric is enabled', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: true,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(true);
 
       renderSettingsScreen();
 
@@ -179,12 +225,14 @@ describe('SettingsScreen', () => {
     });
 
     it('shows switch as off when biometric is disabled', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: false,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
 
       renderSettingsScreen();
 
@@ -195,16 +243,15 @@ describe('SettingsScreen', () => {
     });
 
     it('shows loading indicator when toggling biometric', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: false,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
-      mockBiometricService.promptBiometric.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 100))
-      );
-      mockBiometricService.enableBiometric.mockImplementation(
+      mockEnableBiometric.mockImplementation(
         () => new Promise((resolve) => setTimeout(resolve, 100))
       );
 
@@ -223,16 +270,15 @@ describe('SettingsScreen', () => {
     });
 
     it('shows error when enabling biometric fails', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: false,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
-      mockBiometricService.promptBiometric.mockResolvedValue({
-        success: false,
-        error: 'User cancelled authentication',
-      });
+      mockEnableBiometric.mockRejectedValue(new Error('User cancelled authentication'));
 
       renderSettingsScreen();
 
@@ -249,13 +295,15 @@ describe('SettingsScreen', () => {
     });
 
     it('shows generic error when enabling biometric fails with non-Error', async () => {
-      mockBiometricService.checkBiometricCapability.mockResolvedValue({
-        isAvailable: true,
-        biometricType: 'faceId',
-        isEnrolled: true,
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: false,
       });
-      mockBiometricService.isBiometricEnabled.mockResolvedValue(false);
-      mockBiometricService.promptBiometric.mockRejectedValue('unknown error');
+      mockEnableBiometric.mockRejectedValue('unknown error');
 
       renderSettingsScreen();
 

@@ -258,7 +258,7 @@ describe('BudgetsScreen', () => {
       renderBudgetsScreen();
 
       await waitFor(() => {
-        expect(screen.getByText('Loading budgets...')).toBeTruthy();
+        expect(screen.getByTestId('budgets.skeleton')).toBeTruthy();
       });
     });
   });
