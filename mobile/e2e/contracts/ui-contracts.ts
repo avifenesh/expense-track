@@ -12,6 +12,7 @@ import { TIMEOUTS } from '../helpers/fixtures';
 export const LoginScreen = {
   testIds: {
     screen: 'login.screen',
+    scrollView: 'login.scrollView',
     emailInput: 'login.emailInput',
     passwordInput: 'login.passwordInput',
     submitButton: 'login.submitButton',
@@ -40,12 +41,14 @@ export const LoginScreen = {
   },
 
   async tapSubmit(): Promise<void> {
-    // Scroll to make sure button is visible (keyboard may have pushed it off-screen)
-    await waitFor(element(by.id('login.submitButton')))
-      .toBeVisible()
-      .whileElement(by.id('login.screen'))
-      .scroll(100, 'down');
-    await element(by.id('login.submitButton')).tap();
+    // Try to tap submit button directly - if keyboard covered it, scroll first
+    try {
+      await element(by.id('login.submitButton')).tap();
+    } catch {
+      // If tap fails, scroll within ScrollView to bring button into view
+      await element(by.id('login.scrollView')).scrollTo('bottom');
+      await element(by.id('login.submitButton')).tap();
+    }
   },
 
   async tapRegisterLink(): Promise<void> {
