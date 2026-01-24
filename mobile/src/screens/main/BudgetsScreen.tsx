@@ -20,6 +20,8 @@ import {
 import { getMonthKey } from '../../utils/date'
 import type { Currency } from '../../types'
 
+const SKELETON_CATEGORY_COUNT = 4
+
 export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey())
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -211,7 +213,7 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
           </Text>
           {budgetsLoading && budgets.length === 0 ? (
             <View testID="budgets.categoryLoading">
-              {[0, 1, 2, 3].map((index) => (
+              {Array.from({ length: SKELETON_CATEGORY_COUNT }).map((_, index) => (
                 <SkeletonBudgetCategoryCard key={index} testID={`budgets.skeleton.categoryCard.${index}`} />
               ))}
             </View>

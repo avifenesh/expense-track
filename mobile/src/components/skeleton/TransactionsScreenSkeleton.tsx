@@ -3,6 +3,8 @@ import { View, StyleSheet } from 'react-native'
 import { SkeletonDateSectionHeader } from './SkeletonDateSectionHeader'
 import { SkeletonTransactionItem } from './SkeletonTransactionItem'
 
+const SKELETON_ITEMS_PER_SECTION = 3
+
 interface TransactionsScreenSkeletonProps {
   testID?: string
 }
@@ -17,7 +19,7 @@ export function TransactionsScreenSkeleton({ testID }: TransactionsScreenSkeleto
       accessibilityLabel="Loading transactions"
     >
       <SkeletonDateSectionHeader testID={testID ? `${testID}.section.0.header` : undefined} />
-      {[0, 1, 2].map((index) => (
+      {Array.from({ length: SKELETON_ITEMS_PER_SECTION }).map((_, index) => (
         <SkeletonTransactionItem
           key={`section-0-${index}`}
           testID={testID ? `${testID}.section.0.transaction.${index}` : undefined}
@@ -25,7 +27,7 @@ export function TransactionsScreenSkeleton({ testID }: TransactionsScreenSkeleto
       ))}
 
       <SkeletonDateSectionHeader testID={testID ? `${testID}.section.1.header` : undefined} />
-      {[0, 1, 2].map((index) => (
+      {Array.from({ length: SKELETON_ITEMS_PER_SECTION }).map((_, index) => (
         <SkeletonTransactionItem
           key={`section-1-${index}`}
           testID={testID ? `${testID}.section.1.transaction.${index}` : undefined}

@@ -27,6 +27,8 @@ import type {
   ShareParticipant,
 } from '../../stores/sharingStore'
 
+const SKELETON_SHARED_ITEM_COUNT = 2
+
 function getDisplayName(user: { email: string; displayName?: string | null }): string {
   return user.displayName || user.email.split('@')[0]
 }
@@ -373,7 +375,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           <Text style={styles.sectionTitle}>Shared With You</Text>
           {isLoading && pendingSharedWithMe.length === 0 ? (
             <View testID="sharing.sharedWithMe.loading">
-              {[0, 1].map((index) => (
+              {Array.from({ length: SKELETON_SHARED_ITEM_COUNT }).map((_, index) => (
                 <SkeletonSharedExpenseCard key={index} testID={`sharing.skeleton.sharedWithMe.${index}`} />
               ))}
             </View>
@@ -397,7 +399,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           <Text style={styles.sectionTitle}>You Shared</Text>
           {isLoading && sortedSharedByMe.length === 0 ? (
             <View testID="sharing.sharedByMe.loading">
-              {[0, 1].map((index) => (
+              {Array.from({ length: SKELETON_SHARED_ITEM_COUNT }).map((_, index) => (
                 <SkeletonSharedExpenseCard key={index} testID={`sharing.skeleton.sharedByMe.${index}`} />
               ))}
             </View>

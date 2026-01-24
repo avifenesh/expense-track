@@ -219,7 +219,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
           </Text>
           {transactionsLoading && transactions.length === 0 ? (
             <View testID="dashboard.transactionsLoading">
-              {[0, 1, 2, 3, 4].map((index) => (
+              {Array.from({ length: RECENT_TRANSACTIONS_LIMIT }).map((_, index) => (
                 <SkeletonTransactionItem key={index} testID={`dashboard.skeleton.transaction.${index}`} />
               ))}
             </View>
