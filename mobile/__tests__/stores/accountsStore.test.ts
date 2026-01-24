@@ -1,6 +1,6 @@
 import { useAccountsStore } from '../../src/stores/accountsStore';
 import { useAuthStore } from '../../src/stores/authStore';
-import { ApiError, apiGet, apiPatch } from '../../src/services/api';
+import { ApiError, apiGet, apiPatch, apiPut, apiDelete } from '../../src/services/api';
 
 jest.mock('../../src/services/api', () => {
   const actual = jest.requireActual('../../src/services/api');
@@ -8,11 +8,15 @@ jest.mock('../../src/services/api', () => {
     ...actual,
     apiGet: jest.fn(),
     apiPatch: jest.fn(),
+    apiPut: jest.fn(),
+    apiDelete: jest.fn(),
   };
 });
 
 const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
 const mockApiPatch = apiPatch as jest.MockedFunction<typeof apiPatch>;
+const mockApiPut = apiPut as jest.MockedFunction<typeof apiPut>;
+const mockApiDelete = apiDelete as jest.MockedFunction<typeof apiDelete>;
 
 const mockAccount = {
   id: 'acc-1',
@@ -22,6 +26,7 @@ const mockAccount = {
   color: '#4CAF50',
   icon: 'wallet',
   description: 'My personal finances',
+  balance: 1000,
 };
 
 describe('accountsStore', () => {
@@ -233,6 +238,147 @@ describe('accountsStore', () => {
       useAccountsStore.getState().clearError();
 
       expect(useAccountsStore.getState().error).toBeNull();
+    });
+  });
+
+  describe('updateAccount', () => {
+    it('updates account name successfully', async () => {
+      useAccountsStore.setState({
+        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        activeAccountId: 'acc-1',
+      });
+      mockApiPut.mockResolvedValue({ id: 'acc-1', name: 'Updated Name' });
+
+      const result = await useAccountsStore.getState().updateAccount('acc-1', 'Updated Name');
+
+      expect(result).toBe(true);
+      expect(mockApiPut).toHaveBeenCalledWith('/accounts/acc-1', { name: 'Updated Name' }, 'test-token');
+      const state = useAccountsStore.getState();
+      expect(state.accounts[0].name).toBe('Updated Name');
+      expect(state.isLoading).toBe(false);
+    });
+
+    it('handles API errors', async () => {
+      useAccountsStore.setState({
+        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+      });
+      mockApiPut.mockRejectedValue(new ApiError('Name already exists', 'CONFLICT', 400));
+
+      const result = await useAccountsStore.getState().updateAccount('acc-1', 'Duplicate Name');
+
+      expect(result).toBe(false);
+      const state = useAccountsStore.getState();
+      expect(state.error).toBe('Name already exists');
+    });
+
+    it('handles generic errors', async () => {
+      mockApiPut.mockRejectedValue(new Error('Network error'));
+
+      const result = await useAccountsStore.getState().updateAccount('acc-1', 'New Name');
+
+      expect(result).toBe(false);
+      const state = useAccountsStore.getState();
+      expect(state.error).toBe('Failed to update account');
+    });
+
+    it('sets isLoading during update', async () => {
+      let loadingDuringUpdate = false;
+      mockApiPut.mockImplementation(async () => {
+        loadingDuringUpdate = useAccountsStore.getState().isLoading;
+        return { id: 'acc-1', name: 'Updated' };
+      });
+
+      await useAccountsStore.getState().updateAccount('acc-1', 'Updated');
+
+      expect(loadingDuringUpdate).toBe(true);
+      expect(useAccountsStore.getState().isLoading).toBe(false);
+    });
+  });
+
+  describe('deleteAccount', () => {
+    it('deletes account successfully', async () => {
+      useAccountsStore.setState({
+        accounts: [
+          { ...mockAccount, type: 'PERSONAL' },
+          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED' },
+        ],
+        activeAccountId: 'acc-1',
+      });
+      mockApiDelete.mockResolvedValue({ deleted: true });
+
+      const result = await useAccountsStore.getState().deleteAccount('acc-2');
+
+      expect(result).toBe(true);
+      expect(mockApiDelete).toHaveBeenCalledWith('/accounts/acc-2', 'test-token');
+      const state = useAccountsStore.getState();
+      expect(state.accounts).toHaveLength(1);
+      expect(state.accounts.find((a) => a.id === 'acc-2')).toBeUndefined();
+    });
+
+    it('selects first remaining account if active account is deleted', async () => {
+      useAccountsStore.setState({
+        accounts: [
+          { ...mockAccount, type: 'PERSONAL' },
+          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED' },
+        ],
+        activeAccountId: 'acc-1',
+      });
+      mockApiDelete.mockResolvedValue({ deleted: true });
+
+      await useAccountsStore.getState().deleteAccount('acc-1');
+
+      const state = useAccountsStore.getState();
+      expect(state.activeAccountId).toBe('acc-2');
+    });
+
+    it('sets activeAccountId to null if no accounts remain after delete', async () => {
+      useAccountsStore.setState({
+        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        activeAccountId: null,
+      });
+      mockApiDelete.mockResolvedValue({ deleted: true });
+
+      await useAccountsStore.getState().deleteAccount('acc-1');
+
+      const state = useAccountsStore.getState();
+      expect(state.activeAccountId).toBeNull();
+      expect(state.accounts).toHaveLength(0);
+    });
+
+    it('handles API errors', async () => {
+      useAccountsStore.setState({
+        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+      });
+      mockApiDelete.mockRejectedValue(new ApiError('Cannot delete only account', 'VALIDATION_ERROR', 400));
+
+      const result = await useAccountsStore.getState().deleteAccount('acc-1');
+
+      expect(result).toBe(false);
+      const state = useAccountsStore.getState();
+      expect(state.error).toBe('Cannot delete only account');
+    });
+
+    it('handles generic errors', async () => {
+      mockApiDelete.mockRejectedValue(new Error('Network error'));
+
+      const result = await useAccountsStore.getState().deleteAccount('acc-1');
+
+      expect(result).toBe(false);
+      const state = useAccountsStore.getState();
+      expect(state.error).toBe('Failed to delete account');
+    });
+
+    it('sets isLoading during delete', async () => {
+      let loadingDuringDelete = false;
+      mockApiDelete.mockImplementation(async () => {
+        loadingDuringDelete = useAccountsStore.getState().isLoading;
+        return { deleted: true };
+      });
+
+      await useAccountsStore.getState().deleteAccount('acc-1');
+
+      expect(loadingDuringDelete).toBe(true);
+      expect(useAccountsStore.getState().isLoading).toBe(false);
     });
   });
 

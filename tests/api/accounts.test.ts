@@ -170,23 +170,26 @@ describe('GET /api/v1/accounts', () => {
     })
 
     it('calculates balance correctly from transactions', async () => {
-      mockAccountFindMany.mockResolvedValue([mockAccounts[0]] as unknown as ReturnType<typeof mockAccountFindMany>)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockAccountFindMany.mockResolvedValue([mockAccounts[0]] as any)
       // First call for income, second for expense (per account)
       mockTransactionAggregate
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mockResolvedValueOnce({
           _sum: { amount: mockDecimal(1000) },
           _count: { _all: 5 },
           _avg: { amount: null },
           _min: { amount: null },
           _max: { amount: null },
-        })
+        } as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mockResolvedValueOnce({
           _sum: { amount: mockDecimal(350) },
           _count: { _all: 3 },
           _avg: { amount: null },
           _min: { amount: null },
           _max: { amount: null },
-        })
+        } as any)
 
       const response = await GET(createRequest())
       const data = await response.json()

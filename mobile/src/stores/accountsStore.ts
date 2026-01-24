@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiGet, apiPatch, ApiError } from '../services/api';
+import { apiGet, apiPatch, apiPut, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import { registerStoreReset } from './storeRegistry';
 import type { Currency } from '../types';
@@ -14,6 +14,7 @@ export interface Account {
   color: string | null;
   icon: string | null;
   description: string | null;
+  balance: number;
 }
 
 interface AccountsResponse {
@@ -25,6 +26,7 @@ interface AccountsResponse {
     color: string | null;
     icon: string | null;
     description: string | null;
+    balance: number;
   }>;
 }
 
@@ -38,6 +40,8 @@ interface AccountsState {
 interface AccountsActions {
   fetchAccounts: () => Promise<boolean>;
   setActiveAccount: (accountId: string | null) => Promise<boolean>;
+  updateAccount: (id: string, name: string) => Promise<boolean>;
+  deleteAccount: (id: string) => Promise<boolean>;
   getActiveAccount: () => Account | undefined;
   clearError: () => void;
   reset: () => void;
@@ -113,6 +117,56 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
     } catch (error) {
       const message =
         error instanceof ApiError ? error.message : 'Failed to activate account';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  updateAccount: async (id: string, name: string) => {
+    const accessToken = useAuthStore.getState().accessToken;
+
+    set({ isLoading: true, error: null });
+
+    try {
+      const updated = await apiPut<{ id: string; name: string }>(`/accounts/${id}`, { name }, accessToken);
+      const { accounts } = get();
+      set({
+        accounts: accounts.map((acc) => (acc.id === id ? { ...acc, name: updated.name } : acc)),
+        isLoading: false,
+      });
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : 'Failed to update account';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  deleteAccount: async (id: string) => {
+    const accessToken = useAuthStore.getState().accessToken;
+
+    set({ isLoading: true, error: null });
+
+    try {
+      await apiDelete(`/accounts/${id}`, accessToken);
+      const { accounts, activeAccountId } = get();
+      const remainingAccounts = accounts.filter((acc) => acc.id !== id);
+
+      // If the deleted account was active, select the first remaining account
+      const newActiveId = activeAccountId === id
+        ? (remainingAccounts.length > 0 ? remainingAccounts[0].id : null)
+        : activeAccountId;
+
+      set({
+        accounts: remainingAccounts,
+        activeAccountId: newActiveId,
+        isLoading: false,
+      });
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : 'Failed to delete account';
       set({ error: message, isLoading: false });
       return false;
     }
