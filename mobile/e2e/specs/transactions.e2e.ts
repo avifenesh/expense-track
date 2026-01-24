@@ -103,10 +103,10 @@ describe('Transaction E2E Tests', () => {
       await expect(element(by.id('addTransaction.submitButton'))).toBeVisible();
     });
 
-    // SKIP: This test causes emulator instability (crash/disconnect) on Windows.
+    // SKIP: Transaction submission via UI fails - app doesn't navigate back to dashboard.
     // The API test above proves transaction creation works via backend.
-    // TODO: Investigate emulator stability issue - possibly memory/resource related.
-    // See: https://github.com/wix/Detox/issues for similar WebSocket disconnection issues
+    // TODO: Debug why form submission doesn't complete - likely activeAccountId race condition
+    // or API error causing Alert that blocks navigation. Need to add error state handling.
     it.skip('creates expense transaction', async () => {
       await DashboardScreen.tapAddTransaction();
       await AddTransactionScreen.waitForScreen();
