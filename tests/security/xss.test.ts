@@ -51,6 +51,10 @@ vi.mock('@/lib/subscription', () => ({
 // Mock Prisma enums
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
+  class PrismaClientKnownRequestError extends Error {
+    code?: string
+  }
+
   return {
     ...original,
     Currency: {
@@ -69,12 +73,33 @@ vi.mock('@prisma/client', async (importOriginal) => {
           return Number(this.value)
         }
       },
+      PrismaClientKnownRequestError,
     },
   }
 })
 
 // Mock Prisma client
 vi.mock('@/lib/prisma', () => {
+  const account = {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+  }
+  const category = {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    updateMany: vi.fn(),
+  }
+  const budget = {
+    upsert: vi.fn(),
+    findUnique: vi.fn(),
+  }
+  const holding = {
+    create: vi.fn(),
+    findFirst: vi.fn(),
+  }
   const mockTransaction = {
     create: vi.fn(),
     findFirst: vi.fn(),
@@ -85,39 +110,39 @@ vi.mock('@/lib/prisma', () => {
     create: vi.fn(),
     findFirst: vi.fn(),
   }
+  const user = {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+  }
+  type TransactionClient = {
+    account: typeof account
+    category: typeof category
+    budget: typeof budget
+    holding: typeof holding
+    transaction: typeof mockTransaction
+    recurringTemplate: typeof mockRecurringTemplate
+    user: typeof user
+  }
+
   return {
     prisma: {
-      account: {
-        findUnique: vi.fn(),
-        findFirst: vi.fn(),
-        findMany: vi.fn(),
-      },
-      category: {
-        findUnique: vi.fn(),
-        findFirst: vi.fn(),
-        findMany: vi.fn(),
-        create: vi.fn(),
-        updateMany: vi.fn(),
-      },
+      account,
+      category,
       transaction: mockTransaction,
-      budget: {
-        upsert: vi.fn(),
-        findUnique: vi.fn(),
-      },
-      holding: {
-        create: vi.fn(),
-        findFirst: vi.fn(),
-      },
+      budget,
+      holding,
       recurringTemplate: mockRecurringTemplate,
-      user: {
-        findUnique: vi.fn(),
-        create: vi.fn(),
-      },
+      user,
       // Mock $transaction to execute callback with transaction client
-      $transaction: vi.fn().mockImplementation(async (callback: any) => {
-        const txClient = {
+      $transaction: vi.fn().mockImplementation(async (callback: (tx: TransactionClient) => unknown) => {
+        const txClient: TransactionClient = {
+          account,
+          category,
+          budget,
+          holding,
           transaction: mockTransaction,
           recurringTemplate: mockRecurringTemplate,
+          user,
         }
         return callback(txClient)
       }),
@@ -471,7 +496,7 @@ describe('XSS Vulnerability Audit - Stored XSS Protection', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: false,
-    activeAccountId: null,
+          activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as User)

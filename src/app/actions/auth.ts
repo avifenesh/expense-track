@@ -19,7 +19,7 @@ import {
 import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangedEmail } from '@/lib/email'
 import { serverLogger } from '@/lib/server-logger'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
-import { createTrialSubscription } from '@/lib/subscription'
+import { registerUser } from '@/lib/services/registration-service'
 
 const BCRYPT_ROUNDS = 12
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24
@@ -213,58 +213,28 @@ export async function registerAction(input: z.infer<typeof registrationSchema>) 
   }
   incrementRateLimitTyped(email, 'registration')
 
-  // Check if email already exists - return same message to prevent email enumeration
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  const registerResult = await registerUser({
+    email,
+    password,
+    displayName,
   })
 
-  if (existingUser) {
-    // Return generic success message to prevent attackers from discovering registered emails
-    return success({
-      message: 'If this email is not already registered, you will receive a verification email shortly.',
-    })
-  }
-
-  // Hash password
-  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-
-  // Generate verification token
-  const verificationToken = crypto.randomBytes(32).toString('hex')
-  const verificationExpires = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
-
-  // Create user with a default "Personal" account and trial subscription
-  try {
-    const newUser = await prisma.user.create({
-      data: {
-        email,
-        displayName,
-        passwordHash,
-        emailVerified: false,
-        emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpires,
-        accounts: {
-          create: {
-            name: 'Personal',
-            type: 'SELF',
-          },
-        },
-      },
-    })
-
-    // Create 14-day trial subscription for new user
-    await createTrialSubscription(newUser.id)
-  } catch (error) {
-    serverLogger.error('Failed to create user account', { action: 'registerAction', input: { email } }, error)
+  if (!registerResult.success) {
+    if (registerResult.reason === 'exists') {
+      return success({
+        message: 'If this email is not already registered, you will receive a verification email shortly.',
+      })
+    }
     return generalError('Unable to create account. Please try again.')
   }
 
-  // Send verification email
-  const emailResult = await sendVerificationEmail(email, verificationToken)
-  if (!emailResult.success) {
-    // User created but email failed - they can request resend later
-    return success({
-      message: 'Account created. Verification email could not be sent. Please contact support.',
-    })
+  if (!registerResult.emailVerified && registerResult.verificationToken) {
+    const emailResult = await sendVerificationEmail(email, registerResult.verificationToken)
+    if (!emailResult.success) {
+      return success({
+        message: 'Account created. Verification email could not be sent. Please contact support.',
+      })
+    }
   }
 
   return success({

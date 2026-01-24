@@ -13,6 +13,7 @@ This project is ready to deploy on Railway with `railway.json` configuration and
 Set these variables in the Railway service:
 
 ### Required
+
 - `DATABASE_URL` – Railway Postgres connection string
 - `AUTH_SESSION_SECRET` – random 64+ character secret
 - `NEXT_PUBLIC_APP_URL` – Railway public URL or custom domain
@@ -31,14 +32,18 @@ Set these variables in the Railway service:
 - `AUTH_USER2_PREFERRED_CURRENCY` (e.g., `USD`, `EUR`, `ILS`)
 
 ### Optional Features
+
 - `ALPHA_VANTAGE_API_KEY` – stock prices (free at alphavantage.co)
 - `STOCK_PRICE_MAX_AGE_HOURS` – defaults to 24
+- `STOCK_REFRESH_SLEEP_MS` – delay between quote calls (defaults to 12000)
+- `STOCK_REFRESH_TIME_BUDGET_MS` – max refresh time per request (defaults to 55000)
 - `AWS_BEDROCK_ACCESS_KEY_ID`, `AWS_BEDROCK_SECRET_ACCESS_KEY`, `AWS_BEDROCK_REGION` – for AI assistant
 - `NEXT_PUBLIC_AI_ENABLED` – `true`/`false`
 
 ## 3) Build & Deploy
 
 `railway.json` in the repo handles:
+
 - **Build**: `npm run build`
 - **Migrations**: `npm run db:migrate`
 - **Start**: `npm run start`

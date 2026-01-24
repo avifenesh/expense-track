@@ -1,30 +1,36 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { resetAllRateLimits } from '@/lib/rate-limit'
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-  },
+vi.mock('@/lib/services/registration-service', () => ({
+  registerUser: vi.fn(),
+}))
+
+vi.mock('@/lib/email', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 vi.mock('@/lib/server-logger', () => ({
   serverLogger: {
     info: vi.fn(),
     error: vi.fn(),
+    warn: vi.fn(),
   },
 }))
 
 import { POST as registerPost } from '@/app/api/v1/auth/register/route'
-import { prisma } from '@/lib/prisma'
+import { registerUser } from '@/lib/services/registration-service'
+import { sendVerificationEmail } from '@/lib/email'
 
 describe('POST /api/v1/auth/register', () => {
   beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'test')
     resetAllRateLimits()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   const buildRequest = (body: unknown) =>
@@ -36,22 +42,13 @@ describe('POST /api/v1/auth/register', () => {
 
   describe('success cases', () => {
     it('registers new user successfully', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
-      vi.mocked(prisma.user.create).mockResolvedValueOnce({
-        id: 'new-user-id',
+      vi.mocked(registerUser).mockResolvedValueOnce({
+        success: true,
+        userId: 'new-user-id',
         email: 'test@example.com',
-        displayName: 'Test User',
-        passwordHash: 'hashed',
         emailVerified: false,
-        emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-    activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        verificationToken: 'token',
+        verificationExpires: new Date(),
       })
 
       const response = await registerPost(
@@ -67,65 +64,17 @@ describe('POST /api/v1/auth/register', () => {
       expect(data.success).toBe(true)
       expect(data.data.message).toContain('verification email')
       expect(data.data.emailVerified).toBe(false)
-    })
-
-    it('creates default Personal account for new user', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
-      vi.mocked(prisma.user.create).mockResolvedValueOnce({
-        id: 'new-user-id',
+      expect(registerUser).toHaveBeenCalledWith({
         email: 'test@example.com',
+        password: 'Password123',
         displayName: 'Test User',
-        passwordHash: 'hashed',
-        emailVerified: false,
-        emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-        activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        autoVerify: false,
       })
-
-      await registerPost(
-        buildRequest({
-          email: 'test@example.com',
-          password: 'Password123',
-          displayName: 'Test User',
-        }),
-      )
-
-      // Verify user was created with default account
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          accounts: {
-            create: {
-              name: 'Personal',
-              type: 'SELF',
-            },
-          },
-        }),
-      })
+      expect(sendVerificationEmail).toHaveBeenCalledWith('test@example.com', 'token')
     })
 
     it('returns success even for existing email (email enumeration protection)', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-        id: 'existing-user',
-        email: 'existing@example.com',
-        displayName: 'Existing User',
-        passwordHash: 'hashed',
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationExpires: null,
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-    activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      vi.mocked(registerUser).mockResolvedValueOnce({ success: false, reason: 'exists' })
 
       const response = await registerPost(
         buildRequest({
@@ -140,27 +89,17 @@ describe('POST /api/v1/auth/register', () => {
       expect(data.success).toBe(true)
       // Same message as successful registration
       expect(data.data.message).toContain('verification email')
-      // User create should NOT be called
-      expect(prisma.user.create).not.toHaveBeenCalled()
+      expect(sendVerificationEmail).not.toHaveBeenCalled()
     })
 
     it('auto-verifies @test.local emails for E2E testing', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
-      vi.mocked(prisma.user.create).mockResolvedValueOnce({
-        id: 'new-user-id',
+      vi.mocked(registerUser).mockResolvedValueOnce({
+        success: true,
+        userId: 'new-user-id',
         email: 'e2e-test@test.local',
-        displayName: 'Test User',
-        passwordHash: 'hashed',
-        emailVerified: true, // Should be auto-verified
-        emailVerificationToken: null, // No token needed
-        emailVerificationExpires: null, // No expiry needed
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-        activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpires: null,
       })
 
       const response = await registerPost(
@@ -175,40 +114,23 @@ describe('POST /api/v1/auth/register', () => {
       // Response should indicate emailVerified: true for test users
       expect(data.data.emailVerified).toBe(true)
 
-      // Verify user was created with auto-verification and default account
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          email: 'e2e-test@test.local',
-          emailVerified: true,
-          emailVerificationToken: null,
-          emailVerificationExpires: null,
-          accounts: {
-            create: {
-              name: 'Personal',
-              type: 'SELF',
-            },
-          },
-        }),
+      expect(registerUser).toHaveBeenCalledWith({
+        email: 'e2e-test@test.local',
+        password: 'Password123',
+        displayName: 'Test User',
+        autoVerify: true,
       })
+      expect(sendVerificationEmail).not.toHaveBeenCalled()
     })
 
     it('does NOT auto-verify non-test.local emails', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
-      vi.mocked(prisma.user.create).mockResolvedValueOnce({
-        id: 'new-user-id',
+      vi.mocked(registerUser).mockResolvedValueOnce({
+        success: true,
+        userId: 'new-user-id',
         email: 'test@example.com',
-        displayName: 'Test User',
-        passwordHash: 'hashed',
         emailVerified: false,
-        emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-        activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        verificationToken: 'token',
+        verificationExpires: new Date(),
       })
 
       await registerPost(
@@ -219,34 +141,23 @@ describe('POST /api/v1/auth/register', () => {
         }),
       )
 
-      // Verify user was created WITHOUT auto-verification
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          email: 'test@example.com',
-          emailVerified: false,
-          emailVerificationToken: expect.any(String),
-          emailVerificationExpires: expect.any(Date),
-        }),
+      expect(registerUser).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'Password123',
+        displayName: 'Test User',
+        autoVerify: false,
       })
+      expect(sendVerificationEmail).toHaveBeenCalledWith('test@example.com', 'token')
     })
 
     it('normalizes email to lowercase', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
-      vi.mocked(prisma.user.create).mockResolvedValueOnce({
-        id: 'new-user-id',
+      vi.mocked(registerUser).mockResolvedValueOnce({
+        success: true,
+        userId: 'new-user-id',
         email: 'test@example.com',
-        displayName: 'Test User',
-        passwordHash: 'hashed',
-        emailVerified: false,
-        emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-    activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpires: null,
       })
 
       await registerPost(
@@ -257,8 +168,11 @@ describe('POST /api/v1/auth/register', () => {
         }),
       )
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { email: 'test@example.com' },
+      expect(registerUser).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'Password123',
+        displayName: 'Test User',
+        autoVerify: false,
       })
     })
   })
@@ -385,22 +299,13 @@ describe('POST /api/v1/auth/register', () => {
 
   describe('rate limiting', () => {
     it('returns 429 after 3 registration attempts for same email', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.create).mockResolvedValue({
-        id: 'new-user-id',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        passwordHash: 'hashed',
-        emailVerified: false,
-        emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-    activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      vi.mocked(registerUser).mockResolvedValue({
+        success: true,
+        userId: 'new-user-id',
+        email: 'ratelimit@example.com',
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpires: null,
       })
 
       // First 3 attempts should succeed
@@ -428,22 +333,13 @@ describe('POST /api/v1/auth/register', () => {
     })
 
     it('rate limits are case-insensitive for email', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.create).mockResolvedValue({
-        id: 'new-user-id',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        passwordHash: 'hashed',
-        emailVerified: false,
-        emailVerificationToken: 'token',
-        emailVerificationExpires: new Date(),
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-    activeAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      vi.mocked(registerUser).mockResolvedValue({
+        success: true,
+        userId: 'new-user-id',
+        email: 'case@example.com',
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpires: null,
       })
 
       const emails = ['CASE@example.com', 'Case@Example.COM', 'case@EXAMPLE.com']
