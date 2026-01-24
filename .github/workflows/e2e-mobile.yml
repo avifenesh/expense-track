@@ -65,17 +65,19 @@ jobs:
           NEXTAUTH_SECRET: e2e-test-nextauth-secret
           APP_URL: https://e2e-test.local:3000
 
-      # Seed test users
+      # Seed test users - emails and password hashes must match mobile/e2e/helpers/fixtures.ts
       - name: Seed test users
         run: npm run db:seed:e2e
         env:
           DATABASE_URL: postgresql://runner@localhost:5432/expense_track_test
-          AUTH_USER1_EMAIL: e2e-user1@test.local
+          # TEST_USER: e2e-test@test.local / TestPassword123!
+          AUTH_USER1_EMAIL: e2e-test@test.local
           AUTH_USER1_DISPLAY_NAME: E2E Test User
-          AUTH_USER1_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
-          AUTH_USER2_EMAIL: e2e-user2@test.local
+          AUTH_USER1_PASSWORD_HASH: "$2b$12$scka8WyFGlRUIWaZ3Xs0teAmS/oAt/gYN70M/y6TDqEi6VeqRn5zm"
+          # TEST_USER_2: e2e-test-2@test.local / TestPassword456!
+          AUTH_USER2_EMAIL: e2e-test-2@test.local
           AUTH_USER2_DISPLAY_NAME: E2E Test User 2
-          AUTH_USER2_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
+          AUTH_USER2_PASSWORD_HASH: "$2b$12$T1pvfXsEK1A2KhAYm6E2/.6SPRne65004KOadGuXilDI0uFROX0lK"
 
       # Start backend server in background
       - name: Start backend server
@@ -249,17 +251,19 @@ jobs:
           NEXTAUTH_SECRET: e2e-test-nextauth-secret
           APP_URL: https://e2e-test.local:3000
 
-      # Seed test users
+      # Seed test users - emails and password hashes must match mobile/e2e/helpers/fixtures.ts
       - name: Seed test users
         run: npm run db:seed:e2e
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/expense_track_test
-          AUTH_USER1_EMAIL: e2e-user1@test.local
+          # TEST_USER: e2e-test@test.local / TestPassword123!
+          AUTH_USER1_EMAIL: e2e-test@test.local
           AUTH_USER1_DISPLAY_NAME: E2E Test User
-          AUTH_USER1_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
-          AUTH_USER2_EMAIL: e2e-user2@test.local
+          AUTH_USER1_PASSWORD_HASH: "$2b$12$scka8WyFGlRUIWaZ3Xs0teAmS/oAt/gYN70M/y6TDqEi6VeqRn5zm"
+          # TEST_USER_2: e2e-test-2@test.local / TestPassword456!
+          AUTH_USER2_EMAIL: e2e-test-2@test.local
           AUTH_USER2_DISPLAY_NAME: E2E Test User 2
-          AUTH_USER2_PASSWORD_HASH: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.qO.Tf.vlD6ZXCS"
+          AUTH_USER2_PASSWORD_HASH: "$2b$12$T1pvfXsEK1A2KhAYm6E2/.6SPRne65004KOadGuXilDI0uFROX0lK"
 
       # Start backend server in background
       - name: Start backend server
