@@ -108,9 +108,16 @@ export const RegisterScreen = {
   async enterPassword(password: string): Promise<void> {
     await element(by.id('register.passwordInput')).clearText();
     await element(by.id('register.passwordInput')).typeText(password);
+    // Dismiss keyboard and iOS automatic password suggestion
+    await element(by.id('register.passwordInput')).tapReturnKey();
   },
 
   async tapSubmit(): Promise<void> {
+    // Scroll to ensure button is visible (may be hidden by keyboard or validation hints)
+    await waitFor(element(by.id('register.submitButton')))
+      .toBeVisible()
+      .whileElement(by.id('register.screen'))
+      .scroll(100, 'down');
     await element(by.id('register.submitButton')).tap();
   },
 
@@ -118,7 +125,6 @@ export const RegisterScreen = {
     await this.enterDisplayName(displayName);
     await this.enterEmail(email);
     await this.enterPassword(password);
-    await element(by.id('register.screen')).tap(); // Dismiss keyboard
     await this.tapSubmit();
   },
 
@@ -355,6 +361,7 @@ export const TransactionsScreen = {
 export const AddTransactionScreen = {
   testIds: {
     screen: 'addTransaction.screen',
+    scrollView: 'addTransaction.scrollView',
     amountInput: 'addTransaction.amountInput',
     descriptionInput: 'addTransaction.descriptionInput',
     accountPicker: 'addTransaction.accountPicker',
@@ -376,11 +383,11 @@ export const AddTransactionScreen = {
   },
 
   async enterDescription(description: string): Promise<void> {
-    // Scroll to make description input visible
+    // Scroll within the ScrollView (not SafeAreaView) to make description input visible
     await waitFor(element(by.id('addTransaction.descriptionInput')))
       .toBeVisible()
-      .whileElement(by.id('addTransaction.screen'))
-      .scroll(100, 'down');
+      .whileElement(by.id('addTransaction.scrollView'))
+      .scroll(200, 'down');
     await element(by.id('addTransaction.descriptionInput')).clearText();
     await element(by.id('addTransaction.descriptionInput')).typeText(description);
     // Dismiss keyboard after typing description
@@ -388,11 +395,11 @@ export const AddTransactionScreen = {
   },
 
   async tapSubmit(): Promise<void> {
-    // Scroll to make sure button is visible (keyboard may have pushed it off-screen)
+    // Scroll within the ScrollView to make submit button visible
     await waitFor(element(by.id('addTransaction.submitButton')))
       .toBeVisible()
-      .whileElement(by.id('addTransaction.screen'))
-      .scroll(100, 'down');
+      .whileElement(by.id('addTransaction.scrollView'))
+      .scroll(200, 'down');
     await element(by.id('addTransaction.submitButton')).tap();
   },
 
