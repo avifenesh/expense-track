@@ -13,9 +13,9 @@ import { serverLogger } from '@/lib/server-logger'
 /**
  * GET /api/v1/accounts
  *
- * Retrieves all accounts for the authenticated user.
+ * Retrieves all accounts for the authenticated user with calculated balances.
  *
- * @returns {Object} { accounts: [{ id, name, type, preferredCurrency, color, icon, description }] }
+ * @returns {Object} { accounts: [{ id, name, type, preferredCurrency, color, icon, description, balance }] }
  * @throws {401} Unauthorized - Invalid or missing auth token
  * @throws {429} Rate limited - Too many requests
  * @throws {500} Server error - Unable to fetch accounts
@@ -55,7 +55,27 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     })
 
-    return successResponse({ accounts })
+    // 4. Calculate balance for each account
+    const accountsWithBalance = await Promise.all(
+      accounts.map(async (account) => {
+        const [income, expense] = await Promise.all([
+          prisma.transaction.aggregate({
+            where: { accountId: account.id, type: 'INCOME', deletedAt: null },
+            _sum: { amount: true },
+          }),
+          prisma.transaction.aggregate({
+            where: { accountId: account.id, type: 'EXPENSE', deletedAt: null },
+            _sum: { amount: true },
+          }),
+        ])
+        return {
+          ...account,
+          balance: (income._sum.amount?.toNumber() || 0) - (expense._sum.amount?.toNumber() || 0),
+        }
+      })
+    )
+
+    return successResponse({ accounts: accountsWithBalance })
   } catch (error) {
     serverLogger.error('Failed to fetch accounts', { action: 'GET /api/v1/accounts' }, error)
     return serverError('Unable to fetch accounts')
