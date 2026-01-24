@@ -86,13 +86,12 @@ function formatDateToLocalISO(date: Date): string {
 export function AddTransactionScreen({
   navigation,
 }: AppStackScreenProps<'CreateTransaction'>) {
-  // Use individual selectors to prevent unnecessary re-renders
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
-  const createTransaction = useTransactionsStore((state) => state.createTransaction);
   const categories = useCategoriesStore((state) => state.categories);
   const categoriesLoading = useCategoriesStore((state) => state.isLoading);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
@@ -107,10 +106,8 @@ export function AddTransactionScreen({
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch categories when type changes
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
-    fetchCategories(type);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useCategoriesStore.getState().fetchCategories(type);
   }, [type]);
 
   useEffect(() => {
@@ -196,7 +193,7 @@ export function AddTransactionScreen({
     setErrors({});
 
     try {
-      await createTransaction({
+      await useTransactionsStore.getState().createTransaction({
         accountId: activeAccountId,
         categoryId: categoryId!,
         type,
@@ -224,7 +221,6 @@ export function AddTransactionScreen({
     currency,
     date,
     description,
-    createTransaction,
     navigation,
   ]);
 

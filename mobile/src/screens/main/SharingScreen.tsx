@@ -224,58 +224,48 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
 
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const sharedByMe = useSharingStore((state) => state.sharedByMe)
   const sharedWithMe = useSharingStore((state) => state.sharedWithMe)
   const settlementBalances = useSharingStore((state) => state.settlementBalances)
   const isLoading = useSharingStore((state) => state.isLoading)
   const error = useSharingStore((state) => state.error)
-  const fetchSharing = useSharingStore((state) => state.fetchSharing)
-  const markParticipantPaid = useSharingStore((state) => state.markParticipantPaid)
-  const clearError = useSharingStore((state) => state.clearError)
 
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions)
   const filters = useTransactionsStore((state) => state.filters)
-  const setFilters = useTransactionsStore((state) => state.setFilters)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
   // Initial load - fetch sharing data (runs once on mount)
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
-    fetchSharing()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useSharingStore.getState().fetchSharing()
   }, [])
 
   // Ensure transactions are loaded for picker when account changes
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     if (activeAccountId && activeAccountId !== filters.accountId) {
-      setFilters({ accountId: activeAccountId })
+      useTransactionsStore.getState().setFilters({ accountId: activeAccountId })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAccountId, filters.accountId])
 
   // Fetch transactions when filters change
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     if (filters.accountId) {
-      fetchTransactions()
+      useTransactionsStore.getState().fetchTransactions()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.accountId])
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-    await fetchSharing()
+    await useSharingStore.getState().fetchSharing()
     setIsRefreshing(false)
-  }, [fetchSharing])
+  }, [])
 
   const handleMarkPaid = useCallback(
     async (participantId: string) => {
       if (markingPaidId) return
       setMarkingPaidId(participantId)
       try {
-        await markParticipantPaid(participantId)
+        await useSharingStore.getState().markParticipantPaid(participantId)
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to mark as paid'
         Alert.alert('Error', message)
@@ -283,7 +273,7 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
         setMarkingPaidId(null)
       }
     },
-    [markParticipantPaid, markingPaidId],
+    [markingPaidId],
   )
 
   const handleSharePress = useCallback(() => {
@@ -337,8 +327,8 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => {
-              clearError()
-              fetchSharing()
+              useSharingStore.getState().clearError()
+              useSharingStore.getState().fetchSharing()
             }}
           >
             <Text style={styles.retryButtonText}>Try Again</Text>

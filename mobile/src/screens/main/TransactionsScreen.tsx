@@ -52,44 +52,39 @@ function groupTransactionsByDate(transactions: Transaction[]): DateSection[] {
 export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transactions'>) {
   const [filterType, setFilterType] = useState<FilterType>('all');
 
-  // Use individual selectors to prevent unnecessary re-renders
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const transactions = useTransactionsStore((state) => state.transactions);
   const isLoading = useTransactionsStore((state) => state.isLoading);
   const error = useTransactionsStore((state) => state.error);
   const hasMore = useTransactionsStore((state) => state.hasMore);
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
-  const fetchMoreTransactions = useTransactionsStore((state) => state.fetchMoreTransactions);
-  const setFilters = useTransactionsStore((state) => state.setFilters);
 
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const isLoadingAccounts = useAccountsStore((state) => state.isLoading);
-  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Initial load - fetch accounts if needed (runs once on mount)
   useEffect(() => {
     async function init() {
-      if (accounts.length === 0) {
-        await fetchAccounts();
+      if (useAccountsStore.getState().accounts.length === 0) {
+        await useAccountsStore.getState().fetchAccounts();
       }
     }
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // When account changes, update filters and fetch transactions
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     async function loadTransactions() {
       if (activeAccountId) {
-        setFilters({ accountId: activeAccountId });
-        await fetchTransactions(true);
+        const store = useTransactionsStore.getState();
+        store.setFilters({ accountId: activeAccountId });
+        await store.fetchTransactions(true);
       }
     }
     loadTransactions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAccountId]);
 
   const handleFilterChange = useCallback(
@@ -99,26 +94,28 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
         return;
       }
       setFilterType(type);
-      setFilters({
+      const store = useTransactionsStore.getState();
+      store.setFilters({
         accountId,
         type: type === 'all' ? undefined : type,
       });
-      await fetchTransactions(true);
+      await store.fetchTransactions(true);
     },
-    [setFilters, fetchTransactions, activeAccountId, accounts]
+    [activeAccountId, accounts]
   );
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await fetchTransactions(true);
+    await useTransactionsStore.getState().fetchTransactions(true);
     setIsRefreshing(false);
-  }, [fetchTransactions]);
+  }, []);
 
   const handleEndReached = useCallback(() => {
-    if (hasMore && !isLoading) {
-      fetchMoreTransactions();
+    const store = useTransactionsStore.getState();
+    if (store.hasMore && !store.isLoading) {
+      store.fetchMoreTransactions();
     }
-  }, [hasMore, isLoading, fetchMoreTransactions]);
+  }, []);
 
   const handleTransactionPress = useCallback((transaction: Transaction) => {
     navigation.navigate('EditTransaction', { transactionId: transaction.id });

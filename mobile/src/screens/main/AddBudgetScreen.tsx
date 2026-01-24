@@ -44,14 +44,13 @@ export function AddBudgetScreen({
   navigation,
   route,
 }: AppStackScreenProps<'CreateBudget'>) {
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const budgets = useBudgetsStore((state) => state.budgets);
-  const createOrUpdateBudget = useBudgetsStore((state) => state.createOrUpdateBudget);
   const categories = useCategoriesStore((state) => state.categories);
   const categoriesLoading = useCategoriesStore((state) => state.isLoading);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
@@ -65,10 +64,8 @@ export function AddBudgetScreen({
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch expense categories (runs once on mount)
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
-    fetchCategories('EXPENSE');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useCategoriesStore.getState().fetchCategories('EXPENSE');
   }, []);
 
   const availableCategories = useMemo(() => {
@@ -145,7 +142,7 @@ export function AddBudgetScreen({
     setErrors({});
 
     try {
-      await createOrUpdateBudget({
+      await useBudgetsStore.getState().createOrUpdateBudget({
         accountId: activeAccountId,
         categoryId: categoryId!,
         monthKey: selectedMonth,
@@ -168,7 +165,6 @@ export function AddBudgetScreen({
     selectedMonth,
     amount,
     currency,
-    createOrUpdateBudget,
     navigation,
   ]);
 

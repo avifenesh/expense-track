@@ -94,15 +94,13 @@ export function EditTransactionScreen({
 }: AppStackScreenProps<'EditTransaction'>) {
   const { transactionId } = route.params;
 
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const transactions = useTransactionsStore((state) => state.transactions);
-  const updateTransaction = useTransactionsStore((state) => state.updateTransaction);
-  const deleteTransaction = useTransactionsStore((state) => state.deleteTransaction);
   const categories = useCategoriesStore((state) => state.categories);
   const categoriesLoading = useCategoriesStore((state) => state.isLoading);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const transaction = useMemo(
     () => transactions.find((t) => t.id === transactionId),
@@ -139,10 +137,8 @@ export function EditTransactionScreen({
   }, [transaction, isInitialized]);
 
   // Fetch categories when type changes
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
-    fetchCategories(type);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useCategoriesStore.getState().fetchCategories(type);
   }, [type]);
 
   const filteredCategories = useMemo(() => {
@@ -225,7 +221,7 @@ export function EditTransactionScreen({
     setErrors({});
 
     try {
-      await updateTransaction({
+      await useTransactionsStore.getState().updateTransaction({
         id: transactionId,
         categoryId: categoryId!,
         type,
@@ -253,7 +249,6 @@ export function EditTransactionScreen({
     currency,
     date,
     description,
-    updateTransaction,
     navigation,
   ]);
 
@@ -269,7 +264,7 @@ export function EditTransactionScreen({
           onPress: async () => {
             setIsDeleting(true);
             try {
-              await deleteTransaction(transactionId);
+              await useTransactionsStore.getState().deleteTransaction(transactionId);
               navigation.goBack();
             } catch (error) {
               const message =
@@ -282,7 +277,7 @@ export function EditTransactionScreen({
         },
       ]
     );
-  }, [deleteTransaction, transactionId, navigation]);
+  }, [transactionId, navigation]);
 
   const handleCancel = useCallback(() => {
     navigation.goBack();

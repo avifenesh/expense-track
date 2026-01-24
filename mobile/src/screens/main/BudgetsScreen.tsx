@@ -30,30 +30,24 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Use individual selectors to prevent unnecessary re-renders
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const accountsLoading = useAccountsStore((state) => state.isLoading);
   const accountsError = useAccountsStore((state) => state.error);
-  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
 
   const transactions = useTransactionsStore((state) => state.transactions);
   const transactionsLoading = useTransactionsStore((state) => state.isLoading);
   const transactionsError = useTransactionsStore((state) => state.error);
-  const setTransactionFilters = useTransactionsStore((state) => state.setFilters);
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
 
   const budgets = useBudgetsStore((state) => state.budgets);
   const budgetsLoading = useBudgetsStore((state) => state.isLoading);
   const budgetsError = useBudgetsStore((state) => state.error);
-  const setBudgetFilters = useBudgetsStore((state) => state.setFilters);
-  const setBudgetSelectedMonth = useBudgetsStore((state) => state.setSelectedMonth);
-  const fetchBudgets = useBudgetsStore((state) => state.fetchBudgets);
 
   const categories = useCategoriesStore((state) => state.categories);
   const categoriesLoading = useCategoriesStore((state) => state.isLoading);
   const categoriesError = useCategoriesStore((state) => state.error);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
@@ -93,52 +87,48 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
 
   // Initial load - fetch accounts (runs once on mount)
   useEffect(() => {
-    fetchAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useAccountsStore.getState().fetchAccounts();
   }, []);
 
   // When account or month changes, update filters and fetch data
-  // Store functions are stable and should not be in deps to avoid infinite loops
   useEffect(() => {
     if (activeAccountId) {
-      setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: activeAccountId });
-      setBudgetSelectedMonth(selectedMonth);
+      const txStore = useTransactionsStore.getState();
+      const budgetStore = useBudgetsStore.getState();
+      const catStore = useCategoriesStore.getState();
 
-      fetchCategories('EXPENSE');
-      fetchBudgets();
-      fetchTransactions();
+      txStore.setFilters({ accountId: activeAccountId, month: selectedMonth });
+      budgetStore.setFilters({ accountId: activeAccountId });
+      budgetStore.setSelectedMonth(selectedMonth);
+
+      catStore.fetchCategories('EXPENSE');
+      budgetStore.fetchBudgets();
+      txStore.fetchTransactions();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAccountId, selectedMonth]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await fetchAccounts();
+    await useAccountsStore.getState().fetchAccounts();
     const currentAccountId = useAccountsStore.getState().activeAccountId;
 
     if (currentAccountId) {
-      setTransactionFilters({ accountId: currentAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: currentAccountId });
-      setBudgetSelectedMonth(selectedMonth);
+      const txStore = useTransactionsStore.getState();
+      const budgetStore = useBudgetsStore.getState();
+      const catStore = useCategoriesStore.getState();
+
+      txStore.setFilters({ accountId: currentAccountId, month: selectedMonth });
+      budgetStore.setFilters({ accountId: currentAccountId });
+      budgetStore.setSelectedMonth(selectedMonth);
 
       await Promise.all([
-        fetchCategories('EXPENSE'),
-        fetchBudgets(),
-        fetchTransactions(),
+        catStore.fetchCategories('EXPENSE'),
+        budgetStore.fetchBudgets(),
+        txStore.fetchTransactions(),
       ]);
     }
     setIsRefreshing(false);
-  }, [
-    fetchAccounts,
-    fetchCategories,
-    fetchBudgets,
-    fetchTransactions,
-    selectedMonth,
-    setTransactionFilters,
-    setBudgetFilters,
-    setBudgetSelectedMonth,
-  ]);
+  }, [selectedMonth]);
 
   const handleMonthChange = useCallback((month: string) => {
     setSelectedMonth(month);

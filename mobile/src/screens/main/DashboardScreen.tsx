@@ -33,26 +33,20 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Use individual selectors to prevent unnecessary re-renders
-  // This avoids "Maximum update depth exceeded" errors during rapid state changes
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const accountsLoading = useAccountsStore((state) => state.isLoading);
   const accountsError = useAccountsStore((state) => state.error);
-  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
 
   const transactions = useTransactionsStore((state) => state.transactions);
   const transactionsLoading = useTransactionsStore((state) => state.isLoading);
   const transactionsError = useTransactionsStore((state) => state.error);
-  const setTransactionFilters = useTransactionsStore((state) => state.setFilters);
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
 
   const budgets = useBudgetsStore((state) => state.budgets);
   const budgetsLoading = useBudgetsStore((state) => state.isLoading);
   const budgetsError = useBudgetsStore((state) => state.error);
-  const setBudgetFilters = useBudgetsStore((state) => state.setFilters);
-  const setBudgetSelectedMonth = useBudgetsStore((state) => state.setSelectedMonth);
-  const fetchBudgets = useBudgetsStore((state) => state.fetchBudgets);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
@@ -80,32 +74,37 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   const recentTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT);
 
   // Initial load - fetch accounts (runs once on mount)
+  // Access store actions via getState() to avoid subscription issues
   useEffect(() => {
-    fetchAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useAccountsStore.getState().fetchAccounts();
   }, []);
 
   // When account or month changes, update filters and fetch data
-  // Store functions are stable and should not be in deps to avoid infinite loops
+  // Access store actions via getState() to avoid subscription issues
   useEffect(() => {
     if (activeAccountId) {
-      setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: activeAccountId });
-      setBudgetSelectedMonth(selectedMonth);
-      fetchTransactions();
-      fetchBudgets();
+      const transactionsStore = useTransactionsStore.getState();
+      const budgetsStore = useBudgetsStore.getState();
+
+      transactionsStore.setFilters({ accountId: activeAccountId, month: selectedMonth });
+      budgetsStore.setFilters({ accountId: activeAccountId });
+      budgetsStore.setSelectedMonth(selectedMonth);
+      transactionsStore.fetchTransactions();
+      budgetsStore.fetchBudgets();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAccountId, selectedMonth]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await fetchAccounts();
+    await useAccountsStore.getState().fetchAccounts();
     if (activeAccountId) {
-      await Promise.all([fetchTransactions(), fetchBudgets()]);
+      await Promise.all([
+        useTransactionsStore.getState().fetchTransactions(),
+        useBudgetsStore.getState().fetchBudgets(),
+      ]);
     }
     setIsRefreshing(false);
-  }, [fetchAccounts, fetchTransactions, fetchBudgets, activeAccountId]);
+  }, [activeAccountId]);
 
   const handleMonthChange = useCallback((month: string) => {
     setSelectedMonth(month);
