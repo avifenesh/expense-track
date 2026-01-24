@@ -8,7 +8,9 @@ import { createTrialSubscription } from '@/lib/subscription'
  * POST /api/v1/onboarding/complete
  *
  * Marks the user's onboarding as complete.
- * For test users (@test.local), also ensures they have a trial subscription.
+ * For test users (@test.local), also ensures they have:
+ * - A default "Personal" account (for backward compatibility with existing test users)
+ * - A trial subscription
  *
  * @returns {Object} { hasCompletedOnboarding: true }
  * @throws {401} Unauthorized - Invalid or missing auth token
@@ -25,8 +27,24 @@ export async function POST(request: NextRequest) {
         select: { email: true },
       })
 
-      // Ensure test users have a trial subscription for E2E testing
+      // Ensure test users have account and subscription for E2E testing
+      // This handles backward compatibility for users created before account-creation was added
       if (userRecord?.email.endsWith('@test.local')) {
+        // Ensure default account exists
+        const existingAccount = await prisma.account.findFirst({
+          where: { userId: user.userId, deletedAt: null },
+        })
+        if (!existingAccount) {
+          await prisma.account.create({
+            data: {
+              userId: user.userId,
+              name: 'Personal',
+              type: 'SELF',
+            },
+          })
+        }
+
+        // Ensure trial subscription exists
         const existingSubscription = await prisma.subscription.findUnique({
           where: { userId: user.userId },
         })
