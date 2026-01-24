@@ -8,15 +8,14 @@ import { getApiTestUser, TEST_USER_ID, OTHER_USER_ID, getOtherTestUser } from '.
 
 describe('POST /api/v1/accounts', () => {
   let validToken: string
-  let testUserId: string
 
   beforeEach(async () => {
     process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing!'
     resetEnvCache()
     validToken = generateAccessToken(TEST_USER_ID, 'api-test@example.com')
 
-    const testUser = await getApiTestUser()
-    testUserId = testUser.id
+    // Ensure test user exists
+    await getApiTestUser()
   })
 
   afterEach(async () => {

@@ -527,39 +527,41 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
           <View style={styles.modalContent} testID="accounts.createModal">
             <Text style={styles.modalTitle}>Create Account</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Name</Text>
-              <TextInput
-                style={[styles.input, createState.error && styles.inputError]}
-                value={createState.name}
-                onChangeText={(text) => createDispatch({ type: 'SET_NAME', payload: text })}
-                placeholder="Enter account name"
-                placeholderTextColor="#64748b"
-                maxLength={50}
-                autoFocus
-                testID="accounts.createModal.nameInput"
-              />
-              {createState.error && <Text style={styles.fieldError}>{createState.error}</Text>}
-              <Text style={styles.charCount}>{createState.name.length}/50</Text>
-            </View>
+            <ScrollView style={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Name</Text>
+                <TextInput
+                  style={[styles.input, createState.error && styles.inputError]}
+                  value={createState.name}
+                  onChangeText={(text) => createDispatch({ type: 'SET_NAME', payload: text })}
+                  placeholder="Enter account name"
+                  placeholderTextColor="#64748b"
+                  maxLength={50}
+                  autoFocus
+                  testID="accounts.createModal.nameInput"
+                />
+                {createState.error && <Text style={styles.fieldError}>{createState.error}</Text>}
+                <Text style={styles.charCount}>{createState.name.length}/50</Text>
+              </View>
 
-            {renderTypeSelector(
-              createState.type,
-              (type) => createDispatch({ type: 'SET_TYPE', payload: type }),
-              'accounts.createModal'
-            )}
+              {renderTypeSelector(
+                createState.type,
+                (type) => createDispatch({ type: 'SET_TYPE', payload: type }),
+                'accounts.createModal'
+              )}
 
-            {renderColorPicker(
-              createState.color,
-              (color) => createDispatch({ type: 'SET_COLOR', payload: color }),
-              'accounts.createModal'
-            )}
+              {renderColorPicker(
+                createState.color,
+                (color) => createDispatch({ type: 'SET_COLOR', payload: color }),
+                'accounts.createModal'
+              )}
 
-            {renderCurrencySelector(
-              createState.preferredCurrency,
-              (currency) => createDispatch({ type: 'SET_CURRENCY', payload: currency }),
-              'accounts.createModal'
-            )}
+              {renderCurrencySelector(
+                createState.preferredCurrency,
+                (currency) => createDispatch({ type: 'SET_CURRENCY', payload: currency }),
+                'accounts.createModal'
+              )}
+            </ScrollView>
 
             <View style={styles.modalActions}>
               <Pressable
@@ -594,40 +596,42 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
           <View style={styles.modalContent} testID="accounts.editModal">
             <Text style={styles.modalTitle}>Edit Account</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Name</Text>
-              <TextInput
-                style={[styles.input, editState.error && styles.inputError]}
-                value={editState.name}
-                onChangeText={(text) => editDispatch({ type: 'SET_NAME', payload: text })}
-                placeholder="Enter account name"
-                placeholderTextColor="#64748b"
-                maxLength={50}
-                autoFocus
-                testID="accounts.editModal.nameInput"
-              />
-              {editState.error && <Text style={styles.fieldError}>{editState.error}</Text>}
-              <Text style={styles.charCount}>{editState.name.length}/50</Text>
-            </View>
+            <ScrollView style={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Name</Text>
+                <TextInput
+                  style={[styles.input, editState.error && styles.inputError]}
+                  value={editState.name}
+                  onChangeText={(text) => editDispatch({ type: 'SET_NAME', payload: text })}
+                  placeholder="Enter account name"
+                  placeholderTextColor="#64748b"
+                  maxLength={50}
+                  autoFocus
+                  testID="accounts.editModal.nameInput"
+                />
+                {editState.error && <Text style={styles.fieldError}>{editState.error}</Text>}
+                <Text style={styles.charCount}>{editState.name.length}/50</Text>
+              </View>
 
-            {renderTypeSelector(
-              editState.type,
-              (type) => editDispatch({ type: 'SET_TYPE', payload: type }),
-              'accounts.editModal'
-            )}
+              {renderTypeSelector(
+                editState.type,
+                (type) => editDispatch({ type: 'SET_TYPE', payload: type }),
+                'accounts.editModal'
+              )}
 
-            {renderColorPicker(
-              editState.color,
-              (color) => editDispatch({ type: 'SET_COLOR', payload: color }),
-              'accounts.editModal',
-              true
-            )}
+              {renderColorPicker(
+                editState.color,
+                (color) => editDispatch({ type: 'SET_COLOR', payload: color }),
+                'accounts.editModal',
+                true
+              )}
 
-            {renderCurrencySelector(
-              editState.preferredCurrency,
-              (currency) => editDispatch({ type: 'SET_CURRENCY', payload: currency }),
-              'accounts.editModal'
-            )}
+              {renderCurrencySelector(
+                editState.preferredCurrency,
+                (currency) => editDispatch({ type: 'SET_CURRENCY', payload: currency }),
+                'accounts.editModal'
+              )}
+            </ScrollView>
 
             <View style={styles.modalActions}>
               <Pressable
@@ -855,6 +859,9 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 360,
     maxHeight: '80%',
+  },
+  modalScrollContent: {
+    flexGrow: 0,
   },
   modalTitle: {
     fontSize: 18,

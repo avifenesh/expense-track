@@ -171,6 +171,15 @@ export async function POST(request: NextRequest) {
     return successResponse(account, 201)
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      // Check if this is due to a soft-deleted account with the same name
+      const deletedAccount = await prisma.account.findFirst({
+        where: { userId: user.userId, name, deletedAt: { not: null } },
+      })
+      if (deletedAccount) {
+        return validationError({
+          name: ['A deleted account with this name exists. Please use a different name or restore the deleted account.'],
+        })
+      }
       return validationError({ name: ['An account with this name already exists'] })
     }
     serverLogger.error('Failed to create account', {
