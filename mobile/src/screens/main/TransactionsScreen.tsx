@@ -3,7 +3,13 @@ import { View, Text, StyleSheet, SectionList, Pressable, RefreshControl, Activit
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import { useTransactionsStore, useAccountsStore, type Transaction } from '../../stores'
-import { TransactionListItem, DateSectionHeader, EmptyState, SyncStatusBadge } from '../../components'
+import {
+  TransactionListItem,
+  DateSectionHeader,
+  EmptyState,
+  SyncStatusBadge,
+  TransactionsScreenSkeleton,
+} from '../../components'
 import { getDateKey, formatDateHeader } from '../../utils/date'
 
 type FilterType = 'all' | 'INCOME' | 'EXPENSE'
@@ -137,8 +143,8 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
   const renderEmpty = useCallback(() => {
     if (isLoading || isLoadingAccounts) {
       return (
-        <View style={styles.centerContainer} testID="transactions.loadingState">
-          <ActivityIndicator size="large" color="#38bdf8" testID="transactions.loadingIndicator" />
+        <View style={styles.skeletonContainer} testID="transactions.loadingState">
+          <TransactionsScreenSkeleton testID="transactions.skeleton" />
         </View>
       )
     }
@@ -326,6 +332,10 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     paddingTop: 60,
+  },
+  skeletonContainer: {
+    flex: 1,
+    paddingTop: 8,
   },
   footer: {
     paddingVertical: 20,

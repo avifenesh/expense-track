@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import {
@@ -9,7 +9,14 @@ import {
   useCategoriesStore,
   type Category,
 } from '../../stores'
-import { MonthSelector, BudgetProgressCard, BudgetCategoryCard, EmptyState } from '../../components'
+import {
+  MonthSelector,
+  BudgetProgressCard,
+  BudgetCategoryCard,
+  EmptyState,
+  BudgetsScreenSkeleton,
+  SkeletonBudgetCategoryCard,
+} from '../../components'
 import { getMonthKey } from '../../utils/date'
 import type { Currency } from '../../types'
 
@@ -124,10 +131,15 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   if (accountsLoading && accounts.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.loadingScreen">
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" testID="budgets.loadingIndicator" />
-          <Text style={styles.loadingText}>Loading budgets...</Text>
-        </View>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <Text style={styles.title} testID="budgets.title">
+            Budgets
+          </Text>
+          <Text style={styles.subtitle} testID="budgets.subtitle">
+            Track your spending by category
+          </Text>
+          <BudgetsScreenSkeleton testID="budgets.skeleton" />
+        </ScrollView>
       </SafeAreaView>
     )
   }
@@ -204,8 +216,10 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
             Category Budgets
           </Text>
           {budgetsLoading && budgets.length === 0 ? (
-            <View style={styles.loadingContainer} testID="budgets.categoryLoading">
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="budgets.categoryLoading">
+              {[0, 1, 2, 3].map((index) => (
+                <SkeletonBudgetCategoryCard key={index} testID={`budgets.skeleton.categoryCard.${index}`} />
+              ))}
             </View>
           ) : budgets.length === 0 ? (
             <EmptyState

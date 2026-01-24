@@ -1,18 +1,16 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-  Pressable,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import { useAccountsStore, useTransactionsStore, useBudgetsStore, type Transaction } from '../../stores'
-import { MonthSelector, TransactionListItem, BudgetProgressCard, SyncStatusBadge } from '../../components'
+import {
+  MonthSelector,
+  TransactionListItem,
+  BudgetProgressCard,
+  SyncStatusBadge,
+  DashboardScreenSkeleton,
+  SkeletonTransactionItem,
+} from '../../components'
 import { getMonthKey } from '../../utils/date'
 import { formatCurrency } from '../../utils/format'
 import type { Currency } from '../../types'
@@ -111,12 +109,20 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   if (accountsLoading && accounts.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.loadingScreen">
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" testID="dashboard.loadingIndicator" />
-          <Text style={styles.loadingText} testID="dashboard.loadingText">
-            Loading your finances...
-          </Text>
-        </View>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.title} testID="dashboard.title">
+                Dashboard
+              </Text>
+              <Text style={styles.subtitle} testID="dashboard.subtitle">
+                Your financial overview
+              </Text>
+            </View>
+            <SyncStatusBadge testID="dashboard.syncStatusBadge" />
+          </View>
+          <DashboardScreenSkeleton testID="dashboard.skeleton" />
+        </ScrollView>
       </SafeAreaView>
     )
   }
@@ -222,8 +228,10 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
             Recent Transactions
           </Text>
           {transactionsLoading && transactions.length === 0 ? (
-            <View style={styles.loadingContainer} testID="dashboard.transactionsLoading">
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="dashboard.transactionsLoading">
+              {[0, 1, 2, 3, 4].map((index) => (
+                <SkeletonTransactionItem key={index} testID={`dashboard.skeleton.transaction.${index}`} />
+              ))}
             </View>
           ) : recentTransactions.length === 0 ? (
             <View style={styles.emptyContainer} testID="dashboard.transactionsEmpty">

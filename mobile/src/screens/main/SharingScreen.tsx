@@ -12,7 +12,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import { useSharingStore, useTransactionsStore, useAccountsStore, useToastStore } from '../../stores'
-import { EmptyState, TransactionPickerModal } from '../../components'
+import {
+  EmptyState,
+  TransactionPickerModal,
+  SharingScreenSkeleton,
+  SkeletonSharedExpenseCard,
+} from '../../components'
 import { formatCurrency } from '../../utils/format'
 import type { Currency } from '../../types'
 import type {
@@ -306,11 +311,13 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
 
   if (isLoading && hasNoData && !isRefreshing) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#38bdf8" />
-          <Text style={styles.loadingText}>Loading sharing data...</Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={['top']} testID="sharing.loadingScreen">
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Sharing</Text>
+          </View>
+          <SharingScreenSkeleton testID="sharing.skeleton" />
+        </ScrollView>
       </SafeAreaView>
     )
   }
@@ -370,8 +377,10 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
         <View style={styles.section} testID="sharing.sharedWithMe">
           <Text style={styles.sectionTitle}>Shared With You</Text>
           {isLoading && pendingSharedWithMe.length === 0 ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="sharing.sharedWithMe.loading">
+              {[0, 1].map((index) => (
+                <SkeletonSharedExpenseCard key={index} testID={`sharing.skeleton.sharedWithMe.${index}`} />
+              ))}
             </View>
           ) : pendingSharedWithMe.length === 0 ? (
             <EmptyState
@@ -392,8 +401,10 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
         <View style={styles.section} testID="sharing.sharedByMe">
           <Text style={styles.sectionTitle}>You Shared</Text>
           {isLoading && sortedSharedByMe.length === 0 ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#38bdf8" />
+            <View testID="sharing.sharedByMe.loading">
+              {[0, 1].map((index) => (
+                <SkeletonSharedExpenseCard key={index} testID={`sharing.skeleton.sharedByMe.${index}`} />
+              ))}
             </View>
           ) : sortedSharedByMe.length === 0 ? (
             <EmptyState
