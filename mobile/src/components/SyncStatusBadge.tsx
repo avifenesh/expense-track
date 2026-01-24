@@ -16,11 +16,12 @@ export interface SyncStatusBadgeProps {
 }
 
 export function SyncStatusBadge({ style, onPress, testID = 'sync-status-badge' }: SyncStatusBadgeProps) {
-  const { items, isSyncing, syncError } = useOfflineQueueStore((state) => ({
-    items: state.items,
-    isSyncing: state.isSyncing,
-    syncError: state.syncError,
-  }));
+  // Use individual selectors to prevent infinite re-renders
+  // Returning an object from a selector creates a new reference every time,
+  // causing Zustand to think state changed and trigger re-renders
+  const items = useOfflineQueueStore((state) => state.items);
+  const isSyncing = useOfflineQueueStore((state) => state.isSyncing);
+  const syncError = useOfflineQueueStore((state) => state.syncError);
 
   const pendingCount = items.length;
   const failedCount = items.filter((item) => item.lastError).length;
