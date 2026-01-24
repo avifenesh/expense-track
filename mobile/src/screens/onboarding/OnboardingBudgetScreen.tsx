@@ -8,10 +8,10 @@ import { CURRENCY_SYMBOLS } from '../../constants/categories';
 export function OnboardingBudgetScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingBudget'>) {
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency);
   const monthlyBudget = useOnboardingStore((state) => state.monthlyBudget);
-  const setBudget = useOnboardingStore((state) => state.setBudget);
   const [inputValue, setInputValue] = useState(
     monthlyBudget ? monthlyBudget.toString() : ''
   );
@@ -21,13 +21,13 @@ export function OnboardingBudgetScreen({
   const handleSetBudget = () => {
     const amount = parseFloat(inputValue);
     if (!isNaN(amount) && amount >= 0) {
-      setBudget(amount);
+      useOnboardingStore.getState().setBudget(amount);
       navigation.navigate('OnboardingSampleData');
     }
   };
 
   const handleSkip = () => {
-    setBudget(null);
+    useOnboardingStore.getState().setBudget(null);
     navigation.navigate('OnboardingSampleData');
   };
 

@@ -7,9 +7,9 @@ import { useOnboardingStore } from '../../stores';
 export function OnboardingSampleDataScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingSampleData'>) {
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const wantsSampleData = useOnboardingStore((state) => state.wantsSampleData);
-  const setSampleData = useOnboardingStore((state) => state.setSampleData);
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.sampleData.screen">
@@ -23,7 +23,7 @@ export function OnboardingSampleDataScreen({
         <View style={styles.optionsContainer} testID="onboarding.sampleData.options">
           <Pressable
             style={[styles.option, wantsSampleData && styles.optionSelected]}
-            onPress={() => setSampleData(true)}
+            onPress={() => useOnboardingStore.getState().setSampleData(true)}
             testID="onboarding.sampleData.option.yes"
           >
             <Text style={styles.optionTitle}>Yes, add samples</Text>
@@ -33,7 +33,7 @@ export function OnboardingSampleDataScreen({
           </Pressable>
           <Pressable
             style={[styles.option, !wantsSampleData && styles.optionSelected]}
-            onPress={() => setSampleData(false)}
+            onPress={() => useOnboardingStore.getState().setSampleData(false)}
             testID="onboarding.sampleData.option.no"
           >
             <Text style={styles.optionTitle}>No, start fresh</Text>

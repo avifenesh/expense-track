@@ -62,12 +62,11 @@ export function ShareExpenseScreen({
 }: AppStackScreenProps<'ShareExpense'>) {
   const { transactionId } = route.params;
 
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const transactions = useTransactionsStore((state) => state.transactions);
   const accounts = useAccountsStore((state) => state.accounts);
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
-  const createSharedExpense = useSharingStore((state) => state.createSharedExpense);
-  const lookupUser = useSharingStore((state) => state.lookupUser);
 
   // Find the transaction
   const transaction = useMemo(
@@ -184,7 +183,7 @@ export function ShareExpenseScreen({
     setErrors((prev) => ({ ...prev, email: undefined }));
 
     try {
-      const user = await lookupUser(email);
+      const user = await useSharingStore.getState().lookupUser(email);
 
       if (user) {
         addParticipant({
@@ -213,7 +212,7 @@ export function ShareExpenseScreen({
     } finally {
       setIsLookingUp(false);
     }
-  }, [emailInput, participants, lookupUser, addParticipant]);
+  }, [emailInput, participants, addParticipant]);
 
   const removeParticipant = useCallback(
     (email: string) => {
@@ -301,7 +300,7 @@ export function ShareExpenseScreen({
         };
       });
 
-      await createSharedExpense({
+      await useSharingStore.getState().createSharedExpense({
         transactionId: transaction.id,
         splitType,
         description: description.trim() || '',
@@ -327,7 +326,6 @@ export function ShareExpenseScreen({
     participants,
     splitType,
     description,
-    createSharedExpense,
     navigation,
   ]);
 
