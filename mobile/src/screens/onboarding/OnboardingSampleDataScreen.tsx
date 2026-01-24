@@ -7,7 +7,9 @@ import { useOnboardingStore } from '../../stores';
 export function OnboardingSampleDataScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingSampleData'>) {
-  const { wantsSampleData, setSampleData } = useOnboardingStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const wantsSampleData = useOnboardingStore((state) => state.wantsSampleData);
+  const setSampleData = useOnboardingStore((state) => state.setSampleData);
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.sampleData.screen">

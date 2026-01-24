@@ -44,13 +44,14 @@ export function AddBudgetScreen({
   navigation,
   route,
 }: AppStackScreenProps<'CreateBudget'>) {
-  const { accounts, activeAccountId } = useAccountsStore();
-  const { budgets, createOrUpdateBudget } = useBudgetsStore();
-  const {
-    categories,
-    isLoading: categoriesLoading,
-    fetchCategories,
-  } = useCategoriesStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const accounts = useAccountsStore((state) => state.accounts);
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const budgets = useBudgetsStore((state) => state.budgets);
+  const createOrUpdateBudget = useBudgetsStore((state) => state.createOrUpdateBudget);
+  const categories = useCategoriesStore((state) => state.categories);
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
+  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
 
   const selectedAccount = accounts.find((a) => a.id === activeAccountId);
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD';

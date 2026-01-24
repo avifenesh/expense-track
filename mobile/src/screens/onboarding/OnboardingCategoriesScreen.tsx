@@ -13,7 +13,9 @@ const DEFAULT_CATEGORIES = [
 export function OnboardingCategoriesScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingCategories'>) {
-  const { selectedCategories, toggleCategory } = useOnboardingStore();
+  // Use individual selectors to prevent infinite re-render loops
+  const selectedCategories = useOnboardingStore((state) => state.selectedCategories);
+  const toggleCategory = useOnboardingStore((state) => state.toggleCategory);
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.categories.screen">
