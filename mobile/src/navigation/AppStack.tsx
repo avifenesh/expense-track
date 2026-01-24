@@ -1,15 +1,16 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { AppStackParamList } from './types';
-import { MainTabNavigator } from './MainTabNavigator';
+import React from 'react'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import type { AppStackParamList } from './types'
+import { MainTabNavigator } from './MainTabNavigator'
 import {
   AddTransactionScreen,
   EditTransactionScreen,
   AddBudgetScreen,
   ShareExpenseScreen,
-} from '../screens';
+  ProfileScreen,
+} from '../screens'
 
-const Stack = createNativeStackNavigator<AppStackParamList>();
+const Stack = createNativeStackNavigator<AppStackParamList>()
 
 export function AppStack() {
   return (
@@ -52,6 +53,14 @@ export function AppStack() {
           animation: 'slide_from_bottom',
         }}
       />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
     </Stack.Navigator>
-  );
+  )
 }

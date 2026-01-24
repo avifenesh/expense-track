@@ -1,4 +1,3 @@
-
 export function generateOpenAPIDocument() {
   return {
     openapi: '3.1.0',
@@ -184,7 +183,19 @@ export function generateOpenAPIDocument() {
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
-          required: ['id', 'accountId', 'categoryId', 'type', 'amount', 'currency', 'date', 'month', 'isRecurring', 'createdAt', 'updatedAt'],
+          required: [
+            'id',
+            'accountId',
+            'categoryId',
+            'type',
+            'amount',
+            'currency',
+            'date',
+            'month',
+            'isRecurring',
+            'createdAt',
+            'updatedAt',
+          ],
         },
 
         // Expense Request
@@ -397,9 +408,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/LoginRequest' } } },
           },
           responses: {
-            '200': { description: 'Login successful', content: { 'application/json': { schema: { $ref: '#/components/schemas/TokenResponse' } } } },
-            '401': { description: 'Invalid credentials', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '429': { description: 'Rate limit exceeded (5 req/min per email)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Login successful',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/TokenResponse' } } },
+            },
+            '401': {
+              description: 'Invalid credentials',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '429': {
+              description: 'Rate limit exceeded (5 req/min per email)',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -414,8 +434,14 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/RefreshRequest' } } },
           },
           responses: {
-            '200': { description: 'Tokens refreshed', content: { 'application/json': { schema: { $ref: '#/components/schemas/TokenResponse' } } } },
-            '401': { description: 'Invalid or expired refresh token', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Tokens refreshed',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/TokenResponse' } } },
+            },
+            '401': {
+              description: 'Invalid or expired refresh token',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -430,7 +456,10 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/LogoutRequest' } } },
           },
           responses: {
-            '200': { description: 'Logged out', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessMessage' } } } },
+            '200': {
+              description: 'Logged out',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessMessage' } } },
+            },
           },
         },
       },
@@ -446,9 +475,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateTransaction' } } },
           },
           responses: {
-            '201': { description: 'Transaction created', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '201': {
+              description: 'Transaction created',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -463,10 +501,22 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateTransaction' } } },
           },
           responses: {
-            '200': { description: 'Transaction updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Transaction updated',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
         delete: {
@@ -474,9 +524,18 @@ export function generateOpenAPIDocument() {
           summary: 'Delete transaction',
           parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: {
-            '200': { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/DeleteResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Deleted',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/DeleteResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -492,9 +551,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateExpenseRequest' } } },
           },
           responses: {
-            '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '201': {
+              description: 'Created',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -504,9 +572,18 @@ export function generateOpenAPIDocument() {
           summary: 'Approve expense request',
           parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: {
-            '200': { description: 'Approved', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Approved',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -516,9 +593,18 @@ export function generateOpenAPIDocument() {
           summary: 'Reject expense request',
           parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: {
-            '200': { description: 'Rejected', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Rejected',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -534,9 +620,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateBudget' } } },
           },
           responses: {
-            '200': { description: 'Budget set', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Budget set',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
         delete: {
@@ -548,9 +643,18 @@ export function generateOpenAPIDocument() {
             { name: 'monthKey', in: 'query', required: true, schema: { type: 'string' } },
           ],
           responses: {
-            '200': { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/DeleteResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Deleted',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/DeleteResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -565,9 +669,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateCategory' } } },
           },
           responses: {
-            '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '201': {
+              description: 'Created',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -581,9 +694,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/ArchiveCategory' } } },
           },
           responses: {
-            '200': { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Updated',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -598,9 +720,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateHolding' } } },
           },
           responses: {
-            '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '201': {
+              description: 'Created',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -614,10 +745,22 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateHolding' } } },
           },
           responses: {
-            '200': { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Updated',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
         delete: {
@@ -625,9 +768,18 @@ export function generateOpenAPIDocument() {
           summary: 'Delete holding',
           parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: {
-            '200': { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/DeleteResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Deleted',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/DeleteResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -641,8 +793,31 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/RefreshHoldingPrices' } } },
           },
           responses: {
-            '200': { description: 'Prices refreshed', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: { updated: { type: 'integer' } } } } } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Prices refreshed',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      data: {
+                        type: 'object',
+                        properties: {
+                          updated: { type: 'integer' },
+                          skipped: { type: 'integer' },
+                          errors: { type: 'array', items: { type: 'string' } },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -658,9 +833,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateRecurring' } } },
           },
           responses: {
-            '200': { description: 'Template saved', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Template saved',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -674,9 +858,18 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/ToggleRecurring' } } },
           },
           responses: {
-            '200': { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Toggled',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/IdResponse' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '404': {
+              description: 'Not found',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },
@@ -690,9 +883,31 @@ export function generateOpenAPIDocument() {
             content: { 'application/json': { schema: { $ref: '#/components/schemas/ApplyRecurring' } } },
           },
           responses: {
-            '200': { description: 'Applied', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: { created: { type: 'integer' }, skipped: { type: 'integer' } } } } } } } },
-            '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            '200': {
+              description: 'Applied',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      data: {
+                        type: 'object',
+                        properties: { created: { type: 'integer' }, skipped: { type: 'integer' } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            '400': {
+              description: 'Validation error',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
+            '401': {
+              description: 'Unauthorized',
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+            },
           },
         },
       },

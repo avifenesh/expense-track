@@ -1,47 +1,49 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { OnboardingScreenProps } from '../../navigation/types';
-import { useOnboardingStore } from '../../stores';
-import { CURRENCY_SYMBOLS } from '../../constants/categories';
+import React, { useState } from 'react'
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { OnboardingScreenProps } from '../../navigation/types'
+import { useOnboardingStore } from '../../stores'
+import { CURRENCY_SYMBOLS } from '../../constants/categories'
 
-export function OnboardingBudgetScreen({
-  navigation,
-}: OnboardingScreenProps<'OnboardingBudget'>) {
+export function OnboardingBudgetScreen({ navigation }: OnboardingScreenProps<'OnboardingBudget'>) {
   // Select only STATE values, not functions, to prevent re-render loops
   // Functions are accessed via getState() within callbacks
-  const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency);
-  const monthlyBudget = useOnboardingStore((state) => state.monthlyBudget);
-  const [inputValue, setInputValue] = useState(
-    monthlyBudget ? monthlyBudget.toString() : ''
-  );
+  const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency)
+  const monthlyBudget = useOnboardingStore((state) => state.monthlyBudget)
+  const [inputValue, setInputValue] = useState(monthlyBudget ? monthlyBudget.toString() : '')
 
-  const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency];
+  const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency]
 
   const handleSetBudget = () => {
-    const amount = parseFloat(inputValue);
+    const amount = parseFloat(inputValue)
     if (!isNaN(amount) && amount >= 0) {
-      useOnboardingStore.getState().setBudget(amount);
-      navigation.navigate('OnboardingSampleData');
+      useOnboardingStore.getState().setBudget(amount)
+      navigation.navigate('OnboardingSampleData')
     }
-  };
+  }
 
   const handleSkip = () => {
-    useOnboardingStore.getState().setBudget(null);
-    navigation.navigate('OnboardingSampleData');
-  };
+    useOnboardingStore.getState().setBudget(null)
+    navigation.navigate('OnboardingSampleData')
+  }
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.budget.screen">
       <View style={styles.content} testID="onboarding.budget.content">
-        <Text style={styles.stepIndicator} testID="onboarding.budget.stepIndicator">Step 3 of 5</Text>
-        <Text style={styles.title} testID="onboarding.budget.title">Set Budget</Text>
+        <Text style={styles.stepIndicator} testID="onboarding.budget.stepIndicator">
+          Step 3 of 5
+        </Text>
+        <Text style={styles.title} testID="onboarding.budget.title">
+          Set Budget
+        </Text>
         <Text style={styles.subtitle} testID="onboarding.budget.subtitle">
           Set your monthly budget to track spending
         </Text>
 
         <View style={styles.budgetInput} testID="onboarding.budget.inputContainer">
-          <Text style={styles.budgetSymbol} testID="onboarding.budget.currencySymbol">{currencySymbol}</Text>
+          <Text style={styles.budgetSymbol} testID="onboarding.budget.currencySymbol">
+            {currencySymbol}
+          </Text>
           <TextInput
             style={styles.budgetAmountInput}
             value={inputValue}
@@ -55,9 +57,7 @@ export function OnboardingBudgetScreen({
         </View>
 
         <View style={styles.infoBox} testID="onboarding.budget.infoBox">
-          <Text style={styles.infoText}>
-            You can adjust this later and set category-specific budgets
-          </Text>
+          <Text style={styles.infoText}>You can adjust this later and set category-specific budgets</Text>
         </View>
 
         <View style={styles.buttonContainer}>
@@ -70,7 +70,7 @@ export function OnboardingBudgetScreen({
         </View>
       </View>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -168,4 +168,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

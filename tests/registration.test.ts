@@ -49,16 +49,23 @@ vi.mock('@/lib/rate-limit', () => ({
   incrementRateLimitTyped: vi.fn(),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
+vi.mock('@/lib/prisma', () => {
+  const user = {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  }
+
+  return {
+    prisma: {
+      user,
+      $transaction: vi
+        .fn()
+        .mockImplementation(async (callback: (tx: { user: typeof user }) => unknown) => callback({ user })),
     },
-  },
-}))
+  }
+})
 
 vi.mock('@/lib/email', () => ({
   sendVerificationEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test-message-id' }),

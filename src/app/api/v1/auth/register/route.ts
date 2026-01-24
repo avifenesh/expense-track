@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server'
-import bcrypt from 'bcryptjs'
-import { randomBytes } from 'crypto'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
 import { rateLimitError, validationError, successResponse, serverError } from '@/lib/api-helpers'
 import { serverLogger } from '@/lib/server-logger'
-import { createTrialSubscription } from '@/lib/subscription'
+import { sendVerificationEmail } from '@/lib/email'
+import { registerUser } from '@/lib/services/registration-service'
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
@@ -22,10 +20,7 @@ const registerSchema = z.object({
     .min(2, 'Display name must be at least 2 characters')
     .max(100, 'Display name must be at most 100 characters')
     // Must start and end with alphanumeric, can contain spaces, hyphens, apostrophes in middle
-    .regex(
-      /^[a-zA-Z0-9]([a-zA-Z0-9\s\-']*[a-zA-Z0-9])?$/,
-      'Display name must start and end with a letter or number',
-    ),
+    .regex(/^[a-zA-Z0-9]([a-zA-Z0-9\s\-']*[a-zA-Z0-9])?$/, 'Display name must start and end with a letter or number'),
 })
 
 export async function POST(request: NextRequest) {
@@ -51,58 +46,49 @@ export async function POST(request: NextRequest) {
     }
     incrementRateLimitTyped(normalizedEmail, 'registration')
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
+    // Auto-verify test emails only in test environment
+    const isTestEmail = process.env.NODE_ENV === 'test' && normalizedEmail.endsWith('@test.local')
+
+    const registerResult = await registerUser({
+      email: normalizedEmail,
+      password,
+      displayName,
+      autoVerify: isTestEmail,
     })
 
-    if (existingUser) {
-      serverLogger.info('Registration attempt for existing email', { email: normalizedEmail })
-      return successResponse({ message: 'If this email is not registered, you will receive a verification email shortly.' }, 201)
+    if (!registerResult.success) {
+      if (registerResult.reason === 'exists') {
+        serverLogger.info('Registration attempt for existing email', { email: normalizedEmail })
+        return successResponse(
+          { message: 'If this email is not registered, you will receive a verification email shortly.' },
+          201,
+        )
+      }
+      return serverError('Registration failed')
     }
 
-    const passwordHash = await bcrypt.hash(password, 12)
-
-    // Auto-verify test emails (*.test.local domain) for E2E testing
-    const isTestEmail = normalizedEmail.endsWith('@test.local')
-
-    const verificationToken = isTestEmail ? null : randomBytes(32).toString('hex')
-    const verificationExpires = isTestEmail ? null : new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-    const newUser = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        displayName: displayName.trim(),
-        passwordHash,
-        emailVerified: isTestEmail,
-        emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpires,
-        // Create default account (same as web registration)
-        accounts: {
-          create: {
-            name: 'Personal',
-            type: 'SELF',
-          },
-        },
-      },
-    })
-
-    // Auto-create trial subscription for test users so they can access subscription-required features
-    if (isTestEmail) {
-      await createTrialSubscription(newUser.id)
+    if (!registerResult.emailVerified && registerResult.verificationToken) {
+      const emailResult = await sendVerificationEmail(normalizedEmail, registerResult.verificationToken)
+      if (!emailResult.success) {
+        serverLogger.warn('Verification email failed to send', {
+          action: 'POST /api/v1/auth/register',
+          email: normalizedEmail,
+        })
+      }
     }
 
-    if (process.env.NODE_ENV === 'development' && !isTestEmail) {
+    if (process.env.NODE_ENV === 'development' && !isTestEmail && registerResult.verificationExpires) {
       // Log for development debugging, but never log the actual token
       serverLogger.info('Email verification required', {
         email: normalizedEmail,
-        expires: verificationExpires!.toISOString(),
+        expires: registerResult.verificationExpires.toISOString(),
       })
     }
 
     return successResponse(
       {
         message: 'If this email is not registered, you will receive a verification email shortly.',
-        emailVerified: isTestEmail,
+        emailVerified: registerResult.emailVerified,
       },
       201,
     )
@@ -111,4 +97,3 @@ export async function POST(request: NextRequest) {
     return serverError('Registration failed')
   }
 }
-

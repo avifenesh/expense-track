@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyRefreshToken } from '@/lib/jwt'
+import { verifyRefreshToken, type TokenPayload } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { env } from '@/lib/env-schema'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { rateLimitError } from '@/lib/api-helpers'
 
@@ -14,20 +15,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Refresh token required' }, { status: 400 })
     }
 
-    let jti: string
-    let userId: string
+    let payload: TokenPayload
     try {
-      const payload = verifyRefreshToken(refreshToken)
-      jti = payload.jti!
-      userId = payload.userId
+      payload = verifyRefreshToken(refreshToken)
     } catch {
-      const decoded = jwt.decode(refreshToken) as { jti?: string; userId?: string } | null
-      if (!decoded?.jti || !decoded?.userId) {
+      try {
+        payload = jwt.verify(refreshToken, env.jwtSecret, { ignoreExpiration: true }) as TokenPayload
+      } catch {
         return NextResponse.json({ error: 'Invalid refresh token' }, { status: 400 })
       }
-      jti = decoded.jti
-      userId = decoded.userId
+
+      if (payload.type !== 'refresh' || !payload.jti) {
+        return NextResponse.json({ error: 'Invalid refresh token' }, { status: 400 })
+      }
     }
+
+    const { jti, userId } = payload
 
     // Rate limit check
     const rateLimit = checkRateLimit(userId)

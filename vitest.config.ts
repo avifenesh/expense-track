@@ -10,6 +10,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
     fileParallelism: false, // Run test files sequentially to avoid database race conditions
+    setupFiles: ['tests/setup-env.ts'],
     coverage: {
       reporter: ['text', 'html', 'json-summary'],
       reportsDirectory: 'coverage',

@@ -1,21 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { OnboardingScreenProps } from '../../navigation/types';
-import { useOnboardingStore } from '../../stores';
+import React from 'react'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { OnboardingScreenProps } from '../../navigation/types'
+import { useOnboardingStore } from '../../stores'
 
-export function OnboardingSampleDataScreen({
-  navigation,
-}: OnboardingScreenProps<'OnboardingSampleData'>) {
+export function OnboardingSampleDataScreen({ navigation }: OnboardingScreenProps<'OnboardingSampleData'>) {
   // Select only STATE values, not functions, to prevent re-render loops
   // Functions are accessed via getState() within callbacks
-  const wantsSampleData = useOnboardingStore((state) => state.wantsSampleData);
+  const wantsSampleData = useOnboardingStore((state) => state.wantsSampleData)
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.sampleData.screen">
       <View style={styles.content} testID="onboarding.sampleData.content">
-        <Text style={styles.stepIndicator} testID="onboarding.sampleData.stepIndicator">Step 4 of 5</Text>
-        <Text style={styles.title} testID="onboarding.sampleData.title">Sample Data</Text>
+        <Text style={styles.stepIndicator} testID="onboarding.sampleData.stepIndicator">
+          Step 4 of 5
+        </Text>
+        <Text style={styles.title} testID="onboarding.sampleData.title">
+          Sample Data
+        </Text>
         <Text style={styles.subtitle} testID="onboarding.sampleData.subtitle">
           Want to explore with sample transactions?
         </Text>
@@ -27,9 +29,7 @@ export function OnboardingSampleDataScreen({
             testID="onboarding.sampleData.option.yes"
           >
             <Text style={styles.optionTitle}>Yes, add samples</Text>
-            <Text style={styles.optionDescription}>
-              See how the app works with realistic data
-            </Text>
+            <Text style={styles.optionDescription}>See how the app works with realistic data</Text>
           </Pressable>
           <Pressable
             style={[styles.option, !wantsSampleData && styles.optionSelected]}
@@ -37,9 +37,7 @@ export function OnboardingSampleDataScreen({
             testID="onboarding.sampleData.option.no"
           >
             <Text style={styles.optionTitle}>No, start fresh</Text>
-            <Text style={styles.optionDescription}>
-              Begin with a clean slate
-            </Text>
+            <Text style={styles.optionDescription}>Begin with a clean slate</Text>
           </Pressable>
         </View>
 
@@ -52,7 +50,7 @@ export function OnboardingSampleDataScreen({
         </Pressable>
       </View>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -118,4 +116,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

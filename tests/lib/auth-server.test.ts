@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import crypto from 'node:crypto'
 
 // Mock dependencies BEFORE imports
 vi.mock('next/headers', () => ({
@@ -114,11 +115,11 @@ describe('auth-server.ts', () => {
   })
 
   describe('Phase 0: Environment Setup - Module initialization', () => {
-    it.skip('should throw when AUTH_SESSION_SECRET is missing', async () => {
-      // SKIP: This test requires process-level isolation to test module initialization error
-      // SESSION_SECRET is evaluated at module load time (line 26 of auth-server.ts)
-      // In Vitest, modules are cached and vi.resetModules() doesn't clear the module-level const
-      // The error path is verified by: (1) code review, (2) production deployment fails without secret
+    it('should throw when AUTH_SESSION_SECRET is missing', async () => {
+      vi.stubEnv('AUTH_SESSION_SECRET', '')
+      await vi.resetModules()
+
+      await expect(import('@/lib/auth-server')).rejects.toThrow('AUTH_SESSION_SECRET environment variable is required')
     })
   })
 
@@ -254,12 +255,19 @@ describe('auth-server.ts', () => {
         expect(session).toBeNull()
       })
 
-      it.skip('should return null and log error when token validation throws exception', async () => {
-        // SKIP: crypto.timingSafeEqual exception path is defensive programming for system-level errors
-        // The function checks buffer length equality first (line 67), preventing most exception cases
-        // Buffer.from() accepts any string without throwing, and timingSafeEqual only throws on length mismatch
-        // Testing this requires mocking crypto module internals, which is brittle and tests implementation details
-        // The try/catch provides safety for unexpected crypto errors but is not reliably triggerable in tests
+      it('should return null when token validation throws exception', async () => {
+        const { establishSession, validateSessionToken } = await import('@/lib/auth-server')
+
+        await establishSession({ userEmail: 'user1@test.com', accountId: 'acc123' })
+
+        const timingSpy = vi.spyOn(crypto, 'timingSafeEqual').mockImplementation(() => {
+          throw new Error('crypto failure')
+        })
+
+        const session = await validateSessionToken()
+        expect(session).toBeNull()
+
+        timingSpy.mockRestore()
       })
 
       it('should return null when user email not in database', async () => {
@@ -549,7 +557,7 @@ describe('auth-server.ts', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: true,
-    activeAccountId: null,
+          activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           accounts: [{ name: 'Account1' }, { name: 'Shared' }],
@@ -589,7 +597,7 @@ describe('auth-server.ts', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: true,
-    activeAccountId: null,
+          activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           accounts: [{ name: 'Account1' }],
@@ -616,7 +624,7 @@ describe('auth-server.ts', () => {
           passwordResetToken: null,
           passwordResetExpires: null,
           hasCompletedOnboarding: true,
-    activeAccountId: null,
+          activeAccountId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           accounts: [],
@@ -696,12 +704,37 @@ describe('auth-server.ts', () => {
         expect(result).toEqual({ error: { general: ['Account not found'] } })
       })
 
-      it.skip('should return error when authUser not found from session', async () => {
-        // SKIP: This error path is unreachable in the current implementation
-        // getSession() at line 145-160 checks if authUser exists (lines 155-158) and returns null if not found
-        // Therefore, updateSessionAccount() always gets either null or a session with a valid user
-        // The authUser check at lines 119-122 in updateSessionAccount is defensive but never executed
-        // This represents potential dead code that could be removed in a refactor
+      it('should return error when user record is missing during account update', async () => {
+        const { establishSession, updateSessionAccount } = await import('@/lib/auth-server')
+
+        await establishSession({ userEmail: 'user1@test.com', accountId: 'acc-account1' })
+
+        vi.mocked(prisma.user.findUnique)
+          .mockResolvedValueOnce({
+            ...TEST_USER_1,
+            emailVerified: true,
+          } as never)
+          .mockResolvedValueOnce(null)
+
+        vi.mocked(prisma.account.findFirst).mockResolvedValue({
+          id: 'acc-shared',
+          userId: 'user1',
+          name: 'Shared Account',
+          type: 'SELF',
+          preferredCurrency: 'USD',
+          color: null,
+          icon: null,
+          description: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+          deletedBy: null,
+          defaultIncomeGoal: null,
+          defaultIncomeGoalCurrency: null,
+        })
+
+        const result = await updateSessionAccount('acc-shared')
+        expect(result).toEqual({ error: { general: ['User record not found'] } })
       })
 
       it('should return error when account not in user authorized accounts', async () => {

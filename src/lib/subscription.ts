@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SubscriptionStatus } from '@prisma/client'
+import { Prisma, SubscriptionStatus } from '@prisma/client'
 import { prisma } from './prisma'
 import { TRIAL_DURATION_DAYS, SUBSCRIPTION_PRICE_CENTS } from './subscription-constants'
 
@@ -66,11 +66,13 @@ export async function getSubscriptionState(userId: string): Promise<Subscription
 /**
  * Create a trial subscription for a new user
  */
-export async function createTrialSubscription(userId: string): Promise<void> {
+type PrismaClientLike = Prisma.TransactionClient | typeof prisma
+
+export async function createTrialSubscription(userId: string, tx: PrismaClientLike = prisma): Promise<void> {
   const trialEndsAt = new Date()
   trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DURATION_DAYS)
 
-  await prisma.subscription.create({
+  await tx.subscription.create({
     data: {
       userId,
       status: SubscriptionStatus.TRIALING,
@@ -231,11 +233,7 @@ export async function findSubscriptionByPaddleId(paddleSubscriptionId: string) {
  * Update subscription period dates
  * Called when we receive transaction.completed webhook
  */
-export async function updateSubscriptionPeriod(
-  userId: string,
-  periodStart: Date,
-  periodEnd: Date,
-): Promise<void> {
+export async function updateSubscriptionPeriod(userId: string, periodStart: Date, periodEnd: Date): Promise<void> {
   await prisma.subscription.update({
     where: { userId },
     data: {

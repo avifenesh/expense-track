@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
@@ -27,28 +28,45 @@ export async function POST(request: NextRequest) {
     }
     incrementRateLimit(payload.userId)
 
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { jti: payload.jti },
+    const rotationResult = await prisma.$transaction(async (tx) => {
+      const { token: newRefreshToken, jti: newJti, expiresAt } = generateRefreshToken(payload.userId, payload.email)
+
+      try {
+        await tx.refreshToken.update({
+          where: { jti: payload.jti },
+          data: {
+            jti: newJti,
+            userId: payload.userId,
+            email: payload.email,
+            expiresAt,
+          },
+        })
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+          return null
+        }
+        throw error
+      }
+
+      const newAccessToken = generateAccessToken(payload.userId, payload.email)
+
+      return {
+        newAccessToken,
+        newRefreshToken,
+      }
     })
 
-    if (!storedToken) {
+    if (!rotationResult) {
       return NextResponse.json({ error: 'Refresh token has been revoked' }, { status: 401 })
     }
 
-    await prisma.refreshToken.delete({
-      where: { jti: payload.jti },
-    })
-
-    const newAccessToken = generateAccessToken(payload.userId, payload.email)
-    const { token: newRefreshToken, jti, expiresAt } = generateRefreshToken(payload.userId, payload.email)
-
-    await prisma.refreshToken.create({
-      data: { jti, userId: payload.userId, email: payload.email, expiresAt },
-    })
-
     return NextResponse.json({
       success: true,
-      data: { accessToken: newAccessToken, refreshToken: newRefreshToken, expiresIn: 900 },
+      data: {
+        accessToken: rotationResult.newAccessToken,
+        refreshToken: rotationResult.newRefreshToken,
+        expiresIn: 900,
+      },
     })
   } catch {
     return NextResponse.json({ error: 'Token refresh failed' }, { status: 500 })

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { checkRateLimitTyped, incrementRateLimitTyped } from '@/lib/rate-limit'
 import { rateLimitError, validationError, successResponse, serverError } from '@/lib/api-helpers'
 import { serverLogger } from '@/lib/server-logger'
+import { sendVerificationEmail } from '@/lib/email'
 
 const resendVerificationSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
@@ -43,12 +44,16 @@ export async function POST(request: NextRequest) {
     // The actual verification email sending happens only if conditions are met
     if (!user) {
       serverLogger.info('Resend verification requested for non-existent email', { email: normalizedEmail })
-      return successResponse({ message: 'If an account exists with this email and is not verified, a new verification email will be sent.' })
+      return successResponse({
+        message: 'If an account exists with this email and is not verified, a new verification email will be sent.',
+      })
     }
 
     if (user.emailVerified) {
       serverLogger.info('Resend verification requested for already verified email', { email: normalizedEmail })
-      return successResponse({ message: 'If an account exists with this email and is not verified, a new verification email will be sent.' })
+      return successResponse({
+        message: 'If an account exists with this email and is not verified, a new verification email will be sent.',
+      })
     }
 
     // Generate new verification token
@@ -64,15 +69,24 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    const emailResult = await sendVerificationEmail(normalizedEmail, verificationToken)
+    if (!emailResult.success) {
+      serverLogger.error('Failed to send verification email', {
+        action: 'POST /api/v1/auth/resend-verification',
+        email: normalizedEmail,
+      })
+    }
+
     if (process.env.NODE_ENV === 'development') {
       serverLogger.info('Verification email resent', {
         email: normalizedEmail,
-        token: verificationToken,
         expires: verificationExpires.toISOString(),
       })
     }
 
-    return successResponse({ message: 'If an account exists with this email and is not verified, a new verification email will be sent.' })
+    return successResponse({
+      message: 'If an account exists with this email and is not verified, a new verification email will be sent.',
+    })
   } catch (error) {
     serverLogger.error('Resend verification failed', { error })
     return serverError('Failed to process request')
