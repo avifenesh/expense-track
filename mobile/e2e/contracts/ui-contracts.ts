@@ -4,8 +4,8 @@
  * These define the contract between the app and the user (test framework)
  */
 
-import { element, by, expect, waitFor } from 'detox';
-import { TIMEOUTS } from '../helpers/fixtures';
+import { element, by, expect, waitFor } from 'detox'
+import { TIMEOUTS } from '../helpers/fixtures'
 
 // ============ Auth Screens ============
 
@@ -24,53 +24,53 @@ export const LoginScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('login.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.LONG);
+      .withTimeout(TIMEOUTS.LONG)
   },
 
   async enterEmail(email: string): Promise<void> {
-    await element(by.id('login.emailInput')).clearText();
-    await element(by.id('login.emailInput')).typeText(email);
+    await element(by.id('login.emailInput')).clearText()
+    await element(by.id('login.emailInput')).typeText(email)
   },
 
   async enterPassword(password: string): Promise<void> {
-    await element(by.id('login.passwordInput')).clearText();
-    await element(by.id('login.passwordInput')).typeText(password);
+    await element(by.id('login.passwordInput')).clearText()
+    await element(by.id('login.passwordInput')).typeText(password)
   },
 
   async tapSubmit(): Promise<void> {
-    await element(by.id('login.submitButton')).tap();
+    await element(by.id('login.submitButton')).tap()
   },
 
   async tapRegisterLink(): Promise<void> {
-    await element(by.id('login.registerLink')).tap();
+    await element(by.id('login.registerLink')).tap()
   },
 
   async tapResetPasswordLink(): Promise<void> {
-    await element(by.id('login.resetPasswordLink')).tap();
+    await element(by.id('login.resetPasswordLink')).tap()
   },
 
   async tapBiometricButton(): Promise<void> {
-    await element(by.id('login.biometricButton')).tap();
+    await element(by.id('login.biometricButton')).tap()
   },
 
   async login(email: string, password: string): Promise<void> {
-    await this.enterEmail(email);
-    await this.enterPassword(password);
-    await element(by.id('login.screen')).tap(); // Dismiss keyboard
-    await this.tapSubmit();
+    await this.enterEmail(email)
+    await this.enterPassword(password)
+    await element(by.id('login.screen')).tap() // Dismiss keyboard
+    await this.tapSubmit()
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('login.screen'))).toBeVisible();
+    await expect(element(by.id('login.screen'))).toBeVisible()
   },
 
   async assertErrorVisible(errorText?: string): Promise<void> {
-    await expect(element(by.id('login.errorText'))).toBeVisible();
+    await expect(element(by.id('login.errorText'))).toBeVisible()
     if (errorText) {
-      await expect(element(by.text(errorText))).toBeVisible();
+      await expect(element(by.text(errorText))).toBeVisible()
     }
   },
-};
+}
 
 export const RegisterScreen = {
   testIds: {
@@ -86,40 +86,40 @@ export const RegisterScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('register.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
 
   async enterDisplayName(name: string): Promise<void> {
-    await element(by.id('register.displayNameInput')).clearText();
-    await element(by.id('register.displayNameInput')).typeText(name);
+    await element(by.id('register.displayNameInput')).clearText()
+    await element(by.id('register.displayNameInput')).typeText(name)
   },
 
   async enterEmail(email: string): Promise<void> {
-    await element(by.id('register.emailInput')).clearText();
-    await element(by.id('register.emailInput')).typeText(email);
+    await element(by.id('register.emailInput')).clearText()
+    await element(by.id('register.emailInput')).typeText(email)
   },
 
   async enterPassword(password: string): Promise<void> {
-    await element(by.id('register.passwordInput')).clearText();
-    await element(by.id('register.passwordInput')).typeText(password);
+    await element(by.id('register.passwordInput')).clearText()
+    await element(by.id('register.passwordInput')).typeText(password)
   },
 
   async tapSubmit(): Promise<void> {
-    await element(by.id('register.submitButton')).tap();
+    await element(by.id('register.submitButton')).tap()
   },
 
   async register(displayName: string, email: string, password: string): Promise<void> {
-    await this.enterDisplayName(displayName);
-    await this.enterEmail(email);
-    await this.enterPassword(password);
-    await element(by.id('register.screen')).tap(); // Dismiss keyboard
-    await this.tapSubmit();
+    await this.enterDisplayName(displayName)
+    await this.enterEmail(email)
+    await this.enterPassword(password)
+    await element(by.id('register.screen')).tap() // Dismiss keyboard
+    await this.tapSubmit()
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('register.screen'))).toBeVisible();
+    await expect(element(by.id('register.screen'))).toBeVisible()
   },
-};
+}
 
 export const ResetPasswordScreen = {
   testIds: {
@@ -131,13 +131,13 @@ export const ResetPasswordScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('resetPassword.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('resetPassword.screen'))).toBeVisible();
+    await expect(element(by.id('resetPassword.screen'))).toBeVisible()
   },
-};
+}
 
 // ============ Onboarding Screens ============
 
@@ -150,17 +150,17 @@ export const OnboardingWelcomeScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('onboarding.welcome.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.LONG);
+      .withTimeout(TIMEOUTS.LONG)
   },
 
   async tapGetStarted(): Promise<void> {
-    await element(by.id('onboarding.welcome.getStartedButton')).tap();
+    await element(by.id('onboarding.welcome.getStartedButton')).tap()
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('onboarding.welcome.screen'))).toBeVisible();
+    await expect(element(by.id('onboarding.welcome.screen'))).toBeVisible()
   },
-};
+}
 
 export const OnboardingCurrencyScreen = {
   testIds: {
@@ -170,9 +170,9 @@ export const OnboardingCurrencyScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('onboarding.currency.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
-};
+}
 
 // ============ Main Screens ============
 
@@ -193,40 +193,40 @@ export const DashboardScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.LONG);
+      .withTimeout(TIMEOUTS.LONG)
   },
 
   async waitForLoaded(): Promise<void> {
     // Wait for either dashboard content or empty state
     await waitFor(element(by.id('dashboard.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.LONG);
+      .withTimeout(TIMEOUTS.LONG)
   },
 
   async tapAddTransaction(): Promise<void> {
-    await element(by.id('dashboard.addTransactionFab')).tap();
+    await element(by.id('dashboard.addTransactionFab')).tap()
   },
 
   async tapRetry(): Promise<void> {
-    await element(by.id('dashboard.retryButton')).tap();
+    await element(by.id('dashboard.retryButton')).tap()
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('dashboard.screen'))).toBeVisible();
+    await expect(element(by.id('dashboard.screen'))).toBeVisible()
   },
 
   async assertLoadingVisible(): Promise<void> {
-    await expect(element(by.id('dashboard.loadingScreen'))).toBeVisible();
+    await expect(element(by.id('dashboard.loadingScreen'))).toBeVisible()
   },
 
   async assertErrorVisible(): Promise<void> {
-    await expect(element(by.id('dashboard.errorScreen'))).toBeVisible();
+    await expect(element(by.id('dashboard.errorScreen'))).toBeVisible()
   },
 
   async assertEmptyVisible(): Promise<void> {
-    await expect(element(by.id('dashboard.emptyScreen'))).toBeVisible();
+    await expect(element(by.id('dashboard.emptyScreen'))).toBeVisible()
   },
-};
+}
 
 export const TransactionsScreen = {
   testIds: {
@@ -236,13 +236,13 @@ export const TransactionsScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('transactions.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('transactions.screen'))).toBeVisible();
+    await expect(element(by.id('transactions.screen'))).toBeVisible()
   },
-};
+}
 
 export const AddTransactionScreen = {
   testIds: {
@@ -257,27 +257,27 @@ export const AddTransactionScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('addTransaction.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
 
   async enterAmount(amount: string): Promise<void> {
-    await element(by.id('addTransaction.amountInput')).clearText();
-    await element(by.id('addTransaction.amountInput')).typeText(amount);
+    await element(by.id('addTransaction.amountInput')).clearText()
+    await element(by.id('addTransaction.amountInput')).typeText(amount)
   },
 
   async enterDescription(description: string): Promise<void> {
-    await element(by.id('addTransaction.descriptionInput')).clearText();
-    await element(by.id('addTransaction.descriptionInput')).typeText(description);
+    await element(by.id('addTransaction.descriptionInput')).clearText()
+    await element(by.id('addTransaction.descriptionInput')).typeText(description)
   },
 
   async tapSubmit(): Promise<void> {
-    await element(by.id('addTransaction.submitButton')).tap();
+    await element(by.id('addTransaction.submitButton')).tap()
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('addTransaction.screen'))).toBeVisible();
+    await expect(element(by.id('addTransaction.screen'))).toBeVisible()
   },
-};
+}
 
 export const BudgetsScreen = {
   testIds: {
@@ -287,13 +287,13 @@ export const BudgetsScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('budgets.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('budgets.screen'))).toBeVisible();
+    await expect(element(by.id('budgets.screen'))).toBeVisible()
   },
-};
+}
 
 export const SettingsScreen = {
   testIds: {
@@ -304,34 +304,31 @@ export const SettingsScreen = {
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('settings.screen')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
+      .withTimeout(TIMEOUTS.MEDIUM)
   },
 
   async tapLogout(): Promise<void> {
-    await element(by.id('settings.logoutButton')).tap();
+    await element(by.id('settings.logoutButton')).tap()
   },
 
   async assertVisible(): Promise<void> {
-    await expect(element(by.id('settings.screen'))).toBeVisible();
+    await expect(element(by.id('settings.screen'))).toBeVisible()
   },
-};
+}
 
 // ============ Helper Functions ============
 
 /**
  * Complete the login flow from LoginScreen to Dashboard
  */
-export async function performLogin(
-  email: string,
-  password: string
-): Promise<void> {
-  await LoginScreen.waitForScreen();
-  await LoginScreen.login(email, password);
+export async function performLogin(email: string, password: string): Promise<void> {
+  await LoginScreen.waitForScreen()
+  await LoginScreen.login(email, password)
   // Either goes to onboarding or dashboard
   // Wait for either screen to appear
   await waitFor(element(by.id('dashboard.screen')))
     .toBeVisible()
-    .withTimeout(TIMEOUTS.LONG);
+    .withTimeout(TIMEOUTS.LONG)
 }
 
 /**
@@ -340,19 +337,18 @@ export async function performLogin(
  */
 export async function completeOnboarding(): Promise<void> {
   // Wait for welcome screen
-  await OnboardingWelcomeScreen.waitForScreen();
-  await OnboardingWelcomeScreen.tapGetStarted();
+  await OnboardingWelcomeScreen.waitForScreen()
+  await OnboardingWelcomeScreen.tapGetStarted()
 
   // Continue through onboarding steps
   // The exact steps depend on the onboarding flow
-  // This is a placeholder - implement based on actual flow
 }
 
 /**
  * Navigate to a tab in the main tab navigator
  */
 export async function navigateToTab(
-  tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings'
+  tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings',
 ): Promise<void> {
-  await element(by.id(`tab.${tabName.toLowerCase()}`)).tap();
+  await element(by.id(`tab.${tabName.toLowerCase()}`)).tap()
 }
