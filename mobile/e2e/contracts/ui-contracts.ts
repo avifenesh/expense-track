@@ -165,12 +165,114 @@ export const OnboardingWelcomeScreen = {
 export const OnboardingCurrencyScreen = {
   testIds: {
     screen: 'onboarding.currency.screen',
+    continueButton: 'onboarding.currency.continueButton',
   },
 
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('onboarding.currency.screen')))
       .toBeVisible()
       .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async selectCurrency(currencyCode: 'USD' | 'EUR' | 'ILS'): Promise<void> {
+    await element(by.id(`onboarding.currency.option.${currencyCode}`)).tap();
+  },
+
+  async tapContinue(): Promise<void> {
+    await element(by.id('onboarding.currency.continueButton')).tap();
+  },
+};
+
+export const OnboardingCategoriesScreen = {
+  testIds: {
+    screen: 'onboarding.categories.screen',
+    continueButton: 'onboarding.categories.continueButton',
+  },
+
+  async waitForScreen(): Promise<void> {
+    await waitFor(element(by.id('onboarding.categories.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async tapContinue(): Promise<void> {
+    await element(by.id('onboarding.categories.continueButton')).tap();
+  },
+};
+
+export const OnboardingBudgetScreen = {
+  testIds: {
+    screen: 'onboarding.budget.screen',
+    amountInput: 'onboarding.budget.amountInput',
+    setBudgetButton: 'onboarding.budget.setBudgetButton',
+    skipButton: 'onboarding.budget.skipButton',
+  },
+
+  async waitForScreen(): Promise<void> {
+    await waitFor(element(by.id('onboarding.budget.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async setBudget(amount: string): Promise<void> {
+    await element(by.id('onboarding.budget.amountInput')).clearText();
+    await element(by.id('onboarding.budget.amountInput')).typeText(amount);
+    await element(by.id('onboarding.budget.setBudgetButton')).tap();
+  },
+
+  async tapSkip(): Promise<void> {
+    await element(by.id('onboarding.budget.skipButton')).tap();
+  },
+};
+
+export const OnboardingSampleDataScreen = {
+  testIds: {
+    screen: 'onboarding.sampleData.screen',
+    continueButton: 'onboarding.sampleData.continueButton',
+  },
+
+  async waitForScreen(): Promise<void> {
+    await waitFor(element(by.id('onboarding.sampleData.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async tapContinue(): Promise<void> {
+    await element(by.id('onboarding.sampleData.continueButton')).tap();
+  },
+};
+
+export const OnboardingCompleteScreen = {
+  testIds: {
+    screen: 'onboarding.complete.screen',
+    continueButton: 'onboarding.complete.continueButton',
+  },
+
+  async waitForScreen(): Promise<void> {
+    await waitFor(element(by.id('onboarding.complete.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async tapContinue(): Promise<void> {
+    await element(by.id('onboarding.complete.continueButton')).tap();
+  },
+};
+
+export const OnboardingBiometricScreen = {
+  testIds: {
+    screen: 'onboarding.biometric.screen',
+    continueButton: 'onboarding.biometric.continueButton',
+  },
+
+  async waitForScreen(): Promise<void> {
+    await waitFor(element(by.id('onboarding.biometric.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async tapContinue(): Promise<void> {
+    await element(by.id('onboarding.biometric.continueButton')).tap();
   },
 };
 
@@ -337,15 +439,56 @@ export async function performLogin(
 /**
  * Complete onboarding flow for a new user
  * This should be called after login if the user hasn't completed onboarding
+ *
+ * @param options - Onboarding configuration
+ * @param options.currency - Currency to select (default: 'USD')
+ * @param options.skipBudget - Whether to skip budget setup (default: true)
+ * @param options.budget - Budget amount if not skipping
  */
-export async function completeOnboarding(): Promise<void> {
-  // Wait for welcome screen
+export async function completeOnboarding(options?: {
+  currency?: 'USD' | 'EUR' | 'ILS';
+  skipBudget?: boolean;
+  budget?: string;
+}): Promise<void> {
+  const { currency = 'USD', skipBudget = true, budget } = options || {};
+
+  // Step 1: Welcome screen
   await OnboardingWelcomeScreen.waitForScreen();
   await OnboardingWelcomeScreen.tapGetStarted();
 
-  // Continue through onboarding steps
-  // The exact steps depend on the onboarding flow
-  // This is a placeholder - implement based on actual flow
+  // Step 2: Currency selection
+  await OnboardingCurrencyScreen.waitForScreen();
+  await OnboardingCurrencyScreen.selectCurrency(currency);
+  await OnboardingCurrencyScreen.tapContinue();
+
+  // Step 3: Categories selection (just continue with defaults)
+  await OnboardingCategoriesScreen.waitForScreen();
+  await OnboardingCategoriesScreen.tapContinue();
+
+  // Step 4: Budget setup
+  await OnboardingBudgetScreen.waitForScreen();
+  if (skipBudget) {
+    await OnboardingBudgetScreen.tapSkip();
+  } else if (budget) {
+    await OnboardingBudgetScreen.setBudget(budget);
+  } else {
+    await OnboardingBudgetScreen.tapSkip();
+  }
+
+  // Step 5: Sample data (just continue)
+  await OnboardingSampleDataScreen.waitForScreen();
+  await OnboardingSampleDataScreen.tapContinue();
+
+  // Step 6: Complete screen (triggers API call)
+  await OnboardingCompleteScreen.waitForScreen();
+  await OnboardingCompleteScreen.tapContinue();
+
+  // Step 7: Biometric setup (skip)
+  await OnboardingBiometricScreen.waitForScreen();
+  await OnboardingBiometricScreen.tapContinue();
+
+  // Should now be on dashboard
+  await DashboardScreen.waitForScreen();
 }
 
 /**

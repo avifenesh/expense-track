@@ -16,6 +16,7 @@ import {
   getYearFromMonthKey,
   getMonthFromMonthKey,
 } from '../utils/date';
+import { COLORS } from '../constants';
 
 const MONTH_NAMES = [
   'Jan',
@@ -31,18 +32,6 @@ const MONTH_NAMES = [
   'Nov',
   'Dec',
 ];
-
-// TODO: Move to shared theme file (e.g., src/constants/colors.ts)
-const COLORS = {
-  background: '#1e293b',
-  primary: '#38bdf8',
-  text: '#fff',
-  textDisabled: '#64748b',
-  modalBackground: '#0f172a',
-  modalOverlay: 'rgba(0,0,0,0.7)',
-  itemBorder: 'rgba(255,255,255,0.1)',
-  selectedBackground: 'rgba(56,189,248,0.1)',
-};
 
 interface MonthSelectorProps {
   selectedMonth: string;
@@ -357,7 +346,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -376,19 +365,19 @@ const styles = StyleSheet.create({
   monthLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text,
+    color: COLORS.text.primary,
     textAlign: 'center',
   },
   textDisabled: {
-    color: COLORS.textDisabled,
+    color: COLORS.text.placeholder,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: COLORS.modalOverlay,
+    backgroundColor: COLORS.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.modalBackground,
+    backgroundColor: COLORS.background.modal,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 34,
@@ -399,16 +388,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.itemBorder,
+    borderBottomColor: COLORS.border.default,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text,
+    color: COLORS.text.primary,
   },
   closeButton: {
     fontSize: 18,
-    color: COLORS.textDisabled,
+    color: COLORS.text.placeholder,
     padding: 4,
   },
   yearSelector: {
@@ -422,7 +411,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -437,7 +426,7 @@ const styles = StyleSheet.create({
   yearText: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.text,
+    color: COLORS.text.primary,
     minWidth: 80,
     textAlign: 'center',
   },
@@ -457,20 +446,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthGridItemSelected: {
-    backgroundColor: COLORS.selectedBackground,
+    backgroundColor: COLORS.primaryLight,
   },
   monthGridItemDisabled: {
     opacity: 0.5,
   },
   monthGridText: {
     fontSize: 16,
-    color: COLORS.text,
+    color: COLORS.text.primary,
   },
   monthGridTextSelected: {
     color: COLORS.primary,
     fontWeight: '600',
   },
   monthGridTextDisabled: {
-    color: COLORS.textDisabled,
+    color: COLORS.text.placeholder,
   },
 });
