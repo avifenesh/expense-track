@@ -68,7 +68,6 @@ export type AppStackScreenProps<T extends keyof AppStackParamList> = NativeStack
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>
 
 // Declare global navigation types for useNavigation hook
-// Declare global navigation types for useNavigation hook
 declare global {
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}
