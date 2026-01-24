@@ -95,7 +95,6 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       const category = await apiPost<Category>('/categories', data, accessToken);
 
       set((state) => {
-        // Handle reactivation: if category ID already exists, update it instead of appending
         const existingIndex = state.categories.findIndex((c) => c.id === category.id);
         if (existingIndex >= 0) {
           const updatedCategories = [...state.categories];

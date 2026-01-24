@@ -18,7 +18,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import type { AppStackScreenProps } from '../../navigation/types'
 import { useCategoriesStore, useToastStore, type Category, type TransactionType } from '../../stores'
 
-// Color palettes for categories
 const EXPENSE_COLORS = [
   '#22c55e',
   '#f97316',
@@ -43,7 +42,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
 
   const [activeTab, setActiveTab] = useState<TabType>('EXPENSE')
 
-  // Create modal state
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [createName, setCreateName] = useState('')
   const [createColor, setCreateColor] = useState(EXPENSE_COLORS[0])
@@ -51,7 +49,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
   const [createError, setCreateError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [editName, setEditName] = useState('')
@@ -71,15 +68,12 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     navigation.goBack()
   }, [navigation])
 
-  // Filter categories by active tab
   const filteredCategories = categories.filter((c) => c.type === activeTab)
 
-  // Get color palette based on type
   const getColorPalette = (type: TransactionType) => {
     return type === 'EXPENSE' ? EXPENSE_COLORS : INCOME_COLORS
   }
 
-  // Validation
   const validateName = (name: string): string | null => {
     const trimmed = name.trim()
     if (!trimmed) return 'Name is required'
@@ -88,7 +82,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     return null
   }
 
-  // Create handlers
   const handleOpenCreate = useCallback(() => {
     setCreateName('')
     setCreateColor(activeTab === 'EXPENSE' ? EXPENSE_COLORS[0] : INCOME_COLORS[0])
@@ -132,7 +125,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     }
   }, [createName, createType, createColor, handleCreateCancel])
 
-  // Edit handlers
   const handleEditPress = useCallback((category: Category) => {
     setEditingCategory(category)
     setEditName(category.name)
@@ -180,7 +172,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     }
   }, [editingCategory, editName, editColor, handleEditCancel])
 
-  // Archive handlers
   const handleArchivePress = useCallback((category: Category) => {
     const action = category.isArchived ? 'unarchive' : 'archive'
     Alert.alert(
@@ -209,7 +200,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
     )
   }, [])
 
-  // Delete handler (only for non-holding categories)
   const handleDeletePress = useCallback((category: Category) => {
     if (category.isHolding) {
       Alert.alert(
@@ -229,8 +219,6 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            // For now, archive instead of delete since there's no delete endpoint
-            // This matches the soft-delete pattern in the app
             try {
               await useCategoriesStore.getState().archiveCategory(category.id)
               useToastStore.getState().success('Category deleted')

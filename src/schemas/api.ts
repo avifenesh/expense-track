@@ -1,12 +1,3 @@
-/**
- * API-specific schemas without CSRF tokens.
- * These schemas are used by API routes that authenticate via JWT instead of session cookies.
- *
- * Pattern:
- * - Server actions use schemas with csrfToken (from index.ts)
- * - API routes use schemas without csrfToken (from this file)
- */
-
 import { z } from 'zod'
 import { TransactionType, Currency, SplitType } from '@prisma/client'
 
