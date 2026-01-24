@@ -73,10 +73,7 @@ describe('Transaction E2E Tests', () => {
       await expect(element(by.id('addTransaction.submitButton'))).toBeVisible();
     });
 
-    // Skip: Transaction submission via UI fails - activeAccountId is null when form submits
-    // The form silently fails because store.activeAccountId isn't set during this flow
-    // This needs investigation in the mobile app's AddTransactionScreen component
-    it.skip('creates expense transaction', async () => {
+    it('creates expense transaction', async () => {
       const testDescription = `E2E Test ${Date.now()}`;
 
       await DashboardScreen.tapAddTransaction();
