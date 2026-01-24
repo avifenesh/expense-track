@@ -1,6 +1,6 @@
 import { useCategoriesStore } from '../../src/stores/categoriesStore';
 import { useAuthStore } from '../../src/stores/authStore';
-import { ApiError, apiGet, apiPost, apiPatch } from '../../src/services/api';
+import { ApiError, apiGet, apiPost, apiPatch, apiPut } from '../../src/services/api';
 
 jest.mock('../../src/services/api', () => {
   const actual = jest.requireActual('../../src/services/api');
@@ -9,12 +9,14 @@ jest.mock('../../src/services/api', () => {
     apiGet: jest.fn(),
     apiPost: jest.fn(),
     apiPatch: jest.fn(),
+    apiPut: jest.fn(),
   };
 });
 
 const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
 const mockApiPost = apiPost as jest.MockedFunction<typeof apiPost>;
 const mockApiPatch = apiPatch as jest.MockedFunction<typeof apiPatch>;
+const mockApiPut = apiPut as jest.MockedFunction<typeof apiPut>;
 
 const mockCategory = {
   id: 'cat-1',
@@ -238,6 +240,115 @@ describe('categoriesStore', () => {
       expect(state.categories).toHaveLength(2);
       expect(state.categories[0]).toEqual(reactivatedCategory);
       expect(state.categories[0].isArchived).toBe(false);
+    });
+  });
+
+  describe('updateCategory', () => {
+    beforeEach(() => {
+      useCategoriesStore.setState({
+        categories: [mockCategory, mockIncomeCategory],
+      });
+    });
+
+    it('updates category successfully', async () => {
+      const updatedCategory = { ...mockCategory, name: 'Food', color: '#FF5722' };
+      mockApiPut.mockResolvedValue(updatedCategory);
+
+      const result = await useCategoriesStore.getState().updateCategory({
+        id: 'cat-1',
+        name: 'Food',
+        color: '#FF5722',
+      });
+
+      expect(result).toEqual(updatedCategory);
+      const state = useCategoriesStore.getState();
+      expect(state.categories.find((c) => c.id === 'cat-1')?.name).toBe('Food');
+      expect(state.categories.find((c) => c.id === 'cat-1')?.color).toBe('#FF5722');
+    });
+
+    it('calls correct API endpoint', async () => {
+      const updatedCategory = { ...mockCategory, name: 'Food' };
+      mockApiPut.mockResolvedValue(updatedCategory);
+
+      await useCategoriesStore.getState().updateCategory({
+        id: 'cat-1',
+        name: 'Food',
+        color: '#FF5722',
+      });
+
+      expect(mockApiPut).toHaveBeenCalledWith(
+        '/categories/cat-1',
+        { name: 'Food', color: '#FF5722' },
+        'test-token'
+      );
+    });
+
+    it('updates local state with API response', async () => {
+      const updatedCategory = { ...mockCategory, name: 'Updated Name', color: '#123456' };
+      mockApiPut.mockResolvedValue(updatedCategory);
+
+      await useCategoriesStore.getState().updateCategory({
+        id: 'cat-1',
+        name: 'Updated Name',
+        color: '#123456',
+      });
+
+      const state = useCategoriesStore.getState();
+      expect(state.categories).toHaveLength(2);
+      expect(state.categories[0]).toEqual(updatedCategory);
+      expect(state.categories[1]).toEqual(mockIncomeCategory);
+    });
+
+    it('throws ApiError on failure', async () => {
+      mockApiPut.mockRejectedValue(new ApiError('Duplicate name', 'VALIDATION_ERROR', 400));
+
+      await expect(
+        useCategoriesStore.getState().updateCategory({
+          id: 'cat-1',
+          name: 'Duplicate',
+        })
+      ).rejects.toThrow('Duplicate name');
+    });
+
+    it('wraps generic errors', async () => {
+      mockApiPut.mockRejectedValue(new Error('Network error'));
+
+      await expect(
+        useCategoriesStore.getState().updateCategory({
+          id: 'cat-1',
+          name: 'Food',
+        })
+      ).rejects.toThrow('Failed to update category');
+    });
+
+    it('handles update with null color', async () => {
+      const updatedCategory = { ...mockCategory, name: 'Food', color: null };
+      mockApiPut.mockResolvedValue(updatedCategory);
+
+      await useCategoriesStore.getState().updateCategory({
+        id: 'cat-1',
+        name: 'Food',
+        color: null,
+      });
+
+      expect(mockApiPut).toHaveBeenCalledWith(
+        '/categories/cat-1',
+        { name: 'Food', color: null },
+        'test-token'
+      );
+    });
+
+    it('does not affect other categories', async () => {
+      const updatedCategory = { ...mockCategory, name: 'Updated' };
+      mockApiPut.mockResolvedValue(updatedCategory);
+
+      await useCategoriesStore.getState().updateCategory({
+        id: 'cat-1',
+        name: 'Updated',
+      });
+
+      const state = useCategoriesStore.getState();
+      expect(state.categories.find((c) => c.id === 'cat-2')).toEqual(mockIncomeCategory);
     });
   });
 
