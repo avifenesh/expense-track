@@ -41,8 +41,6 @@ function groupTransactionsByDate(transactions: Transaction[]): DateSection[] {
 export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transactions'>) {
   const [filterType, setFilterType] = useState<FilterType>('all')
 
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const transactions = useTransactionsStore((state) => state.transactions)
   const isLoading = useTransactionsStore((state) => state.isLoading)
   const error = useTransactionsStore((state) => state.error)
@@ -54,7 +52,6 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
 
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Initial load - fetch accounts if needed (runs once on mount)
   useEffect(() => {
     async function init() {
       if (useAccountsStore.getState().accounts.length === 0) {
@@ -64,7 +61,6 @@ export function TransactionsScreen({ navigation }: MainTabScreenProps<'Transacti
     init()
   }, [])
 
-  // When account changes, update filters and fetch transactions
   useEffect(() => {
     async function loadTransactions() {
       if (activeAccountId) {

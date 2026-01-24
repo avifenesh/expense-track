@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { SkeletonBudgetProgressCard } from './SkeletonBudgetProgressCard'
 import { SkeletonBudgetCategoryCard } from './SkeletonBudgetCategoryCard'
@@ -7,7 +7,7 @@ interface BudgetsScreenSkeletonProps {
   testID?: string
 }
 
-function BudgetsScreenSkeletonComponent({ testID }: BudgetsScreenSkeletonProps) {
+export function BudgetsScreenSkeleton({ testID }: BudgetsScreenSkeletonProps) {
   return (
     <View style={styles.container} testID={testID}>
       <View style={styles.monthSelector}>
@@ -27,8 +27,6 @@ function BudgetsScreenSkeletonComponent({ testID }: BudgetsScreenSkeletonProps) 
     </View>
   )
 }
-
-export const BudgetsScreenSkeleton = memo(BudgetsScreenSkeletonComponent)
 
 const styles = StyleSheet.create({
   container: {

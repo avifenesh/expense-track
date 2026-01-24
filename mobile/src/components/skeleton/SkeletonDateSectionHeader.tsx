@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { Skeleton } from './Skeleton'
 
@@ -6,7 +6,7 @@ interface SkeletonDateSectionHeaderProps {
   testID?: string
 }
 
-function SkeletonDateSectionHeaderComponent({ testID }: SkeletonDateSectionHeaderProps) {
+export function SkeletonDateSectionHeader({ testID }: SkeletonDateSectionHeaderProps) {
   return (
     <View style={styles.container} testID={testID}>
       <Skeleton
@@ -18,8 +18,6 @@ function SkeletonDateSectionHeaderComponent({ testID }: SkeletonDateSectionHeade
     </View>
   )
 }
-
-export const SkeletonDateSectionHeader = memo(SkeletonDateSectionHeaderComponent)
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native'
 import { Skeleton } from './Skeleton'
 
@@ -7,7 +7,7 @@ interface SkeletonStatCardProps {
   testID?: string
 }
 
-function SkeletonStatCardComponent({ style, testID }: SkeletonStatCardProps) {
+export function SkeletonStatCard({ style, testID }: SkeletonStatCardProps) {
   return (
     <View style={[styles.container, style]} testID={testID}>
       <Skeleton
@@ -26,8 +26,6 @@ function SkeletonStatCardComponent({ style, testID }: SkeletonStatCardProps) {
     </View>
   )
 }
-
-export const SkeletonStatCard = memo(SkeletonStatCardComponent)
 
 const styles = StyleSheet.create({
   container: {

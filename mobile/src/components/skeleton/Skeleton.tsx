@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, memo } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Animated, StyleSheet, ViewStyle, StyleProp, DimensionValue } from 'react-native'
 
 interface SkeletonProps {
@@ -13,7 +13,7 @@ const ANIMATION_DURATION = 800
 const MIN_OPACITY = 0.3
 const MAX_OPACITY = 0.7
 
-function SkeletonComponent({ width, height, borderRadius = 4, style, testID }: SkeletonProps) {
+export function Skeleton({ width, height, borderRadius = 4, style, testID }: SkeletonProps) {
   const opacity = useRef(new Animated.Value(MIN_OPACITY)).current
 
   useEffect(() => {
@@ -57,8 +57,6 @@ function SkeletonComponent({ width, height, borderRadius = 4, style, testID }: S
     />
   )
 }
-
-export const Skeleton = memo(SkeletonComponent)
 
 const styles = StyleSheet.create({
   skeleton: {

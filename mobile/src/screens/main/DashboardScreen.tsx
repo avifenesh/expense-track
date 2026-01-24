@@ -21,8 +21,6 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey())
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
   const accountsLoading = useAccountsStore((state) => state.isLoading)
@@ -39,7 +37,6 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   const selectedAccount = accounts.find((a) => a.id === activeAccountId)
   const currency: Currency = selectedAccount?.preferredCurrency || 'USD'
 
-  // Calculate totals from transactions (memoized for performance)
   const totalIncome = useMemo(
     () => transactions.filter((t) => t.type === 'INCOME').reduce((sum, t) => sum + parseFloat(t.amount), 0),
     [transactions],
@@ -54,14 +51,10 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
 
   const recentTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT)
 
-  // Initial load - fetch accounts (runs once on mount)
-  // Access store actions via getState() to avoid subscription issues
   useEffect(() => {
     useAccountsStore.getState().fetchAccounts()
   }, [])
 
-  // When account or month changes, update filters and fetch data
-  // Access store actions via getState() to avoid subscription issues
   useEffect(() => {
     if (activeAccountId) {
       const transactionsStore = useTransactionsStore.getState()
@@ -105,7 +98,6 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
   const isLoading = accountsLoading || (activeAccountId && (transactionsLoading || budgetsLoading))
   const error = accountsError || transactionsError || budgetsError
 
-  // Loading state (initial load only)
   if (accountsLoading && accounts.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.loadingScreen">
@@ -127,7 +119,6 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     )
   }
 
-  // Error state
   if (error && !isRefreshing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.errorScreen">
@@ -146,7 +137,6 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     )
   }
 
-  // No accounts state
   if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.emptyScreen">

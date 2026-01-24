@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { SkeletonBalanceCard } from './SkeletonBalanceCard'
 import { SkeletonSharedExpenseCard } from './SkeletonSharedExpenseCard'
@@ -7,7 +7,7 @@ interface SharingScreenSkeletonProps {
   testID?: string
 }
 
-function SharingScreenSkeletonComponent({ testID }: SharingScreenSkeletonProps) {
+export function SharingScreenSkeleton({ testID }: SharingScreenSkeletonProps) {
   return (
     <View style={styles.container} testID={testID}>
       <View style={styles.balanceGroup}>
@@ -36,8 +36,6 @@ function SharingScreenSkeletonComponent({ testID }: SharingScreenSkeletonProps) 
     </View>
   )
 }
-
-export const SharingScreenSkeleton = memo(SharingScreenSkeletonComponent)
 
 const styles = StyleSheet.create({
   container: {

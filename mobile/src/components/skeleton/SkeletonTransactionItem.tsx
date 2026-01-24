@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { Skeleton } from './Skeleton'
 
@@ -6,7 +6,7 @@ interface SkeletonTransactionItemProps {
   testID?: string
 }
 
-function SkeletonTransactionItemComponent({ testID }: SkeletonTransactionItemProps) {
+export function SkeletonTransactionItem({ testID }: SkeletonTransactionItemProps) {
   return (
     <View style={styles.container} testID={testID}>
       <Skeleton
@@ -40,8 +40,6 @@ function SkeletonTransactionItemComponent({ testID }: SkeletonTransactionItemPro
     </View>
   )
 }
-
-export const SkeletonTransactionItem = memo(SkeletonTransactionItemComponent)
 
 const styles = StyleSheet.create({
   container: {

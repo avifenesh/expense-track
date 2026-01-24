@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { SkeletonDateSectionHeader } from './SkeletonDateSectionHeader'
 import { SkeletonTransactionItem } from './SkeletonTransactionItem'
@@ -7,7 +7,7 @@ interface TransactionsScreenSkeletonProps {
   testID?: string
 }
 
-function TransactionsScreenSkeletonComponent({ testID }: TransactionsScreenSkeletonProps) {
+export function TransactionsScreenSkeleton({ testID }: TransactionsScreenSkeletonProps) {
   return (
     <View style={styles.container} testID={testID}>
       <SkeletonDateSectionHeader testID={testID ? `${testID}.section.0.header` : undefined} />
@@ -28,8 +28,6 @@ function TransactionsScreenSkeletonComponent({ testID }: TransactionsScreenSkele
     </View>
   )
 }
-
-export const TransactionsScreenSkeleton = memo(TransactionsScreenSkeletonComponent)
 
 const styles = StyleSheet.create({
   container: {

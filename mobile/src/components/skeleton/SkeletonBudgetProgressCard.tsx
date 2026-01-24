@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { Skeleton } from './Skeleton'
 
@@ -6,7 +6,7 @@ interface SkeletonBudgetProgressCardProps {
   testID?: string
 }
 
-function SkeletonBudgetProgressCardComponent({ testID }: SkeletonBudgetProgressCardProps) {
+export function SkeletonBudgetProgressCard({ testID }: SkeletonBudgetProgressCardProps) {
   return (
     <View style={styles.container} testID={testID}>
       <Skeleton
@@ -47,8 +47,6 @@ function SkeletonBudgetProgressCardComponent({ testID }: SkeletonBudgetProgressC
     </View>
   )
 }
-
-export const SkeletonBudgetProgressCard = memo(SkeletonBudgetProgressCardComponent)
 
 const styles = StyleSheet.create({
   container: {

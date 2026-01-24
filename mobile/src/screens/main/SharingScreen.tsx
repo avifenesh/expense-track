@@ -225,8 +225,6 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
 
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const sharedByMe = useSharingStore((state) => state.sharedByMe)
   const sharedWithMe = useSharingStore((state) => state.sharedWithMe)
   const settlementBalances = useSharingStore((state) => state.settlementBalances)
@@ -236,19 +234,16 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const filters = useTransactionsStore((state) => state.filters)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
-  // Initial load - fetch sharing data (runs once on mount)
   useEffect(() => {
     useSharingStore.getState().fetchSharing()
   }, [])
 
-  // Ensure transactions are loaded for picker when account changes
   useEffect(() => {
     if (activeAccountId && activeAccountId !== filters.accountId) {
       useTransactionsStore.getState().setFilters({ accountId: activeAccountId })
     }
   }, [activeAccountId, filters.accountId])
 
-  // Fetch transactions when filters change
   useEffect(() => {
     if (filters.accountId) {
       useTransactionsStore.getState().fetchTransactions()

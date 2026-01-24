@@ -24,8 +24,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey())
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const accounts = useAccountsStore((state) => state.accounts)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
   const accountsLoading = useAccountsStore((state) => state.isLoading)
@@ -76,12 +74,10 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     return map
   }, [categories])
 
-  // Initial load - fetch accounts (runs once on mount)
   useEffect(() => {
     useAccountsStore.getState().fetchAccounts()
   }, [])
 
-  // When account or month changes, update filters and fetch data
   useEffect(() => {
     if (activeAccountId) {
       const txStore = useTransactionsStore.getState()
@@ -144,7 +140,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     )
   }
 
-  // Error state
   if (error && !isRefreshing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.errorScreen">
@@ -163,7 +158,6 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     )
   }
 
-  // No accounts state
   if (!activeAccountId && accounts.length === 0 && !accountsLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.noAccountsScreen">

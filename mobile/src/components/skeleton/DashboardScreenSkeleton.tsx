@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { SkeletonBudgetProgressCard } from './SkeletonBudgetProgressCard'
 import { SkeletonStatCard } from './SkeletonStatCard'
@@ -8,7 +8,7 @@ interface DashboardScreenSkeletonProps {
   testID?: string
 }
 
-function DashboardScreenSkeletonComponent({ testID }: DashboardScreenSkeletonProps) {
+export function DashboardScreenSkeleton({ testID }: DashboardScreenSkeletonProps) {
   return (
     <View style={styles.container} testID={testID}>
       <View style={styles.monthSelector}>
@@ -39,8 +39,6 @@ function DashboardScreenSkeletonComponent({ testID }: DashboardScreenSkeletonPro
     </View>
   )
 }
-
-export const DashboardScreenSkeleton = memo(DashboardScreenSkeletonComponent)
 
 const styles = StyleSheet.create({
   container: {
