@@ -5,9 +5,10 @@
 
 /**
  * Category name validation pattern
- * Must start and end with alphanumeric, can contain spaces/hyphens/underscores
+ * Must start and end with alphanumeric (Unicode-aware), can contain spaces/hyphens/underscores
+ * Uses Unicode property escapes to match server-side validation
  */
-export const CATEGORY_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9\s\-_]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/
+export const CATEGORY_NAME_PATTERN = /^[\p{L}\p{N}](?:.*\S.*)?[\p{L}\p{N}]$|^[\p{L}\p{N}]{2}$/u
 
 export const CATEGORY_NAME_MIN_LENGTH = 2
 export const CATEGORY_NAME_MAX_LENGTH = 100

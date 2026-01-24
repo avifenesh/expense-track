@@ -31,6 +31,14 @@ describe('validateCategoryName', () => {
     it('should accept name starting with number', () => {
       expect(validateCategoryName('401k')).toEqual({ valid: true })
     })
+
+    it('should accept Unicode characters (Hebrew)', () => {
+      expect(validateCategoryName('מזון')).toEqual({ valid: true })
+    })
+
+    it('should accept Unicode characters (Chinese)', () => {
+      expect(validateCategoryName('食品')).toEqual({ valid: true })
+    })
   })
 
   describe('invalid names', () => {

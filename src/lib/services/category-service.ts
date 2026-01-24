@@ -141,7 +141,7 @@ export async function updateCategory(input: UpdateCategoryInput): Promise<Update
       where: { id: input.id, userId: input.userId },
       data: {
         name: input.name,
-        color: input.color !== undefined ? input.color : undefined,
+        ...(input.color !== undefined && { color: input.color }),
       },
     })
 
