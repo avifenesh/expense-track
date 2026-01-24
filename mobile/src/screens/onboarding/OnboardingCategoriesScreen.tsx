@@ -13,9 +13,9 @@ const DEFAULT_CATEGORIES = [
 export function OnboardingCategoriesScreen({
   navigation,
 }: OnboardingScreenProps<'OnboardingCategories'>) {
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const selectedCategories = useOnboardingStore((state) => state.selectedCategories);
-  const toggleCategory = useOnboardingStore((state) => state.toggleCategory);
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.categories.screen">
@@ -33,7 +33,7 @@ export function OnboardingCategoriesScreen({
               <Pressable
                 key={category}
                 style={[styles.category, isSelected && styles.categorySelected]}
-                onPress={() => toggleCategory(category)}
+                onPress={() => useOnboardingStore.getState().toggleCategory(category)}
                 testID={`onboarding.categories.item.${category.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
               >
                 <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>

@@ -22,7 +22,7 @@ import {
 import { ApiError } from '../../services/api';
 
 export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
-  const register = useAuthStore((state) => state.register);
+  // No state selectors needed - only functions accessed via getState()
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -86,7 +86,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
     setIsLoading(true);
 
     try {
-      const response = await register(email, password, displayName);
+      const response = await useAuthStore.getState().register(email, password, displayName);
       // Test users (@test.local) are auto-verified, go directly to login
       if (response?.emailVerified) {
         navigation.navigate('Login');
