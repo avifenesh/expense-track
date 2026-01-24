@@ -39,6 +39,7 @@ const mockAccounts = [
     id: 'acc-1',
     name: 'Personal Account',
     type: 'PERSONAL' as const,
+    dbType: 'SELF' as const,
     preferredCurrency: 'USD' as const,
     color: '#4CAF50',
     icon: 'wallet',
@@ -49,6 +50,7 @@ const mockAccounts = [
     id: 'acc-2',
     name: 'Shared Account',
     type: 'SHARED' as const,
+    dbType: 'PARTNER' as const,
     preferredCurrency: 'EUR' as const,
     color: '#2196F3',
     icon: 'users',
@@ -134,8 +136,8 @@ describe('AccountsScreen', () => {
     it('displays account type badges', () => {
       renderAccountsScreen()
 
-      expect(screen.getByText('PERSONAL')).toBeTruthy()
-      expect(screen.getByText('SHARED')).toBeTruthy()
+      expect(screen.getByText('Personal')).toBeTruthy()
+      expect(screen.getByText('Partner')).toBeTruthy()
     })
 
     it('displays positive balance correctly', () => {
@@ -299,7 +301,7 @@ describe('AccountsScreen', () => {
       })
     })
 
-    it('calls updateAccount on successful save', async () => {
+    it('calls updateAccount with data object on successful save', async () => {
       const mockUpdateAccount = jest.fn().mockResolvedValue(true)
       jest.spyOn(useAccountsStore, 'getState').mockReturnValue({
         ...useAccountsStore.getState(),
@@ -319,7 +321,9 @@ describe('AccountsScreen', () => {
       fireEvent.press(screen.getByTestId('accounts.editModal.saveButton'))
 
       await waitFor(() => {
-        expect(mockUpdateAccount).toHaveBeenCalledWith('acc-1', 'Updated Name')
+        expect(mockUpdateAccount).toHaveBeenCalledWith('acc-1', expect.objectContaining({
+          name: 'Updated Name',
+        }))
       })
     })
 
@@ -450,6 +454,166 @@ describe('AccountsScreen', () => {
       fireEvent.press(screen.getByTestId('accounts.closeButton'))
 
       expect(mockNavigation.goBack).toHaveBeenCalled()
+    })
+  })
+
+  describe('Create Account', () => {
+    it('shows Add button in header', () => {
+      renderAccountsScreen()
+
+      expect(screen.getByTestId('accounts.addButton')).toBeTruthy()
+    })
+
+    it('opens create modal when Add button is pressed', async () => {
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal')).toBeTruthy()
+      })
+      expect(screen.getByText('Create Account')).toBeTruthy()
+    })
+
+    it('validates empty name in create modal', async () => {
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal.nameInput')).toBeTruthy()
+      })
+
+      fireEvent.press(screen.getByTestId('accounts.createModal.saveButton'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Name is required')).toBeTruthy()
+      })
+    })
+
+    it('calls createAccount on successful save', async () => {
+      const mockCreateAccount = jest.fn().mockResolvedValue(true)
+      jest.spyOn(useAccountsStore, 'getState').mockReturnValue({
+        ...useAccountsStore.getState(),
+        createAccount: mockCreateAccount,
+      })
+
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal.nameInput')).toBeTruthy()
+      })
+
+      fireEvent.changeText(screen.getByTestId('accounts.createModal.nameInput'), 'New Account')
+      fireEvent.press(screen.getByTestId('accounts.createModal.saveButton'))
+
+      await waitFor(() => {
+        expect(mockCreateAccount).toHaveBeenCalledWith(expect.objectContaining({
+          name: 'New Account',
+          type: 'SELF',
+        }))
+      })
+    })
+
+    it('closes modal after successful create', async () => {
+      const mockCreateAccount = jest.fn().mockResolvedValue(true)
+      jest.spyOn(useAccountsStore, 'getState').mockReturnValue({
+        ...useAccountsStore.getState(),
+        createAccount: mockCreateAccount,
+      })
+
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal')).toBeTruthy()
+      })
+
+      fireEvent.changeText(screen.getByTestId('accounts.createModal.nameInput'), 'New Account')
+      fireEvent.press(screen.getByTestId('accounts.createModal.saveButton'))
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('accounts.createModal')).toBeNull()
+      })
+    })
+
+    it('closes create modal when cancel is pressed', async () => {
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal')).toBeTruthy()
+      })
+
+      fireEvent.press(screen.getByTestId('accounts.createModal.cancelButton'))
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('accounts.createModal')).toBeNull()
+      })
+    })
+
+    it('shows type selector in create modal', async () => {
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal.type.SELF')).toBeTruthy()
+        expect(screen.getByTestId('accounts.createModal.type.PARTNER')).toBeTruthy()
+        expect(screen.getByTestId('accounts.createModal.type.OTHER')).toBeTruthy()
+      })
+    })
+
+    it('shows color picker in create modal', async () => {
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal.color.#22c55e')).toBeTruthy()
+      })
+    })
+
+    it('shows currency selector in create modal', async () => {
+      renderAccountsScreen()
+
+      fireEvent.press(screen.getByTestId('accounts.addButton'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('accounts.createModal.currency.USD')).toBeTruthy()
+        expect(screen.getByTestId('accounts.createModal.currency.EUR')).toBeTruthy()
+        expect(screen.getByTestId('accounts.createModal.currency.ILS')).toBeTruthy()
+      })
+    })
+  })
+
+  describe('Color Indicator', () => {
+    it('shows color indicator for account with color', () => {
+      renderAccountsScreen()
+
+      expect(screen.getByTestId('accounts.colorIndicator.acc-1')).toBeTruthy()
+    })
+
+    it('does not show color indicator for account without color', async () => {
+      useAccountsStore.setState({
+        accounts: [
+          {
+            ...mockAccounts[0],
+            color: null,
+          },
+        ],
+        activeAccountId: 'acc-1',
+        isLoading: false,
+        error: null,
+      })
+
+      renderAccountsScreen()
+
+      expect(screen.queryByTestId('accounts.colorIndicator.acc-1')).toBeNull()
     })
   })
 })

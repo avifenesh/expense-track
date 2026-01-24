@@ -214,6 +214,7 @@ Server actions and REST API endpoints audit for Issue #64.
 ✅ GET    /api/v1/budgets            - List budgets for account/month
 ✅ GET    /api/v1/categories         - List user categories (with type filter)
 ✅ GET    /api/v1/accounts           - List user accounts
+✅ POST   /api/v1/accounts           - Create new account
 ✅ GET    /api/v1/users/me           - Current user profile
 ⚠️  GET    /api/v1/holdings           - List holdings for account (Issue #196)
 ⚠️  GET    /api/v1/recurring          - List recurring templates (Issue #197)

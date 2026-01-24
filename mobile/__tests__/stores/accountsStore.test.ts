@@ -1,6 +1,6 @@
 import { useAccountsStore } from '../../src/stores/accountsStore';
 import { useAuthStore } from '../../src/stores/authStore';
-import { ApiError, apiGet, apiPatch, apiPut, apiDelete } from '../../src/services/api';
+import { ApiError, apiGet, apiPatch, apiPost, apiPut, apiDelete } from '../../src/services/api';
 
 jest.mock('../../src/services/api', () => {
   const actual = jest.requireActual('../../src/services/api');
@@ -8,6 +8,7 @@ jest.mock('../../src/services/api', () => {
     ...actual,
     apiGet: jest.fn(),
     apiPatch: jest.fn(),
+    apiPost: jest.fn(),
     apiPut: jest.fn(),
     apiDelete: jest.fn(),
   };
@@ -15,6 +16,7 @@ jest.mock('../../src/services/api', () => {
 
 const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
 const mockApiPatch = apiPatch as jest.MockedFunction<typeof apiPatch>;
+const mockApiPost = apiPost as jest.MockedFunction<typeof apiPost>;
 const mockApiPut = apiPut as jest.MockedFunction<typeof apiPut>;
 const mockApiDelete = apiDelete as jest.MockedFunction<typeof apiDelete>;
 
@@ -57,7 +59,7 @@ describe('accountsStore', () => {
       expect(result).toBe(true);
       const state = useAccountsStore.getState();
       expect(state.accounts).toHaveLength(1);
-      expect(state.accounts[0]).toEqual({ ...mockAccount, type: 'PERSONAL' });
+      expect(state.accounts[0]).toEqual({ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' });
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -197,20 +199,20 @@ describe('accountsStore', () => {
     it('returns active account when it exists', () => {
       useAccountsStore.setState({
         accounts: [
-          { ...mockAccount, type: 'PERSONAL' },
-          { ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED' },
+          { ...mockAccount, type: 'PERSONAL', dbType: 'SELF' },
+          { ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED', dbType: 'PARTNER' },
         ],
         activeAccountId: 'acc-2',
       });
 
       const account = useAccountsStore.getState().getActiveAccount();
 
-      expect(account).toEqual({ ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED' });
+      expect(account).toEqual({ ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED', dbType: 'PARTNER' });
     });
 
     it('returns undefined when no account is active', () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: null,
       });
 
@@ -221,7 +223,7 @@ describe('accountsStore', () => {
 
     it('returns undefined when active account not in list', () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: 'non-existent',
       });
 
@@ -241,30 +243,181 @@ describe('accountsStore', () => {
     });
   });
 
-  describe('updateAccount', () => {
-    it('updates account name successfully', async () => {
+  describe('createAccount', () => {
+    it('creates account successfully', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: 'acc-1',
       });
-      mockApiPut.mockResolvedValue({ id: 'acc-1', name: 'Updated Name' });
+      mockApiPost.mockResolvedValue({
+        id: 'acc-new',
+        name: 'New Account',
+        type: 'PARTNER',
+        preferredCurrency: 'EUR',
+        color: '#0000FF',
+        icon: null,
+        description: null,
+      });
 
-      const result = await useAccountsStore.getState().updateAccount('acc-1', 'Updated Name');
+      const result = await useAccountsStore.getState().createAccount({
+        name: 'New Account',
+        type: 'PARTNER',
+        color: '#0000FF',
+        preferredCurrency: 'EUR',
+      });
 
       expect(result).toBe(true);
-      expect(mockApiPut).toHaveBeenCalledWith('/accounts/acc-1', { name: 'Updated Name' }, 'test-token');
+      expect(mockApiPost).toHaveBeenCalledWith(
+        '/accounts',
+        { name: 'New Account', type: 'PARTNER', color: '#0000FF', preferredCurrency: 'EUR' },
+        'test-token'
+      );
+      const state = useAccountsStore.getState();
+      expect(state.accounts).toHaveLength(2);
+      expect(state.accounts[1].id).toBe('acc-new');
+      expect(state.accounts[1].name).toBe('New Account');
+      expect(state.accounts[1].type).toBe('SHARED');
+      expect(state.accounts[1].dbType).toBe('PARTNER');
+      expect(state.accounts[1].balance).toBe(0);
+      expect(state.isLoading).toBe(false);
+    });
+
+    it('creates SELF account as PERSONAL type', async () => {
+      useAccountsStore.setState({ accounts: [] });
+      mockApiPost.mockResolvedValue({
+        id: 'acc-self',
+        name: 'Personal',
+        type: 'SELF',
+        preferredCurrency: null,
+        color: null,
+        icon: null,
+        description: null,
+      });
+
+      await useAccountsStore.getState().createAccount({
+        name: 'Personal',
+        type: 'SELF',
+      });
+
+      const state = useAccountsStore.getState();
+      expect(state.accounts[0].type).toBe('PERSONAL');
+      expect(state.accounts[0].dbType).toBe('SELF');
+    });
+
+    it('handles API errors', async () => {
+      mockApiPost.mockRejectedValue(new ApiError('Name already exists', 'CONFLICT', 400));
+
+      const result = await useAccountsStore.getState().createAccount({
+        name: 'Duplicate',
+        type: 'SELF',
+      });
+
+      expect(result).toBe(false);
+      const state = useAccountsStore.getState();
+      expect(state.error).toBe('Name already exists');
+    });
+
+    it('handles generic errors', async () => {
+      mockApiPost.mockRejectedValue(new Error('Network error'));
+
+      const result = await useAccountsStore.getState().createAccount({
+        name: 'New',
+        type: 'SELF',
+      });
+
+      expect(result).toBe(false);
+      const state = useAccountsStore.getState();
+      expect(state.error).toBe('Failed to create account');
+    });
+
+    it('sets isLoading during create', async () => {
+      let loadingDuringCreate = false;
+      mockApiPost.mockImplementation(async () => {
+        loadingDuringCreate = useAccountsStore.getState().isLoading;
+        return {
+          id: 'acc-new',
+          name: 'New',
+          type: 'SELF',
+          preferredCurrency: null,
+          color: null,
+          icon: null,
+          description: null,
+        };
+      });
+
+      await useAccountsStore.getState().createAccount({ name: 'New', type: 'SELF' });
+
+      expect(loadingDuringCreate).toBe(true);
+      expect(useAccountsStore.getState().isLoading).toBe(false);
+    });
+  });
+
+  describe('updateAccount', () => {
+    it('updates account with all fields successfully', async () => {
+      useAccountsStore.setState({
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
+        activeAccountId: 'acc-1',
+      });
+      mockApiPut.mockResolvedValue({
+        id: 'acc-1',
+        name: 'Updated Name',
+        type: 'PARTNER',
+        preferredCurrency: 'EUR',
+        color: '#0000FF',
+        icon: null,
+        description: null,
+      });
+
+      const result = await useAccountsStore.getState().updateAccount('acc-1', {
+        name: 'Updated Name',
+        type: 'PARTNER',
+        color: '#0000FF',
+        preferredCurrency: 'EUR',
+      });
+
+      expect(result).toBe(true);
+      expect(mockApiPut).toHaveBeenCalledWith(
+        '/accounts/acc-1',
+        { name: 'Updated Name', type: 'PARTNER', color: '#0000FF', preferredCurrency: 'EUR' },
+        'test-token'
+      );
       const state = useAccountsStore.getState();
       expect(state.accounts[0].name).toBe('Updated Name');
+      expect(state.accounts[0].type).toBe('SHARED');
+      expect(state.accounts[0].dbType).toBe('PARTNER');
+      expect(state.accounts[0].color).toBe('#0000FF');
+      expect(state.accounts[0].preferredCurrency).toBe('EUR');
       expect(state.isLoading).toBe(false);
+    });
+
+    it('updates account name only', async () => {
+      useAccountsStore.setState({
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
+        activeAccountId: 'acc-1',
+      });
+      mockApiPut.mockResolvedValue({
+        id: 'acc-1',
+        name: 'New Name',
+        type: 'SELF',
+        preferredCurrency: 'USD',
+        color: '#4CAF50',
+        icon: 'wallet',
+        description: 'My personal finances',
+      });
+
+      const result = await useAccountsStore.getState().updateAccount('acc-1', { name: 'New Name' });
+
+      expect(result).toBe(true);
+      expect(mockApiPut).toHaveBeenCalledWith('/accounts/acc-1', { name: 'New Name' }, 'test-token');
     });
 
     it('handles API errors', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
       });
       mockApiPut.mockRejectedValue(new ApiError('Name already exists', 'CONFLICT', 400));
 
-      const result = await useAccountsStore.getState().updateAccount('acc-1', 'Duplicate Name');
+      const result = await useAccountsStore.getState().updateAccount('acc-1', { name: 'Duplicate Name' });
 
       expect(result).toBe(false);
       const state = useAccountsStore.getState();
@@ -274,7 +427,7 @@ describe('accountsStore', () => {
     it('handles generic errors', async () => {
       mockApiPut.mockRejectedValue(new Error('Network error'));
 
-      const result = await useAccountsStore.getState().updateAccount('acc-1', 'New Name');
+      const result = await useAccountsStore.getState().updateAccount('acc-1', { name: 'New Name' });
 
       expect(result).toBe(false);
       const state = useAccountsStore.getState();
@@ -285,10 +438,18 @@ describe('accountsStore', () => {
       let loadingDuringUpdate = false;
       mockApiPut.mockImplementation(async () => {
         loadingDuringUpdate = useAccountsStore.getState().isLoading;
-        return { id: 'acc-1', name: 'Updated' };
+        return {
+          id: 'acc-1',
+          name: 'Updated',
+          type: 'SELF',
+          preferredCurrency: null,
+          color: null,
+          icon: null,
+          description: null,
+        };
       });
 
-      await useAccountsStore.getState().updateAccount('acc-1', 'Updated');
+      await useAccountsStore.getState().updateAccount('acc-1', { name: 'Updated' });
 
       expect(loadingDuringUpdate).toBe(true);
       expect(useAccountsStore.getState().isLoading).toBe(false);
@@ -299,8 +460,8 @@ describe('accountsStore', () => {
     it('deletes account successfully', async () => {
       useAccountsStore.setState({
         accounts: [
-          { ...mockAccount, type: 'PERSONAL' },
-          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED' },
+          { ...mockAccount, type: 'PERSONAL', dbType: 'SELF' },
+          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED', dbType: 'PARTNER' },
         ],
         activeAccountId: 'acc-1',
       });
@@ -318,8 +479,8 @@ describe('accountsStore', () => {
     it('preserves activeAccountId when deleting non-active account', async () => {
       useAccountsStore.setState({
         accounts: [
-          { ...mockAccount, type: 'PERSONAL' },
-          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED' },
+          { ...mockAccount, type: 'PERSONAL', dbType: 'SELF' },
+          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED', dbType: 'PARTNER' },
         ],
         activeAccountId: 'acc-1',
       });
@@ -334,7 +495,7 @@ describe('accountsStore', () => {
 
     it('handles API errors', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
       });
       mockApiDelete.mockRejectedValue(new ApiError('Cannot delete only account', 'VALIDATION_ERROR', 400));
 

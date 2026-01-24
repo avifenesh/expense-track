@@ -1,14 +1,24 @@
 import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { requireJwtAuth } from '@/lib/api-auth'
 import {
   authError,
   serverError,
   successResponse,
+  validationError,
   rateLimitError,
+  checkSubscription,
 } from '@/lib/api-helpers'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { serverLogger } from '@/lib/server-logger'
+
+const createAccountSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(50, 'Name must be 50 characters or less'),
+  type: z.enum(['SELF', 'PARTNER', 'OTHER']),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color').optional().nullable(),
+  preferredCurrency: z.enum(['USD', 'EUR', 'ILS']).optional().nullable(),
+})
 
 /**
  * GET /api/v1/accounts
@@ -79,5 +89,103 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     serverLogger.error('Failed to fetch accounts', { action: 'GET /api/v1/accounts' }, error)
     return serverError('Unable to fetch accounts')
+  }
+}
+
+/**
+ * POST /api/v1/accounts
+ *
+ * Creates a new account for the authenticated user.
+ *
+ * @param {Object} body - { name: string, type: 'SELF' | 'PARTNER' | 'OTHER', color?: string, preferredCurrency?: 'USD' | 'EUR' | 'ILS' }
+ * @returns {Object} { id, name, type, preferredCurrency, color, icon, description }
+ * @throws {400} Validation error - Invalid input or duplicate account name
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {402} Subscription required - No active subscription
+ * @throws {429} Rate limited - Too many requests
+ * @throws {500} Server error - Unable to create account
+ */
+export async function POST(request: NextRequest) {
+  let user
+  try {
+    user = requireJwtAuth(request)
+  } catch (error) {
+    return authError(error instanceof Error ? error.message : 'Unauthorized')
+  }
+
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
+
+  const subscriptionError = await checkSubscription(user.userId)
+  if (subscriptionError) return subscriptionError
+
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return validationError({ body: ['Invalid JSON'] })
+  }
+
+  const parsed = createAccountSchema.safeParse(body)
+  if (!parsed.success) {
+    return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
+  }
+
+  const { name, type, color, preferredCurrency } = parsed.data
+
+  const existingAccount = await prisma.account.findFirst({
+    where: {
+      userId: user.userId,
+      name,
+      deletedAt: null,
+    },
+  })
+
+  if (existingAccount) {
+    return validationError({ name: ['An account with this name already exists'] })
+  }
+
+  try {
+    const account = await prisma.account.create({
+      data: {
+        userId: user.userId,
+        name,
+        type,
+        color: color ?? null,
+        preferredCurrency: preferredCurrency ?? null,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        preferredCurrency: true,
+        color: true,
+        icon: true,
+        description: true,
+      },
+    })
+
+    return successResponse(account, 201)
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      // Check if this is due to a soft-deleted account with the same name
+      const deletedAccount = await prisma.account.findFirst({
+        where: { userId: user.userId, name, deletedAt: { not: null } },
+      })
+      if (deletedAccount) {
+        return validationError({
+          name: ['A deleted account with this name exists. Please use a different name or restore the deleted account.'],
+        })
+      }
+      return validationError({ name: ['An account with this name already exists'] })
+    }
+    serverLogger.error('Failed to create account', {
+      action: 'POST /api/v1/accounts',
+      userId: user.userId,
+    }, error)
+    return serverError('Unable to create account')
   }
 }

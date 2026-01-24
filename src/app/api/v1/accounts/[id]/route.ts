@@ -16,6 +16,9 @@ import { serverLogger } from '@/lib/server-logger'
 
 const updateAccountSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name must be 50 characters or less'),
+  type: z.enum(['SELF', 'PARTNER', 'OTHER']).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color').optional().nullable(),
+  preferredCurrency: z.enum(['USD', 'EUR', 'ILS']).optional().nullable(),
 })
 
 /**
@@ -88,9 +91,26 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
+    const updateData: {
+      name: string
+      type?: 'SELF' | 'PARTNER' | 'OTHER'
+      color?: string | null
+      preferredCurrency?: 'USD' | 'EUR' | 'ILS' | null
+    } = { name: parsed.data.name }
+
+    if (parsed.data.type !== undefined) {
+      updateData.type = parsed.data.type
+    }
+    if (parsed.data.color !== undefined) {
+      updateData.color = parsed.data.color
+    }
+    if (parsed.data.preferredCurrency !== undefined) {
+      updateData.preferredCurrency = parsed.data.preferredCurrency
+    }
+
     const updatedAccount = await prisma.account.update({
       where: { id: accountId },
-      data: { name: parsed.data.name },
+      data: updateData,
       select: {
         id: true,
         name: true,
