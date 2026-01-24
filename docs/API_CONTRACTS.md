@@ -1389,7 +1389,7 @@ List user's accounts.
       {
         "id": "clx...",
         "name": "Personal",
-        "type": "PERSONAL",
+        "type": "SELF",
         "preferredCurrency": "USD",
         "color": "#4CAF50",
         "icon": "wallet",
@@ -1755,7 +1755,7 @@ Get current user's subscription state and Paddle checkout settings.
 
 ### GET /api/v1/accounts
 
-Retrieves all accounts for the authenticated user.
+Retrieves all accounts for the authenticated user with calculated balances.
 
 **Auth:** Bearer token required
 
@@ -1769,22 +1769,158 @@ Retrieves all accounts for the authenticated user.
       {
         "id": "clx...",
         "name": "Personal",
-        "type": "PERSONAL",
+        "type": "SELF",
         "preferredCurrency": "USD",
         "color": "#4CAF50",
         "icon": "wallet",
-        "description": "My personal account"
+        "description": "My personal account",
+        "balance": 1500.00
       }
     ]
   }
 }
 ```
 
+**Balance Calculation:**
+- Balance = Total Income - Total Expenses
+- Calculated from all non-deleted transactions
+- Returned as a number in major currency units
+
 **Errors:**
 
 - 401: Unauthorized - Invalid or missing auth token
 - 429: Rate limited - Too many requests
 - 500: Server error - Unable to fetch accounts
+
+---
+
+### PUT /api/v1/accounts/[id]
+
+Update an account's name.
+
+**Auth:** Bearer token required
+
+**Path Parameters:**
+
+- `id`: Account ID to update (required)
+
+**Request:**
+
+```json
+{
+  "name": "New Account Name"
+}
+```
+
+**Validation:**
+
+- `name`: Required. Min 1 character, max 50 characters.
+- Account must be owned by the authenticated user.
+- Name must be unique across user's non-deleted accounts.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "name": "New Account Name",
+    "type": "SELF",
+    "preferredCurrency": "USD",
+    "color": "#4CAF50",
+    "icon": "wallet",
+    "description": "My personal account"
+  }
+}
+```
+
+**Errors:**
+
+- 400: Validation error - Invalid name or duplicate account name
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 404: Not found - Account does not exist or user does not own it
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to update account
+
+**Example Error (400 - Duplicate name):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "name": ["An account with this name already exists"]
+  }
+}
+```
+
+---
+
+### DELETE /api/v1/accounts/[id]
+
+Soft delete an account.
+
+**Auth:** Bearer token required
+
+**Path Parameters:**
+
+- `id`: Account ID to delete (required)
+
+**State Requirements:**
+
+- Cannot delete if it's the user's only account
+- Cannot delete if it's the currently active account (must switch first)
+- Account must be owned by the authenticated user
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true
+  }
+}
+```
+
+**Errors:**
+
+- 400: Validation error - Cannot delete only account or active account
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 404: Not found - Account does not exist or user does not own it
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to delete account
+
+**Example Error (400 - Active account):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "id": ["Cannot delete the active account. Switch to another account first."]
+  }
+}
+```
+
+**Example Error (400 - Only account):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "id": ["Cannot delete your only account."]
+  }
+}
+```
+
+**Notes:**
+
+- Performs a soft delete (records are not permanently removed)
+- Sets `deletedAt` timestamp and `deletedBy` user ID
+- Soft-deleted accounts will not appear in GET /api/v1/accounts
+- Related data (transactions, budgets) remain intact
 
 ---
 

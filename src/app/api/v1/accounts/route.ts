@@ -13,15 +13,14 @@ import { serverLogger } from '@/lib/server-logger'
 /**
  * GET /api/v1/accounts
  *
- * Retrieves all accounts for the authenticated user.
+ * Retrieves all accounts for the authenticated user with calculated balances.
  *
- * @returns {Object} { accounts: [{ id, name, type, preferredCurrency, color, icon, description }] }
+ * @returns {Object} { accounts: [{ id, name, type, preferredCurrency, color, icon, description, balance }] }
  * @throws {401} Unauthorized - Invalid or missing auth token
  * @throws {429} Rate limited - Too many requests
  * @throws {500} Server error - Unable to fetch accounts
  */
 export async function GET(request: NextRequest) {
-  // 1. Authenticate with JWT
   let user
   try {
     user = requireJwtAuth(request)
@@ -29,14 +28,12 @@ export async function GET(request: NextRequest) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 
-  // 2. Rate limit check
   const rateLimit = checkRateLimit(user.userId)
   if (!rateLimit.allowed) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
 
-  // 3. Fetch accounts for user
   try {
     const accounts = await prisma.account.findMany({
       where: {
@@ -55,7 +52,30 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     })
 
-    return successResponse({ accounts })
+    if (accounts.length === 0) {
+      return successResponse({ accounts: [] })
+    }
+
+    const accountIds = accounts.map((acc) => acc.id)
+    const aggregates = await prisma.transaction.groupBy({
+      by: ['accountId', 'type'],
+      where: { accountId: { in: accountIds }, deletedAt: null },
+      _sum: { amount: true },
+    })
+
+    const balances = new Map<string, number>()
+    for (const { accountId, type, _sum } of aggregates) {
+      const amount = _sum.amount?.toNumber() || 0
+      const currentBalance = balances.get(accountId) || 0
+      balances.set(accountId, currentBalance + (type === 'INCOME' ? amount : -amount))
+    }
+
+    const accountsWithBalance = accounts.map((account) => ({
+      ...account,
+      balance: Math.round((balances.get(account.id) || 0) * 100) / 100,
+    }))
+
+    return successResponse({ accounts: accountsWithBalance })
   } catch (error) {
     serverLogger.error('Failed to fetch accounts', { action: 'GET /api/v1/accounts' }, error)
     return serverError('Unable to fetch accounts')

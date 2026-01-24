@@ -545,7 +545,7 @@ describe('MonthSelector', () => {
       // - minYear = min(currentYear - yearRange, 2026) = 2021 (since current year is 2026)
       // - maxYear = max(currentYear, 2026) = 2026
       // So prev should be enabled (can go to 2025), but next should be disabled (can't go past 2026)
-      const yearPrevButton = screen.getByTestId('month-selector-year-prev');
+      const _yearPrevButton = screen.getByTestId('month-selector-year-prev');
       const yearNextButton = screen.getByTestId('month-selector-year-next');
 
       // Year navigation allows going back in time (minYear is calculated from yearRange)

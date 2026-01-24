@@ -14,6 +14,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- Mobile: AccountsScreen for managing accounts (#302)
+  - View all user accounts with calculated balances
+  - Switch between accounts (e.g., personal, shared)
+  - Edit account names with validation
+  - Delete accounts with safety checks (cannot delete only/active account)
+  - Pull-to-refresh functionality
+  - Loading states with activity indicator
+  - Integration with accountsStore for real-time data
+  - Navigation from Settings screen
+- API: Enhanced GET /api/v1/accounts endpoint (#302)
+  - Now returns calculated `balance` field for each account
+  - Balance = Total Income - Total Expenses
+  - Aggregated from all non-deleted transactions
+- API: PUT /api/v1/accounts/[id] endpoint for updating account names (#302)
+  - Update account name with validation (1-50 characters)
+  - Duplicate name detection across user's accounts
+  - JWT authentication and active subscription required
+- API: DELETE /api/v1/accounts/[id] endpoint for soft-deleting accounts (#302)
+  - Soft delete accounts (sets deletedAt timestamp)
+  - Safety checks: cannot delete only account or active account
+  - Preserves related data (transactions, budgets)
+  - JWT authentication and active subscription required
 - Mobile: AddBudgetScreen for creating and updating budgets (#216)
   - Modal screen for budget creation with month selector and category picker
   - Amount input with currency formatting and real-time validation

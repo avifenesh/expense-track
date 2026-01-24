@@ -41,6 +41,7 @@ export type AppStackParamList = {
   BudgetDetail: { budgetId: string }
   CategoryPicker: undefined
   Profile: undefined
+  Accounts: undefined
 }
 
 // Root Navigator

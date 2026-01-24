@@ -14,7 +14,7 @@ jest.mock('../../../src/services/auth');
 jest.mock('../../../src/lib/tokenStorage');
 jest.mock('../../../src/stores/authStore');
 
-const mockAuthService = authService as jest.Mocked<typeof authService>;
+const _mockAuthService = authService as jest.Mocked<typeof authService>;
 const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
 
