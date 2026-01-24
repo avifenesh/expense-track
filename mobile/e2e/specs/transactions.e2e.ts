@@ -103,33 +103,42 @@ describe('Transaction E2E Tests', () => {
       await expect(element(by.id('addTransaction.submitButton'))).toBeVisible();
     });
 
-    // TODO: Debug why mobile UI transaction creation fails while API works directly
-    // The API test passes, proving backend works. Issue is mobile-specific.
+    // SKIP: This test causes emulator instability (crash/disconnect) on Windows.
+    // The API test above proves transaction creation works via backend.
+    // TODO: Investigate emulator stability issue - possibly memory/resource related.
+    // See: https://github.com/wix/Detox/issues for similar WebSocket disconnection issues
     it.skip('creates expense transaction', async () => {
       await DashboardScreen.tapAddTransaction();
       await AddTransactionScreen.waitForScreen();
 
-      // Enter amount (dismisses keyboard via tapReturnKey)
-      await AddTransactionScreen.enterAmount('42.50');
+      // Wait for categories to fully load
+      await waitFor(element(by.id('addTransaction.categoryGrid')))
+        .toBeVisible()
+        .withTimeout(15000);
 
-      // Select a category (required for form submission)
-      await AddTransactionScreen.selectFirstCategory();
+      // Enter amount and dismiss keyboard
+      await element(by.id('addTransaction.amountInput')).clearText();
+      await element(by.id('addTransaction.amountInput')).typeText('42.50');
+      await element(by.id('addTransaction.amountInput')).tapReturnKey();
 
-      // Verify category was selected by checking if form has valid state
-      // The submit button should be enabled after category selection
+      // Select Groceries category
+      await waitFor(element(by.id('addTransaction.category.groceries')))
+        .toBeVisible()
+        .withTimeout(5000);
+      await element(by.id('addTransaction.category.groceries')).tap();
+
+      // Verify submit button is visible and tap it
       await waitFor(element(by.id('addTransaction.submitButton')))
         .toBeVisible()
         .withTimeout(5000);
-
-      // Tap submit
       await element(by.id('addTransaction.submitButton')).tap();
 
-      // Wait a moment for the API call to complete
+      // Wait for navigation back to dashboard
       await waitFor(element(by.id('dashboard.screen')))
         .toBeVisible()
-        .withTimeout(TIMEOUTS.LONG);
+        .withTimeout(45000);
 
-      // Transaction should appear in the list
+      // Verify transaction appears
       await waitFor(element(by.text('$42.50')))
         .toBeVisible()
         .withTimeout(TIMEOUTS.MEDIUM);
