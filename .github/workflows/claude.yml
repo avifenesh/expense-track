@@ -34,10 +34,9 @@ jobs:
         id: claude
         uses: anthropics/claude-code-action@v1
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           additional_permissions: |
             actions: read
           model: claude-opus-4-5
-
