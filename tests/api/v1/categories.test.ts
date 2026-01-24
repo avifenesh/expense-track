@@ -696,9 +696,10 @@ describe('Category API Routes', () => {
       expect(response.status).toBe(200)
 
       const data = await response.json()
-      expect(data.name).toBe('Updated Category')
+      expect(data.success).toBe(true)
+      expect(data.data.name).toBe('Updated Category')
       // Color may be null or undefined after setting to null
-      expect(data.color).toBeFalsy()
+      expect(data.data.color).toBeFalsy()
     })
   })
 })
