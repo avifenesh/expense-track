@@ -59,17 +59,13 @@ describe('Transaction E2E Tests', () => {
       await AddTransactionScreen.waitForScreen();
 
       await expect(element(by.id('addTransaction.amountInput'))).toBeVisible();
-      // Scroll to see description input (may be below keyboard)
+      // Scroll within ScrollView to see description input (may be below fold)
       await waitFor(element(by.id('addTransaction.descriptionInput')))
         .toBeVisible()
-        .whileElement(by.id('addTransaction.screen'))
-        .scroll(100, 'down');
+        .whileElement(by.id('addTransaction.scrollView'))
+        .scroll(200, 'down');
       await expect(element(by.id('addTransaction.descriptionInput'))).toBeVisible();
-      // Scroll to see submit button
-      await waitFor(element(by.id('addTransaction.submitButton')))
-        .toBeVisible()
-        .whileElement(by.id('addTransaction.screen'))
-        .scroll(100, 'down');
+      // Submit button is in fixed footer, should be visible
       await expect(element(by.id('addTransaction.submitButton'))).toBeVisible();
     });
 

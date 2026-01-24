@@ -106,10 +106,9 @@ export const RegisterScreen = {
   },
 
   async enterPassword(password: string): Promise<void> {
-    await element(by.id('register.passwordInput')).clearText();
-    await element(by.id('register.passwordInput')).typeText(password);
-    // Dismiss keyboard and iOS automatic password suggestion
-    await element(by.id('register.passwordInput')).tapReturnKey();
+    // Use replaceText to bypass iOS automatic password suggestion
+    // typeText triggers iOS autofill which blocks password entry
+    await element(by.id('register.passwordInput')).replaceText(password);
   },
 
   async tapSubmit(): Promise<void> {
@@ -395,12 +394,15 @@ export const AddTransactionScreen = {
   },
 
   async tapSubmit(): Promise<void> {
-    // Scroll within the ScrollView to make submit button visible
-    await waitFor(element(by.id('addTransaction.submitButton')))
-      .toBeVisible()
-      .whileElement(by.id('addTransaction.scrollView'))
-      .scroll(200, 'down');
-    await element(by.id('addTransaction.submitButton')).tap();
+    // Try to tap submit button - it's in a fixed footer so should be visible
+    // If not visible, scroll the content area first
+    try {
+      await element(by.id('addTransaction.submitButton')).tap();
+    } catch {
+      // If tap fails, scroll to bring button into view and retry
+      await element(by.id('addTransaction.scrollView')).scrollTo('bottom');
+      await element(by.id('addTransaction.submitButton')).tap();
+    }
   },
 
   async assertVisible(): Promise<void> {
