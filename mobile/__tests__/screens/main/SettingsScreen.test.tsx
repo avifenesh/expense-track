@@ -5,13 +5,16 @@ import { SettingsScreen } from '../../../src/screens/main/SettingsScreen';
 import { AuthProvider } from '../../../src/contexts';
 import * as biometricService from '../../../src/services/biometric';
 import * as authService from '../../../src/services/auth';
-import { useAuthStore } from '../../../src/stores/authStore';
+import { useAuthStore } from '../../../src/stores';
 import { createMockStoreImplementation } from '../../utils/mockZustandStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/services/biometric');
 jest.mock('../../../src/services/auth');
-jest.mock('../../../src/stores/authStore');
+// Mock the stores index (which the component imports from)
+jest.mock('../../../src/stores', () => ({
+  useAuthStore: jest.fn(),
+}));
 
 const mockBiometricService = biometricService as jest.Mocked<typeof biometricService>;
 const mockAuthService = authService as jest.Mocked<typeof authService>;
