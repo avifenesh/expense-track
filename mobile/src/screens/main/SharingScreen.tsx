@@ -8,11 +8,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Pressable,
-  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
-import { useSharingStore, useTransactionsStore, useAccountsStore } from '../../stores'
+import { useSharingStore, useTransactionsStore, useAccountsStore, useToastStore } from '../../stores'
 import { EmptyState, TransactionPickerModal } from '../../components'
 import { formatCurrency } from '../../utils/format'
 import type { Currency } from '../../types'
@@ -78,10 +77,7 @@ function BalanceSummary({ balances }: BalanceSummaryProps) {
         const subtext = isPositive ? (netBalance === 0 ? 'All settled up' : 'You are owed overall') : 'You owe overall'
 
         return (
-          <View
-            key={currency}
-            style={[styles.balanceCard, index < totals.length - 1 && styles.balanceCardSpacing]}
-          >
+          <View key={currency} style={[styles.balanceCard, index < totals.length - 1 && styles.balanceCardSpacing]}>
             <Text style={styles.balanceLabel}>Net Balance</Text>
             {totals.length > 1 && <Text style={styles.balanceCurrencyLabel}>{currency}</Text>}
             <Text style={[styles.balanceAmount, isPositive ? styles.positiveBalance : styles.negativeBalance]}>
@@ -266,9 +262,10 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
       setMarkingPaidId(participantId)
       try {
         await useSharingStore.getState().markParticipantPaid(participantId)
+        useToastStore.getState().success('Marked as paid')
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to mark as paid'
-        Alert.alert('Error', message)
+        useToastStore.getState().error(message)
       } finally {
         setMarkingPaidId(null)
       }

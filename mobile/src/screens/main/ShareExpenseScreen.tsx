@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -7,92 +7,79 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { AppStackScreenProps } from '../../navigation/types';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { AppStackScreenProps } from '../../navigation/types'
 import {
   useSharingStore,
   useTransactionsStore,
   useAccountsStore,
+  useToastStore,
   type SplitType,
   type ShareUser,
-} from '../../stores';
-import { ApiError } from '../../services/api';
-import { formatCurrency } from '../../utils/format';
-import {
-  validateShareDescription,
-  validateParticipantsList,
-  validateEmail,
-} from '../../lib/validation';
-import {
-  createSplitPreview,
-  roundToTwoDecimals,
-} from '../../lib/splitCalculator';
-import type { Currency } from '../../types';
+} from '../../stores'
+import { ApiError } from '../../services/api'
+import { formatCurrency } from '../../utils/format'
+import { validateShareDescription, validateParticipantsList, validateEmail } from '../../lib/validation'
+import { createSplitPreview, roundToTwoDecimals } from '../../lib/splitCalculator'
+import type { Currency } from '../../types'
 
 interface ParticipantEntry {
-  email: string;
-  displayName?: string | null;
-  userId?: string;
-  percentage: number;
-  fixedAmount: number;
-  isVerified: boolean;
+  email: string
+  displayName?: string | null
+  userId?: string
+  percentage: number
+  fixedAmount: number
+  isVerified: boolean
 }
 
 type FormErrors = {
-  email?: string;
-  description?: string;
-  participants?: string;
-  split?: string;
-  general?: string;
-};
+  email?: string
+  description?: string
+  participants?: string
+  split?: string
+  general?: string
+}
 
 const SPLIT_TYPES: { value: SplitType; label: string; description: string }[] = [
   { value: 'EQUAL', label: 'Equal', description: 'Split equally' },
   { value: 'PERCENTAGE', label: 'Percentage', description: 'By percentage' },
   { value: 'FIXED', label: 'Fixed', description: 'Fixed amounts' },
-];
+]
 
-export function ShareExpenseScreen({
-  navigation,
-  route,
-}: AppStackScreenProps<'ShareExpense'>) {
-  const { transactionId } = route.params;
+export function ShareExpenseScreen({ navigation, route }: AppStackScreenProps<'ShareExpense'>) {
+  const { transactionId } = route.params
 
   // Select only STATE values, not functions, to prevent re-render loops
   // Functions are accessed via getState() within callbacks
-  const transactions = useTransactionsStore((state) => state.transactions);
-  const accounts = useAccountsStore((state) => state.accounts);
-  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const transactions = useTransactionsStore((state) => state.transactions)
+  const accounts = useAccountsStore((state) => state.accounts)
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
   // Find the transaction
-  const transaction = useMemo(
-    () => transactions.find((t) => t.id === transactionId),
-    [transactions, transactionId]
-  );
+  const transaction = useMemo(() => transactions.find((t) => t.id === transactionId), [transactions, transactionId])
 
-  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
-  const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
-  const totalAmount = transaction ? parseFloat(transaction.amount) : 0;
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId)
+  const currency: Currency = selectedAccount?.preferredCurrency || 'USD'
+  const totalAmount = transaction ? parseFloat(transaction.amount) : 0
 
   // Form State
-  const [splitType, setSplitType] = useState<SplitType>('EQUAL');
-  const [description, setDescription] = useState('');
-  const [participants, setParticipants] = useState<ParticipantEntry[]>([]);
-  const [emailInput, setEmailInput] = useState('');
-  const [isLookingUp, setIsLookingUp] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [splitType, setSplitType] = useState<SplitType>('EQUAL')
+  const [description, setDescription] = useState('')
+  const [participants, setParticipants] = useState<ParticipantEntry[]>([])
+  const [emailInput, setEmailInput] = useState('')
+  const [isLookingUp, setIsLookingUp] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<FormErrors>({})
 
   // Load transaction description as default
   useEffect(() => {
     if (transaction?.description) {
-      setDescription(transaction.description);
+      setDescription(transaction.description)
     }
-  }, [transaction?.description]);
+  }, [transaction?.description])
 
   // Calculate split preview
   const splitPreview = useMemo(() => {
@@ -104,36 +91,36 @@ export function ShareExpenseScreen({
         displayName: p.displayName,
         percentage: p.percentage,
         fixedAmount: p.fixedAmount,
-      }))
-    );
-  }, [splitType, totalAmount, participants]);
+      })),
+    )
+  }, [splitType, totalAmount, participants])
 
   // ============================================
   // Handlers
   // ============================================
 
   const handleSplitTypeChange = useCallback((newType: SplitType) => {
-    setSplitType(newType);
-    setErrors((prev) => ({ ...prev, split: undefined }));
+    setSplitType(newType)
+    setErrors((prev) => ({ ...prev, split: undefined }))
 
     // Reset participant percentages for percentage split
     if (newType === 'PERCENTAGE') {
       setParticipants((prev) => {
-        const equalPercentage = prev.length > 0 ? Math.floor(100 / (prev.length + 1)) : 0;
-        return prev.map((p) => ({ ...p, percentage: equalPercentage }));
-      });
+        const equalPercentage = prev.length > 0 ? Math.floor(100 / (prev.length + 1)) : 0
+        return prev.map((p) => ({ ...p, percentage: equalPercentage }))
+      })
     }
-  }, []);
+  }, [])
 
   const handleDescriptionChange = useCallback((text: string) => {
-    setDescription(text);
-    setErrors((prev) => ({ ...prev, description: undefined }));
-  }, []);
+    setDescription(text)
+    setErrors((prev) => ({ ...prev, description: undefined }))
+  }, [])
 
   const handleEmailInputChange = useCallback((text: string) => {
-    setEmailInput(text);
-    setErrors((prev) => ({ ...prev, email: undefined }));
-  }, []);
+    setEmailInput(text)
+    setErrors((prev) => ({ ...prev, email: undefined }))
+  }, [])
 
   const addParticipant = useCallback(
     (user: Omit<ShareUser, 'id'> & { userId?: string; isVerified: boolean }) => {
@@ -144,46 +131,46 @@ export function ShareExpenseScreen({
         percentage: splitType === 'PERCENTAGE' ? Math.floor(100 / (participants.length + 2)) : 0,
         fixedAmount: 0,
         isVerified: user.isVerified,
-      };
+      }
 
       setParticipants((prev) => {
-        const updated = [...prev, newParticipant];
+        const updated = [...prev, newParticipant]
 
         if (splitType === 'PERCENTAGE') {
-          const equalPercentage = Math.floor(100 / (updated.length + 1));
-          return updated.map((p) => ({ ...p, percentage: equalPercentage }));
+          const equalPercentage = Math.floor(100 / (updated.length + 1))
+          return updated.map((p) => ({ ...p, percentage: equalPercentage }))
         }
 
-        return updated;
-      });
+        return updated
+      })
 
-      setEmailInput('');
-      setErrors((prev) => ({ ...prev, email: undefined, participants: undefined }));
+      setEmailInput('')
+      setErrors((prev) => ({ ...prev, email: undefined, participants: undefined }))
     },
-    [splitType, participants.length]
-  );
+    [splitType, participants.length],
+  )
 
   const handleLookupUser = useCallback(async () => {
-    const email = emailInput.trim().toLowerCase();
+    const email = emailInput.trim().toLowerCase()
 
     // Validate email
-    const emailError = validateEmail(email);
+    const emailError = validateEmail(email)
     if (emailError) {
-      setErrors((prev) => ({ ...prev, email: emailError }));
-      return;
+      setErrors((prev) => ({ ...prev, email: emailError }))
+      return
     }
 
     // Check if already added
     if (participants.some((p) => p.email.toLowerCase() === email)) {
-      setErrors((prev) => ({ ...prev, email: 'This user is already added' }));
-      return;
+      setErrors((prev) => ({ ...prev, email: 'This user is already added' }))
+      return
     }
 
-    setIsLookingUp(true);
-    setErrors((prev) => ({ ...prev, email: undefined }));
+    setIsLookingUp(true)
+    setErrors((prev) => ({ ...prev, email: undefined }))
 
     try {
-      const user = await useSharingStore.getState().lookupUser(email);
+      const user = await useSharingStore.getState().lookupUser(email)
 
       if (user) {
         addParticipant({
@@ -191,168 +178,152 @@ export function ShareExpenseScreen({
           displayName: user.displayName,
           userId: user.id,
           isVerified: true,
-        });
+        })
       } else {
         setErrors((prev) => ({
           ...prev,
           email: 'No user found with this email address',
-        }));
+        }))
       }
     } catch (error) {
       // Preserve ApiError messages (rate limiting, validation, etc.) for better UX
-      let message: string;
+      let message: string
       if (error instanceof ApiError) {
-        message = error.message;
+        message = error.message
       } else if (error instanceof Error) {
-        message = error.message;
+        message = error.message
       } else {
-        message = 'Failed to look up user';
+        message = 'Failed to look up user'
       }
-      setErrors((prev) => ({ ...prev, email: message }));
+      setErrors((prev) => ({ ...prev, email: message }))
     } finally {
-      setIsLookingUp(false);
+      setIsLookingUp(false)
     }
-  }, [emailInput, participants, addParticipant]);
+  }, [emailInput, participants, addParticipant])
 
   const removeParticipant = useCallback(
     (email: string) => {
       setParticipants((prev) => {
-        const updated = prev.filter((p) => p.email !== email);
+        const updated = prev.filter((p) => p.email !== email)
 
         // Rebalance percentages for percentage split
         if (splitType === 'PERCENTAGE' && updated.length > 0) {
-          const equalPercentage = Math.floor(100 / (updated.length + 1));
-          return updated.map((p) => ({ ...p, percentage: equalPercentage }));
+          const equalPercentage = Math.floor(100 / (updated.length + 1))
+          return updated.map((p) => ({ ...p, percentage: equalPercentage }))
         }
 
-        return updated;
-      });
+        return updated
+      })
     },
-    [splitType]
-  );
+    [splitType],
+  )
 
   const updateParticipantPercentage = useCallback((email: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    const clampedValue = Math.min(100, Math.max(0, numValue));
+    const numValue = parseFloat(value) || 0
+    const clampedValue = Math.min(100, Math.max(0, numValue))
 
-    setParticipants((prev) =>
-      prev.map((p) => (p.email === email ? { ...p, percentage: clampedValue } : p))
-    );
-    setErrors((prev) => ({ ...prev, split: undefined }));
-  }, []);
+    setParticipants((prev) => prev.map((p) => (p.email === email ? { ...p, percentage: clampedValue } : p)))
+    setErrors((prev) => ({ ...prev, split: undefined }))
+  }, [])
 
   const updateParticipantFixedAmount = useCallback((email: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    const clampedValue = Math.max(0, numValue);
+    const numValue = parseFloat(value) || 0
+    const clampedValue = Math.max(0, numValue)
 
     setParticipants((prev) =>
-      prev.map((p) =>
-        p.email === email ? { ...p, fixedAmount: roundToTwoDecimals(clampedValue) } : p
-      )
-    );
-    setErrors((prev) => ({ ...prev, split: undefined }));
-  }, []);
+      prev.map((p) => (p.email === email ? { ...p, fixedAmount: roundToTwoDecimals(clampedValue) } : p)),
+    )
+    setErrors((prev) => ({ ...prev, split: undefined }))
+  }, [])
 
   const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = {}
 
     // Validate description
-    const descError = validateShareDescription(description);
+    const descError = validateShareDescription(description)
     if (descError) {
-      newErrors.description = descError;
+      newErrors.description = descError
     }
 
     // Validate participants
-    const participantsError = validateParticipantsList(participants);
+    const participantsError = validateParticipantsList(participants)
     if (participantsError) {
-      newErrors.participants = participantsError;
+      newErrors.participants = participantsError
     }
 
     // Validate split amounts
     if (!splitPreview.isValid && splitPreview.errors.length > 0) {
-      newErrors.split = splitPreview.errors[0].message;
+      newErrors.split = splitPreview.errors[0].message
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [description, participants, splitPreview]);
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }, [description, participants, splitPreview])
 
   const handleSubmit = useCallback(async () => {
     if (!validateForm()) {
-      return;
+      return
     }
 
     if (!transaction) {
-      setErrors((prev) => ({ ...prev, general: 'Transaction not found' }));
-      return;
+      setErrors((prev) => ({ ...prev, general: 'Transaction not found' }))
+      return
     }
 
-    setIsSubmitting(true);
-    setErrors({});
+    setIsSubmitting(true)
+    setErrors({})
 
     try {
       const participantData = splitPreview.participantShares.map((share) => {
-        const participant = participants.find((p) => p.email === share.email);
+        const participant = participants.find((p) => p.email === share.email)
         return {
           email: share.email,
           shareAmount: share.amount,
           sharePercentage: splitType === 'PERCENTAGE' ? participant?.percentage : undefined,
-        };
-      });
+        }
+      })
 
       await useSharingStore.getState().createSharedExpense({
         transactionId: transaction.id,
         splitType,
         description: description.trim() || '',
         participants: participantData,
-      });
+      })
 
-      Alert.alert('Success', 'Expense shared successfully', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      useToastStore.getState().success('Expense shared successfully')
+      navigation.goBack()
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to share expense';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : 'Failed to share expense'
+      useToastStore.getState().error(message)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, [
-    validateForm,
-    transaction,
-    splitPreview.participantShares,
-    participants,
-    splitType,
-    description,
-    navigation,
-  ]);
+  }, [validateForm, transaction, splitPreview.participantShares, participants, splitType, description, navigation])
 
   const handleCancel = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    navigation.goBack()
+  }, [navigation])
 
   // ============================================
   // Render Helpers
   // ============================================
 
   const getDisplayName = (participant: ParticipantEntry): string => {
-    return participant.displayName || participant.email.split('@')[0];
-  };
+    return participant.displayName || participant.email.split('@')[0]
+  }
 
   const getCurrencySymbol = (curr: Currency): string => {
     switch (curr) {
       case 'USD':
-        return '$';
+        return '$'
       case 'EUR':
-        return '\u20AC'; // Euro symbol
+        return '\u20AC' // Euro symbol
       case 'ILS':
-        return '\u20AA'; // Shekel symbol
+        return '\u20AA' // Shekel symbol
       default:
-        return '$';
+        return '$'
     }
-  };
+  }
 
   // ============================================
   // Loading State
@@ -368,7 +339,7 @@ export function ShareExpenseScreen({
           </Pressable>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   // ============================================
@@ -377,10 +348,7 @@ export function ShareExpenseScreen({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable
@@ -404,12 +372,8 @@ export function ShareExpenseScreen({
           {/* Transaction Summary */}
           <View style={styles.transactionCard}>
             <Text style={styles.transactionLabel}>Transaction</Text>
-            <Text style={styles.transactionAmount}>
-              {formatCurrency(totalAmount, currency)}
-            </Text>
-            <Text style={styles.transactionDescription}>
-              {transaction.description || 'No description'}
-            </Text>
+            <Text style={styles.transactionAmount}>{formatCurrency(totalAmount, currency)}</Text>
+            <Text style={styles.transactionDescription}>{transaction.description || 'No description'}</Text>
             <Text style={styles.transactionCategory}>{transaction.category.name}</Text>
           </View>
 
@@ -420,29 +384,18 @@ export function ShareExpenseScreen({
               {SPLIT_TYPES.map((type) => (
                 <Pressable
                   key={type.value}
-                  style={[
-                    styles.splitTypeButton,
-                    splitType === type.value && styles.splitTypeButtonActive,
-                  ]}
+                  style={[styles.splitTypeButton, splitType === type.value && styles.splitTypeButtonActive]}
                   onPress={() => handleSplitTypeChange(type.value)}
                   accessibilityRole="button"
                   accessibilityLabel={type.label}
                   accessibilityState={{ selected: splitType === type.value }}
                   testID={`split-type-${type.value.toLowerCase()}`}
                 >
-                  <Text
-                    style={[
-                      styles.splitTypeLabel,
-                      splitType === type.value && styles.splitTypeLabelActive,
-                    ]}
-                  >
+                  <Text style={[styles.splitTypeLabel, splitType === type.value && styles.splitTypeLabelActive]}>
                     {type.label}
                   </Text>
                   <Text
-                    style={[
-                      styles.splitTypeDescription,
-                      splitType === type.value && styles.splitTypeDescriptionActive,
-                    ]}
+                    style={[styles.splitTypeDescription, splitType === type.value && styles.splitTypeDescriptionActive]}
                   >
                     {type.description}
                   </Text>
@@ -468,10 +421,7 @@ export function ShareExpenseScreen({
                 testID="participant-email-input"
               />
               <Pressable
-                style={[
-                  styles.addButton,
-                  (isLookingUp || !emailInput.trim()) && styles.addButtonDisabled,
-                ]}
+                style={[styles.addButton, (isLookingUp || !emailInput.trim()) && styles.addButtonDisabled]}
                 onPress={handleLookupUser}
                 disabled={isLookingUp || !emailInput.trim()}
                 accessibilityRole="button"
@@ -491,16 +441,12 @@ export function ShareExpenseScreen({
           {/* Participants List */}
           {participants.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>
-                Participants ({participants.length})
-              </Text>
+              <Text style={styles.sectionLabel}>Participants ({participants.length})</Text>
               <View style={styles.participantsList}>
                 {participants.map((participant) => (
                   <View key={participant.email} style={styles.participantRow}>
                     <View style={styles.participantInfo}>
-                      <Text style={styles.participantName}>
-                        {getDisplayName(participant)}
-                      </Text>
+                      <Text style={styles.participantName}>{getDisplayName(participant)}</Text>
                       <Text style={styles.participantEmail}>{participant.email}</Text>
                     </View>
 
@@ -510,9 +456,7 @@ export function ShareExpenseScreen({
                         <TextInput
                           style={styles.participantInput}
                           value={participant.percentage.toString()}
-                          onChangeText={(value) =>
-                            updateParticipantPercentage(participant.email, value)
-                          }
+                          onChangeText={(value) => updateParticipantPercentage(participant.email, value)}
                           keyboardType="decimal-pad"
                           accessibilityLabel={`Percentage for ${getDisplayName(participant)}`}
                           testID={`percentage-input-${participant.email}`}
@@ -526,14 +470,8 @@ export function ShareExpenseScreen({
                         <Text style={styles.currencySymbol}>{getCurrencySymbol(currency)}</Text>
                         <TextInput
                           style={styles.participantInput}
-                          value={
-                            participant.fixedAmount > 0
-                              ? participant.fixedAmount.toString()
-                              : ''
-                          }
-                          onChangeText={(value) =>
-                            updateParticipantFixedAmount(participant.email, value)
-                          }
+                          value={participant.fixedAmount > 0 ? participant.fixedAmount.toString() : ''}
+                          onChangeText={(value) => updateParticipantFixedAmount(participant.email, value)}
                           placeholder="0.00"
                           placeholderTextColor="#64748b"
                           keyboardType="decimal-pad"
@@ -546,10 +484,8 @@ export function ShareExpenseScreen({
                     {splitType === 'EQUAL' && (
                       <Text style={styles.participantShareAmount}>
                         {formatCurrency(
-                          splitPreview.participantShares.find(
-                            (s) => s.email === participant.email
-                          )?.amount ?? 0,
-                          currency
+                          splitPreview.participantShares.find((s) => s.email === participant.email)?.amount ?? 0,
+                          currency,
                         )}
                       </Text>
                     )}
@@ -566,9 +502,7 @@ export function ShareExpenseScreen({
                   </View>
                 ))}
               </View>
-              {errors.participants && (
-                <Text style={styles.errorText}>{errors.participants}</Text>
-              )}
+              {errors.participants && <Text style={styles.errorText}>{errors.participants}</Text>}
               {errors.split && <Text style={styles.errorText}>{errors.split}</Text>}
             </View>
           )}
@@ -580,9 +514,7 @@ export function ShareExpenseScreen({
               <View style={styles.previewCard}>
                 <View style={styles.previewRow}>
                   <Text style={styles.previewLabel}>Your share</Text>
-                  <Text style={styles.previewAmount}>
-                    {formatCurrency(splitPreview.ownerShare, currency)}
-                  </Text>
+                  <Text style={styles.previewAmount}>{formatCurrency(splitPreview.ownerShare, currency)}</Text>
                 </View>
                 <View style={styles.previewRow}>
                   <Text style={styles.previewLabel}>Others pay</Text>
@@ -592,9 +524,7 @@ export function ShareExpenseScreen({
                 </View>
                 <View style={[styles.previewRow, styles.previewTotal]}>
                   <Text style={styles.previewTotalLabel}>Total</Text>
-                  <Text style={styles.previewTotalAmount}>
-                    {formatCurrency(totalAmount, currency)}
-                  </Text>
+                  <Text style={styles.previewTotalAmount}>{formatCurrency(totalAmount, currency)}</Text>
                 </View>
               </View>
             </View>
@@ -615,9 +545,7 @@ export function ShareExpenseScreen({
               accessibilityLabel="Description"
               testID="description-input"
             />
-            {errors.description && (
-              <Text style={styles.errorText}>{errors.description}</Text>
-            )}
+            {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
             <Text style={styles.charCount}>{description.length}/240</Text>
           </View>
 
@@ -632,10 +560,7 @@ export function ShareExpenseScreen({
         {/* Submit Button */}
         <View style={styles.footer}>
           <Pressable
-            style={[
-              styles.submitButton,
-              (isSubmitting || participants.length === 0) && styles.submitButtonDisabled,
-            ]}
+            style={[styles.submitButton, (isSubmitting || participants.length === 0) && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting || participants.length === 0}
             accessibilityRole="button"
@@ -652,7 +577,7 @@ export function ShareExpenseScreen({
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -981,4 +906,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})
