@@ -88,7 +88,11 @@ export async function registerUser({
       verificationExpires: newUser.emailVerificationExpires,
     }
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    const hasKnownRequestError =
+      typeof Prisma?.PrismaClientKnownRequestError === 'function' &&
+      error instanceof Prisma.PrismaClientKnownRequestError
+
+    if (hasKnownRequestError && error.code === 'P2002') {
       return { success: false, reason: 'exists' }
     }
     serverLogger.error('Failed to register user', { action: 'registerUser', input: { email: normalizedEmail } }, error)
