@@ -104,8 +104,8 @@ describe('TransactionListItem', () => {
       };
       render(<TransactionListItem transaction={transaction} />);
 
-      // de-DE locale formats as "100,00 €" or similar
-      expect(screen.getByText(/-.*€.*100/)).toBeTruthy();
+      // de-DE locale formats as "-100,00 €" (currency after number)
+      expect(screen.getByText(/-.*100.*€/)).toBeTruthy();
     });
 
     it('formats ILS currency', () => {
@@ -116,7 +116,8 @@ describe('TransactionListItem', () => {
       };
       render(<TransactionListItem transaction={transaction} />);
 
-      expect(screen.getByText(/-.*₪.*100/)).toBeTruthy();
+      // ILS format has currency after number
+      expect(screen.getByText(/-.*100.*₪/)).toBeTruthy();
     });
   });
 

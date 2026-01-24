@@ -2,7 +2,15 @@ import { useBudgetsStore } from '../../src/stores/budgetsStore';
 import { useAuthStore } from '../../src/stores/authStore';
 import { ApiError, apiGet, apiPost, apiDelete } from '../../src/services/api';
 
-jest.mock('../../src/services/api');
+jest.mock('../../src/services/api', () => {
+  const actual = jest.requireActual('../../src/services/api');
+  return {
+    ...actual,
+    apiGet: jest.fn(),
+    apiPost: jest.fn(),
+    apiDelete: jest.fn(),
+  };
+});
 
 const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
 const mockApiPost = apiPost as jest.MockedFunction<typeof apiPost>;

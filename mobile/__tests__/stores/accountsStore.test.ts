@@ -2,7 +2,14 @@ import { useAccountsStore } from '../../src/stores/accountsStore';
 import { useAuthStore } from '../../src/stores/authStore';
 import { ApiError, apiGet, apiPatch } from '../../src/services/api';
 
-jest.mock('../../src/services/api');
+jest.mock('../../src/services/api', () => {
+  const actual = jest.requireActual('../../src/services/api');
+  return {
+    ...actual,
+    apiGet: jest.fn(),
+    apiPatch: jest.fn(),
+  };
+});
 
 const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
 const mockApiPatch = apiPatch as jest.MockedFunction<typeof apiPatch>;

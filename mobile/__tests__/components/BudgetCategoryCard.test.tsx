@@ -54,16 +54,17 @@ describe('BudgetCategoryCard', () => {
     it('formats EUR currency', () => {
       render(<BudgetCategoryCard {...defaultProps} currency="EUR" />);
 
-      // de-DE locale formats as "150,00 €" or similar
-      expect(screen.getByText(/€.*150/)).toBeTruthy();
-      expect(screen.getByText(/€.*500/)).toBeTruthy();
+      // de-DE locale formats as "150,00 €" (currency after number)
+      expect(screen.getByText(/150.*€/)).toBeTruthy();
+      expect(screen.getByText(/500.*€/)).toBeTruthy();
     });
 
     it('formats ILS currency', () => {
       render(<BudgetCategoryCard {...defaultProps} currency="ILS" />);
 
-      expect(screen.getByText(/₪.*150/)).toBeTruthy();
-      expect(screen.getByText(/₪.*500/)).toBeTruthy();
+      // ILS format has currency after number
+      expect(screen.getByText(/150.*₪/)).toBeTruthy();
+      expect(screen.getByText(/500.*₪/)).toBeTruthy();
     });
   });
 
