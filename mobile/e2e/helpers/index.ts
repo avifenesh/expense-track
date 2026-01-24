@@ -1,11 +1,7 @@
 /**
  * E2E Test Helpers
- *
- * Export all helper modules for easy importing in test files.
+ * Re-exports all helper modules
  */
 
 export * from './fixtures';
-export * from './auth-helpers';
-export * from './screen-helpers';
-export * from './element-helpers';
-export * from './transaction-helpers';
+export * from './api-client';

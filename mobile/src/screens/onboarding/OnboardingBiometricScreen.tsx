@@ -6,9 +6,9 @@ import { getBiometricTypeLabel } from '../../services/biometric';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
 export function OnboardingBiometricScreen(_props: OnboardingScreenProps<'OnboardingBiometric'>) {
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const biometricCapability = useAuthStore((state) => state.biometricCapability);
-  const enableBiometric = useAuthStore((state) => state.enableBiometric);
-  const updateUser = useAuthStore((state) => state.updateUser);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +20,7 @@ export function OnboardingBiometricScreen(_props: OnboardingScreenProps<'Onboard
     setIsLoading(true);
     setError(null);
     try {
-      await enableBiometric();
+      await useAuthStore.getState().enableBiometric();
       completeOnboarding();
     } catch (err) {
       if (err instanceof Error) {
@@ -42,7 +42,7 @@ export function OnboardingBiometricScreen(_props: OnboardingScreenProps<'Onboard
     // will automatically switch from OnboardingStack to AppStack.
     // Don't call navigation.reset() as it conflicts with the automatic stack switch
     // and causes "Maximum update depth exceeded" errors.
-    updateUser({ hasCompletedOnboarding: true });
+    useAuthStore.getState().updateUser({ hasCompletedOnboarding: true });
   };
 
   const biometricAvailable = biometricCapability?.isAvailable;

@@ -6,9 +6,9 @@ import { useOnboardingStore } from '../../stores'
 import { CURRENCIES } from '../../constants/currencies'
 
 export function OnboardingCurrencyScreen({ navigation }: OnboardingScreenProps<'OnboardingCurrency'>) {
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const selectedCurrency = useOnboardingStore((state) => state.selectedCurrency)
-  const setCurrency = useOnboardingStore((state) => state.setCurrency)
 
   return (
     <SafeAreaView style={styles.container} testID="onboarding.currency.screen">
@@ -28,7 +28,7 @@ export function OnboardingCurrencyScreen({ navigation }: OnboardingScreenProps<'
             <Pressable
               key={currency.code}
               style={[styles.option, selectedCurrency === currency.code && styles.optionSelected]}
-              onPress={() => setCurrency(currency.code)}
+              onPress={() => useOnboardingStore.getState().setCurrency(currency.code)}
               testID={`onboarding.currency.option.${currency.code}`}
             >
               <Text style={styles.optionSymbol}>{currency.symbol}</Text>

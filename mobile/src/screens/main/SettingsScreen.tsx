@@ -7,11 +7,10 @@ import { useAuthStore } from '../../stores'
 import { getBiometricTypeLabel } from '../../services/biometric'
 
 export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
-  const logout = useAuthStore((state) => state.logout)
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const biometricCapability = useAuthStore((state) => state.biometricCapability)
   const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled)
-  const enableBiometric = useAuthStore((state) => state.enableBiometric)
-  const disableBiometric = useAuthStore((state) => state.disableBiometric)
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBiometricLoading, setIsBiometricLoading] = useState(false)
@@ -20,7 +19,7 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await logout()
+      await useAuthStore.getState().logout()
     } finally {
       setIsLoggingOut(false)
     }
@@ -31,9 +30,9 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
     setIsBiometricLoading(true)
     try {
       if (isBiometricEnabled) {
-        await disableBiometric()
+        await useAuthStore.getState().disableBiometric()
       } else {
-        await enableBiometric()
+        await useAuthStore.getState().enableBiometric()
       }
     } catch (err) {
       if (err instanceof Error) {

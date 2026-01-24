@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -8,125 +8,104 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Pressable,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { MainTabScreenProps } from '../../navigation/types';
-import {
-  useAccountsStore,
-  useTransactionsStore,
-  useBudgetsStore,
-  type Transaction,
-} from '../../stores';
-import {
-  MonthSelector,
-  TransactionListItem,
-  BudgetProgressCard,
-  SyncStatusBadge,
-} from '../../components';
-import { getMonthKey } from '../../utils/date';
-import { formatCurrency } from '../../utils/format';
-import type { Currency } from '../../types';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { MainTabScreenProps } from '../../navigation/types'
+import { useAccountsStore, useTransactionsStore, useBudgetsStore, type Transaction } from '../../stores'
+import { MonthSelector, TransactionListItem, BudgetProgressCard, SyncStatusBadge } from '../../components'
+import { getMonthKey } from '../../utils/date'
+import { formatCurrency } from '../../utils/format'
+import type { Currency } from '../../types'
 
-const RECENT_TRANSACTIONS_LIMIT = 5;
+const RECENT_TRANSACTIONS_LIMIT = 5
 
 export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>) {
-  const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(getMonthKey())
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Use individual selectors to prevent infinite re-render loops
-  const accounts = useAccountsStore((state) => state.accounts);
-  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
-  const accountsLoading = useAccountsStore((state) => state.isLoading);
-  const accountsError = useAccountsStore((state) => state.error);
-  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
+  const accounts = useAccountsStore((state) => state.accounts)
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId)
+  const accountsLoading = useAccountsStore((state) => state.isLoading)
+  const accountsError = useAccountsStore((state) => state.error)
 
-  const transactions = useTransactionsStore((state) => state.transactions);
-  const transactionsLoading = useTransactionsStore((state) => state.isLoading);
-  const transactionsError = useTransactionsStore((state) => state.error);
-  const setTransactionFilters = useTransactionsStore((state) => state.setFilters);
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
+  const transactions = useTransactionsStore((state) => state.transactions)
+  const transactionsLoading = useTransactionsStore((state) => state.isLoading)
+  const transactionsError = useTransactionsStore((state) => state.error)
 
-  const budgets = useBudgetsStore((state) => state.budgets);
-  const budgetsLoading = useBudgetsStore((state) => state.isLoading);
-  const budgetsError = useBudgetsStore((state) => state.error);
-  const setBudgetFilters = useBudgetsStore((state) => state.setFilters);
-  const setBudgetSelectedMonth = useBudgetsStore((state) => state.setSelectedMonth);
-  const fetchBudgets = useBudgetsStore((state) => state.fetchBudgets);
+  const budgets = useBudgetsStore((state) => state.budgets)
+  const budgetsLoading = useBudgetsStore((state) => state.isLoading)
+  const budgetsError = useBudgetsStore((state) => state.error)
 
-  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
-  const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId)
+  const currency: Currency = selectedAccount?.preferredCurrency || 'USD'
 
   // Calculate totals from transactions (memoized for performance)
   const totalIncome = useMemo(
-    () => transactions
-      .filter((t) => t.type === 'INCOME')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0),
-    [transactions]
-  );
+    () => transactions.filter((t) => t.type === 'INCOME').reduce((sum, t) => sum + parseFloat(t.amount), 0),
+    [transactions],
+  )
 
   const totalExpenses = useMemo(
-    () => transactions
-      .filter((t) => t.type === 'EXPENSE')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0),
-    [transactions]
-  );
+    () => transactions.filter((t) => t.type === 'EXPENSE').reduce((sum, t) => sum + parseFloat(t.amount), 0),
+    [transactions],
+  )
 
-  const totalBudget = useMemo(
-    () => budgets.reduce((sum, b) => sum + parseFloat(b.planned), 0),
-    [budgets]
-  );
+  const totalBudget = useMemo(() => budgets.reduce((sum, b) => sum + parseFloat(b.planned), 0), [budgets])
 
-  const recentTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT);
+  const recentTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT)
 
-  // Initial load - fetch accounts
+  // Initial load - fetch accounts (runs once on mount)
+  // Access store actions via getState() to avoid subscription issues
   useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
+    useAccountsStore.getState().fetchAccounts()
+  }, [])
 
-  // When account or month changes, update filters and fetch data in one effect
-  // This prevents race conditions between setting filters and fetching data
+  // When account or month changes, update filters and fetch data
+  // Access store actions via getState() to avoid subscription issues
   useEffect(() => {
     if (activeAccountId) {
-      setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: activeAccountId });
-      setBudgetSelectedMonth(selectedMonth);
-      fetchTransactions();
-      fetchBudgets();
+      const transactionsStore = useTransactionsStore.getState()
+      const budgetsStore = useBudgetsStore.getState()
+
+      transactionsStore.setFilters({ accountId: activeAccountId, month: selectedMonth })
+      budgetsStore.setFilters({ accountId: activeAccountId })
+      budgetsStore.setSelectedMonth(selectedMonth)
+      transactionsStore.fetchTransactions()
+      budgetsStore.fetchBudgets()
     }
-  }, [
-    activeAccountId,
-    selectedMonth,
-    setTransactionFilters,
-    setBudgetFilters,
-    setBudgetSelectedMonth,
-    fetchTransactions,
-    fetchBudgets,
-  ]);
+  }, [activeAccountId, selectedMonth])
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await fetchAccounts();
+    setIsRefreshing(true)
+    await useAccountsStore.getState().fetchAccounts()
     if (activeAccountId) {
-      await Promise.all([fetchTransactions(), fetchBudgets()]);
+      await Promise.all([
+        useTransactionsStore.getState().fetchTransactions(),
+        useBudgetsStore.getState().fetchBudgets(),
+      ])
     }
-    setIsRefreshing(false);
-  }, [fetchAccounts, fetchTransactions, fetchBudgets, activeAccountId]);
+    setIsRefreshing(false)
+  }, [activeAccountId])
 
   const handleMonthChange = useCallback((month: string) => {
-    setSelectedMonth(month);
-  }, []);
+    setSelectedMonth(month)
+  }, [])
 
   const handleAddTransaction = useCallback(() => {
-    navigation.navigate('CreateTransaction');
-  }, [navigation]);
+    navigation.navigate('CreateTransaction')
+  }, [navigation])
 
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
-    navigation.navigate('EditTransaction', { transactionId: transaction.id });
-  }, [navigation]);
+  const handleTransactionPress = useCallback(
+    (transaction: Transaction) => {
+      navigation.navigate('EditTransaction', { transactionId: transaction.id })
+    },
+    [navigation],
+  )
 
-  const isLoading =
-    accountsLoading || (activeAccountId && (transactionsLoading || budgetsLoading));
-  const error = accountsError || transactionsError || budgetsError;
+  const isLoading = accountsLoading || (activeAccountId && (transactionsLoading || budgetsLoading))
+  const error = accountsError || transactionsError || budgetsError
 
   // Loading state (initial load only)
   if (accountsLoading && accounts.length === 0) {
@@ -134,10 +113,12 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.loadingScreen">
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#38bdf8" testID="dashboard.loadingIndicator" />
-          <Text style={styles.loadingText} testID="dashboard.loadingText">Loading your finances...</Text>
+          <Text style={styles.loadingText} testID="dashboard.loadingText">
+            Loading your finances...
+          </Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   // Error state
@@ -145,14 +126,18 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.errorScreen">
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle} testID="dashboard.errorTitle">Something went wrong</Text>
-          <Text style={styles.errorText} testID="dashboard.errorText">{error}</Text>
+          <Text style={styles.errorTitle} testID="dashboard.errorTitle">
+            Something went wrong
+          </Text>
+          <Text style={styles.errorText} testID="dashboard.errorText">
+            {error}
+          </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh} testID="dashboard.retryButton">
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   // No accounts state
@@ -160,13 +145,15 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="dashboard.emptyScreen">
         <View style={styles.centerContainer}>
-          <Text style={styles.emptyTitle} testID="dashboard.emptyTitle">No Accounts Found</Text>
+          <Text style={styles.emptyTitle} testID="dashboard.emptyTitle">
+            No Accounts Found
+          </Text>
           <Text style={styles.emptyText} testID="dashboard.emptyText">
             Create an account to start tracking your finances.
           </Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
@@ -187,8 +174,12 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.title} testID="dashboard.title">Dashboard</Text>
-            <Text style={styles.subtitle} testID="dashboard.subtitle">Your financial overview</Text>
+            <Text style={styles.title} testID="dashboard.title">
+              Dashboard
+            </Text>
+            <Text style={styles.subtitle} testID="dashboard.subtitle">
+              Your financial overview
+            </Text>
           </View>
           <SyncStatusBadge testID="dashboard.syncStatusBadge" />
         </View>
@@ -209,13 +200,17 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
 
         <View style={styles.statsRow} testID="dashboard.statsRow">
           <View style={[styles.statCard, styles.incomeCard]} testID="dashboard.incomeCard">
-            <Text style={styles.statLabel} testID="dashboard.incomeLabel">Income</Text>
+            <Text style={styles.statLabel} testID="dashboard.incomeLabel">
+              Income
+            </Text>
             <Text style={[styles.statAmount, styles.incomeAmount]} testID="dashboard.incomeAmount">
               +{formatCurrency(totalIncome, currency)}
             </Text>
           </View>
           <View style={[styles.statCard, styles.expenseCard]} testID="dashboard.expenseCard">
-            <Text style={styles.statLabel} testID="dashboard.expenseLabel">Expenses</Text>
+            <Text style={styles.statLabel} testID="dashboard.expenseLabel">
+              Expenses
+            </Text>
             <Text style={[styles.statAmount, styles.expenseAmount]} testID="dashboard.expenseAmount">
               -{formatCurrency(totalExpenses, currency)}
             </Text>
@@ -223,7 +218,9 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
         </View>
 
         <View style={styles.section} testID="dashboard.recentTransactionsSection">
-          <Text style={styles.sectionTitle} testID="dashboard.recentTransactionsTitle">Recent Transactions</Text>
+          <Text style={styles.sectionTitle} testID="dashboard.recentTransactionsTitle">
+            Recent Transactions
+          </Text>
           {transactionsLoading && transactions.length === 0 ? (
             <View style={styles.loadingContainer} testID="dashboard.transactionsLoading">
               <ActivityIndicator size="small" color="#38bdf8" />
@@ -234,13 +231,8 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
             </View>
           ) : (
             <View testID="dashboard.transactionsList">
-              {recentTransactions.map((transaction, index) => (
-                <TransactionListItem
-                  key={transaction.id}
-                  transaction={transaction}
-                  onPress={handleTransactionPress}
-                  testID={`dashboard.transaction.${index}`}
-                />
+              {recentTransactions.map((transaction) => (
+                <TransactionListItem key={transaction.id} transaction={transaction} onPress={handleTransactionPress} />
               ))}
             </View>
           )}
@@ -258,7 +250,7 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
         <Text style={styles.fabText}>+</Text>
       </Pressable>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -406,4 +398,4 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     lineHeight: 36,
   },
-});
+})

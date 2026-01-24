@@ -128,13 +128,14 @@ jobs:
             ${{ runner.os }}-pods-
 
       # Cache iOS build (DerivedData) - significantly speeds up rebuilds
+      # Note: Cache key includes src hash to bust cache when source files change
       - name: Cache iOS Build
         uses: actions/cache@v4
         with:
           path: |
             ~/Library/Developer/Xcode/DerivedData
             mobile/ios/build
-          key: ${{ runner.os }}-ios-build-${{ hashFiles('mobile/ios/Podfile.lock', 'mobile/package.json') }}
+          key: ${{ runner.os }}-ios-build-${{ hashFiles('mobile/ios/Podfile.lock', 'mobile/package.json', 'mobile/src/**/*.tsx', 'mobile/src/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-ios-build-
 
@@ -148,6 +149,9 @@ jobs:
       - name: Generate native projects (Expo prebuild)
         working-directory: mobile
         run: npx expo prebuild --clean --platform ios
+        env:
+          # iOS simulator uses localhost to reach host
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Install CocoaPods dependencies
         working-directory: mobile/ios
@@ -309,13 +313,14 @@ jobs:
             ${{ runner.os }}-gradle-
 
       # Cache Android build outputs
+      # Note: Cache key includes src hash to bust cache when source files change
       - name: Cache Android Build
         uses: actions/cache@v4
         with:
           path: |
             mobile/android/.gradle
             mobile/android/app/build
-          key: ${{ runner.os }}-android-build-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/package.json') }}
+          key: ${{ runner.os }}-android-build-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/package.json', 'mobile/src/**/*.tsx', 'mobile/src/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-android-build-
 
@@ -327,7 +332,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-31-x86_64-linux-${{ hashFiles('mobile/detox.config.*') }}-v2
+          key: avd-31-x86_64-linux-test_avd-${{ hashFiles('mobile/detox.config.*') }}-v3
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -339,6 +344,9 @@ jobs:
       - name: Generate native projects (Expo prebuild)
         working-directory: mobile
         run: npx expo prebuild --clean --platform android
+        env:
+          # Android emulator uses 10.0.2.2 to reach host localhost
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Build Detox (Android release)
         working-directory: mobile
@@ -356,6 +364,7 @@ jobs:
           api-level: 31
           target: google_apis
           arch: x86_64
+          avd-name: test_avd
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
@@ -367,6 +376,7 @@ jobs:
           api-level: 31
           target: google_apis
           arch: x86_64
+          avd-name: test_avd
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true

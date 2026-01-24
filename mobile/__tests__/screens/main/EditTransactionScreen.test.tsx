@@ -1,35 +1,36 @@
-import React from 'react';
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { EditTransactionScreen } from '../../../src/screens/main/EditTransactionScreen';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useTransactionsStore } from '../../../src/stores/transactionsStore';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import type { AppStackScreenProps } from '../../../src/navigation/types';
-import { Alert } from 'react-native';
+import React from 'react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native'
+import { NavigationContainer } from '@react-navigation/native'
+import { EditTransactionScreen } from '../../../src/screens/main/EditTransactionScreen'
+import { useAccountsStore } from '../../../src/stores/accountsStore'
+import { useTransactionsStore } from '../../../src/stores/transactionsStore'
+import { useCategoriesStore } from '../../../src/stores/categoriesStore'
+import type { AppStackScreenProps } from '../../../src/navigation/types'
+import { Alert } from 'react-native'
 
 // Mock stores
-jest.mock('../../../src/stores/accountsStore');
-jest.mock('../../../src/stores/transactionsStore');
-jest.mock('../../../src/stores/categoriesStore');
+jest.mock('../../../src/stores/accountsStore')
+jest.mock('../../../src/stores/transactionsStore')
+jest.mock('../../../src/stores/categoriesStore')
 
-// Mock Alert
-jest.spyOn(Alert, 'alert');
+// Mock toast store
+const mockToastSuccess = jest.fn()
+const mockToastError = jest.fn()
+jest.mock('../../../src/stores/toastStore', () => ({
+  useToastStore: {
+    getState: () => ({
+      success: mockToastSuccess,
+      error: mockToastError,
+    }),
+  },
+}))
 
-const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<
-  typeof useAccountsStore
->;
-const mockUseTransactionsStore = useTransactionsStore as jest.MockedFunction<
-  typeof useTransactionsStore
->;
-const mockUseCategoriesStore = useCategoriesStore as jest.MockedFunction<
-  typeof useCategoriesStore
->;
+// Mock Alert (still needed for delete confirmation dialog)
+jest.spyOn(Alert, 'alert')
+
+const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore>
+const mockUseTransactionsStore = useTransactionsStore as jest.MockedFunction<typeof useTransactionsStore>
+const mockUseCategoriesStore = useCategoriesStore as jest.MockedFunction<typeof useCategoriesStore>
 
 const mockAccount = {
   id: 'acc-1',
@@ -39,7 +40,7 @@ const mockAccount = {
   color: '#4CAF50',
   icon: 'wallet',
   description: 'My personal finances',
-};
+}
 
 const mockExpenseCategory = {
   id: 'cat-1',
@@ -48,7 +49,7 @@ const mockExpenseCategory = {
   color: '#4CAF50',
   isArchived: false,
   isHolding: false,
-};
+}
 
 const mockIncomeCategory = {
   id: 'cat-2',
@@ -57,7 +58,7 @@ const mockIncomeCategory = {
   color: '#22c55e',
   isArchived: false,
   isHolding: false,
-};
+}
 
 const mockTransaction = {
   id: 'tx-1',
@@ -71,7 +72,7 @@ const mockTransaction = {
   description: 'Lunch',
   isRecurring: false,
   category: mockExpenseCategory,
-};
+}
 
 const mockIncomeTransaction = {
   id: 'tx-2',
@@ -85,29 +86,26 @@ const mockIncomeTransaction = {
   description: 'Monthly salary',
   isRecurring: false,
   category: mockIncomeCategory,
-};
+}
 
 const mockNavigation = {
   navigate: jest.fn(),
   goBack: jest.fn(),
   setOptions: jest.fn(),
-} as unknown as AppStackScreenProps<'EditTransaction'>['navigation'];
+} as unknown as AppStackScreenProps<'EditTransaction'>['navigation']
 
 const mockRoute = {
   key: 'EditTransaction',
   name: 'EditTransaction' as const,
   params: { transactionId: 'tx-1' },
-} as AppStackScreenProps<'EditTransaction'>['route'];
+} as AppStackScreenProps<'EditTransaction'>['route']
 
-function renderEditTransactionScreen(
-  route = mockRoute,
-  navigation = mockNavigation
-) {
+function renderEditTransactionScreen(route = mockRoute, navigation = mockNavigation) {
   return render(
     <NavigationContainer>
       <EditTransactionScreen navigation={navigation} route={route} />
-    </NavigationContainer>
-  );
+    </NavigationContainer>,
+  )
 }
 
 describe('EditTransactionScreen', () => {
@@ -120,7 +118,7 @@ describe('EditTransactionScreen', () => {
     setActiveAccount: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
-  };
+  }
 
   const defaultTransactionsState = {
     transactions: [mockTransaction, mockIncomeTransaction],
@@ -139,7 +137,7 @@ describe('EditTransactionScreen', () => {
     setFilters: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
-  };
+  }
 
   const defaultCategoriesState = {
     categories: [mockExpenseCategory, mockIncomeCategory],
@@ -149,255 +147,253 @@ describe('EditTransactionScreen', () => {
     createCategory: jest.fn(),
     archiveCategory: jest.fn(),
     unarchiveCategory: jest.fn(),
-    getCategoriesByType: jest.fn((type) =>
-      [mockExpenseCategory, mockIncomeCategory].filter((c) => c.type === type)
-    ),
+    getCategoriesByType: jest.fn((type) => [mockExpenseCategory, mockIncomeCategory].filter((c) => c.type === type)),
     clearError: jest.fn(),
     reset: jest.fn(),
-  };
+  }
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState);
-    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState);
-    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState);
-  });
+    jest.clearAllMocks()
+    mockUseAccountsStore.mockReturnValue(defaultAccountsState)
+    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState)
+    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState)
+  })
 
   describe('Rendering', () => {
     it('renders screen title "Edit Transaction"', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Transaction')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Edit Transaction')).toBeTruthy()
+      })
+    })
 
     it('renders update button text', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Update Transaction')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Update Transaction')).toBeTruthy()
+      })
+    })
 
     it('renders delete button', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
+    })
 
     it('renders cancel button', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Cancel')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Cancel')).toBeTruthy()
+      })
+    })
 
     it('renders type selector with Expense and Income options', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Expense')).toBeTruthy();
-        expect(screen.getByText('Income')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Expense')).toBeTruthy()
+        expect(screen.getByText('Income')).toBeTruthy()
+      })
+    })
 
     it('renders amount input', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount')).toBeTruthy();
-      });
-    });
+        expect(screen.getByLabelText('Amount')).toBeTruthy()
+      })
+    })
 
     it('renders category section', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Category')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Category')).toBeTruthy()
+      })
+    })
 
     it('renders date section', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Date')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Date')).toBeTruthy()
+      })
+    })
 
     it('renders description input', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Description (Optional)')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Description (Optional)')).toBeTruthy()
+      })
+    })
 
     it('renders currency symbol based on account', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('$')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('$')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Loading State', () => {
     it('shows loading indicator when transaction is being loaded', async () => {
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         transactions: [],
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Loading transaction...')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('Loading transaction...')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Error State - Transaction Not Found', () => {
     it('shows error when transaction is not found', async () => {
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         transactions: [],
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // First it shows loading, then after initialization it shows error
       await waitFor(
         () => {
-          expect(screen.getByText('Transaction Not Found')).toBeTruthy();
+          expect(screen.getByText('Transaction Not Found')).toBeTruthy()
         },
-        { timeout: 2000 }
-      );
-    });
+        { timeout: 2000 },
+      )
+    })
 
     it('shows go back button when transaction not found', async () => {
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         transactions: [],
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(
         () => {
-          expect(screen.getByText('Go Back')).toBeTruthy();
+          expect(screen.getByText('Go Back')).toBeTruthy()
         },
-        { timeout: 2000 }
-      );
-    });
+        { timeout: 2000 },
+      )
+    })
 
     it('navigates back when go back button is pressed', async () => {
-      const goBack = jest.fn();
-      const navWithGoBack = { ...mockNavigation, goBack };
+      const goBack = jest.fn()
+      const navWithGoBack = { ...mockNavigation, goBack }
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         transactions: [],
-      });
+      })
 
-      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation);
+      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation)
 
       await waitFor(
         () => {
-          const backButton = screen.getByText('Go Back');
-          fireEvent.press(backButton);
+          const backButton = screen.getByText('Go Back')
+          fireEvent.press(backButton)
         },
-        { timeout: 2000 }
-      );
+        { timeout: 2000 },
+      )
 
       await waitFor(() => {
-        expect(goBack).toHaveBeenCalled();
-      });
-    });
-  });
+        expect(goBack).toHaveBeenCalled()
+      })
+    })
+  })
 
   describe('Pre-population', () => {
     it('pre-populates amount from transaction', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        expect(amountInput.props.value).toBe('50.00');
-      });
-    });
+        const amountInput = screen.getByLabelText('Amount')
+        expect(amountInput.props.value).toBe('50.00')
+      })
+    })
 
     it('pre-populates description from transaction', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const descInput = screen.getByLabelText('Description');
-        expect(descInput.props.value).toBe('Lunch');
-      });
-    });
+        const descInput = screen.getByLabelText('Description')
+        expect(descInput.props.value).toBe('Lunch')
+      })
+    })
 
     it('pre-populates type selection (expense)', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const expenseButton = screen.getByLabelText('Expense');
-        expect(expenseButton.props.accessibilityState.selected).toBe(true);
-      });
-    });
+        const expenseButton = screen.getByLabelText('Expense')
+        expect(expenseButton.props.accessibilityState.selected).toBe(true)
+      })
+    })
 
     it('pre-populates type selection (income)', async () => {
       const incomeRoute = {
         ...mockRoute,
         params: { transactionId: 'tx-2' },
-      };
+      }
 
-      renderEditTransactionScreen(incomeRoute);
+      renderEditTransactionScreen(incomeRoute)
 
       await waitFor(() => {
-        const incomeButton = screen.getByLabelText('Income');
-        expect(incomeButton.props.accessibilityState.selected).toBe(true);
-      });
-    });
+        const incomeButton = screen.getByLabelText('Income')
+        expect(incomeButton.props.accessibilityState.selected).toBe(true)
+      })
+    })
 
     it('pre-populates category selection', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const categoryButton = screen.getByLabelText('Select Food category');
-        expect(categoryButton.props.accessibilityState.selected).toBe(true);
-      });
-    });
-  });
+        const categoryButton = screen.getByLabelText('Select Food category')
+        expect(categoryButton.props.accessibilityState.selected).toBe(true)
+      })
+    })
+  })
 
   describe('Update Transaction', () => {
     it('calls updateTransaction with correct data', async () => {
-      const updateTransaction = jest.fn().mockResolvedValue(mockTransaction);
+      const updateTransaction = jest.fn().mockResolvedValue(mockTransaction)
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         updateTransaction,
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Change amount
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '75.00');
-      });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '75.00')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
         expect(updateTransaction).toHaveBeenCalledWith(
@@ -407,106 +403,122 @@ describe('EditTransactionScreen', () => {
             type: 'EXPENSE',
             amount: 75,
             currency: 'USD',
-          })
-        );
-      });
-    });
+          }),
+        )
+      })
+    })
 
     it('navigates back on successful update', async () => {
-      const goBack = jest.fn();
-      const navWithGoBack = { ...mockNavigation, goBack };
+      const goBack = jest.fn()
+      const navWithGoBack = { ...mockNavigation, goBack }
 
-      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation);
+      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation)
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        expect(goBack).toHaveBeenCalled();
-      });
-    });
+        expect(goBack).toHaveBeenCalled()
+      })
+    })
 
-    it('shows error alert on update failure', async () => {
-      const updateTransaction = jest
-        .fn()
-        .mockRejectedValue(new Error('Network error'));
+    it('shows success toast on successful update', async () => {
+      renderEditTransactionScreen()
+
+      // Wait for pre-population
+      await waitFor(() => {
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
+
+      // Submit
+      await waitFor(() => {
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
+
+      await waitFor(() => {
+        expect(mockToastSuccess).toHaveBeenCalledWith('Transaction updated')
+      })
+    })
+
+    it('shows error toast on update failure', async () => {
+      const updateTransaction = jest.fn().mockRejectedValue(new Error('Network error'))
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         updateTransaction,
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Network error');
-      });
-    });
+        expect(mockToastError).toHaveBeenCalledWith('Network error')
+      })
+    })
 
     it('disables submit button while submitting', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: unknown) => void
       const updateTransaction = jest.fn().mockImplementation(
         () =>
           new Promise((resolve) => {
-            resolvePromise = resolve;
-          })
-      );
+            resolvePromise = resolve
+          }),
+      )
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         updateTransaction,
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        const submitButton = screen.getByLabelText('Update transaction');
-        expect(submitButton.props.accessibilityState.disabled).toBe(true);
-      });
+        const submitButton = screen.getByLabelText('Update transaction')
+        expect(submitButton.props.accessibilityState.disabled).toBe(true)
+      })
 
       // Resolve the promise to clean up
-      resolvePromise!({});
-    });
-  });
+      resolvePromise!({})
+    })
+  })
 
   describe('Delete Transaction', () => {
     it('shows confirmation dialog when delete is pressed', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for screen to load
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
 
       // Press delete
-      fireEvent.press(screen.getByText('Delete Transaction'));
+      fireEvent.press(screen.getByText('Delete Transaction'))
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
@@ -515,523 +527,528 @@ describe('EditTransactionScreen', () => {
           expect.arrayContaining([
             expect.objectContaining({ text: 'Cancel', style: 'cancel' }),
             expect.objectContaining({ text: 'Delete', style: 'destructive' }),
-          ])
-        );
-      });
-    });
+          ]),
+        )
+      })
+    })
 
     it('calls deleteTransaction when confirm is pressed', async () => {
-      const deleteTransaction = jest.fn().mockResolvedValue(undefined);
+      const deleteTransaction = jest.fn().mockResolvedValue(undefined)
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         deleteTransaction,
-      });
+      })
 
       // Mock Alert to immediately call the delete callback
-      (Alert.alert as jest.Mock).mockImplementation(
-        (_title, _message, buttons) => {
-          const deleteButton = buttons?.find(
-            (b: { text: string }) => b.text === 'Delete'
-          );
-          deleteButton?.onPress?.();
-        }
-      );
+      ;(Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons) => {
+        const deleteButton = buttons?.find((b: { text: string }) => b.text === 'Delete')
+        deleteButton?.onPress?.()
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for screen to load
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
 
       // Press delete
-      fireEvent.press(screen.getByText('Delete Transaction'));
+      fireEvent.press(screen.getByText('Delete Transaction'))
 
       await waitFor(() => {
-        expect(deleteTransaction).toHaveBeenCalledWith('tx-1');
-      });
-    });
+        expect(deleteTransaction).toHaveBeenCalledWith('tx-1')
+      })
+    })
 
     it('navigates back after successful delete', async () => {
-      const goBack = jest.fn();
-      const deleteTransaction = jest.fn().mockResolvedValue(undefined);
-      const navWithGoBack = { ...mockNavigation, goBack };
+      const goBack = jest.fn()
+      const deleteTransaction = jest.fn().mockResolvedValue(undefined)
+      const navWithGoBack = { ...mockNavigation, goBack }
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         deleteTransaction,
-      });
+      })
 
       // Mock Alert to immediately call the delete callback
-      (Alert.alert as jest.Mock).mockImplementation(
-        (_title, _message, buttons) => {
-          const deleteButton = buttons?.find(
-            (b: { text: string }) => b.text === 'Delete'
-          );
-          deleteButton?.onPress?.();
-        }
-      );
+      ;(Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons) => {
+        const deleteButton = buttons?.find((b: { text: string }) => b.text === 'Delete')
+        deleteButton?.onPress?.()
+      })
 
-      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation);
+      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation)
 
       // Wait for screen to load
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
 
       // Press delete
-      fireEvent.press(screen.getByText('Delete Transaction'));
+      fireEvent.press(screen.getByText('Delete Transaction'))
 
       await waitFor(() => {
-        expect(goBack).toHaveBeenCalled();
-      });
-    });
+        expect(goBack).toHaveBeenCalled()
+      })
+    })
 
-    it('shows error alert on delete failure', async () => {
-      const deleteTransaction = jest
-        .fn()
-        .mockRejectedValue(new Error('Delete failed'));
+    it('shows success toast on successful delete', async () => {
+      const deleteTransaction = jest.fn().mockResolvedValue(undefined)
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         deleteTransaction,
-      });
+      })
 
-      // Mock Alert for delete confirmation
-      let deleteCallback: (() => Promise<void>) | undefined;
-      (Alert.alert as jest.Mock).mockImplementation(
-        (title, _message, buttons) => {
-          if (title === 'Delete Transaction') {
-            const deleteButton = buttons?.find(
-              (b: { text: string }) => b.text === 'Delete'
-            );
-            deleteCallback = deleteButton?.onPress;
-          }
-        }
-      );
+      // Mock Alert to immediately call the delete callback
+      ;(Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons) => {
+        const deleteButton = buttons?.find((b: { text: string }) => b.text === 'Delete')
+        deleteButton?.onPress?.()
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for screen to load
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
 
       // Press delete
-      fireEvent.press(screen.getByText('Delete Transaction'));
+      fireEvent.press(screen.getByText('Delete Transaction'))
+
+      await waitFor(() => {
+        expect(mockToastSuccess).toHaveBeenCalledWith('Transaction deleted')
+      })
+    })
+
+    it('shows error toast on delete failure', async () => {
+      const deleteTransaction = jest.fn().mockRejectedValue(new Error('Delete failed'))
+
+      mockUseTransactionsStore.mockReturnValue({
+        ...defaultTransactionsState,
+        deleteTransaction,
+      })
+
+      // Mock Alert for delete confirmation
+      let deleteCallback: (() => Promise<void>) | undefined
+      ;(Alert.alert as jest.Mock).mockImplementation((title, _message, buttons) => {
+        if (title === 'Delete Transaction') {
+          const deleteButton = buttons?.find((b: { text: string }) => b.text === 'Delete')
+          deleteCallback = deleteButton?.onPress
+        }
+      })
+
+      renderEditTransactionScreen()
+
+      // Wait for screen to load
+      await waitFor(() => {
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
+
+      // Press delete
+      fireEvent.press(screen.getByText('Delete Transaction'))
 
       // Execute the delete callback
       if (deleteCallback) {
-        await deleteCallback();
+        await deleteCallback()
       }
 
-      // Check that error alert was shown
+      // Check that error toast was shown
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Delete failed');
-      });
-    });
+        expect(mockToastError).toHaveBeenCalledWith('Delete failed')
+      })
+    })
 
     it('does not delete when cancel is pressed', async () => {
-      const deleteTransaction = jest.fn();
+      const deleteTransaction = jest.fn()
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         deleteTransaction,
-      });
+      })
 
       // Mock Alert to call cancel
-      (Alert.alert as jest.Mock).mockImplementation(
-        (_title, _message, buttons) => {
-          const cancelButton = buttons?.find(
-            (b: { text: string }) => b.text === 'Cancel'
-          );
-          cancelButton?.onPress?.();
-        }
-      );
+      ;(Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons) => {
+        const cancelButton = buttons?.find((b: { text: string }) => b.text === 'Cancel')
+        cancelButton?.onPress?.()
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for screen to load
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
 
       // Press delete
-      fireEvent.press(screen.getByText('Delete Transaction'));
+      fireEvent.press(screen.getByText('Delete Transaction'))
 
       // deleteTransaction should not be called
-      expect(deleteTransaction).not.toHaveBeenCalled();
-    });
+      expect(deleteTransaction).not.toHaveBeenCalled()
+    })
 
     it('disables delete button while deleting', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: unknown) => void
       const deleteTransaction = jest.fn().mockImplementation(
         () =>
           new Promise((resolve) => {
-            resolvePromise = resolve;
-          })
-      );
+            resolvePromise = resolve
+          }),
+      )
 
       mockUseTransactionsStore.mockReturnValue({
         ...defaultTransactionsState,
         deleteTransaction,
-      });
+      })
 
       // Mock Alert to immediately call the delete callback
-      (Alert.alert as jest.Mock).mockImplementation(
-        (_title, _message, buttons) => {
-          const deleteButton = buttons?.find(
-            (b: { text: string }) => b.text === 'Delete'
-          );
-          deleteButton?.onPress?.();
-        }
-      );
+      ;(Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons) => {
+        const deleteButton = buttons?.find((b: { text: string }) => b.text === 'Delete')
+        deleteButton?.onPress?.()
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for screen to load
       await waitFor(() => {
-        expect(screen.getByText('Delete Transaction')).toBeTruthy();
-      });
+        expect(screen.getByText('Delete Transaction')).toBeTruthy()
+      })
 
       // Press delete
-      fireEvent.press(screen.getByText('Delete Transaction'));
+      fireEvent.press(screen.getByText('Delete Transaction'))
 
       await waitFor(() => {
-        const deleteButton = screen.getByLabelText('Delete transaction');
-        expect(deleteButton.props.accessibilityState.disabled).toBe(true);
-      });
+        const deleteButton = screen.getByLabelText('Delete transaction')
+        expect(deleteButton.props.accessibilityState.disabled).toBe(true)
+      })
 
       // Resolve the promise to clean up
-      resolvePromise!(undefined);
-    });
-  });
+      resolvePromise!(undefined)
+    })
+  })
 
   describe('Form Validation', () => {
     it('shows error when submitting without amount', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Clear amount
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '');
-      });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Amount is required')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Amount is required')).toBeTruthy()
+      })
+    })
 
     it('shows error for zero amount', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Set amount to 0
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '0');
-      });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '0')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Amount must be greater than zero')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Amount must be greater than zero')).toBeTruthy()
+      })
+    })
 
     it('shows error when category is cleared after type change', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Change type to Income (this clears the category)
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Income'));
-      });
+        fireEvent.press(screen.getByLabelText('Income'))
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Please select a category')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('Please select a category')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Amount Input', () => {
     it('allows editing amount', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '99.99');
-        expect(amountInput.props.value).toBe('99.99');
-      });
-    });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '99.99')
+        expect(amountInput.props.value).toBe('99.99')
+      })
+    })
 
     it('filters out non-numeric characters', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, 'abc123.45xyz');
-        expect(amountInput.props.value).toBe('123.45');
-      });
-    });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, 'abc123.45xyz')
+        expect(amountInput.props.value).toBe('123.45')
+      })
+    })
 
     it('allows only two decimal places', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '50.12');
-        expect(amountInput.props.value).toBe('50.12');
-      });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '50.12')
+        expect(amountInput.props.value).toBe('50.12')
+      })
 
       // Try to add more decimal places
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '50.123');
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '50.123')
         // Should not update because more than 2 decimal places
-        expect(amountInput.props.value).toBe('50.12');
-      });
-    });
-  });
+        expect(amountInput.props.value).toBe('50.12')
+      })
+    })
+  })
 
   describe('Description Input', () => {
     it('allows editing description', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const descInput = screen.getByLabelText('Description');
-        fireEvent.changeText(descInput, 'Updated description');
-        expect(descInput.props.value).toBe('Updated description');
-      });
-    });
+        const descInput = screen.getByLabelText('Description')
+        fireEvent.changeText(descInput, 'Updated description')
+        expect(descInput.props.value).toBe('Updated description')
+      })
+    })
 
     it('shows character count', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Pre-populated with "Lunch" (5 chars)
       await waitFor(() => {
-        expect(screen.getByText('5/200')).toBeTruthy();
-      });
+        expect(screen.getByText('5/200')).toBeTruthy()
+      })
 
       await waitFor(() => {
-        const descInput = screen.getByLabelText('Description');
-        fireEvent.changeText(descInput, 'Updated');
-      });
+        const descInput = screen.getByLabelText('Description')
+        fireEvent.changeText(descInput, 'Updated')
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('7/200')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('7/200')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Cancel Action', () => {
     it('navigates back when cancel is pressed', async () => {
-      const goBack = jest.fn();
-      const navWithGoBack = { ...mockNavigation, goBack };
+      const goBack = jest.fn()
+      const navWithGoBack = { ...mockNavigation, goBack }
 
-      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation);
-
-      await waitFor(() => {
-        fireEvent.press(screen.getByText('Cancel'));
-      });
+      renderEditTransactionScreen(mockRoute, navWithGoBack as typeof mockNavigation)
 
       await waitFor(() => {
-        expect(goBack).toHaveBeenCalled();
-      });
-    });
-  });
+        fireEvent.press(screen.getByText('Cancel'))
+      })
+
+      await waitFor(() => {
+        expect(goBack).toHaveBeenCalled()
+      })
+    })
+  })
 
   describe('No Account Selected', () => {
     it('shows error when no account is selected', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         activeAccountId: null,
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population
       await waitFor(() => {
-        expect(screen.getByLabelText('Amount').props.value).toBe('50.00');
-      });
+        expect(screen.getByLabelText('Amount').props.value).toBe('50.00')
+      })
 
       // Submit
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Update Transaction'));
-      });
+        fireEvent.press(screen.getByText('Update Transaction'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('No account selected')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('No account selected')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Currency Display', () => {
     it('shows EUR symbol for EUR accounts', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'EUR' as const }],
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('\u20AC')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('\u20AC')).toBeTruthy()
+      })
+    })
 
     it('shows ILS symbol for ILS accounts', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'ILS' as const }],
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('\u20AA')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('\u20AA')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Type Change', () => {
     it('clears category when type changes', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Wait for pre-population - category should be selected
       await waitFor(() => {
-        const categoryButton = screen.getByLabelText('Select Food category');
-        expect(categoryButton.props.accessibilityState.selected).toBe(true);
-      });
+        const categoryButton = screen.getByLabelText('Select Food category')
+        expect(categoryButton.props.accessibilityState.selected).toBe(true)
+      })
 
       // Change type to Income
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Income'));
-      });
+        fireEvent.press(screen.getByLabelText('Income'))
+      })
 
       // Category should now show Income categories, Food should not be selected
       await waitFor(() => {
-        expect(screen.queryByLabelText('Select Food category')).toBeNull();
-      });
-    });
+        expect(screen.queryByLabelText('Select Food category')).toBeNull()
+      })
+    })
 
     it('fetches categories when type changes', async () => {
-      const fetchCategories = jest.fn().mockResolvedValue(undefined);
+      const fetchCategories = jest.fn().mockResolvedValue(undefined)
       mockUseCategoriesStore.mockReturnValue({
         ...defaultCategoriesState,
         fetchCategories,
-      });
+      })
 
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       // Change type to Income
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Income'));
-      });
+        fireEvent.press(screen.getByLabelText('Income'))
+      })
 
       await waitFor(() => {
-        expect(fetchCategories).toHaveBeenCalledWith('INCOME');
-      });
-    });
-  });
+        expect(fetchCategories).toHaveBeenCalledWith('INCOME')
+      })
+    })
+  })
 
   describe('Preview', () => {
     it('shows preview when amount and category are selected', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Preview')).toBeTruthy();
-        expect(screen.getByText('-$50.00')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Preview')).toBeTruthy()
+        expect(screen.getByText('-$50.00')).toBeTruthy()
+      })
+    })
 
     it('updates preview when amount changes', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        fireEvent.changeText(amountInput, '100.00');
-      });
+        const amountInput = screen.getByLabelText('Amount')
+        fireEvent.changeText(amountInput, '100.00')
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('-$100.00')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('-$100.00')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Accessibility', () => {
     it('has accessible type buttons', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Expense')).toBeTruthy();
-        expect(screen.getByLabelText('Income')).toBeTruthy();
-      });
-    });
+        expect(screen.getByLabelText('Expense')).toBeTruthy()
+        expect(screen.getByLabelText('Income')).toBeTruthy()
+      })
+    })
 
     it('has accessible amount input', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Amount');
-        expect(amountInput.props.accessibilityHint).toBe(
-          'Enter the transaction amount'
-        );
-      });
-    });
+        const amountInput = screen.getByLabelText('Amount')
+        expect(amountInput.props.accessibilityHint).toBe('Enter the transaction amount')
+      })
+    })
 
     it('has accessible update button', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const updateButton = screen.getByLabelText('Update transaction');
-        expect(updateButton).toBeTruthy();
-      });
-    });
+        const updateButton = screen.getByLabelText('Update transaction')
+        expect(updateButton).toBeTruthy()
+      })
+    })
 
     it('has accessible delete button', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const deleteButton = screen.getByLabelText('Delete transaction');
-        expect(deleteButton).toBeTruthy();
-      });
-    });
+        const deleteButton = screen.getByLabelText('Delete transaction')
+        expect(deleteButton).toBeTruthy()
+      })
+    })
 
     it('has accessible cancel button', async () => {
-      renderEditTransactionScreen();
+      renderEditTransactionScreen()
 
       await waitFor(() => {
-        const cancelButton = screen.getByLabelText('Cancel');
-        expect(cancelButton).toBeTruthy();
-      });
-    });
-  });
-});
+        const cancelButton = screen.getByLabelText('Cancel')
+        expect(cancelButton).toBeTruthy()
+      })
+    })
+  })
+})

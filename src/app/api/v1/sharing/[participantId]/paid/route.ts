@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PATCH as PaidHandler } from '@/app/api/v1/expenses/shares/[participantId]/paid/route'
+import { PATCH as PaidHandler } from '@/app/api/v1/expenses/shares/[id]/paid/route'
 
 type RouteParams = { params: Promise<{ participantId: string }> }
 
 /**
- * @deprecated Use PATCH /api/v1/expenses/shares/[participantId]/paid instead.
+ * @deprecated Use PATCH /api/v1/expenses/shares/[id]/paid instead.
  * This endpoint is kept for backwards compatibility with existing mobile clients.
  */
 export async function PATCH(
   request: NextRequest,
-  context: RouteParams
+  { params }: RouteParams
 ): Promise<NextResponse> {
-  return PaidHandler(request, context)
+  // Map participantId to id for the underlying handler
+  const { participantId } = await params
+  return PaidHandler(request, { params: Promise.resolve({ id: participantId }) })
 }

@@ -7,7 +7,7 @@ import { serverLogger } from '@/lib/server-logger'
 
 interface RouteParams {
   params: Promise<{
-    participantId: string
+    id: string
   }>
 }
 
@@ -16,14 +16,15 @@ interface DeclineRequestBody {
 }
 
 /**
- * POST /api/v1/expenses/shares/[participantId]/decline
+ * POST /api/v1/expenses/shares/[id]/decline
  * Decline a shared expense (participant only).
+ * Note: [id] here refers to the participantId.
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   return withApiAuth(
     request,
     async (user) => {
-      const { participantId } = await params
+      const { id: participantId } = await params
 
       // 1. Parse optional reason
       let reason: string | undefined
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       })
 
       serverLogger.info('Participant declined shared expense', {
-        action: 'POST /api/v1/expenses/shares/[participantId]/decline',
+        action: 'POST /api/v1/expenses/shares/[id]/decline',
         userId: user.userId,
         participantId,
         reason: reason ?? null,

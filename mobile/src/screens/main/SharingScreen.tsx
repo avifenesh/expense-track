@@ -8,11 +8,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Pressable,
-  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
-import { useSharingStore, useTransactionsStore, useAccountsStore } from '../../stores'
+import { useSharingStore, useTransactionsStore, useAccountsStore, useToastStore } from '../../stores'
 import { EmptyState, TransactionPickerModal } from '../../components'
 import { formatCurrency } from '../../utils/format'
 import type { Currency } from '../../types'
@@ -78,10 +77,7 @@ function BalanceSummary({ balances }: BalanceSummaryProps) {
         const subtext = isPositive ? (netBalance === 0 ? 'All settled up' : 'You are owed overall') : 'You owe overall'
 
         return (
-          <View
-            key={currency}
-            style={[styles.balanceCard, index < totals.length - 1 && styles.balanceCardSpacing]}
-          >
+          <View key={currency} style={[styles.balanceCard, index < totals.length - 1 && styles.balanceCardSpacing]}>
             <Text style={styles.balanceLabel}>Net Balance</Text>
             {totals.length > 1 && <Text style={styles.balanceCurrencyLabel}>{currency}</Text>}
             <Text style={[styles.balanceAmount, isPositive ? styles.positiveBalance : styles.negativeBalance]}>
@@ -224,58 +220,57 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [isPickerVisible, setIsPickerVisible] = useState(false)
 
-  // Use individual selectors to prevent infinite re-render loops
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
   const sharedByMe = useSharingStore((state) => state.sharedByMe)
   const sharedWithMe = useSharingStore((state) => state.sharedWithMe)
   const settlementBalances = useSharingStore((state) => state.settlementBalances)
   const isLoading = useSharingStore((state) => state.isLoading)
   const error = useSharingStore((state) => state.error)
-  const fetchSharing = useSharingStore((state) => state.fetchSharing)
-  const markParticipantPaid = useSharingStore((state) => state.markParticipantPaid)
-  const clearError = useSharingStore((state) => state.clearError)
 
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions)
   const filters = useTransactionsStore((state) => state.filters)
-  const setFilters = useTransactionsStore((state) => state.setFilters)
   const activeAccountId = useAccountsStore((state) => state.activeAccountId)
 
+  // Initial load - fetch sharing data (runs once on mount)
   useEffect(() => {
-    fetchSharing()
-  }, [fetchSharing])
+    useSharingStore.getState().fetchSharing()
+  }, [])
 
-  // Ensure transactions are loaded for picker
+  // Ensure transactions are loaded for picker when account changes
   useEffect(() => {
     if (activeAccountId && activeAccountId !== filters.accountId) {
-      setFilters({ accountId: activeAccountId })
+      useTransactionsStore.getState().setFilters({ accountId: activeAccountId })
     }
-  }, [activeAccountId, filters.accountId, setFilters])
+  }, [activeAccountId, filters.accountId])
 
+  // Fetch transactions when filters change
   useEffect(() => {
     if (filters.accountId) {
-      fetchTransactions()
+      useTransactionsStore.getState().fetchTransactions()
     }
-  }, [filters.accountId, fetchTransactions])
+  }, [filters.accountId])
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-    await fetchSharing()
+    await useSharingStore.getState().fetchSharing()
     setIsRefreshing(false)
-  }, [fetchSharing])
+  }, [])
 
   const handleMarkPaid = useCallback(
     async (participantId: string) => {
       if (markingPaidId) return
       setMarkingPaidId(participantId)
       try {
-        await markParticipantPaid(participantId)
+        await useSharingStore.getState().markParticipantPaid(participantId)
+        useToastStore.getState().success('Marked as paid')
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to mark as paid'
-        Alert.alert('Error', message)
+        useToastStore.getState().error(message)
       } finally {
         setMarkingPaidId(null)
       }
     },
-    [markParticipantPaid, markingPaidId],
+    [markingPaidId],
   )
 
   const handleSharePress = useCallback(() => {
@@ -329,8 +324,8 @@ export function SharingScreen({ navigation }: MainTabScreenProps<'Sharing'>) {
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => {
-              clearError()
-              fetchSharing()
+              useSharingStore.getState().clearError()
+              useSharingStore.getState().fetchSharing()
             }}
           >
             <Text style={styles.retryButtonText}>Try Again</Text>

@@ -1,161 +1,125 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { MainTabScreenProps } from '../../navigation/types';
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { MainTabScreenProps } from '../../navigation/types'
 import {
   useAccountsStore,
   useTransactionsStore,
   useBudgetsStore,
   useCategoriesStore,
   type Category,
-} from '../../stores';
-import {
-  MonthSelector,
-  BudgetProgressCard,
-  BudgetCategoryCard,
-  EmptyState,
-} from '../../components';
-import { getMonthKey } from '../../utils/date';
-import type { Currency } from '../../types';
+} from '../../stores'
+import { MonthSelector, BudgetProgressCard, BudgetCategoryCard, EmptyState } from '../../components'
+import { getMonthKey } from '../../utils/date'
+import type { Currency } from '../../types'
 
 export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
-  const [selectedMonth, setSelectedMonth] = useState(getMonthKey());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(getMonthKey())
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Use individual selectors to prevent infinite re-render loops
-  const accounts = useAccountsStore((state) => state.accounts);
-  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
-  const accountsLoading = useAccountsStore((state) => state.isLoading);
-  const accountsError = useAccountsStore((state) => state.error);
-  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts);
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
+  const accounts = useAccountsStore((state) => state.accounts)
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId)
+  const accountsLoading = useAccountsStore((state) => state.isLoading)
+  const accountsError = useAccountsStore((state) => state.error)
 
-  const transactions = useTransactionsStore((state) => state.transactions);
-  const transactionsLoading = useTransactionsStore((state) => state.isLoading);
-  const transactionsError = useTransactionsStore((state) => state.error);
-  const setTransactionFilters = useTransactionsStore((state) => state.setFilters);
-  const fetchTransactions = useTransactionsStore((state) => state.fetchTransactions);
+  const transactions = useTransactionsStore((state) => state.transactions)
+  const transactionsLoading = useTransactionsStore((state) => state.isLoading)
+  const transactionsError = useTransactionsStore((state) => state.error)
 
-  const budgets = useBudgetsStore((state) => state.budgets);
-  const budgetsLoading = useBudgetsStore((state) => state.isLoading);
-  const budgetsError = useBudgetsStore((state) => state.error);
-  const setBudgetFilters = useBudgetsStore((state) => state.setFilters);
-  const setBudgetSelectedMonth = useBudgetsStore((state) => state.setSelectedMonth);
-  const fetchBudgets = useBudgetsStore((state) => state.fetchBudgets);
+  const budgets = useBudgetsStore((state) => state.budgets)
+  const budgetsLoading = useBudgetsStore((state) => state.isLoading)
+  const budgetsError = useBudgetsStore((state) => state.error)
 
-  const categories = useCategoriesStore((state) => state.categories);
-  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
-  const categoriesError = useCategoriesStore((state) => state.error);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
+  const categories = useCategoriesStore((state) => state.categories)
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading)
+  const categoriesError = useCategoriesStore((state) => state.error)
 
-  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
-  const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId)
+  const currency: Currency = selectedAccount?.preferredCurrency || 'USD'
 
   const spentByCategory = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, number>()
     transactions
       .filter((t) => t.type === 'EXPENSE')
       .forEach((t) => {
-        const current = map.get(t.categoryId) || 0;
-        map.set(t.categoryId, current + (parseFloat(t.amount) || 0));
-      });
-    return map;
-  }, [transactions]);
+        const current = map.get(t.categoryId) || 0
+        map.set(t.categoryId, current + (parseFloat(t.amount) || 0))
+      })
+    return map
+  }, [transactions])
 
-  const totalPlanned = useMemo(
-    () => budgets.reduce((sum, b) => sum + (parseFloat(b.planned) || 0), 0),
-    [budgets]
-  );
+  const totalPlanned = useMemo(() => budgets.reduce((sum, b) => sum + (parseFloat(b.planned) || 0), 0), [budgets])
 
   const totalSpent = useMemo(() => {
-    const budgetedCategoryIds = new Set(budgets.map((b) => b.categoryId));
-    let sum = 0;
+    const budgetedCategoryIds = new Set(budgets.map((b) => b.categoryId))
+    let sum = 0
     spentByCategory.forEach((spent, categoryId) => {
       if (budgetedCategoryIds.has(categoryId)) {
-        sum += spent;
+        sum += spent
       }
-    });
-    return sum;
-  }, [budgets, spentByCategory]);
+    })
+    return sum
+  }, [budgets, spentByCategory])
 
   const categoryMap = useMemo(() => {
-    const map = new Map<string, Category>();
-    categories.forEach((c) => map.set(c.id, c));
-    return map;
-  }, [categories]);
+    const map = new Map<string, Category>()
+    categories.forEach((c) => map.set(c.id, c))
+    return map
+  }, [categories])
 
+  // Initial load - fetch accounts (runs once on mount)
   useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
+    useAccountsStore.getState().fetchAccounts()
+  }, [])
 
+  // When account or month changes, update filters and fetch data
   useEffect(() => {
     if (activeAccountId) {
-      setTransactionFilters({ accountId: activeAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: activeAccountId });
-      setBudgetSelectedMonth(selectedMonth);
+      const txStore = useTransactionsStore.getState()
+      const budgetStore = useBudgetsStore.getState()
+      const catStore = useCategoriesStore.getState()
 
-      fetchCategories('EXPENSE');
-      fetchBudgets();
-      fetchTransactions();
+      txStore.setFilters({ accountId: activeAccountId, month: selectedMonth })
+      budgetStore.setFilters({ accountId: activeAccountId })
+      budgetStore.setSelectedMonth(selectedMonth)
+
+      catStore.fetchCategories('EXPENSE')
+      budgetStore.fetchBudgets()
+      txStore.fetchTransactions()
     }
-  }, [
-    activeAccountId,
-    selectedMonth,
-    setTransactionFilters,
-    setBudgetFilters,
-    setBudgetSelectedMonth,
-    fetchCategories,
-    fetchBudgets,
-    fetchTransactions,
-  ]);
+  }, [activeAccountId, selectedMonth])
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await fetchAccounts();
-    const currentAccountId = useAccountsStore.getState().activeAccountId;
+    setIsRefreshing(true)
+    await useAccountsStore.getState().fetchAccounts()
+    const currentAccountId = useAccountsStore.getState().activeAccountId
 
     if (currentAccountId) {
-      setTransactionFilters({ accountId: currentAccountId, month: selectedMonth });
-      setBudgetFilters({ accountId: currentAccountId });
-      setBudgetSelectedMonth(selectedMonth);
+      const txStore = useTransactionsStore.getState()
+      const budgetStore = useBudgetsStore.getState()
+      const catStore = useCategoriesStore.getState()
 
-      await Promise.all([
-        fetchCategories('EXPENSE'),
-        fetchBudgets(),
-        fetchTransactions(),
-      ]);
+      txStore.setFilters({ accountId: currentAccountId, month: selectedMonth })
+      budgetStore.setFilters({ accountId: currentAccountId })
+      budgetStore.setSelectedMonth(selectedMonth)
+
+      await Promise.all([catStore.fetchCategories('EXPENSE'), budgetStore.fetchBudgets(), txStore.fetchTransactions()])
     }
-    setIsRefreshing(false);
-  }, [
-    fetchAccounts,
-    fetchCategories,
-    fetchBudgets,
-    fetchTransactions,
-    selectedMonth,
-    setTransactionFilters,
-    setBudgetFilters,
-    setBudgetSelectedMonth,
-  ]);
+    setIsRefreshing(false)
+  }, [selectedMonth])
 
   const handleMonthChange = useCallback((month: string) => {
-    setSelectedMonth(month);
-  }, []);
+    setSelectedMonth(month)
+  }, [])
 
   const handleAddBudget = useCallback(() => {
-    navigation.navigate('CreateBudget', { initialMonth: selectedMonth });
-  }, [navigation, selectedMonth]);
+    navigation.navigate('CreateBudget', { initialMonth: selectedMonth })
+  }, [navigation, selectedMonth])
 
-  const isLoading =
-    accountsLoading ||
-    (activeAccountId && (transactionsLoading || budgetsLoading || categoriesLoading));
-  const error = accountsError || transactionsError || budgetsError || categoriesError;
+  const isLoading = accountsLoading || (activeAccountId && (transactionsLoading || budgetsLoading || categoriesLoading))
+  const error = accountsError || transactionsError || budgetsError || categoriesError
 
   if (accountsLoading && accounts.length === 0) {
     return (
@@ -165,7 +129,7 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
           <Text style={styles.loadingText}>Loading budgets...</Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   // Error state
@@ -173,14 +137,18 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.errorScreen">
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle} testID="budgets.errorTitle">Something went wrong</Text>
-          <Text style={styles.errorText} testID="budgets.errorText">{error}</Text>
+          <Text style={styles.errorTitle} testID="budgets.errorTitle">
+            Something went wrong
+          </Text>
+          <Text style={styles.errorText} testID="budgets.errorText">
+            {error}
+          </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh} testID="budgets.retryButton">
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   // No accounts state
@@ -189,12 +157,10 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
       <SafeAreaView style={styles.container} edges={['top']} testID="budgets.noAccountsScreen">
         <View style={styles.centerContainer}>
           <Text style={styles.emptyTitle}>No Accounts Found</Text>
-          <Text style={styles.emptyText}>
-            Create an account to start tracking your budgets.
-          </Text>
+          <Text style={styles.emptyText}>Create an account to start tracking your budgets.</Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
@@ -212,8 +178,12 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
         }
         testID="budgets.scrollView"
       >
-        <Text style={styles.title} testID="budgets.title">Budgets</Text>
-        <Text style={styles.subtitle} testID="budgets.subtitle">Track your spending by category</Text>
+        <Text style={styles.title} testID="budgets.title">
+          Budgets
+        </Text>
+        <Text style={styles.subtitle} testID="budgets.subtitle">
+          Track your spending by category
+        </Text>
 
         <MonthSelector
           selectedMonth={selectedMonth}
@@ -230,7 +200,9 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
         />
 
         <View style={styles.section} testID="budgets.categorySection">
-          <Text style={styles.sectionTitle} testID="budgets.categoryTitle">Category Budgets</Text>
+          <Text style={styles.sectionTitle} testID="budgets.categoryTitle">
+            Category Budgets
+          </Text>
           {budgetsLoading && budgets.length === 0 ? (
             <View style={styles.loadingContainer} testID="budgets.categoryLoading">
               <ActivityIndicator size="small" color="#38bdf8" />
@@ -245,8 +217,8 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
           ) : (
             <View testID="budgets.categoryList">
               {budgets.map((budget, index) => {
-                const category = categoryMap.get(budget.categoryId) || budget.category;
-                const spent = spentByCategory.get(budget.categoryId) || 0;
+                const category = categoryMap.get(budget.categoryId) || budget.category
+                const spent = spentByCategory.get(budget.categoryId) || 0
                 return (
                   <BudgetCategoryCard
                     key={budget.id}
@@ -257,7 +229,7 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
                     currency={currency}
                     testID={`budgets.categoryCard.${index}`}
                   />
-                );
+                )
               })}
             </View>
           )}
@@ -274,7 +246,7 @@ export function BudgetsScreen({ navigation }: MainTabScreenProps<'Budgets'>) {
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -382,4 +354,4 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontWeight: '600',
   },
-});
+})

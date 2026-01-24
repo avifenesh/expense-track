@@ -18,8 +18,8 @@ import { ApiError } from '../../services/api';
 import { getBiometricTypeLabel } from '../../services/biometric';
 
 export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
-  const login = useAuthStore((state) => state.login);
-  const loginWithBiometric = useAuthStore((state) => state.loginWithBiometric);
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks
   const biometricCapability = useAuthStore((state) => state.biometricCapability);
   const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled);
   const [email, setEmail] = useState('');
@@ -57,7 +57,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await useAuthStore.getState().login(email, password);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.code === 'RATE_LIMITED') {
@@ -82,7 +82,7 @@ export function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
     setIsLoading(true);
 
     try {
-      await loginWithBiometric();
+      await useAuthStore.getState().loginWithBiometric();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.code === 'BIOMETRIC_FAILED') {

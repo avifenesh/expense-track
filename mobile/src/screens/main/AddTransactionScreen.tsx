@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -7,65 +7,61 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Modal,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { AppStackScreenProps } from '../../navigation/types';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { AppStackScreenProps } from '../../navigation/types'
 import {
   useAccountsStore,
   useTransactionsStore,
   useCategoriesStore,
+  useToastStore,
   type TransactionType,
   type Category,
-} from '../../stores';
-import { formatCurrency } from '../../utils/format';
+} from '../../stores'
+import { formatCurrency } from '../../utils/format'
 import {
   validateTransactionAmount,
   validateTransactionDescription,
   validateTransactionCategory,
   validateTransactionDate,
-} from '../../lib/validation';
-import type { Currency } from '../../types';
+} from '../../lib/validation'
+import type { Currency } from '../../types'
 
 type FormErrors = {
-  amount?: string;
-  description?: string;
-  categoryId?: string;
-  date?: string;
-  general?: string;
-};
+  amount?: string
+  description?: string
+  categoryId?: string
+  date?: string
+  general?: string
+}
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: '$',
   EUR: '€',
   ILS: '₪',
-};
+}
 
 function getYesterday(): Date {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday;
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  return yesterday
 }
 
 function isToday(d: Date): boolean {
-  const today = new Date();
-  return (
-    d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear()
-  );
+  const today = new Date()
+  return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
 }
 
 function isYesterday(d: Date): boolean {
-  const yesterday = getYesterday();
+  const yesterday = getYesterday()
   return (
     d.getDate() === yesterday.getDate() &&
     d.getMonth() === yesterday.getMonth() &&
     d.getFullYear() === yesterday.getFullYear()
-  );
+  )
 }
 
 function formatDateDisplay(d: Date): string {
@@ -73,127 +69,125 @@ function formatDateDisplay(d: Date): string {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+  })
 }
 
 function formatDateToLocalISO(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
-export function AddTransactionScreen({
-  navigation,
-}: AppStackScreenProps<'CreateTransaction'>) {
-  // Use individual selectors to prevent infinite re-render loops
-  const accounts = useAccountsStore((state) => state.accounts);
-  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
-  const createTransaction = useTransactionsStore((state) => state.createTransaction);
-  const categories = useCategoriesStore((state) => state.categories);
-  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
+export function AddTransactionScreen({ navigation }: AppStackScreenProps<'CreateTransaction'>) {
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
+  const accounts = useAccountsStore((state) => state.accounts)
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId)
+  const categories = useCategoriesStore((state) => state.categories)
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading)
 
-  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
-  const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId)
+  const currency: Currency = selectedAccount?.preferredCurrency || 'USD'
 
-  const [type, setType] = useState<TransactionType>('EXPENSE');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [type, setType] = useState<TransactionType>('EXPENSE')
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [categoryId, setCategoryId] = useState<string | null>(null)
+  const [date, setDate] = useState(new Date())
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<FormErrors>({})
+
+  // Fetch categories when type changes
+  useEffect(() => {
+    useCategoriesStore.getState().fetchCategories(type)
+  }, [type])
 
   useEffect(() => {
-    fetchCategories(type);
-  }, [fetchCategories, type]);
-
-  useEffect(() => {
-    setCategoryId(null);
-    setErrors((prev) => ({ ...prev, categoryId: undefined }));
-  }, [type]);
+    setCategoryId(null)
+    setErrors((prev) => ({ ...prev, categoryId: undefined }))
+  }, [type])
 
   const filteredCategories = useMemo(() => {
-    return categories.filter((c) => c.type === type && !c.isArchived);
-  }, [categories, type]);
+    return categories.filter((c) => c.type === type && !c.isArchived)
+  }, [categories, type])
 
   const handleTypeChange = useCallback((newType: TransactionType) => {
-    setType(newType);
-  }, []);
+    setType(newType)
+  }, [])
 
   const handleAmountChange = useCallback((text: string) => {
-    const sanitized = text.replace(/[^0-9.]/g, '');
-    const parts = sanitized.split('.');
+    const sanitized = text.replace(/[^0-9.]/g, '')
+    const parts = sanitized.split('.')
     if (parts.length > 2) {
-      return;
+      return
     }
     if (parts[1] && parts[1].length > 2) {
-      return;
+      return
     }
-    setAmount(sanitized);
-    setErrors((prev) => ({ ...prev, amount: undefined }));
-  }, []);
+    setAmount(sanitized)
+    setErrors((prev) => ({ ...prev, amount: undefined }))
+  }, [])
 
   const handleDescriptionChange = useCallback((text: string) => {
-    setDescription(text);
-    setErrors((prev) => ({ ...prev, description: undefined }));
-  }, []);
+    setDescription(text)
+    setErrors((prev) => ({ ...prev, description: undefined }))
+  }, [])
 
   const handleCategorySelect = useCallback((id: string) => {
-    setCategoryId(id);
-    setErrors((prev) => ({ ...prev, categoryId: undefined }));
-  }, []);
+    setCategoryId(id)
+    setErrors((prev) => ({ ...prev, categoryId: undefined }))
+  }, [])
 
   const handleDateSelect = useCallback((selectedDate: Date) => {
-    setDate(selectedDate);
-    setShowDatePicker(false);
-    setErrors((prev) => ({ ...prev, date: undefined }));
-  }, []);
+    setDate(selectedDate)
+    setShowDatePicker(false)
+    setErrors((prev) => ({ ...prev, date: undefined }))
+  }, [])
 
   const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = {}
 
-    const amountError = validateTransactionAmount(amount);
+    const amountError = validateTransactionAmount(amount)
     if (amountError) {
-      newErrors.amount = amountError;
+      newErrors.amount = amountError
     }
 
-    const descriptionError = validateTransactionDescription(description);
+    const descriptionError = validateTransactionDescription(description)
     if (descriptionError) {
-      newErrors.description = descriptionError;
+      newErrors.description = descriptionError
     }
 
-    const categoryError = validateTransactionCategory(categoryId);
+    const categoryError = validateTransactionCategory(categoryId)
     if (categoryError) {
-      newErrors.categoryId = categoryError;
+      newErrors.categoryId = categoryError
     }
 
-    const dateError = validateTransactionDate(date);
+    const dateError = validateTransactionDate(date)
     if (dateError) {
-      newErrors.date = dateError;
+      newErrors.date = dateError
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [amount, description, categoryId, date]);
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }, [amount, description, categoryId, date])
 
   const handleSubmit = useCallback(async () => {
     if (!validateForm()) {
-      return;
+      return
     }
 
     if (!activeAccountId) {
-      setErrors((prev) => ({ ...prev, general: 'No account selected' }));
-      return;
+      setErrors((prev) => ({ ...prev, general: 'No account selected' }))
+      return
     }
 
-    setIsSubmitting(true);
-    setErrors({});
+    setIsSubmitting(true)
+    setErrors({})
 
     try {
-      await createTransaction({
+      await useTransactionsStore.getState().createTransaction({
         accountId: activeAccountId,
         categoryId: categoryId!,
         type,
@@ -202,73 +196,46 @@ export function AddTransactionScreen({
         date: formatDateToLocalISO(date),
         description: description.trim() || undefined,
         isRecurring: false,
-      });
+      })
 
-      navigation.goBack();
+      useToastStore.getState().success('Transaction created')
+      navigation.goBack()
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create transaction';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : 'Failed to create transaction'
+      useToastStore.getState().error(message)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, [
-    validateForm,
-    activeAccountId,
-    categoryId,
-    type,
-    amount,
-    currency,
-    date,
-    description,
-    createTransaction,
-    navigation,
-  ]);
+  }, [validateForm, activeAccountId, categoryId, type, amount, currency, date, description, navigation])
 
   const handleCancel = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    navigation.goBack()
+  }, [navigation])
 
   const renderCategoryItem = useCallback(
     (category: Category) => {
-      const isSelected = categoryId === category.id;
+      const isSelected = categoryId === category.id
       return (
         <Pressable
           key={category.id}
-          style={[
-            styles.categoryChip,
-            isSelected && styles.categoryChipSelected,
-            { borderColor: category.color },
-          ]}
+          style={[styles.categoryChip, isSelected && styles.categoryChipSelected, { borderColor: category.color }]}
           onPress={() => handleCategorySelect(category.id)}
           accessibilityRole="button"
           accessibilityLabel={`Select ${category.name} category`}
           accessibilityState={{ selected: isSelected }}
           testID={`addTransaction.category.${category.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
         >
-          <View
-            style={[styles.categoryDot, { backgroundColor: category.color }]}
-          />
-          <Text
-            style={[
-              styles.categoryChipText,
-              isSelected && styles.categoryChipTextSelected,
-            ]}
-          >
-            {category.name}
-          </Text>
+          <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
+          <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>{category.name}</Text>
         </Pressable>
-      );
+      )
     },
-    [categoryId, handleCategorySelect]
-  );
+    [categoryId, handleCategorySelect],
+  )
 
   return (
     <SafeAreaView style={styles.container} edges={['top']} testID="addTransaction.screen">
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.header} testID="addTransaction.header">
           <Pressable
             style={styles.cancelButton}
@@ -279,7 +246,9 @@ export function AddTransactionScreen({
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
-          <Text style={styles.title} testID="addTransaction.title">Add Transaction</Text>
+          <Text style={styles.title} testID="addTransaction.title">
+            Add Transaction
+          </Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -294,44 +263,24 @@ export function AddTransactionScreen({
             <Text style={styles.sectionLabel}>Type</Text>
             <View style={styles.typeRow}>
               <Pressable
-                style={[
-                  styles.typeButton,
-                  type === 'EXPENSE' && styles.typeButtonExpenseActive,
-                ]}
+                style={[styles.typeButton, type === 'EXPENSE' && styles.typeButtonExpenseActive]}
                 onPress={() => handleTypeChange('EXPENSE')}
                 accessibilityRole="button"
                 accessibilityLabel="Expense"
                 accessibilityState={{ selected: type === 'EXPENSE' }}
                 testID="addTransaction.type.expense"
               >
-                <Text
-                  style={[
-                    styles.typeButtonText,
-                    type === 'EXPENSE' && styles.typeButtonTextActive,
-                  ]}
-                >
-                  Expense
-                </Text>
+                <Text style={[styles.typeButtonText, type === 'EXPENSE' && styles.typeButtonTextActive]}>Expense</Text>
               </Pressable>
               <Pressable
-                style={[
-                  styles.typeButton,
-                  type === 'INCOME' && styles.typeButtonIncomeActive,
-                ]}
+                style={[styles.typeButton, type === 'INCOME' && styles.typeButtonIncomeActive]}
                 onPress={() => handleTypeChange('INCOME')}
                 accessibilityRole="button"
                 accessibilityLabel="Income"
                 accessibilityState={{ selected: type === 'INCOME' }}
                 testID="addTransaction.type.income"
               >
-                <Text
-                  style={[
-                    styles.typeButtonText,
-                    type === 'INCOME' && styles.typeButtonTextActive,
-                  ]}
-                >
-                  Income
-                </Text>
+                <Text style={[styles.typeButtonText, type === 'INCOME' && styles.typeButtonTextActive]}>Income</Text>
               </Pressable>
             </View>
           </View>
@@ -339,12 +288,8 @@ export function AddTransactionScreen({
           {/* Amount Input */}
           <View style={styles.section} testID="addTransaction.amountSection">
             <Text style={styles.sectionLabel}>Amount</Text>
-            <View
-              style={[styles.inputContainer, errors.amount && styles.inputError]}
-            >
-              <Text style={styles.currencySymbol}>
-                {CURRENCY_SYMBOLS[currency]}
-              </Text>
+            <View style={[styles.inputContainer, errors.amount && styles.inputError]}>
+              <Text style={styles.currencySymbol}>{CURRENCY_SYMBOLS[currency]}</Text>
               <TextInput
                 style={styles.amountInput}
                 value={amount}
@@ -358,7 +303,9 @@ export function AddTransactionScreen({
               />
             </View>
             {errors.amount && (
-              <Text style={styles.errorText} testID="addTransaction.amountError">{errors.amount}</Text>
+              <Text style={styles.errorText} testID="addTransaction.amountError">
+                {errors.amount}
+              </Text>
             )}
           </View>
 
@@ -379,7 +326,9 @@ export function AddTransactionScreen({
               </View>
             )}
             {errors.categoryId && (
-              <Text style={styles.errorText} testID="addTransaction.categoryError">{errors.categoryId}</Text>
+              <Text style={styles.errorText} testID="addTransaction.categoryError">
+                {errors.categoryId}
+              </Text>
             )}
           </View>
 
@@ -388,68 +337,42 @@ export function AddTransactionScreen({
             <Text style={styles.sectionLabel}>Date</Text>
             <View style={styles.dateRow}>
               <Pressable
-                style={[
-                  styles.dateChip,
-                  isToday(date) && styles.dateChipActive,
-                ]}
+                style={[styles.dateChip, isToday(date) && styles.dateChipActive]}
                 onPress={() => handleDateSelect(new Date())}
                 accessibilityRole="button"
                 accessibilityLabel="Today"
                 accessibilityState={{ selected: isToday(date) }}
                 testID="addTransaction.date.today"
               >
-                <Text
-                  style={[
-                    styles.dateChipText,
-                    isToday(date) && styles.dateChipTextActive,
-                  ]}
-                >
-                  Today
-                </Text>
+                <Text style={[styles.dateChipText, isToday(date) && styles.dateChipTextActive]}>Today</Text>
               </Pressable>
               <Pressable
-                style={[
-                  styles.dateChip,
-                  isYesterday(date) && styles.dateChipActive,
-                ]}
+                style={[styles.dateChip, isYesterday(date) && styles.dateChipActive]}
                 onPress={() => handleDateSelect(getYesterday())}
                 accessibilityRole="button"
                 accessibilityLabel="Yesterday"
                 accessibilityState={{ selected: isYesterday(date) }}
                 testID="addTransaction.date.yesterday"
               >
-                <Text
-                  style={[
-                    styles.dateChipText,
-                    isYesterday(date) && styles.dateChipTextActive,
-                  ]}
-                >
-                  Yesterday
-                </Text>
+                <Text style={[styles.dateChipText, isYesterday(date) && styles.dateChipTextActive]}>Yesterday</Text>
               </Pressable>
               <Pressable
-                style={[
-                  styles.dateChip,
-                  !isToday(date) && !isYesterday(date) && styles.dateChipActive,
-                ]}
+                style={[styles.dateChip, !isToday(date) && !isYesterday(date) && styles.dateChipActive]}
                 onPress={() => setShowDatePicker(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Select custom date"
                 testID="addTransaction.date.other"
               >
-                <Text
-                  style={[
-                    styles.dateChipText,
-                    !isToday(date) && !isYesterday(date) && styles.dateChipTextActive,
-                  ]}
-                >
-                  {!isToday(date) && !isYesterday(date)
-                    ? formatDateDisplay(date)
-                    : 'Other'}
+                <Text style={[styles.dateChipText, !isToday(date) && !isYesterday(date) && styles.dateChipTextActive]}>
+                  {!isToday(date) && !isYesterday(date) ? formatDateDisplay(date) : 'Other'}
                 </Text>
               </Pressable>
             </View>
-            {errors.date && <Text style={styles.errorText} testID="addTransaction.dateError">{errors.date}</Text>}
+            {errors.date && (
+              <Text style={styles.errorText} testID="addTransaction.dateError">
+                {errors.date}
+              </Text>
+            )}
           </View>
 
           {/* Date Picker Modal */}
@@ -459,34 +382,26 @@ export function AddTransactionScreen({
             animationType="fade"
             onRequestClose={() => setShowDatePicker(false)}
           >
-            <Pressable
-              style={styles.modalOverlay}
-              onPress={() => setShowDatePicker(false)}
-            >
-              <View
-                style={styles.datePickerModal}
-                onStartShouldSetResponder={() => true}
-              >
+            <Pressable style={styles.modalOverlay} onPress={() => setShowDatePicker(false)}>
+              <View style={styles.datePickerModal} onStartShouldSetResponder={() => true}>
                 <Text style={styles.datePickerTitle}>Select Date</Text>
                 <View style={styles.datePickerContent}>
                   {Array.from({ length: 7 }, (_, i) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
+                    const d = new Date()
+                    d.setDate(d.getDate() - i)
                     return (
                       <Pressable
                         key={i}
                         style={[
                           styles.datePickerOption,
-                          date.toDateString() === d.toDateString() &&
-                            styles.datePickerOptionActive,
+                          date.toDateString() === d.toDateString() && styles.datePickerOptionActive,
                         ]}
                         onPress={() => handleDateSelect(d)}
                       >
                         <Text
                           style={[
                             styles.datePickerOptionText,
-                            date.toDateString() === d.toDateString() &&
-                              styles.datePickerOptionTextActive,
+                            date.toDateString() === d.toDateString() && styles.datePickerOptionTextActive,
                           ]}
                         >
                           {i === 0
@@ -500,13 +415,10 @@ export function AddTransactionScreen({
                                 })}
                         </Text>
                       </Pressable>
-                    );
+                    )
                   })}
                 </View>
-                <Pressable
-                  style={styles.datePickerClose}
-                  onPress={() => setShowDatePicker(false)}
-                >
+                <Pressable style={styles.datePickerClose} onPress={() => setShowDatePicker(false)}>
                   <Text style={styles.datePickerCloseText}>Cancel</Text>
                 </Pressable>
               </View>
@@ -517,10 +429,7 @@ export function AddTransactionScreen({
           <View style={styles.section} testID="addTransaction.descriptionSection">
             <Text style={styles.sectionLabel}>Description (Optional)</Text>
             <TextInput
-              style={[
-                styles.descriptionInput,
-                errors.description && styles.inputError,
-              ]}
+              style={[styles.descriptionInput, errors.description && styles.inputError]}
               value={description}
               onChangeText={handleDescriptionChange}
               placeholder="Enter a description"
@@ -533,7 +442,9 @@ export function AddTransactionScreen({
               testID="addTransaction.descriptionInput"
             />
             {errors.description && (
-              <Text style={styles.errorText} testID="addTransaction.descriptionError">{errors.description}</Text>
+              <Text style={styles.errorText} testID="addTransaction.descriptionError">
+                {errors.description}
+              </Text>
             )}
             <Text style={styles.charCount}>{description.length}/200</Text>
           </View>
@@ -543,28 +454,13 @@ export function AddTransactionScreen({
             <View style={styles.previewSection}>
               <Text style={styles.sectionLabel}>Preview</Text>
               <View style={styles.previewCard}>
-                <Text style={styles.previewType}>
-                  {type === 'EXPENSE' ? 'Expense' : 'Income'}
-                </Text>
-                <Text
-                  style={[
-                    styles.previewAmount,
-                    type === 'EXPENSE'
-                      ? styles.expenseAmount
-                      : styles.incomeAmount,
-                  ]}
-                >
+                <Text style={styles.previewType}>{type === 'EXPENSE' ? 'Expense' : 'Income'}</Text>
+                <Text style={[styles.previewAmount, type === 'EXPENSE' ? styles.expenseAmount : styles.incomeAmount]}>
                   {type === 'EXPENSE' ? '-' : '+'}
                   {formatCurrency(parseFloat(amount) || 0, currency)}
                 </Text>
-                <Text style={styles.previewCategory}>
-                  {filteredCategories.find((c) => c.id === categoryId)?.name}
-                </Text>
-                {description.trim() && (
-                  <Text style={styles.previewDescription}>
-                    {description.trim()}
-                  </Text>
-                )}
+                <Text style={styles.previewCategory}>{filteredCategories.find((c) => c.id === categoryId)?.name}</Text>
+                {description.trim() && <Text style={styles.previewDescription}>{description.trim()}</Text>}
               </View>
             </View>
           )}
@@ -579,10 +475,7 @@ export function AddTransactionScreen({
         {/* Submit Button */}
         <View style={styles.footer} testID="addTransaction.footer">
           <Pressable
-            style={[
-              styles.submitButton,
-              isSubmitting && styles.submitButtonDisabled,
-            ]}
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
             accessibilityRole="button"
@@ -599,7 +492,7 @@ export function AddTransactionScreen({
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -913,4 +806,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

@@ -1,0 +1,38 @@
+{
+  "env": {},
+  "betas": [
+    "context-1m-2025-08-07",
+    "output-128k-2025-02-19",
+    "structured-outputs-2025-11-13",
+    "interleaved-thinking-2025-05-14",
+    "token-efficient-tools-2025-02-19",
+    "code-execution-2025-08-25",
+    "context-management-2025-06-27",
+    "extended-cache-ttl-2025-04-11"
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(git rev-parse:*)",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(!git rev-parse --show-toplevel:*)",
+      "Bash(!git rev-parse:*)",
+      "WebFetch"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You MUST respond with ONLY a JSON object, no other text.\n\nCheck if code was written (Edit/Write tools modified src/ or tests/ files).\n\nIf NO code was written (exploration, Q&A, planning, docs, config):\n{\"ok\": true}\n\nIf code WAS written, check Definition of Done:\n- DB schema supports changes (if needed)\n- Server actions return {success, data} or {success, error}\n- UI has loading/error states\n- Tests exist for new code\n- Types/lint pass\n\nAll criteria met or N/A:\n{\"ok\": true}\n\nCriteria failed:\n{\"ok\": false, \"reason\": \"<which criterion failed>\"}\n\nRespond with ONLY the JSON object, nothing else."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,35 +1,32 @@
-import React from 'react';
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { AddBudgetScreen } from '../../../src/screens/main/AddBudgetScreen';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useBudgetsStore } from '../../../src/stores/budgetsStore';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import type { AppStackScreenProps } from '../../../src/navigation/types';
-import { Alert } from 'react-native';
+import React from 'react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native'
+import { NavigationContainer } from '@react-navigation/native'
+import { AddBudgetScreen } from '../../../src/screens/main/AddBudgetScreen'
+import { useAccountsStore } from '../../../src/stores/accountsStore'
+import { useBudgetsStore } from '../../../src/stores/budgetsStore'
+import { useCategoriesStore } from '../../../src/stores/categoriesStore'
+import type { AppStackScreenProps } from '../../../src/navigation/types'
 
 // Mock stores
-jest.mock('../../../src/stores/accountsStore');
-jest.mock('../../../src/stores/budgetsStore');
-jest.mock('../../../src/stores/categoriesStore');
+jest.mock('../../../src/stores/accountsStore')
+jest.mock('../../../src/stores/budgetsStore')
+jest.mock('../../../src/stores/categoriesStore')
 
-// Mock Alert
-jest.spyOn(Alert, 'alert');
+// Mock toast store
+const mockToastSuccess = jest.fn()
+const mockToastError = jest.fn()
+jest.mock('../../../src/stores/toastStore', () => ({
+  useToastStore: {
+    getState: () => ({
+      success: mockToastSuccess,
+      error: mockToastError,
+    }),
+  },
+}))
 
-const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<
-  typeof useAccountsStore
->;
-const mockUseBudgetsStore = useBudgetsStore as jest.MockedFunction<
-  typeof useBudgetsStore
->;
-const mockUseCategoriesStore = useCategoriesStore as jest.MockedFunction<
-  typeof useCategoriesStore
->;
+const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore>
+const mockUseBudgetsStore = useBudgetsStore as jest.MockedFunction<typeof useBudgetsStore>
+const mockUseCategoriesStore = useCategoriesStore as jest.MockedFunction<typeof useCategoriesStore>
 
 const mockAccount = {
   id: 'acc-1',
@@ -39,7 +36,7 @@ const mockAccount = {
   color: '#4CAF50',
   icon: 'wallet',
   description: 'My personal finances',
-};
+}
 
 const mockExpenseCategory = {
   id: 'cat-1',
@@ -48,7 +45,7 @@ const mockExpenseCategory = {
   color: '#4CAF50',
   isArchived: false,
   isHolding: false,
-};
+}
 
 const mockExpenseCategory2 = {
   id: 'cat-2',
@@ -57,7 +54,7 @@ const mockExpenseCategory2 = {
   color: '#2196F3',
   isArchived: false,
   isHolding: false,
-};
+}
 
 const mockArchivedCategory = {
   id: 'cat-3',
@@ -66,7 +63,7 @@ const mockArchivedCategory = {
   color: '#888888',
   isArchived: true,
   isHolding: false,
-};
+}
 
 const mockIncomeCategory = {
   id: 'cat-4',
@@ -75,7 +72,7 @@ const mockIncomeCategory = {
   color: '#22c55e',
   isArchived: false,
   isHolding: false,
-};
+}
 
 const mockExistingBudget = {
   id: 'budget-1',
@@ -86,26 +83,26 @@ const mockExistingBudget = {
   currency: 'USD' as const,
   notes: null,
   category: mockExpenseCategory,
-};
+}
 
 const mockNavigation = {
   navigate: jest.fn(),
   goBack: jest.fn(),
   setOptions: jest.fn(),
-} as unknown as AppStackScreenProps<'CreateBudget'>['navigation'];
+} as unknown as AppStackScreenProps<'CreateBudget'>['navigation']
 
 const mockRoute = {
   key: 'CreateBudget',
   name: 'CreateBudget' as const,
   params: undefined,
-} as AppStackScreenProps<'CreateBudget'>['route'];
+} as AppStackScreenProps<'CreateBudget'>['route']
 
 function renderAddBudgetScreen() {
   return render(
     <NavigationContainer>
       <AddBudgetScreen navigation={mockNavigation} route={mockRoute} />
-    </NavigationContainer>
-  );
+    </NavigationContainer>,
+  )
 }
 
 describe('AddBudgetScreen', () => {
@@ -118,7 +115,7 @@ describe('AddBudgetScreen', () => {
     setActiveAccount: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
-  };
+  }
 
   const defaultBudgetsState = {
     budgets: [],
@@ -142,15 +139,10 @@ describe('AddBudgetScreen', () => {
     setSelectedMonth: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
-  };
+  }
 
   const defaultCategoriesState = {
-    categories: [
-      mockExpenseCategory,
-      mockExpenseCategory2,
-      mockArchivedCategory,
-      mockIncomeCategory,
-    ],
+    categories: [mockExpenseCategory, mockExpenseCategory2, mockArchivedCategory, mockIncomeCategory],
     isLoading: false,
     error: null,
     fetchCategories: jest.fn().mockResolvedValue(undefined),
@@ -160,110 +152,110 @@ describe('AddBudgetScreen', () => {
     getCategoriesByType: jest.fn(),
     clearError: jest.fn(),
     reset: jest.fn(),
-  };
+  }
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState);
-    mockUseBudgetsStore.mockReturnValue(defaultBudgetsState);
-    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState);
-  });
+    jest.clearAllMocks()
+    mockUseAccountsStore.mockReturnValue(defaultAccountsState)
+    mockUseBudgetsStore.mockReturnValue(defaultBudgetsState)
+    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState)
+  })
 
   describe('Rendering', () => {
     it('renders screen title', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Add Budget')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Add Budget')).toBeTruthy()
+      })
+    })
 
     it('renders cancel button', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Cancel')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Cancel')).toBeTruthy()
+      })
+    })
 
     it('renders month selector', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Month')).toBeTruthy();
-        expect(screen.getByLabelText('Previous month')).toBeTruthy();
-        expect(screen.getByLabelText('Next month')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Month')).toBeTruthy()
+        expect(screen.getByLabelText('Previous month')).toBeTruthy()
+        expect(screen.getByLabelText('Next month')).toBeTruthy()
+      })
+    })
 
     it('renders amount input', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Budget Amount')).toBeTruthy();
-        expect(screen.getByLabelText('Budget amount')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Budget Amount')).toBeTruthy()
+        expect(screen.getByLabelText('Budget amount')).toBeTruthy()
+      })
+    })
 
     it('renders category section', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Category')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Category')).toBeTruthy()
+      })
+    })
 
     it('renders save button', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Save Budget')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Save Budget')).toBeTruthy()
+      })
+    })
 
     it('renders currency symbol based on account', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('$')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('$')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Category Filtering', () => {
     it('displays only expense categories', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('Food')).toBeTruthy();
-        expect(screen.getByText('Transport')).toBeTruthy();
-        expect(screen.queryByText('Salary')).toBeNull();
-      });
-    });
+        expect(screen.getByText('Food')).toBeTruthy()
+        expect(screen.getByText('Transport')).toBeTruthy()
+        expect(screen.queryByText('Salary')).toBeNull()
+      })
+    })
 
     it('filters out archived categories', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.queryByText('Archived Category')).toBeNull();
-      });
-    });
+        expect(screen.queryByText('Archived Category')).toBeNull()
+      })
+    })
 
     it('filters out categories with existing budgets for selected month', async () => {
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         budgets: [mockExistingBudget],
-      });
+      })
 
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
         // Food has existing budget, should be filtered out
-        expect(screen.queryByText('Food')).toBeNull();
+        expect(screen.queryByText('Food')).toBeNull()
         // Transport has no budget, should be visible
-        expect(screen.getByText('Transport')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Transport')).toBeTruthy()
+      })
+    })
 
     it('shows empty message when all categories have budgets', async () => {
       const budgetForAll = [
@@ -274,231 +266,229 @@ describe('AddBudgetScreen', () => {
           categoryId: 'cat-2',
           category: mockExpenseCategory2,
         },
-      ];
+      ]
 
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         budgets: budgetForAll,
-      });
+      })
 
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
         expect(
-          screen.getByText(
-            'No categories available. All expense categories already have budgets for this month.'
-          )
-        ).toBeTruthy();
-      });
-    });
+          screen.getByText('No categories available. All expense categories already have budgets for this month.'),
+        ).toBeTruthy()
+      })
+    })
 
     it('shows loading indicator when categories are loading', async () => {
       mockUseCategoriesStore.mockReturnValue({
         ...defaultCategoriesState,
         categories: [],
         isLoading: true,
-      });
+      })
 
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.queryByText('Food')).toBeNull();
-      });
-    });
-  });
+        expect(screen.queryByText('Food')).toBeNull()
+      })
+    })
+  })
 
   describe('Category Selection', () => {
     it('allows selecting a category', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        const categoryButton = screen.getByLabelText('Select Food category');
-        expect(categoryButton.props.accessibilityState.selected).toBe(true);
-      });
-    });
+        const categoryButton = screen.getByLabelText('Select Food category')
+        expect(categoryButton.props.accessibilityState.selected).toBe(true)
+      })
+    })
 
     it('resets category selection when month changes and category becomes unavailable', async () => {
       // Start with no budgets
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         budgets: [],
-      });
+      })
 
-      const { rerender } = renderAddBudgetScreen();
+      const { rerender } = renderAddBudgetScreen()
 
       // Select a category
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       // Verify selection
       await waitFor(() => {
-        const categoryButton = screen.getByLabelText('Select Food category');
-        expect(categoryButton.props.accessibilityState.selected).toBe(true);
-      });
+        const categoryButton = screen.getByLabelText('Select Food category')
+        expect(categoryButton.props.accessibilityState.selected).toBe(true)
+      })
 
       // Now simulate month change where Food has a budget
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         budgets: [mockExistingBudget],
-      });
+      })
 
       rerender(
         <NavigationContainer>
           <AddBudgetScreen navigation={mockNavigation} route={mockRoute} />
-        </NavigationContainer>
-      );
+        </NavigationContainer>,
+      )
 
       // Food should no longer be visible
       await waitFor(() => {
-        expect(screen.queryByText('Food')).toBeNull();
-      });
-    });
-  });
+        expect(screen.queryByText('Food')).toBeNull()
+      })
+    })
+  })
 
   describe('Amount Input', () => {
     it('allows entering numeric amount', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-        expect(amountInput.props.value).toBe('500.00');
-      });
-    });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+        expect(amountInput.props.value).toBe('500.00')
+      })
+    })
 
     it('filters out non-numeric characters', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, 'abc500.00xyz');
-        expect(amountInput.props.value).toBe('500.00');
-      });
-    });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, 'abc500.00xyz')
+        expect(amountInput.props.value).toBe('500.00')
+      })
+    })
 
     it('allows only two decimal places', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.12');
-        expect(amountInput.props.value).toBe('500.12');
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.12')
+        expect(amountInput.props.value).toBe('500.12')
+      })
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.123');
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.123')
         // Should not update because more than 2 decimal places
-        expect(amountInput.props.value).toBe('500.12');
-      });
-    });
-  });
+        expect(amountInput.props.value).toBe('500.12')
+      })
+    })
+  })
 
   describe('Preview', () => {
     it('shows preview when amount and category are selected', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Preview')).toBeTruthy();
-        expect(screen.getByText('$500.00')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Preview')).toBeTruthy()
+        expect(screen.getByText('$500.00')).toBeTruthy()
+      })
+    })
 
     it('does not show preview without amount', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        expect(screen.queryByText('Preview')).toBeNull();
-      });
-    });
+        expect(screen.queryByText('Preview')).toBeNull()
+      })
+    })
 
     it('does not show preview without category', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        expect(screen.queryByText('Preview')).toBeNull();
-      });
-    });
-  });
+        expect(screen.queryByText('Preview')).toBeNull()
+      })
+    })
+  })
 
   describe('Form Validation', () => {
     it('shows error when submitting without amount', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Amount is required')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Amount is required')).toBeTruthy()
+      })
+    })
 
     it('shows error when submitting without category', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Please select a category')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('Please select a category')).toBeTruthy()
+      })
+    })
 
     it('shows error for zero amount', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '0');
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '0')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('Amount must be greater than zero')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('Amount must be greater than zero')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Form Submission', () => {
     it('calls createOrUpdateBudget with correct data', async () => {
@@ -511,27 +501,27 @@ describe('AddBudgetScreen', () => {
         currency: 'USD',
         notes: null,
         category: mockExpenseCategory,
-      });
+      })
 
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         createOrUpdateBudget,
-      });
+      })
 
-      renderAddBudgetScreen();
-
-      await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
+
+      await waitFor(() => {
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
 
       await waitFor(() => {
         expect(createOrUpdateBudget).toHaveBeenCalledWith(
@@ -540,276 +530,287 @@ describe('AddBudgetScreen', () => {
             categoryId: 'cat-1',
             planned: 500,
             currency: 'USD',
-          })
-        );
-      });
-    });
+          }),
+        )
+      })
+    })
 
     it('navigates back after successful submission', async () => {
-      const goBack = jest.fn();
-      const navWithGoBack = { ...mockNavigation, goBack };
+      const goBack = jest.fn()
+      const navWithGoBack = { ...mockNavigation, goBack }
 
       render(
         <NavigationContainer>
-          <AddBudgetScreen
-            navigation={navWithGoBack as typeof mockNavigation}
-            route={mockRoute}
-          />
-        </NavigationContainer>
-      );
+          <AddBudgetScreen navigation={navWithGoBack as typeof mockNavigation} route={mockRoute} />
+        </NavigationContainer>,
+      )
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
 
       await waitFor(() => {
-        expect(goBack).toHaveBeenCalled();
-      });
-    });
+        expect(goBack).toHaveBeenCalled()
+      })
+    })
 
-    it('shows error alert on submission failure', async () => {
-      const createOrUpdateBudget = jest
-        .fn()
-        .mockRejectedValue(new Error('Network error'));
+    it('shows success toast on successful submission', async () => {
+      renderAddBudgetScreen()
+
+      await waitFor(() => {
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
+
+      await waitFor(() => {
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
+
+      await waitFor(() => {
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
+
+      await waitFor(() => {
+        expect(mockToastSuccess).toHaveBeenCalledWith('Budget saved')
+      })
+    })
+
+    it('shows error toast on submission failure', async () => {
+      const createOrUpdateBudget = jest.fn().mockRejectedValue(new Error('Network error'))
 
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         createOrUpdateBudget,
-      });
+      })
 
-      renderAddBudgetScreen();
-
-      await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Network error');
-      });
-    });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
+
+      await waitFor(() => {
+        expect(mockToastError).toHaveBeenCalledWith('Network error')
+      })
+    })
 
     it('disables submit button while submitting', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: unknown) => void
       const createOrUpdateBudget = jest.fn().mockImplementation(
         () =>
           new Promise((resolve) => {
-            resolvePromise = resolve;
-          })
-      );
+            resolvePromise = resolve
+          }),
+      )
 
       mockUseBudgetsStore.mockReturnValue({
         ...defaultBudgetsState,
         createOrUpdateBudget,
-      });
+      })
 
-      renderAddBudgetScreen();
-
-      await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        const submitButton = screen.getByLabelText('Save budget');
-        expect(submitButton.props.accessibilityState.disabled).toBe(true);
-      });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
+
+      await waitFor(() => {
+        const submitButton = screen.getByLabelText('Save budget')
+        expect(submitButton.props.accessibilityState.disabled).toBe(true)
+      })
 
       // Resolve the promise to clean up
-      resolvePromise!({});
-    });
-  });
+      resolvePromise!({})
+    })
+  })
 
   describe('Cancel Action', () => {
     it('navigates back when cancel is pressed', async () => {
-      const goBack = jest.fn();
-      const navWithGoBack = { ...mockNavigation, goBack };
+      const goBack = jest.fn()
+      const navWithGoBack = { ...mockNavigation, goBack }
 
       render(
         <NavigationContainer>
-          <AddBudgetScreen
-            navigation={navWithGoBack as typeof mockNavigation}
-            route={mockRoute}
-          />
-        </NavigationContainer>
-      );
+          <AddBudgetScreen navigation={navWithGoBack as typeof mockNavigation} route={mockRoute} />
+        </NavigationContainer>,
+      )
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Cancel'));
-      });
+        fireEvent.press(screen.getByText('Cancel'))
+      })
 
       await waitFor(() => {
-        expect(goBack).toHaveBeenCalled();
-      });
-    });
-  });
+        expect(goBack).toHaveBeenCalled()
+      })
+    })
+  })
 
   describe('No Account Selected', () => {
     it('shows error when no account is selected', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         activeAccountId: null,
-      });
+      })
 
-      renderAddBudgetScreen();
-
-      await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        fireEvent.changeText(amountInput, '500.00');
-      });
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        fireEvent.press(screen.getByLabelText('Select Food category'));
-      });
+        const amountInput = screen.getByLabelText('Budget amount')
+        fireEvent.changeText(amountInput, '500.00')
+      })
 
       await waitFor(() => {
-        fireEvent.press(screen.getByText('Save Budget'));
-      });
+        fireEvent.press(screen.getByLabelText('Select Food category'))
+      })
 
       await waitFor(() => {
-        expect(screen.getByText('No account selected')).toBeTruthy();
-      });
-    });
-  });
+        fireEvent.press(screen.getByText('Save Budget'))
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText('No account selected')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Currency Display', () => {
     it('shows EUR symbol for EUR accounts', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'EUR' as const }],
-      });
+      })
 
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('€')).toBeTruthy();
-      });
-    });
+        expect(screen.getByText('€')).toBeTruthy()
+      })
+    })
 
     it('shows ILS symbol for ILS accounts', async () => {
       mockUseAccountsStore.mockReturnValue({
         ...defaultAccountsState,
         accounts: [{ ...mockAccount, preferredCurrency: 'ILS' as const }],
-      });
+      })
 
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('₪')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('₪')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Month Selector', () => {
     it('allows future months for budgets', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const nextButton = screen.getByLabelText('Next month');
+        const nextButton = screen.getByLabelText('Next month')
         // Next month should be enabled for budgets
-        expect(nextButton.props.accessibilityState?.disabled).toBeFalsy();
-      });
-    });
+        expect(nextButton.props.accessibilityState?.disabled).toBeFalsy()
+      })
+    })
 
     it('uses initialMonth from navigation params when provided', async () => {
-      const customMonth = '2025-06';
+      const customMonth = '2025-06'
       const routeWithMonth = {
         key: 'CreateBudget',
         name: 'CreateBudget' as const,
         params: { initialMonth: customMonth },
-      } as AppStackScreenProps<'CreateBudget'>['route'];
+      } as AppStackScreenProps<'CreateBudget'>['route']
 
       render(
         <NavigationContainer>
           <AddBudgetScreen navigation={mockNavigation} route={routeWithMonth} />
-        </NavigationContainer>
-      );
+        </NavigationContainer>,
+      )
 
       await waitFor(() => {
         // The month selector should show June 2025
-        expect(screen.getByText('June 2025')).toBeTruthy();
-      });
-    });
-  });
+        expect(screen.getByText('June 2025')).toBeTruthy()
+      })
+    })
+  })
 
   describe('Accessibility', () => {
     it('has accessible amount input', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const amountInput = screen.getByLabelText('Budget amount');
-        expect(amountInput.props.accessibilityHint).toBe(
-          'Enter the budget amount for this category'
-        );
-      });
-    });
+        const amountInput = screen.getByLabelText('Budget amount')
+        expect(amountInput.props.accessibilityHint).toBe('Enter the budget amount for this category')
+      })
+    })
 
     it('has accessible save button', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const saveButton = screen.getByLabelText('Save budget');
-        expect(saveButton).toBeTruthy();
-      });
-    });
+        const saveButton = screen.getByLabelText('Save budget')
+        expect(saveButton).toBeTruthy()
+      })
+    })
 
     it('has accessible cancel button', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const cancelButton = screen.getByLabelText('Cancel');
-        expect(cancelButton).toBeTruthy();
-      });
-    });
+        const cancelButton = screen.getByLabelText('Cancel')
+        expect(cancelButton).toBeTruthy()
+      })
+    })
 
     it('has accessible category buttons', async () => {
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        const foodCategory = screen.getByLabelText('Select Food category');
-        expect(foodCategory).toBeTruthy();
-      });
-    });
-  });
+        const foodCategory = screen.getByLabelText('Select Food category')
+        expect(foodCategory).toBeTruthy()
+      })
+    })
+  })
 
   describe('Initial Data Fetch', () => {
     it('fetches expense categories on mount', async () => {
-      const fetchCategories = jest.fn().mockResolvedValue(undefined);
+      const fetchCategories = jest.fn().mockResolvedValue(undefined)
       mockUseCategoriesStore.mockReturnValue({
         ...defaultCategoriesState,
         fetchCategories,
-      });
+      })
 
-      renderAddBudgetScreen();
+      renderAddBudgetScreen()
 
       await waitFor(() => {
-        expect(fetchCategories).toHaveBeenCalledWith('EXPENSE');
-      });
-    });
-  });
-});
+        expect(fetchCategories).toHaveBeenCalledWith('EXPENSE')
+      })
+    })
+  })
+})

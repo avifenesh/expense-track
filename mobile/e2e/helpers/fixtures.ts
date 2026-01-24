@@ -1,97 +1,73 @@
 /**
  * E2E Test Fixtures
- *
- * Test data for E2E tests. These credentials should match
- * the test environment setup.
+ * Test data constants for E2E tests
  */
 
-export const TEST_USERS = {
-  // Primary test user - matches web E2E test user setup
-  // Note: These credentials should match users seeded in CI workflow
-  primary: {
-    email: 'e2e-user1@test.local',
-    password: 'E2ETestPassword123!',
-    name: 'E2E Test User',
-  },
+// Test user - uses @test.local domain for auto-verification
+export const TEST_USER = {
+  email: 'e2e-test@test.local',
+  password: 'TestPassword123!',
+  displayName: 'E2E Test User',
+};
 
-  // Secondary test user for multi-user scenarios
-  secondary: {
-    email: 'e2e-user2@test.local',
-    password: 'E2ETestPassword123!',
-    name: 'E2E Test User 2',
-  },
+// Alternative test user for multi-user scenarios
+export const TEST_USER_2 = {
+  email: 'e2e-test-2@test.local',
+  password: 'TestPassword456!',
+  displayName: 'E2E Test User 2',
+};
 
-  // New user for registration tests
-  newUser: {
-    email: `e2e-new-${Date.now()}@balancebeacon.app`,
-    password: 'NewUserPassword123!',
-    name: 'New Test User',
-  },
+// Invalid credentials for error testing
+export const INVALID_USER = {
+  email: 'invalid@test.local',
+  password: 'WrongPassword123!',
+};
 
-  // Invalid credentials for error case testing
-  invalid: {
-    email: 'invalid@balancebeacon.app',
-    password: 'WrongPassword123!',
-  },
-} as const;
+// Test account data
+export const TEST_ACCOUNT = {
+  name: 'Test Checking',
+  type: 'CHECKING' as const,
+  preferredCurrency: 'USD' as const,
+};
 
-export const TEST_TRANSACTIONS = {
-  expense: {
-    amount: '25.50',
-    description: 'E2E Test Expense',
-    category: 'Food & Dining',
-    type: 'expense',
-  },
+// Test category data
+export const TEST_EXPENSE_CATEGORY = {
+  name: 'Groceries',
+  type: 'EXPENSE' as const,
+  color: '#4CAF50',
+};
 
-  income: {
-    amount: '1000.00',
-    description: 'E2E Test Income',
-    category: 'Salary',
-    type: 'income',
-  },
+export const TEST_INCOME_CATEGORY = {
+  name: 'Salary',
+  type: 'INCOME' as const,
+  color: '#2196F3',
+};
 
-  large: {
-    amount: '5000.00',
-    description: 'E2E Large Transaction',
-    category: 'Shopping',
-    type: 'expense',
-  },
-} as const;
+// Test transaction data
+export const TEST_EXPENSE_TRANSACTION = {
+  type: 'EXPENSE' as const,
+  amount: 25.5,
+  currency: 'USD' as const,
+  description: 'Test grocery purchase',
+};
 
-export const TEST_BUDGETS = {
-  food: {
-    category: 'Food & Dining',
-    amount: '500.00',
-  },
+export const TEST_INCOME_TRANSACTION = {
+  type: 'INCOME' as const,
+  amount: 1000.0,
+  currency: 'USD' as const,
+  description: 'Test salary payment',
+};
 
-  shopping: {
-    category: 'Shopping',
-    amount: '300.00',
-  },
+// Test budget data
+export const TEST_BUDGET = {
+  planned: 500.0,
+  currency: 'USD' as const,
+};
 
-  entertainment: {
-    category: 'Entertainment',
-    amount: '200.00',
-  },
-} as const;
-
-export const TEST_CATEGORIES = {
-  expense: [
-    'Food & Dining',
-    'Shopping',
-    'Transportation',
-    'Entertainment',
-    'Bills & Utilities',
-    'Healthcare',
-  ],
-
-  income: ['Salary', 'Freelance', 'Investments', 'Other Income'],
-} as const;
-
-export const API_CONFIG = {
-  // Note: In CI, tests may run without a backend (mocked or using EXPO_PUBLIC_API_URL)
-  // The E2E_API_URL env var is used for reference but tests should not require
-  // a live backend for basic smoke tests
-  baseUrl: process.env.E2E_API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000', // DevSkim: ignore DS162092,DS126858
-  timeout: 10000,
-} as const;
+// Timeouts
+export const TIMEOUTS = {
+  SHORT: 5000,
+  MEDIUM: 10000,
+  LONG: 30000,
+  STARTUP: 60000,
+};

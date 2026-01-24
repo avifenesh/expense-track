@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { PATCH as MarkPaid } from '@/app/api/v1/expenses/shares/[participantId]/paid/route'
+import { PATCH as MarkPaid } from '@/app/api/v1/expenses/shares/[id]/paid/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
@@ -122,7 +122,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId }),
+      params: Promise.resolve({ id: participantId }),
     })
     const data = await response.json()
 
@@ -147,7 +147,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId }),
+      params: Promise.resolve({ id: participantId }),
     })
     const data = await response.json()
 
@@ -169,7 +169,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId: 'non-existent-id' }),
+      params: Promise.resolve({ id: 'non-existent-id' }),
     })
     const data = await response.json()
 
@@ -196,7 +196,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId }),
+      params: Promise.resolve({ id: participantId }),
     })
     const data = await response.json()
 
@@ -224,7 +224,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId }),
+      params: Promise.resolve({ id: participantId }),
     })
     const data = await response.json()
 
@@ -244,7 +244,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId }),
+      params: Promise.resolve({ id: participantId }),
     })
 
     expect(response.status).toBe(401)
@@ -264,7 +264,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const beforeMark = new Date()
-    await MarkPaid(request, { params: Promise.resolve({ participantId }) })
+    await MarkPaid(request, { params: Promise.resolve({ id: participantId }) })
     const afterMark = new Date()
 
     const participant = await prisma.expenseParticipant.findUnique({
@@ -296,7 +296,7 @@ describe('PATCH /api/v1/expenses/shares/[participantId]/paid', () => {
     )
 
     const response = await MarkPaid(request, {
-      params: Promise.resolve({ participantId }),
+      params: Promise.resolve({ id: participantId }),
     })
     const data = await response.json()
 

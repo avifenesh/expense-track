@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -7,214 +7,168 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { AppStackScreenProps } from '../../navigation/types';
-import {
-  useAccountsStore,
-  useBudgetsStore,
-  useCategoriesStore,
-  type Category,
-} from '../../stores';
-import { MonthSelector } from '../../components';
-import { formatCurrency } from '../../utils/format';
-import { getMonthKey } from '../../utils/date';
-import {
-  validateBudgetAmount,
-  validateBudgetCategory,
-} from '../../lib/validation';
-import type { Currency } from '../../types';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import type { AppStackScreenProps } from '../../navigation/types'
+import { useAccountsStore, useBudgetsStore, useCategoriesStore, useToastStore, type Category } from '../../stores'
+import { MonthSelector } from '../../components'
+import { formatCurrency } from '../../utils/format'
+import { getMonthKey } from '../../utils/date'
+import { validateBudgetAmount, validateBudgetCategory } from '../../lib/validation'
+import type { Currency } from '../../types'
 
 type FormErrors = {
-  amount?: string;
-  categoryId?: string;
-  general?: string;
-};
+  amount?: string
+  categoryId?: string
+  general?: string
+}
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: '$',
   EUR: '€',
   ILS: '₪',
-};
+}
 
-export function AddBudgetScreen({
-  navigation,
-  route,
-}: AppStackScreenProps<'CreateBudget'>) {
-  // Use individual selectors to prevent infinite re-render loops
-  const accounts = useAccountsStore((state) => state.accounts);
-  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
-  const budgets = useBudgetsStore((state) => state.budgets);
-  const createOrUpdateBudget = useBudgetsStore((state) => state.createOrUpdateBudget);
-  const categories = useCategoriesStore((state) => state.categories);
-  const categoriesLoading = useCategoriesStore((state) => state.isLoading);
-  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
+export function AddBudgetScreen({ navigation, route }: AppStackScreenProps<'CreateBudget'>) {
+  // Select only STATE values, not functions, to prevent re-render loops
+  // Functions are accessed via getState() within callbacks to avoid subscription issues
+  const accounts = useAccountsStore((state) => state.accounts)
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId)
+  const budgets = useBudgetsStore((state) => state.budgets)
+  const categories = useCategoriesStore((state) => state.categories)
+  const categoriesLoading = useCategoriesStore((state) => state.isLoading)
 
-  const selectedAccount = accounts.find((a) => a.id === activeAccountId);
-  const currency: Currency = selectedAccount?.preferredCurrency || 'USD';
+  const selectedAccount = accounts.find((a) => a.id === activeAccountId)
+  const currency: Currency = selectedAccount?.preferredCurrency || 'USD'
 
-  const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(
-    route.params?.initialMonth || getMonthKey()
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [amount, setAmount] = useState('')
+  const [categoryId, setCategoryId] = useState<string | null>(null)
+  const [selectedMonth, setSelectedMonth] = useState(route.params?.initialMonth || getMonthKey())
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<FormErrors>({})
 
+  // Fetch expense categories (runs once on mount)
   useEffect(() => {
-    fetchCategories('EXPENSE');
-  }, [fetchCategories]);
+    useCategoriesStore.getState().fetchCategories('EXPENSE')
+  }, [])
 
   const availableCategories = useMemo(() => {
     const existingBudgetCategoryIds = new Set(
-      budgets
-        .filter((b) => b.month.slice(0, 7) === selectedMonth)
-        .map((b) => b.categoryId)
-    );
+      budgets.filter((b) => b.month.slice(0, 7) === selectedMonth).map((b) => b.categoryId),
+    )
 
-    return categories.filter(
-      (c) =>
-        c.type === 'EXPENSE' &&
-        !c.isArchived &&
-        !existingBudgetCategoryIds.has(c.id)
-    );
-  }, [categories, budgets, selectedMonth]);
+    return categories.filter((c) => c.type === 'EXPENSE' && !c.isArchived && !existingBudgetCategoryIds.has(c.id))
+  }, [categories, budgets, selectedMonth])
 
   useEffect(() => {
     if (categoryId && !availableCategories.find((c) => c.id === categoryId)) {
-      setCategoryId(null);
+      setCategoryId(null)
     }
-  }, [availableCategories, categoryId]);
+  }, [availableCategories, categoryId])
 
   const handleAmountChange = useCallback((text: string) => {
-    const sanitized = text.replace(/[^0-9.]/g, '');
-    const parts = sanitized.split('.');
+    const sanitized = text.replace(/[^0-9.]/g, '')
+    const parts = sanitized.split('.')
     if (parts.length > 2) {
-      return;
+      return
     }
     if (parts[1] && parts[1].length > 2) {
-      return;
+      return
     }
-    setAmount(sanitized);
-    setErrors((prev) => ({ ...prev, amount: undefined }));
-  }, []);
+    setAmount(sanitized)
+    setErrors((prev) => ({ ...prev, amount: undefined }))
+  }, [])
 
   const handleCategorySelect = useCallback((id: string) => {
-    setCategoryId(id);
-    setErrors((prev) => ({ ...prev, categoryId: undefined }));
-  }, []);
+    setCategoryId(id)
+    setErrors((prev) => ({ ...prev, categoryId: undefined }))
+  }, [])
 
   const handleMonthChange = useCallback((month: string) => {
-    setSelectedMonth(month);
-  }, []);
+    setSelectedMonth(month)
+  }, [])
 
   const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = {}
 
-    const amountError = validateBudgetAmount(amount);
+    const amountError = validateBudgetAmount(amount)
     if (amountError) {
-      newErrors.amount = amountError;
+      newErrors.amount = amountError
     }
 
-    const categoryError = validateBudgetCategory(categoryId);
+    const categoryError = validateBudgetCategory(categoryId)
     if (categoryError) {
-      newErrors.categoryId = categoryError;
+      newErrors.categoryId = categoryError
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [amount, categoryId]);
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }, [amount, categoryId])
 
   const handleSubmit = useCallback(async () => {
     if (!validateForm()) {
-      return;
+      return
     }
 
     if (!activeAccountId) {
-      setErrors((prev) => ({ ...prev, general: 'No account selected' }));
-      return;
+      setErrors((prev) => ({ ...prev, general: 'No account selected' }))
+      return
     }
 
-    setIsSubmitting(true);
-    setErrors({});
+    setIsSubmitting(true)
+    setErrors({})
 
     try {
-      await createOrUpdateBudget({
+      await useBudgetsStore.getState().createOrUpdateBudget({
         accountId: activeAccountId,
         categoryId: categoryId!,
         monthKey: selectedMonth,
         planned: parseFloat(amount),
         currency,
-      });
+      })
 
-      navigation.goBack();
+      useToastStore.getState().success('Budget saved')
+      navigation.goBack()
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create budget';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : 'Failed to create budget'
+      useToastStore.getState().error(message)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, [
-    validateForm,
-    activeAccountId,
-    categoryId,
-    selectedMonth,
-    amount,
-    currency,
-    createOrUpdateBudget,
-    navigation,
-  ]);
+  }, [validateForm, activeAccountId, categoryId, selectedMonth, amount, currency, navigation])
 
   const handleCancel = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    navigation.goBack()
+  }, [navigation])
 
   const renderCategoryItem = useCallback(
     (category: Category) => {
-      const isSelected = categoryId === category.id;
+      const isSelected = categoryId === category.id
       return (
         <Pressable
           key={category.id}
-          style={[
-            styles.categoryChip,
-            isSelected && styles.categoryChipSelected,
-            { borderColor: category.color },
-          ]}
+          style={[styles.categoryChip, isSelected && styles.categoryChipSelected, { borderColor: category.color }]}
           onPress={() => handleCategorySelect(category.id)}
           accessibilityRole="button"
           accessibilityLabel={`Select ${category.name} category`}
           accessibilityState={{ selected: isSelected }}
           testID={`addBudget.category.${category.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
         >
-          <View
-            style={[styles.categoryDot, { backgroundColor: category.color }]}
-          />
-          <Text
-            style={[
-              styles.categoryChipText,
-              isSelected && styles.categoryChipTextSelected,
-            ]}
-          >
-            {category.name}
-          </Text>
+          <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
+          <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>{category.name}</Text>
         </Pressable>
-      );
+      )
     },
-    [categoryId, handleCategorySelect]
-  );
+    [categoryId, handleCategorySelect],
+  )
 
-  const selectedCategory = availableCategories.find((c) => c.id === categoryId);
+  const selectedCategory = availableCategories.find((c) => c.id === categoryId)
 
   return (
     <SafeAreaView style={styles.container} edges={['top']} testID="addBudget.screen">
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.header} testID="addBudget.header">
           <Pressable
             style={styles.cancelButton}
@@ -225,7 +179,9 @@ export function AddBudgetScreen({
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
-          <Text style={styles.title} testID="addBudget.title">Add Budget</Text>
+          <Text style={styles.title} testID="addBudget.title">
+            Add Budget
+          </Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -247,12 +203,8 @@ export function AddBudgetScreen({
 
           <View style={styles.section} testID="addBudget.amountSection">
             <Text style={styles.sectionLabel}>Budget Amount</Text>
-            <View
-              style={[styles.inputContainer, errors.amount && styles.inputError]}
-            >
-              <Text style={styles.currencySymbol}>
-                {CURRENCY_SYMBOLS[currency]}
-              </Text>
+            <View style={[styles.inputContainer, errors.amount && styles.inputError]}>
+              <Text style={styles.currencySymbol}>{CURRENCY_SYMBOLS[currency]}</Text>
               <TextInput
                 style={styles.amountInput}
                 value={amount}
@@ -266,7 +218,9 @@ export function AddBudgetScreen({
               />
             </View>
             {errors.amount && (
-              <Text style={styles.errorText} testID="addBudget.amountError">{errors.amount}</Text>
+              <Text style={styles.errorText} testID="addBudget.amountError">
+                {errors.amount}
+              </Text>
             )}
           </View>
 
@@ -286,7 +240,9 @@ export function AddBudgetScreen({
               </View>
             )}
             {errors.categoryId && (
-              <Text style={styles.errorText} testID="addBudget.categoryError">{errors.categoryId}</Text>
+              <Text style={styles.errorText} testID="addBudget.categoryError">
+                {errors.categoryId}
+              </Text>
             )}
           </View>
 
@@ -295,39 +251,27 @@ export function AddBudgetScreen({
               <Text style={styles.sectionLabel}>Preview</Text>
               <View style={styles.previewCard}>
                 <View style={styles.previewRow}>
-                  <View
-                    style={[
-                      styles.previewCategoryDot,
-                      { backgroundColor: selectedCategory.color },
-                    ]}
-                  />
-                  <Text style={styles.previewCategory}>
-                    {selectedCategory.name}
-                  </Text>
+                  <View style={[styles.previewCategoryDot, { backgroundColor: selectedCategory.color }]} />
+                  <Text style={styles.previewCategory}>{selectedCategory.name}</Text>
                 </View>
-                <Text style={styles.previewAmount}>
-                  {formatCurrency(parseFloat(amount) || 0, currency)}
-                </Text>
-                <Text style={styles.previewMonth}>
-                  Budget for {selectedMonth}
-                </Text>
+                <Text style={styles.previewAmount}>{formatCurrency(parseFloat(amount) || 0, currency)}</Text>
+                <Text style={styles.previewMonth}>Budget for {selectedMonth}</Text>
               </View>
             </View>
           )}
 
           {errors.general && (
             <View style={styles.generalErrorContainer} testID="addBudget.generalErrorContainer">
-              <Text style={styles.generalErrorText} testID="addBudget.generalError">{errors.general}</Text>
+              <Text style={styles.generalErrorText} testID="addBudget.generalError">
+                {errors.general}
+              </Text>
             </View>
           )}
         </ScrollView>
 
         <View style={styles.footer} testID="addBudget.footer">
           <Pressable
-            style={[
-              styles.submitButton,
-              isSubmitting && styles.submitButtonDisabled,
-            ]}
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
             accessibilityRole="button"
@@ -344,7 +288,7 @@ export function AddBudgetScreen({
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -534,4 +478,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

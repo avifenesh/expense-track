@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET as GetSharing } from '@/app/api/v1/sharing/route'
-import { POST as DeclineShare } from '@/app/api/v1/expenses/shares/[participantId]/decline/route'
+import { POST as DeclineShare } from '@/app/api/v1/expenses/shares/[id]/decline/route'
 import { generateAccessToken } from '@/lib/jwt'
 import { resetEnvCache } from '@/lib/env-schema'
 import { prisma } from '@/lib/prisma'
@@ -202,7 +202,7 @@ describe('Sharing API Routes', () => {
         },
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -224,7 +224,7 @@ describe('Sharing API Routes', () => {
         body: JSON.stringify({ reason: declineReason }),
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -251,7 +251,7 @@ describe('Sharing API Routes', () => {
         body: JSON.stringify({ reason: 123 }),
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(400)
@@ -269,7 +269,7 @@ describe('Sharing API Routes', () => {
         body: JSON.stringify({ reason: "   " }),
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -293,7 +293,7 @@ describe('Sharing API Routes', () => {
         },
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(403)
@@ -309,7 +309,7 @@ describe('Sharing API Routes', () => {
         },
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId: 'non-existent-id' }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: 'non-existent-id' }) })
 
       expect(response.status).toBe(404)
     })
@@ -328,7 +328,7 @@ describe('Sharing API Routes', () => {
         },
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(400)
@@ -350,7 +350,7 @@ describe('Sharing API Routes', () => {
         },
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const data = await response.json()
 
       expect(response.status).toBe(400)
@@ -364,7 +364,7 @@ describe('Sharing API Routes', () => {
         headers: { 'Content-Type': 'application/json' },
       })
 
-      const response = await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      const response = await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
 
       expect(response.status).toBe(401)
     })
@@ -379,7 +379,7 @@ describe('Sharing API Routes', () => {
       })
 
       const beforeDecline = new Date()
-      await DeclineShare(request, { params: Promise.resolve({ participantId }) })
+      await DeclineShare(request, { params: Promise.resolve({ id: participantId }) })
       const afterDecline = new Date()
 
       const participant = await prisma.expenseParticipant.findUnique({

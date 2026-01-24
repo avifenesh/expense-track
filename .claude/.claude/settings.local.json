@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(ralph-loop:ralph-loop)",
+      "Skill(ship-it)",
+      "Skill(ship:ship)",
+      "Skill(deslop-around:deslop-around)"
+    ]
+  }
+}
