@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import { apiGet, apiPatch, apiPut, apiDelete, ApiError } from '../services/api';
+import { apiGet, apiPatch, apiPost, apiPut, apiDelete, ApiError } from '../services/api';
 import { useAuthStore } from './authStore';
 import { registerStoreReset } from './storeRegistry';
 import type { Currency } from '../types';
 
 export type AccountType = 'PERSONAL' | 'SHARED';
+export type DbAccountType = 'SELF' | 'PARTNER' | 'OTHER';
 
 export interface Account {
   id: string;
@@ -15,6 +16,20 @@ export interface Account {
   icon: string | null;
   description: string | null;
   balance: number;
+}
+
+export interface CreateAccountData {
+  name: string;
+  type: DbAccountType;
+  color?: string | null;
+  preferredCurrency?: Currency | null;
+}
+
+export interface UpdateAccountData {
+  name: string;
+  type?: DbAccountType;
+  color?: string | null;
+  preferredCurrency?: Currency | null;
 }
 
 interface AccountsResponse {
@@ -40,7 +55,8 @@ interface AccountsState {
 interface AccountsActions {
   fetchAccounts: () => Promise<boolean>;
   setActiveAccount: (accountId: string | null) => Promise<boolean>;
-  updateAccount: (id: string, name: string) => Promise<boolean>;
+  createAccount: (data: CreateAccountData) => Promise<boolean>;
+  updateAccount: (id: string, data: UpdateAccountData) => Promise<boolean>;
   deleteAccount: (id: string) => Promise<boolean>;
   getActiveAccount: () => Account | undefined;
   clearError: () => void;
@@ -122,16 +138,71 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
     }
   },
 
-  updateAccount: async (id: string, name: string) => {
+  createAccount: async (data: CreateAccountData) => {
     const accessToken = useAuthStore.getState().accessToken;
 
     set({ isLoading: true, error: null });
 
     try {
-      const updated = await apiPut<{ id: string; name: string }>(`/accounts/${id}`, { name }, accessToken);
+      const created = await apiPost<{
+        id: string;
+        name: string;
+        type: 'SELF' | 'PARTNER' | 'OTHER';
+        preferredCurrency: Currency | null;
+        color: string | null;
+        icon: string | null;
+        description: string | null;
+      }>('/accounts', data, accessToken);
+
+      const newAccount: Account = {
+        ...created,
+        type: mapAccountType(created.type),
+        balance: 0,
+      };
+
       const { accounts } = get();
       set({
-        accounts: accounts.map((acc) => (acc.id === id ? { ...acc, name: updated.name } : acc)),
+        accounts: [...accounts, newAccount],
+        isLoading: false,
+      });
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : 'Failed to create account';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+
+  updateAccount: async (id: string, data: UpdateAccountData) => {
+    const accessToken = useAuthStore.getState().accessToken;
+
+    set({ isLoading: true, error: null });
+
+    try {
+      const updated = await apiPut<{
+        id: string;
+        name: string;
+        type: 'SELF' | 'PARTNER' | 'OTHER';
+        preferredCurrency: Currency | null;
+        color: string | null;
+        icon: string | null;
+        description: string | null;
+      }>(`/accounts/${id}`, data, accessToken);
+
+      const { accounts } = get();
+      set({
+        accounts: accounts.map((acc) =>
+          acc.id === id
+            ? {
+                ...acc,
+                name: updated.name,
+                type: mapAccountType(updated.type),
+                preferredCurrency: updated.preferredCurrency,
+                color: updated.color,
+              }
+            : acc
+        ),
         isLoading: false,
       });
       return true;

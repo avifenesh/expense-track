@@ -43,3 +43,28 @@ export function validateCategoryName(name: string): ValidationResult {
 
   return { valid: true }
 }
+
+export const ACCOUNT_NAME_MIN_LENGTH = 1
+export const ACCOUNT_NAME_MAX_LENGTH = 50
+
+/**
+ * Validate account name
+ * Matches server-side validation in PUT/POST /api/v1/accounts
+ */
+export function validateAccountName(name: string): ValidationResult {
+  const trimmed = name.trim()
+
+  if (!trimmed) {
+    return { valid: false, error: 'Name is required' }
+  }
+
+  if (trimmed.length < ACCOUNT_NAME_MIN_LENGTH) {
+    return { valid: false, error: `Name must be at least ${ACCOUNT_NAME_MIN_LENGTH} character` }
+  }
+
+  if (trimmed.length > ACCOUNT_NAME_MAX_LENGTH) {
+    return { valid: false, error: `Name must be ${ACCOUNT_NAME_MAX_LENGTH} characters or less` }
+  }
+
+  return { valid: true }
+}

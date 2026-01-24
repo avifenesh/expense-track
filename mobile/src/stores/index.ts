@@ -2,7 +2,7 @@ export { useAuthStore } from './authStore'
 export type { AuthStore, User } from './authStore'
 
 export { useAccountsStore } from './accountsStore'
-export type { AccountsStore, Account, AccountType } from './accountsStore'
+export type { AccountsStore, Account, AccountType, DbAccountType, CreateAccountData, UpdateAccountData } from './accountsStore'
 
 export { useCategoriesStore } from './categoriesStore'
 export type { CategoriesStore, Category, TransactionType, CreateCategoryInput } from './categoriesStore'
