@@ -131,11 +131,6 @@ const editInitialState: EditModalState = {
   isSubmitting: false,
 }
 
-function mapDisplayTypeToDbType(displayType: 'PERSONAL' | 'SHARED', account: Account): DbAccountType {
-  if (displayType === 'PERSONAL') return 'SELF'
-  return 'PARTNER'
-}
-
 function editReducer(state: EditModalState, action: EditModalAction): EditModalState {
   switch (action.type) {
     case 'OPEN':
@@ -143,7 +138,7 @@ function editReducer(state: EditModalState, action: EditModalAction): EditModalS
         visible: true,
         account: action.payload.account,
         name: action.payload.account.name,
-        type: mapDisplayTypeToDbType(action.payload.account.type, action.payload.account),
+        type: action.payload.account.dbType,
         color: action.payload.account.color,
         preferredCurrency: action.payload.account.preferredCurrency,
         error: null,

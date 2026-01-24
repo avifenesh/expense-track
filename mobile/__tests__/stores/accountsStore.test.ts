@@ -59,7 +59,7 @@ describe('accountsStore', () => {
       expect(result).toBe(true);
       const state = useAccountsStore.getState();
       expect(state.accounts).toHaveLength(1);
-      expect(state.accounts[0]).toEqual({ ...mockAccount, type: 'PERSONAL' });
+      expect(state.accounts[0]).toEqual({ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' });
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -199,20 +199,20 @@ describe('accountsStore', () => {
     it('returns active account when it exists', () => {
       useAccountsStore.setState({
         accounts: [
-          { ...mockAccount, type: 'PERSONAL' },
-          { ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED' },
+          { ...mockAccount, type: 'PERSONAL', dbType: 'SELF' },
+          { ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED', dbType: 'PARTNER' },
         ],
         activeAccountId: 'acc-2',
       });
 
       const account = useAccountsStore.getState().getActiveAccount();
 
-      expect(account).toEqual({ ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED' });
+      expect(account).toEqual({ ...mockAccount, id: 'acc-2', name: 'Second Account', type: 'SHARED', dbType: 'PARTNER' });
     });
 
     it('returns undefined when no account is active', () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: null,
       });
 
@@ -223,7 +223,7 @@ describe('accountsStore', () => {
 
     it('returns undefined when active account not in list', () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: 'non-existent',
       });
 
@@ -246,7 +246,7 @@ describe('accountsStore', () => {
   describe('createAccount', () => {
     it('creates account successfully', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: 'acc-1',
       });
       mockApiPost.mockResolvedValue({
@@ -277,6 +277,7 @@ describe('accountsStore', () => {
       expect(state.accounts[1].id).toBe('acc-new');
       expect(state.accounts[1].name).toBe('New Account');
       expect(state.accounts[1].type).toBe('SHARED');
+      expect(state.accounts[1].dbType).toBe('PARTNER');
       expect(state.accounts[1].balance).toBe(0);
       expect(state.isLoading).toBe(false);
     });
@@ -300,6 +301,7 @@ describe('accountsStore', () => {
 
       const state = useAccountsStore.getState();
       expect(state.accounts[0].type).toBe('PERSONAL');
+      expect(state.accounts[0].dbType).toBe('SELF');
     });
 
     it('handles API errors', async () => {
@@ -353,7 +355,7 @@ describe('accountsStore', () => {
   describe('updateAccount', () => {
     it('updates account with all fields successfully', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: 'acc-1',
       });
       mockApiPut.mockResolvedValue({
@@ -382,6 +384,7 @@ describe('accountsStore', () => {
       const state = useAccountsStore.getState();
       expect(state.accounts[0].name).toBe('Updated Name');
       expect(state.accounts[0].type).toBe('SHARED');
+      expect(state.accounts[0].dbType).toBe('PARTNER');
       expect(state.accounts[0].color).toBe('#0000FF');
       expect(state.accounts[0].preferredCurrency).toBe('EUR');
       expect(state.isLoading).toBe(false);
@@ -389,7 +392,7 @@ describe('accountsStore', () => {
 
     it('updates account name only', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
         activeAccountId: 'acc-1',
       });
       mockApiPut.mockResolvedValue({
@@ -410,7 +413,7 @@ describe('accountsStore', () => {
 
     it('handles API errors', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
       });
       mockApiPut.mockRejectedValue(new ApiError('Name already exists', 'CONFLICT', 400));
 
@@ -457,8 +460,8 @@ describe('accountsStore', () => {
     it('deletes account successfully', async () => {
       useAccountsStore.setState({
         accounts: [
-          { ...mockAccount, type: 'PERSONAL' },
-          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED' },
+          { ...mockAccount, type: 'PERSONAL', dbType: 'SELF' },
+          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED', dbType: 'PARTNER' },
         ],
         activeAccountId: 'acc-1',
       });
@@ -476,8 +479,8 @@ describe('accountsStore', () => {
     it('preserves activeAccountId when deleting non-active account', async () => {
       useAccountsStore.setState({
         accounts: [
-          { ...mockAccount, type: 'PERSONAL' },
-          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED' },
+          { ...mockAccount, type: 'PERSONAL', dbType: 'SELF' },
+          { ...mockAccount, id: 'acc-2', name: 'Second', type: 'SHARED', dbType: 'PARTNER' },
         ],
         activeAccountId: 'acc-1',
       });
@@ -492,7 +495,7 @@ describe('accountsStore', () => {
 
     it('handles API errors', async () => {
       useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
+        accounts: [{ ...mockAccount, type: 'PERSONAL', dbType: 'SELF' }],
       });
       mockApiDelete.mockRejectedValue(new ApiError('Cannot delete only account', 'VALIDATION_ERROR', 400));
 

@@ -11,6 +11,7 @@ export interface Account {
   id: string;
   name: string;
   type: AccountType;
+  dbType: DbAccountType;
   preferredCurrency: Currency | null;
   color: string | null;
   icon: string | null;
@@ -90,6 +91,7 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
       const accounts = response.accounts.map((acc) => ({
         ...acc,
         type: mapAccountType(acc.type),
+        dbType: acc.type,
       }));
 
       const { activeAccountId } = get();
@@ -157,6 +159,7 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
       const newAccount: Account = {
         ...created,
         type: mapAccountType(created.type),
+        dbType: created.type,
         balance: 0,
       };
 
@@ -198,6 +201,7 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
                 ...acc,
                 name: updated.name,
                 type: mapAccountType(updated.type),
+                dbType: updated.type,
                 preferredCurrency: updated.preferredCurrency,
                 color: updated.color,
               }
