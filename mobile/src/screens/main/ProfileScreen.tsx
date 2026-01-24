@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -34,6 +34,18 @@ export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
   // Track if values have changed
   const [initialDisplayName, setInitialDisplayName] = useState(user?.displayName || '')
   const [initialCurrency, setInitialCurrency] = useState('USD')
+
+  // Ref for success message timeout cleanup
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timeout on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     // Fetch current profile to get preferredCurrency
@@ -117,7 +129,7 @@ export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
       }
 
       setSuccessMessage('Profile updated successfully')
-      setTimeout(() => setSuccessMessage(null), 3000)
+      successTimeoutRef.current = setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message)

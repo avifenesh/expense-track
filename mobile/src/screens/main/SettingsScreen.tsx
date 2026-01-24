@@ -149,7 +149,7 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
           style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
           onPress={handleLogout}
           disabled={isLoggingOut}
-          testID="settings.logoutButton"
+          testID="logout-button"
         >
           {isLoggingOut ? <ActivityIndicator color="#ef4444" /> : <Text style={styles.logoutText}>Sign Out</Text>}
         </Pressable>
