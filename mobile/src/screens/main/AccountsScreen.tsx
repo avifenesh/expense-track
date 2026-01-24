@@ -40,6 +40,12 @@ const ACCOUNT_TYPES: { value: DbAccountType; label: string }[] = [
   { value: 'OTHER', label: 'Other' },
 ]
 
+const DB_TYPE_TO_LABEL: Record<DbAccountType, string> = {
+  SELF: 'Personal',
+  PARTNER: 'Partner',
+  OTHER: 'Other',
+}
+
 const CURRENCIES: { value: Currency; label: string }[] = [
   { value: 'USD', label: 'USD' },
   { value: 'EUR', label: 'EUR' },
@@ -428,8 +434,8 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
               <View style={[styles.colorIndicator, { backgroundColor: item.color }]} testID={`accounts.colorIndicator.${item.id}`} />
             )}
             <Text style={styles.accountName}>{item.name}</Text>
-            <View style={[styles.typeBadge, item.type === 'SHARED' && styles.typeBadgeShared]}>
-              <Text style={styles.typeBadgeText}>{item.type}</Text>
+            <View style={[styles.typeBadge, item.dbType !== 'SELF' && styles.typeBadgeShared]}>
+              <Text style={styles.typeBadgeText}>{DB_TYPE_TO_LABEL[item.dbType]}</Text>
             </View>
           </View>
           {isActive && (

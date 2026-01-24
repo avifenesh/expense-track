@@ -136,8 +136,8 @@ describe('AccountsScreen', () => {
     it('displays account type badges', () => {
       renderAccountsScreen()
 
-      expect(screen.getByText('PERSONAL')).toBeTruthy()
-      expect(screen.getByText('SHARED')).toBeTruthy()
+      expect(screen.getByText('Personal')).toBeTruthy()
+      expect(screen.getByText('Partner')).toBeTruthy()
     })
 
     it('displays positive balance correctly', () => {
