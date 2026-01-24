@@ -6,6 +6,7 @@ import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useBudgetsStore } from '../../../src/stores/budgetsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
+import { useOfflineQueueStore } from '../../../src/stores/offlineQueueStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
 
 // Mock stores
@@ -13,13 +14,23 @@ jest.mock('../../../src/stores/accountsStore');
 jest.mock('../../../src/stores/transactionsStore');
 jest.mock('../../../src/stores/budgetsStore');
 jest.mock('../../../src/stores/categoriesStore');
+jest.mock('../../../src/stores/offlineQueueStore');
 
-const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore> & {
-  getState: jest.MockedFunction<() => ReturnType<typeof useAccountsStore>>;
-};
-const mockUseTransactionsStore = useTransactionsStore as jest.MockedFunction<typeof useTransactionsStore>;
-const mockUseBudgetsStore = useBudgetsStore as jest.MockedFunction<typeof useBudgetsStore>;
-const mockUseCategoriesStore = useCategoriesStore as jest.MockedFunction<typeof useCategoriesStore>;
+const mockUseAccountsStore = useAccountsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseTransactionsStore = useTransactionsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseBudgetsStore = useBudgetsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseCategoriesStore = useCategoriesStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseOfflineQueueStore = useOfflineQueueStore as unknown as jest.Mock & { getState: jest.Mock };
+
+// Helper to create store mock that handles selectors
+function createStoreMock<T extends object>(state: T): (selector?: (s: T) => unknown) => unknown {
+  return (selector?: (s: T) => unknown) => {
+    if (typeof selector === 'function') {
+      return selector(state);
+    }
+    return state;
+  };
+}
 
 const mockAccount = {
   id: 'acc-1',
@@ -177,13 +188,25 @@ describe('BudgetsScreen', () => {
     reset: jest.fn(),
   };
 
+  const defaultOfflineQueueState = {
+    items: [],
+    isSyncing: false,
+    syncError: null,
+    processQueue: jest.fn(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState);
-    mockUseAccountsStore.getState = jest.fn().mockReturnValue(defaultAccountsState);
-    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState);
-    mockUseBudgetsStore.mockReturnValue(defaultBudgetsState);
-    mockUseCategoriesStore.mockReturnValue(defaultCategoriesState);
+    mockUseAccountsStore.mockImplementation(createStoreMock(defaultAccountsState));
+    mockUseAccountsStore.getState = jest.fn(() => defaultAccountsState);
+    mockUseTransactionsStore.mockImplementation(createStoreMock(defaultTransactionsState));
+    mockUseTransactionsStore.getState = jest.fn(() => defaultTransactionsState);
+    mockUseBudgetsStore.mockImplementation(createStoreMock(defaultBudgetsState));
+    mockUseBudgetsStore.getState = jest.fn(() => defaultBudgetsState);
+    mockUseCategoriesStore.mockImplementation(createStoreMock(defaultCategoriesState));
+    mockUseCategoriesStore.getState = jest.fn(() => defaultCategoriesState);
+    mockUseOfflineQueueStore.mockImplementation(createStoreMock(defaultOfflineQueueState));
+    mockUseOfflineQueueStore.getState = jest.fn(() => defaultOfflineQueueState);
   });
 
   describe('Rendering', () => {
@@ -223,12 +246,14 @@ describe('BudgetsScreen', () => {
 
   describe('Loading State', () => {
     it('shows loading spinner during initial load', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const loadingState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: true,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(loadingState));
+      mockUseAccountsStore.getState = jest.fn(() => loadingState);
 
       renderBudgetsScreen();
 
@@ -240,13 +265,15 @@ describe('BudgetsScreen', () => {
 
   describe('Error State', () => {
     it('shows error message when accounts fail to load', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const errorState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
         error: 'Failed to load accounts',
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(errorState));
+      mockUseAccountsStore.getState = jest.fn(() => errorState);
 
       renderBudgetsScreen();
 
@@ -257,10 +284,12 @@ describe('BudgetsScreen', () => {
     });
 
     it('shows error when budgets fail to load', async () => {
-      mockUseBudgetsStore.mockReturnValue({
+      const errorState = {
         ...defaultBudgetsState,
         error: 'Failed to fetch budgets',
-      });
+      };
+      mockUseBudgetsStore.mockImplementation(createStoreMock(errorState));
+      mockUseBudgetsStore.getState = jest.fn(() => errorState);
 
       renderBudgetsScreen();
 
@@ -271,13 +300,15 @@ describe('BudgetsScreen', () => {
     });
 
     it('shows retry button on error', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const errorState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
         error: 'Network error',
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(errorState));
+      mockUseAccountsStore.getState = jest.fn(() => errorState);
 
       renderBudgetsScreen();
 
@@ -296,8 +327,8 @@ describe('BudgetsScreen', () => {
         error: 'Network error',
         fetchAccounts,
       };
-      mockUseAccountsStore.mockReturnValue(errorState);
-      mockUseAccountsStore.getState = jest.fn().mockReturnValue(errorState);
+      mockUseAccountsStore.mockImplementation(createStoreMock(errorState));
+      mockUseAccountsStore.getState = jest.fn(() => errorState);
 
       renderBudgetsScreen();
 
@@ -315,12 +346,14 @@ describe('BudgetsScreen', () => {
 
   describe('Empty States', () => {
     it('shows no accounts message when user has no accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const emptyState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(emptyState));
+      mockUseAccountsStore.getState = jest.fn(() => emptyState);
 
       renderBudgetsScreen();
 
@@ -331,10 +364,12 @@ describe('BudgetsScreen', () => {
     });
 
     it('shows no budgets message when month has no budgets', async () => {
-      mockUseBudgetsStore.mockReturnValue({
+      const emptyBudgetsState = {
         ...defaultBudgetsState,
         budgets: [],
-      });
+      };
+      mockUseBudgetsStore.mockImplementation(createStoreMock(emptyBudgetsState));
+      mockUseBudgetsStore.getState = jest.fn(() => emptyBudgetsState);
 
       renderBudgetsScreen();
 
@@ -392,10 +427,12 @@ describe('BudgetsScreen', () => {
   describe('Month Navigation', () => {
     it('calls setFilters when month changes', async () => {
       const setFilters = jest.fn();
-      mockUseTransactionsStore.mockReturnValue({
+      const stateWithSetFilters = {
         ...defaultTransactionsState,
         setFilters,
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(stateWithSetFilters));
+      mockUseTransactionsStore.getState = jest.fn(() => stateWithSetFilters);
 
       renderBudgetsScreen();
 
@@ -412,10 +449,12 @@ describe('BudgetsScreen', () => {
 
     it('calls setBudgetSelectedMonth when month changes', async () => {
       const setSelectedMonth = jest.fn();
-      mockUseBudgetsStore.mockReturnValue({
+      const stateWithSetMonth = {
         ...defaultBudgetsState,
         setSelectedMonth,
-      });
+      };
+      mockUseBudgetsStore.mockImplementation(createStoreMock(stateWithSetMonth));
+      mockUseBudgetsStore.getState = jest.fn(() => stateWithSetMonth);
 
       renderBudgetsScreen();
 
@@ -434,10 +473,12 @@ describe('BudgetsScreen', () => {
   describe('Initial Data Fetch', () => {
     it('fetches accounts on mount', async () => {
       const fetchAccounts = jest.fn().mockResolvedValue(true);
-      mockUseAccountsStore.mockReturnValue({
+      const stateWithFetch = {
         ...defaultAccountsState,
         fetchAccounts,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(stateWithFetch));
+      mockUseAccountsStore.getState = jest.fn(() => stateWithFetch);
 
       renderBudgetsScreen();
 
@@ -448,10 +489,12 @@ describe('BudgetsScreen', () => {
 
     it('fetches budgets when account is selected', async () => {
       const fetchBudgets = jest.fn().mockResolvedValue(undefined);
-      mockUseBudgetsStore.mockReturnValue({
+      const stateWithFetch = {
         ...defaultBudgetsState,
         fetchBudgets,
-      });
+      };
+      mockUseBudgetsStore.mockImplementation(createStoreMock(stateWithFetch));
+      mockUseBudgetsStore.getState = jest.fn(() => stateWithFetch);
 
       renderBudgetsScreen();
 
@@ -462,10 +505,12 @@ describe('BudgetsScreen', () => {
 
     it('fetches categories when account is selected', async () => {
       const fetchCategories = jest.fn().mockResolvedValue(undefined);
-      mockUseCategoriesStore.mockReturnValue({
+      const stateWithFetch = {
         ...defaultCategoriesState,
         fetchCategories,
-      });
+      };
+      mockUseCategoriesStore.mockImplementation(createStoreMock(stateWithFetch));
+      mockUseCategoriesStore.getState = jest.fn(() => stateWithFetch);
 
       renderBudgetsScreen();
 
@@ -476,10 +521,12 @@ describe('BudgetsScreen', () => {
 
     it('fetches transactions when account is selected', async () => {
       const fetchTransactions = jest.fn().mockResolvedValue(true);
-      mockUseTransactionsStore.mockReturnValue({
+      const stateWithFetch = {
         ...defaultTransactionsState,
         fetchTransactions,
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(stateWithFetch));
+      mockUseTransactionsStore.getState = jest.fn(() => stateWithFetch);
 
       renderBudgetsScreen();
 
@@ -508,10 +555,12 @@ describe('BudgetsScreen', () => {
         amount: '600.00', // More than the $500 budget
       };
 
-      mockUseTransactionsStore.mockReturnValue({
+      const stateWithOverBudget = {
         ...defaultTransactionsState,
         transactions: [overBudgetTransaction, mockTransaction2],
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(stateWithOverBudget));
+      mockUseTransactionsStore.getState = jest.fn(() => stateWithOverBudget);
 
       renderBudgetsScreen();
 
@@ -567,10 +616,12 @@ describe('BudgetsScreen', () => {
   describe('Category Lookup', () => {
     it('falls back to budget.category when category not in store', async () => {
       // Categories store doesn't have the category
-      mockUseCategoriesStore.mockReturnValue({
+      const emptyCategoriesState = {
         ...defaultCategoriesState,
         categories: [],
-      });
+      };
+      mockUseCategoriesStore.mockImplementation(createStoreMock(emptyCategoriesState));
+      mockUseCategoriesStore.getState = jest.fn(() => emptyCategoriesState);
 
       renderBudgetsScreen();
 
@@ -588,15 +639,19 @@ describe('BudgetsScreen', () => {
         category: undefined as unknown as typeof mockExpenseCategory,
       };
 
-      mockUseBudgetsStore.mockReturnValue({
+      const budgetStateWithoutCategory = {
         ...defaultBudgetsState,
         budgets: [budgetWithoutCategory],
-      });
+      };
+      mockUseBudgetsStore.mockImplementation(createStoreMock(budgetStateWithoutCategory));
+      mockUseBudgetsStore.getState = jest.fn(() => budgetStateWithoutCategory);
 
-      mockUseCategoriesStore.mockReturnValue({
+      const emptyCategoriesState = {
         ...defaultCategoriesState,
         categories: [],
-      });
+      };
+      mockUseCategoriesStore.mockImplementation(createStoreMock(emptyCategoriesState));
+      mockUseCategoriesStore.getState = jest.fn(() => emptyCategoriesState);
 
       renderBudgetsScreen();
 

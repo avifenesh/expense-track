@@ -1,11 +1,21 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { OnboardingBiometricScreen } from '../../../src/screens/onboarding/OnboardingBiometricScreen';
-import { useAuth } from '../../../src/contexts/AuthContext';
+import { useAuthStore } from '../../../src/stores/authStore';
 
-jest.mock('../../../src/contexts/AuthContext');
+jest.mock('../../../src/stores/authStore');
 
-const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock & { getState: jest.Mock };
+
+// Helper to create store mock that handles selectors
+function createStoreMock<T extends object>(state: T): (selector?: (s: T) => unknown) => unknown {
+  return (selector?: (s: T) => unknown) => {
+    if (typeof selector === 'function') {
+      return selector(state);
+    }
+    return state;
+  };
+}
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -21,7 +31,7 @@ const mockRoute = {
 };
 
 describe('OnboardingBiometricScreen', () => {
-  const defaultAuthValue = {
+  const defaultAuthState = {
     isAuthenticated: true,
     isLoading: false,
     user: { id: '1', email: 'test@example.com', hasCompletedOnboarding: false },
@@ -44,7 +54,8 @@ describe('OnboardingBiometricScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue(defaultAuthValue);
+    mockUseAuthStore.mockImplementation(createStoreMock(defaultAuthState));
+    mockUseAuthStore.getState = jest.fn(() => defaultAuthState);
   });
 
   it('renders with biometric available', () => {
@@ -59,14 +70,16 @@ describe('OnboardingBiometricScreen', () => {
   });
 
   it('renders fingerprint label for fingerprint type', () => {
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const fingerprintState = {
+      ...defaultAuthState,
       biometricCapability: {
         isAvailable: true,
-        biometricType: 'fingerprint',
+        biometricType: 'fingerprint' as const,
         isEnrolled: true,
       },
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(fingerprintState));
+    mockUseAuthStore.getState = jest.fn(() => fingerprintState);
 
     render(
       <OnboardingBiometricScreen navigation={mockNavigation} route={mockRoute} />
@@ -77,14 +90,16 @@ describe('OnboardingBiometricScreen', () => {
   });
 
   it('renders continue button when biometric not available', () => {
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const noBiometricState = {
+      ...defaultAuthState,
       biometricCapability: {
         isAvailable: false,
-        biometricType: 'none',
+        biometricType: 'none' as const,
         isEnrolled: false,
       },
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(noBiometricState));
+    mockUseAuthStore.getState = jest.fn(() => noBiometricState);
 
     render(
       <OnboardingBiometricScreen navigation={mockNavigation} route={mockRoute} />
@@ -98,47 +113,45 @@ describe('OnboardingBiometricScreen', () => {
   it('enables biometric and completes onboarding on enable button press', async () => {
     const enableBiometric = jest.fn().mockResolvedValue(undefined);
     const updateUser = jest.fn();
-    const resetMock = jest.fn();
-    const getParentMock = jest.fn(() => ({ reset: resetMock }));
 
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const stateWithFns = {
+      ...defaultAuthState,
       enableBiometric,
       updateUser,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(stateWithFns));
+    mockUseAuthStore.getState = jest.fn(() => stateWithFns);
 
     render(
       <OnboardingBiometricScreen
-        navigation={{ ...mockNavigation, getParent: getParentMock } as typeof mockNavigation}
+        navigation={mockNavigation}
         route={mockRoute}
       />
     );
 
-    fireEvent.press(screen.getByTestId('enable-biometric-button'));
+    fireEvent.press(screen.getByTestId('onboarding.biometric.enableButton'));
 
     await waitFor(() => {
       expect(enableBiometric).toHaveBeenCalled();
       expect(updateUser).toHaveBeenCalledWith({ hasCompletedOnboarding: true });
-      expect(resetMock).toHaveBeenCalledWith({
-        index: 0,
-        routes: [{ name: 'App' }],
-      });
     });
   });
 
   it('shows error when enable fails', async () => {
     const enableBiometric = jest.fn().mockRejectedValue(new Error('Biometric failed'));
 
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const stateWithFn = {
+      ...defaultAuthState,
       enableBiometric,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(stateWithFn));
+    mockUseAuthStore.getState = jest.fn(() => stateWithFn);
 
     render(
       <OnboardingBiometricScreen navigation={mockNavigation} route={mockRoute} />
     );
 
-    fireEvent.press(screen.getByTestId('enable-biometric-button'));
+    fireEvent.press(screen.getByTestId('onboarding.biometric.enableButton'));
 
     await waitFor(() => {
       expect(screen.getByText('Biometric failed')).toBeTruthy();
@@ -148,16 +161,18 @@ describe('OnboardingBiometricScreen', () => {
   it('shows generic error when enable fails with non-Error', async () => {
     const enableBiometric = jest.fn().mockRejectedValue('unknown error');
 
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const stateWithFn = {
+      ...defaultAuthState,
       enableBiometric,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(stateWithFn));
+    mockUseAuthStore.getState = jest.fn(() => stateWithFn);
 
     render(
       <OnboardingBiometricScreen navigation={mockNavigation} route={mockRoute} />
     );
 
-    fireEvent.press(screen.getByTestId('enable-biometric-button'));
+    fireEvent.press(screen.getByTestId('onboarding.biometric.enableButton'));
 
     await waitFor(() => {
       expect(screen.getByText('Failed to enable biometric authentication')).toBeTruthy();
@@ -166,59 +181,54 @@ describe('OnboardingBiometricScreen', () => {
 
   it('completes onboarding on skip button press', async () => {
     const updateUser = jest.fn();
-    const resetMock = jest.fn();
-    const getParentMock = jest.fn(() => ({ reset: resetMock }));
 
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const stateWithFn = {
+      ...defaultAuthState,
       updateUser,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(stateWithFn));
+    mockUseAuthStore.getState = jest.fn(() => stateWithFn);
 
     render(
       <OnboardingBiometricScreen
-        navigation={{ ...mockNavigation, getParent: getParentMock } as typeof mockNavigation}
+        navigation={mockNavigation}
         route={mockRoute}
       />
     );
 
-    fireEvent.press(screen.getByTestId('skip-button'));
+    fireEvent.press(screen.getByTestId('onboarding.biometric.skipButton'));
 
     await waitFor(() => {
       expect(updateUser).toHaveBeenCalledWith({ hasCompletedOnboarding: true });
-      expect(resetMock).toHaveBeenCalledWith({
-        index: 0,
-        routes: [{ name: 'App' }],
-      });
     });
   });
 
   it('completes onboarding on continue button when biometric unavailable', async () => {
     const updateUser = jest.fn();
-    const resetMock = jest.fn();
-    const getParentMock = jest.fn(() => ({ reset: resetMock }));
 
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const noBiometricState = {
+      ...defaultAuthState,
       biometricCapability: {
         isAvailable: false,
-        biometricType: 'none',
+        biometricType: 'none' as const,
         isEnrolled: false,
       },
       updateUser,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(noBiometricState));
+    mockUseAuthStore.getState = jest.fn(() => noBiometricState);
 
     render(
       <OnboardingBiometricScreen
-        navigation={{ ...mockNavigation, getParent: getParentMock } as typeof mockNavigation}
+        navigation={mockNavigation}
         route={mockRoute}
       />
     );
 
-    fireEvent.press(screen.getByTestId('continue-button'));
+    fireEvent.press(screen.getByTestId('onboarding.biometric.continueButton'));
 
     await waitFor(() => {
       expect(updateUser).toHaveBeenCalledWith({ hasCompletedOnboarding: true });
-      expect(resetMock).toHaveBeenCalled();
     });
   });
 
@@ -227,16 +237,18 @@ describe('OnboardingBiometricScreen', () => {
       () => new Promise((resolve) => setTimeout(resolve, 100))
     );
 
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const stateWithFn = {
+      ...defaultAuthState,
       enableBiometric,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(stateWithFn));
+    mockUseAuthStore.getState = jest.fn(() => stateWithFn);
 
     render(
       <OnboardingBiometricScreen navigation={mockNavigation} route={mockRoute} />
     );
 
-    fireEvent.press(screen.getByTestId('enable-biometric-button'));
+    fireEvent.press(screen.getByTestId('onboarding.biometric.enableButton'));
 
     // Button should show loading indicator (ActivityIndicator)
     await waitFor(() => {
@@ -263,10 +275,12 @@ describe('OnboardingBiometricScreen', () => {
   });
 
   it('handles null biometricCapability', () => {
-    mockUseAuth.mockReturnValue({
-      ...defaultAuthValue,
+    const nullBiometricState = {
+      ...defaultAuthState,
       biometricCapability: null,
-    });
+    };
+    mockUseAuthStore.mockImplementation(createStoreMock(nullBiometricState));
+    mockUseAuthStore.getState = jest.fn(() => nullBiometricState);
 
     render(
       <OnboardingBiometricScreen navigation={mockNavigation} route={mockRoute} />

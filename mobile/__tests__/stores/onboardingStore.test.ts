@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react-native';
 import { useOnboardingStore } from '../../src/stores/onboardingStore';
 import * as api from '../../src/services/api';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -7,7 +7,17 @@ jest.mock('../../src/services/api');
 jest.mock('../../src/stores/authStore');
 
 const mockedApi = api as jest.Mocked<typeof api>;
-const mockedAuthStore = useAuthStore as unknown as jest.Mock;
+const mockedAuthStore = useAuthStore as unknown as jest.Mock & { getState: jest.Mock };
+
+// Helper to create store mock that handles selectors
+function createStoreMock<T extends object>(state: T): (selector?: (s: T) => unknown) => unknown {
+  return (selector?: (s: T) => unknown) => {
+    if (typeof selector === 'function') {
+      return selector(state);
+    }
+    return state;
+  };
+}
 
 describe('onboardingStore', () => {
   beforeEach(() => {
@@ -118,10 +128,12 @@ describe('onboardingStore', () => {
     const mockUpdateUser = jest.fn();
 
     beforeEach(() => {
-      mockedAuthStore.mockReturnValue({
+      const authState = {
         accessToken: mockAccessToken,
         updateUser: mockUpdateUser,
-      } as unknown as ReturnType<typeof useAuthStore>);
+      };
+      mockedAuthStore.mockImplementation(createStoreMock(authState));
+      mockedAuthStore.getState = jest.fn(() => authState);
 
       global.fetch = jest.fn();
     });
@@ -287,10 +299,12 @@ describe('onboardingStore', () => {
     });
 
     it('returns false when not authenticated', async () => {
-      mockedAuthStore.mockReturnValue({
+      const noAuthState = {
         accessToken: null,
         updateUser: jest.fn(),
-      } as unknown as ReturnType<typeof useAuthStore>);
+      };
+      mockedAuthStore.mockImplementation(createStoreMock(noAuthState));
+      mockedAuthStore.getState = jest.fn(() => noAuthState);
 
       const { result } = renderHook(() => useOnboardingStore());
 

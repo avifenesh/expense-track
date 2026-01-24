@@ -4,13 +4,35 @@ import { NavigationContainer } from '@react-navigation/native';
 import { TransactionsScreen } from '../../../src/screens/main/TransactionsScreen';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
+import { useOfflineQueueStore } from '../../../src/stores/offlineQueueStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
 
 jest.mock('../../../src/stores/accountsStore');
 jest.mock('../../../src/stores/transactionsStore');
+jest.mock('../../../src/stores/offlineQueueStore');
 
-const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore>;
-const mockUseTransactionsStore = useTransactionsStore as jest.MockedFunction<typeof useTransactionsStore>;
+const mockUseOfflineQueueStore = useOfflineQueueStore as unknown as jest.Mock & { getState: jest.Mock };
+
+// Default offline queue state for SyncStatusBadge
+const defaultOfflineQueueState = {
+  items: [],
+  isSyncing: false,
+  syncError: null,
+  processQueue: jest.fn(),
+};
+
+const mockUseAccountsStore = useAccountsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseTransactionsStore = useTransactionsStore as unknown as jest.Mock & { getState: jest.Mock };
+
+// Helper to create store mock that handles selectors
+function createStoreMock<T extends object>(state: T): (selector?: (s: T) => unknown) => unknown {
+  return (selector?: (s: T) => unknown) => {
+    if (typeof selector === 'function') {
+      return selector(state);
+    }
+    return state;
+  };
+}
 
 const mockAccount = {
   id: 'acc-1',
@@ -108,8 +130,12 @@ describe('TransactionsScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState);
-    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState);
+    mockUseAccountsStore.mockImplementation(createStoreMock(defaultAccountsState));
+    mockUseAccountsStore.getState = jest.fn(() => defaultAccountsState);
+    mockUseTransactionsStore.mockImplementation(createStoreMock(defaultTransactionsState));
+    mockUseTransactionsStore.getState = jest.fn(() => defaultTransactionsState);
+    mockUseOfflineQueueStore.mockImplementation(createStoreMock(defaultOfflineQueueState));
+    mockUseOfflineQueueStore.getState = jest.fn(() => defaultOfflineQueueState);
   });
 
   describe('Rendering', () => {
@@ -150,11 +176,13 @@ describe('TransactionsScreen', () => {
 
   describe('Loading State', () => {
     it('shows loading indicator when loading transactions', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      const loadingState = {
         ...defaultTransactionsState,
         transactions: [],
         isLoading: true,
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(loadingState));
+      mockUseTransactionsStore.getState = jest.fn(() => loadingState);
 
       renderTransactionsScreen();
 
@@ -166,11 +194,13 @@ describe('TransactionsScreen', () => {
 
   describe('Error State', () => {
     it('shows error message when transactions fail to load', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      const errorState = {
         ...defaultTransactionsState,
         transactions: [],
         error: 'Failed to fetch transactions',
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(errorState));
+      mockUseTransactionsStore.getState = jest.fn(() => errorState);
 
       renderTransactionsScreen();
 
@@ -183,15 +213,19 @@ describe('TransactionsScreen', () => {
 
   describe('Empty States', () => {
     it('shows no accounts message when user has no accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const noAccountsState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
-      });
-      mockUseTransactionsStore.mockReturnValue({
+      };
+      const noTransactionsState = {
         ...defaultTransactionsState,
         transactions: [],
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(noAccountsState));
+      mockUseAccountsStore.getState = jest.fn(() => noAccountsState);
+      mockUseTransactionsStore.mockImplementation(createStoreMock(noTransactionsState));
+      mockUseTransactionsStore.getState = jest.fn(() => noTransactionsState);
 
       renderTransactionsScreen();
 
@@ -201,10 +235,12 @@ describe('TransactionsScreen', () => {
     });
 
     it('shows empty state when no transactions exist', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      const emptyState = {
         ...defaultTransactionsState,
         transactions: [],
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(emptyState));
+      mockUseTransactionsStore.getState = jest.fn(() => emptyState);
 
       renderTransactionsScreen();
 
@@ -238,12 +274,14 @@ describe('TransactionsScreen', () => {
     it('calls setFilters and fetchTransactions when filter changes', async () => {
       const setFilters = jest.fn();
       const fetchTransactions = jest.fn().mockResolvedValue(true);
-
-      mockUseTransactionsStore.mockReturnValue({
+      const filterState = {
         ...defaultTransactionsState,
         setFilters,
         fetchTransactions,
-      });
+      };
+
+      mockUseTransactionsStore.mockImplementation(createStoreMock(filterState));
+      mockUseTransactionsStore.getState = jest.fn(() => filterState);
 
       renderTransactionsScreen();
 
@@ -262,12 +300,14 @@ describe('TransactionsScreen', () => {
     it('clears type filter when "All" is pressed', async () => {
       const setFilters = jest.fn();
       const fetchTransactions = jest.fn().mockResolvedValue(true);
-
-      mockUseTransactionsStore.mockReturnValue({
+      const filterState = {
         ...defaultTransactionsState,
         setFilters,
         fetchTransactions,
-      });
+      };
+
+      mockUseTransactionsStore.mockImplementation(createStoreMock(filterState));
+      mockUseTransactionsStore.getState = jest.fn(() => filterState);
 
       renderTransactionsScreen();
 
@@ -285,12 +325,14 @@ describe('TransactionsScreen', () => {
     it('calls setFilters with EXPENSE when Expenses chip is pressed', async () => {
       const setFilters = jest.fn();
       const fetchTransactions = jest.fn().mockResolvedValue(true);
-
-      mockUseTransactionsStore.mockReturnValue({
+      const filterState = {
         ...defaultTransactionsState,
         setFilters,
         fetchTransactions,
-      });
+      };
+
+      mockUseTransactionsStore.mockImplementation(createStoreMock(filterState));
+      mockUseTransactionsStore.getState = jest.fn(() => filterState);
 
       renderTransactionsScreen();
 
@@ -309,11 +351,13 @@ describe('TransactionsScreen', () => {
   describe('Initial Data Fetch', () => {
     it('fetches accounts on mount if not loaded', async () => {
       const fetchAccounts = jest.fn().mockResolvedValue(true);
-      mockUseAccountsStore.mockReturnValue({
+      const emptyAccountsState = {
         ...defaultAccountsState,
         accounts: [],
         fetchAccounts,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(emptyAccountsState));
+      mockUseAccountsStore.getState = jest.fn(() => emptyAccountsState);
 
       renderTransactionsScreen();
 
@@ -325,12 +369,14 @@ describe('TransactionsScreen', () => {
     it('sets account filter and fetches transactions after accounts load', async () => {
       const setFilters = jest.fn();
       const fetchTransactions = jest.fn().mockResolvedValue(true);
-
-      mockUseTransactionsStore.mockReturnValue({
+      const stateWithFns = {
         ...defaultTransactionsState,
         setFilters,
         fetchTransactions,
-      });
+      };
+
+      mockUseTransactionsStore.mockImplementation(createStoreMock(stateWithFns));
+      mockUseTransactionsStore.getState = jest.fn(() => stateWithFns);
 
       renderTransactionsScreen();
 

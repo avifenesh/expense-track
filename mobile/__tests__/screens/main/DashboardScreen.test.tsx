@@ -5,16 +5,29 @@ import { DashboardScreen } from '../../../src/screens/main/DashboardScreen';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useBudgetsStore } from '../../../src/stores/budgetsStore';
+import { useOfflineQueueStore } from '../../../src/stores/offlineQueueStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
 
 // Mock stores
 jest.mock('../../../src/stores/accountsStore');
 jest.mock('../../../src/stores/transactionsStore');
 jest.mock('../../../src/stores/budgetsStore');
+jest.mock('../../../src/stores/offlineQueueStore');
 
-const mockUseAccountsStore = useAccountsStore as jest.MockedFunction<typeof useAccountsStore>;
-const mockUseTransactionsStore = useTransactionsStore as jest.MockedFunction<typeof useTransactionsStore>;
-const mockUseBudgetsStore = useBudgetsStore as jest.MockedFunction<typeof useBudgetsStore>;
+const mockUseAccountsStore = useAccountsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseTransactionsStore = useTransactionsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseBudgetsStore = useBudgetsStore as unknown as jest.Mock & { getState: jest.Mock };
+const mockUseOfflineQueueStore = useOfflineQueueStore as unknown as jest.Mock & { getState: jest.Mock };
+
+// Helper to create store mock that handles selectors
+function createStoreMock<T extends object>(state: T): (selector?: (s: T) => unknown) => unknown {
+  return (selector?: (s: T) => unknown) => {
+    if (typeof selector === 'function') {
+      return selector(state);
+    }
+    return state;
+  };
+}
 
 const mockAccount = {
   id: 'acc-1',
@@ -140,11 +153,23 @@ describe('DashboardScreen', () => {
     reset: jest.fn(),
   };
 
+  const defaultOfflineQueueState = {
+    items: [],
+    isSyncing: false,
+    syncError: null,
+    processQueue: jest.fn(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAccountsStore.mockReturnValue(defaultAccountsState);
-    mockUseTransactionsStore.mockReturnValue(defaultTransactionsState);
-    mockUseBudgetsStore.mockReturnValue(defaultBudgetsState);
+    mockUseAccountsStore.mockImplementation(createStoreMock(defaultAccountsState));
+    mockUseAccountsStore.getState = jest.fn(() => defaultAccountsState);
+    mockUseTransactionsStore.mockImplementation(createStoreMock(defaultTransactionsState));
+    mockUseTransactionsStore.getState = jest.fn(() => defaultTransactionsState);
+    mockUseBudgetsStore.mockImplementation(createStoreMock(defaultBudgetsState));
+    mockUseBudgetsStore.getState = jest.fn(() => defaultBudgetsState);
+    mockUseOfflineQueueStore.mockImplementation(createStoreMock(defaultOfflineQueueState));
+    mockUseOfflineQueueStore.getState = jest.fn(() => defaultOfflineQueueState);
   });
 
   describe('Rendering', () => {
@@ -183,31 +208,35 @@ describe('DashboardScreen', () => {
   });
 
   describe('Loading State', () => {
-    it('shows loading spinner during initial load', async () => {
-      mockUseAccountsStore.mockReturnValue({
+    it('shows loading skeleton during initial load', async () => {
+      const loadingState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: true,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(loadingState));
+      mockUseAccountsStore.getState = jest.fn(() => loadingState);
 
       renderDashboardScreen();
 
       await waitFor(() => {
-        expect(screen.getByText('Loading your finances...')).toBeTruthy();
+        expect(screen.getByTestId('dashboard.skeleton')).toBeTruthy();
       });
     });
   });
 
   describe('Error State', () => {
     it('shows error message when accounts fail to load', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const errorState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
         error: 'Failed to load accounts',
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(errorState));
+      mockUseAccountsStore.getState = jest.fn(() => errorState);
 
       renderDashboardScreen();
 
@@ -218,13 +247,15 @@ describe('DashboardScreen', () => {
     });
 
     it('shows retry button on error', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const errorState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
         error: 'Network error',
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(errorState));
+      mockUseAccountsStore.getState = jest.fn(() => errorState);
 
       renderDashboardScreen();
 
@@ -235,14 +266,16 @@ describe('DashboardScreen', () => {
 
     it('calls refresh handlers when retry is pressed', async () => {
       const fetchAccounts = jest.fn().mockResolvedValue(true);
-      mockUseAccountsStore.mockReturnValue({
+      const errorState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
         error: 'Network error',
         fetchAccounts,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(errorState));
+      mockUseAccountsStore.getState = jest.fn(() => errorState);
 
       renderDashboardScreen();
 
@@ -260,12 +293,14 @@ describe('DashboardScreen', () => {
 
   describe('Empty States', () => {
     it('shows no accounts message when user has no accounts', async () => {
-      mockUseAccountsStore.mockReturnValue({
+      const emptyState = {
         ...defaultAccountsState,
         accounts: [],
         activeAccountId: null,
         isLoading: false,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(emptyState));
+      mockUseAccountsStore.getState = jest.fn(() => emptyState);
 
       renderDashboardScreen();
 
@@ -276,11 +311,13 @@ describe('DashboardScreen', () => {
     });
 
     it('shows no transactions message when month has no transactions', async () => {
-      mockUseTransactionsStore.mockReturnValue({
+      const emptyTransactionsState = {
         ...defaultTransactionsState,
         transactions: [],
         total: 0,
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(emptyTransactionsState));
+      mockUseTransactionsStore.getState = jest.fn(() => emptyTransactionsState);
 
       renderDashboardScreen();
 
@@ -322,10 +359,12 @@ describe('DashboardScreen', () => {
   describe('Month Navigation', () => {
     it('calls setFilters when month changes', async () => {
       const setFilters = jest.fn();
-      mockUseTransactionsStore.mockReturnValue({
+      const stateWithSetFilters = {
         ...defaultTransactionsState,
         setFilters,
-      });
+      };
+      mockUseTransactionsStore.mockImplementation(createStoreMock(stateWithSetFilters));
+      mockUseTransactionsStore.getState = jest.fn(() => stateWithSetFilters);
 
       renderDashboardScreen();
 
@@ -344,10 +383,12 @@ describe('DashboardScreen', () => {
   describe('Initial Data Fetch', () => {
     it('fetches accounts on mount', async () => {
       const fetchAccounts = jest.fn().mockResolvedValue(true);
-      mockUseAccountsStore.mockReturnValue({
+      const stateWithFetch = {
         ...defaultAccountsState,
         fetchAccounts,
-      });
+      };
+      mockUseAccountsStore.mockImplementation(createStoreMock(stateWithFetch));
+      mockUseAccountsStore.getState = jest.fn(() => stateWithFetch);
 
       renderDashboardScreen();
 
