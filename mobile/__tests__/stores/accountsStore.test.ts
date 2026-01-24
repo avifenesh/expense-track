@@ -315,7 +315,7 @@ describe('accountsStore', () => {
       expect(state.accounts.find((a) => a.id === 'acc-2')).toBeUndefined();
     });
 
-    it('selects first remaining account if active account is deleted', async () => {
+    it('preserves activeAccountId when deleting non-active account', async () => {
       useAccountsStore.setState({
         accounts: [
           { ...mockAccount, type: 'PERSONAL' },
@@ -325,24 +325,11 @@ describe('accountsStore', () => {
       });
       mockApiDelete.mockResolvedValue({ deleted: true });
 
-      await useAccountsStore.getState().deleteAccount('acc-1');
+      await useAccountsStore.getState().deleteAccount('acc-2');
 
       const state = useAccountsStore.getState();
-      expect(state.activeAccountId).toBe('acc-2');
-    });
-
-    it('sets activeAccountId to null if no accounts remain after delete', async () => {
-      useAccountsStore.setState({
-        accounts: [{ ...mockAccount, type: 'PERSONAL' }],
-        activeAccountId: null,
-      });
-      mockApiDelete.mockResolvedValue({ deleted: true });
-
-      await useAccountsStore.getState().deleteAccount('acc-1');
-
-      const state = useAccountsStore.getState();
-      expect(state.activeAccountId).toBeNull();
-      expect(state.accounts).toHaveLength(0);
+      expect(state.activeAccountId).toBe('acc-1');
+      expect(state.accounts).toHaveLength(1);
     });
 
     it('handles API errors', async () => {

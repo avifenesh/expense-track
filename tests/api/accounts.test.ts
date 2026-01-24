@@ -20,7 +20,7 @@ vi.mock('@/lib/prisma', () => ({
       count: vi.fn(),
     },
     transaction: {
-      aggregate: vi.fn(),
+      groupBy: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -51,7 +51,7 @@ const mockAccountFindMany = vi.mocked(prisma.account.findMany)
 const mockAccountFindFirst = vi.mocked(prisma.account.findFirst)
 const mockAccountUpdate = vi.mocked(prisma.account.update)
 const mockAccountCount = vi.mocked(prisma.account.count)
-const mockTransactionAggregate = vi.mocked(prisma.transaction.aggregate)
+const mockTransactionGroupBy = vi.mocked(prisma.transaction.groupBy)
 const mockUserFindUnique = vi.mocked(prisma.user.findUnique)
 
 describe('GET /api/v1/accounts', () => {
@@ -90,13 +90,8 @@ describe('GET /api/v1/accounts', () => {
     mockRequireJwtAuth.mockReturnValue(mockUser)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockAccountFindMany.mockResolvedValue(mockAccounts as unknown as any)
-    mockTransactionAggregate.mockResolvedValue({
-      _sum: { amount: null },
-      _count: { _all: 0 },
-      _avg: { amount: null },
-      _min: { amount: null },
-      _max: { amount: null },
-    })
+    // Default: no transactions, so empty groupBy result
+    mockTransactionGroupBy.mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -169,21 +164,11 @@ describe('GET /api/v1/accounts', () => {
 
     it('calculates balance correctly from transactions', async () => {
       mockAccountFindMany.mockResolvedValue([mockAccounts[0]] as never)
-      mockTransactionAggregate
-        .mockResolvedValueOnce({
-          _sum: { amount: mockDecimal(1000) },
-          _count: { _all: 5 },
-          _avg: { amount: null },
-          _min: { amount: null },
-          _max: { amount: null },
-        } as never)
-        .mockResolvedValueOnce({
-          _sum: { amount: mockDecimal(350) },
-          _count: { _all: 3 },
-          _avg: { amount: null },
-          _min: { amount: null },
-          _max: { amount: null },
-        } as never)
+      // groupBy returns aggregated results by accountId and type
+      mockTransactionGroupBy.mockResolvedValue([
+        { accountId: 'acc-1', type: 'INCOME', _sum: { amount: mockDecimal(1000) } },
+        { accountId: 'acc-1', type: 'EXPENSE', _sum: { amount: mockDecimal(350) } },
+      ] as never)
 
       const response = await GET(createRequest())
       const data = await response.json()

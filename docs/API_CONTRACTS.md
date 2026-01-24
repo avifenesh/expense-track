@@ -1389,7 +1389,7 @@ List user's accounts.
       {
         "id": "clx...",
         "name": "Personal",
-        "type": "PERSONAL",
+        "type": "SELF",
         "preferredCurrency": "USD",
         "color": "#4CAF50",
         "icon": "wallet",
@@ -1769,7 +1769,7 @@ Retrieves all accounts for the authenticated user with calculated balances.
       {
         "id": "clx...",
         "name": "Personal",
-        "type": "PERSONAL",
+        "type": "SELF",
         "preferredCurrency": "USD",
         "color": "#4CAF50",
         "icon": "wallet",
@@ -1826,7 +1826,7 @@ Update an account's name.
   "data": {
     "id": "clx...",
     "name": "New Account Name",
-    "type": "PERSONAL",
+    "type": "SELF",
     "preferredCurrency": "USD",
     "color": "#4CAF50",
     "icon": "wallet",

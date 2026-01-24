@@ -11,6 +11,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { AppStackScreenProps } from '../../navigation/types'
@@ -30,6 +31,10 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
+    useAccountsStore.getState().fetchAccounts()
+  }, [])
+
+  const onRefresh = useCallback(() => {
     useAccountsStore.getState().fetchAccounts()
   }, [])
 
@@ -232,6 +237,7 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={renderEmpty}
           testID="accounts.list"
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor="#38bdf8" />}
         />
       )}
 

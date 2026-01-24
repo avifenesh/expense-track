@@ -153,13 +153,9 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
       const { accounts, activeAccountId } = get();
       const remainingAccounts = accounts.filter((acc) => acc.id !== id);
 
-      const newActiveId = activeAccountId === id
-        ? (remainingAccounts.length > 0 ? remainingAccounts[0].id : null)
-        : activeAccountId;
-
       set({
         accounts: remainingAccounts,
-        activeAccountId: newActiveId,
+        activeAccountId,
         isLoading: false,
       });
       return true;

@@ -52,24 +52,28 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     })
 
-    const accountsWithBalance = await Promise.all(
-      accounts.map(async (account) => {
-        const [income, expense] = await Promise.all([
-          prisma.transaction.aggregate({
-            where: { accountId: account.id, type: 'INCOME', deletedAt: null },
-            _sum: { amount: true },
-          }),
-          prisma.transaction.aggregate({
-            where: { accountId: account.id, type: 'EXPENSE', deletedAt: null },
-            _sum: { amount: true },
-          }),
-        ])
-        return {
-          ...account,
-          balance: (income._sum.amount?.toNumber() || 0) - (expense._sum.amount?.toNumber() || 0),
-        }
-      })
-    )
+    if (accounts.length === 0) {
+      return successResponse({ accounts: [] })
+    }
+
+    const accountIds = accounts.map((acc) => acc.id)
+    const aggregates = await prisma.transaction.groupBy({
+      by: ['accountId', 'type'],
+      where: { accountId: { in: accountIds }, deletedAt: null },
+      _sum: { amount: true },
+    })
+
+    const balances = new Map<string, number>()
+    for (const { accountId, type, _sum } of aggregates) {
+      const amount = _sum.amount?.toNumber() || 0
+      const currentBalance = balances.get(accountId) || 0
+      balances.set(accountId, currentBalance + (type === 'INCOME' ? amount : -amount))
+    }
+
+    const accountsWithBalance = accounts.map((account) => ({
+      ...account,
+      balance: balances.get(account.id) || 0,
+    }))
 
     return successResponse({ accounts: accountsWithBalance })
   } catch (error) {
