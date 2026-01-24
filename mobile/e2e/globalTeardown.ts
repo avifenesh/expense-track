@@ -10,7 +10,7 @@ export default async function globalTeardown() {
   console.log('\n[GlobalTeardown] Cleaning up E2E test environment...\n')
 
   // 1. Run Detox global teardown first
-  const { default: detoxGlobalTeardown } = await import('detox/runners/jest/globalTeardown')
+  const { default: detoxGlobalTeardown } = await import('detox/runners/jest/globalTeardown.js')
   await detoxGlobalTeardown()
 
   // 2. Stop backend server

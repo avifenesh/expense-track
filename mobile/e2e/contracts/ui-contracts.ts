@@ -35,9 +35,16 @@ export const LoginScreen = {
   async enterPassword(password: string): Promise<void> {
     await element(by.id('login.passwordInput')).clearText();
     await element(by.id('login.passwordInput')).typeText(password);
+    // Dismiss keyboard after typing password
+    await element(by.id('login.passwordInput')).tapReturnKey();
   },
 
   async tapSubmit(): Promise<void> {
+    // Scroll to make sure button is visible (keyboard may have pushed it off-screen)
+    await waitFor(element(by.id('login.submitButton')))
+      .toBeVisible()
+      .whileElement(by.id('login.screen'))
+      .scroll(100, 'down');
     await element(by.id('login.submitButton')).tap();
   },
 
@@ -55,8 +62,7 @@ export const LoginScreen = {
 
   async login(email: string, password: string): Promise<void> {
     await this.enterEmail(email);
-    await this.enterPassword(password);
-    await element(by.id('login.screen')).tap(); // Dismiss keyboard
+    await this.enterPassword(password); // Dismisses keyboard via tapReturnKey
     await this.tapSubmit();
   },
 
@@ -365,14 +371,28 @@ export const AddTransactionScreen = {
   async enterAmount(amount: string): Promise<void> {
     await element(by.id('addTransaction.amountInput')).clearText();
     await element(by.id('addTransaction.amountInput')).typeText(amount);
+    // Dismiss keyboard after typing amount
+    await element(by.id('addTransaction.amountInput')).tapReturnKey();
   },
 
   async enterDescription(description: string): Promise<void> {
+    // Scroll to make description input visible
+    await waitFor(element(by.id('addTransaction.descriptionInput')))
+      .toBeVisible()
+      .whileElement(by.id('addTransaction.screen'))
+      .scroll(100, 'down');
     await element(by.id('addTransaction.descriptionInput')).clearText();
     await element(by.id('addTransaction.descriptionInput')).typeText(description);
+    // Dismiss keyboard after typing description
+    await element(by.id('addTransaction.descriptionInput')).tapReturnKey();
   },
 
   async tapSubmit(): Promise<void> {
+    // Scroll to make sure button is visible (keyboard may have pushed it off-screen)
+    await waitFor(element(by.id('addTransaction.submitButton')))
+      .toBeVisible()
+      .whileElement(by.id('addTransaction.screen'))
+      .scroll(100, 'down');
     await element(by.id('addTransaction.submitButton')).tap();
   },
 
