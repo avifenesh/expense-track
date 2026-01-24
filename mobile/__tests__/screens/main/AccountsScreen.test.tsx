@@ -5,7 +5,6 @@ import { Alert } from 'react-native'
 import { AccountsScreen } from '../../../src/screens/main/AccountsScreen'
 import { useAccountsStore } from '../../../src/stores/accountsStore'
 import { useAuthStore } from '../../../src/stores/authStore'
-import { useToastStore } from '../../../src/stores/toastStore'
 import type { AppStackScreenProps } from '../../../src/navigation/types'
 
 // Mock toast store
