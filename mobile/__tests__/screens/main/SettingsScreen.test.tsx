@@ -9,7 +9,14 @@ import { useAuthStore } from '../../../src/stores';
 import { createMockStoreImplementation } from '../../utils/mockZustandStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
 
-jest.mock('../../../src/services/biometric');
+jest.mock('../../../src/services/biometric', () => ({
+  ...jest.requireActual('../../../src/services/biometric'),
+  checkBiometricCapability: jest.fn(),
+  isBiometricEnabled: jest.fn(),
+  enableBiometric: jest.fn(),
+  disableBiometric: jest.fn(),
+  authenticateWithBiometric: jest.fn(),
+}));
 jest.mock('../../../src/services/auth');
 // Mock the stores index (which the component imports from)
 jest.mock('../../../src/stores', () => ({

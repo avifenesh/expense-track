@@ -1,18 +1,67 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor, act } from '@testing-library/react-native';
 import App from '../App';
 import { tokenStorage } from '../src/lib/tokenStorage';
 import { networkStatus } from '../src/services/networkStatus';
-import { useOfflineQueueStore } from '../src/stores/offlineQueueStore';
 
 jest.mock('../src/lib/tokenStorage');
 jest.mock('../src/services/auth');
 jest.mock('../src/services/networkStatus');
-jest.mock('../src/stores/offlineQueueStore');
+
+// Mock offline queue store with getState
+const mockLoadFromStorage = jest.fn().mockResolvedValue(undefined);
+const mockProcessQueue = jest.fn();
+
+jest.mock('../src/stores/offlineQueueStore', () => ({
+  useOfflineQueueStore: Object.assign(
+    jest.fn((selector) => {
+      const state = {
+        items: [],
+        isSyncing: false,
+        syncError: null,
+        loadFromStorage: mockLoadFromStorage,
+        processQueue: mockProcessQueue,
+      };
+      return typeof selector === 'function' ? selector(state) : state;
+    }),
+    {
+      getState: jest.fn(() => ({
+        items: [],
+        isSyncing: false,
+        syncError: null,
+        loadFromStorage: mockLoadFromStorage,
+        processQueue: mockProcessQueue,
+      })),
+    }
+  ),
+}));
+
+// Mock auth store
+const mockInitialize = jest.fn();
+jest.mock('../src/stores/authStore', () => ({
+  useAuthStore: Object.assign(
+    jest.fn((selector) => {
+      const state = {
+        accessToken: null,
+        user: null,
+        isLoading: false,
+        initialize: mockInitialize,
+      };
+      return typeof selector === 'function' ? selector(state) : state;
+    }),
+    {
+      getState: jest.fn(() => ({
+        accessToken: null,
+        user: null,
+        isLoading: false,
+        initialize: mockInitialize,
+      })),
+    }
+  ),
+}));
 
 const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 const mockNetworkStatus = networkStatus as jest.Mocked<typeof networkStatus>;
-const mockOfflineQueueStore = useOfflineQueueStore as unknown as { getState: jest.Mock };
 
 // Mock the auth state hook to avoid async issues
 jest.mock('../src/hooks/useAuthState', () => ({
@@ -25,12 +74,12 @@ jest.mock('../src/hooks/useAuthState', () => ({
 }));
 
 describe('App', () => {
-  const mockLoadFromStorage = jest.fn();
-  const mockProcessQueue = jest.fn();
   const mockUnsubscribe = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+
     mockTokenStorage.getStoredCredentials.mockResolvedValue({
       accessToken: null,
       refreshToken: null,
@@ -46,10 +95,14 @@ describe('App', () => {
     mockNetworkStatus.initialize = jest.fn();
     mockNetworkStatus.subscribe = jest.fn().mockReturnValue(mockUnsubscribe);
     mockNetworkStatus.cleanup = jest.fn();
-    mockOfflineQueueStore.getState = jest.fn().mockReturnValue({
-      loadFromStorage: mockLoadFromStorage,
-      processQueue: mockProcessQueue,
+    mockNetworkStatus.getStatus = jest.fn().mockReturnValue({
+      isConnected: true,
+      isInternetReachable: true,
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('renders the navigation container', async () => {
@@ -77,62 +130,119 @@ describe('App', () => {
   });
 
   describe('network monitoring initialization', () => {
-    it('initializes network monitoring on mount', () => {
+    it('initializes network monitoring on mount', async () => {
       render(<App />);
+
+      // Need to wait for async initialization
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
 
       expect(mockNetworkStatus.initialize).toHaveBeenCalled();
     });
 
-    it('loads offline queue from storage on mount', () => {
+    it('loads offline queue from storage on mount', async () => {
       render(<App />);
+
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
 
       expect(mockLoadFromStorage).toHaveBeenCalled();
     });
 
-    it('subscribes to network status changes', () => {
+    it('subscribes to network status changes', async () => {
       render(<App />);
+
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
 
       expect(mockNetworkStatus.subscribe).toHaveBeenCalledWith(expect.any(Function));
     });
 
-    it('processes queue when network becomes available', () => {
+    it('processes queue when network becomes available', async () => {
       render(<App />);
 
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
+
+      // The subscription callback should trigger queue processing
+      expect(mockNetworkStatus.subscribe).toHaveBeenCalled();
+
+      // Simulate network becoming available through the callback
       const subscribeCallback = mockNetworkStatus.subscribe.mock.calls[0][0];
-      subscribeCallback({ isConnected: true, isInternetReachable: true });
+      mockProcessQueue.mockClear();
+
+      await act(async () => {
+        subscribeCallback({ isConnected: true, isInternetReachable: true });
+        jest.advanceTimersByTime(600); // debounce timeout is 500ms
+      });
 
       expect(mockProcessQueue).toHaveBeenCalled();
     });
 
-    it('processes queue when connected with null reachability', () => {
+    it('processes queue when connected with null reachability', async () => {
       render(<App />);
 
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
+
       const subscribeCallback = mockNetworkStatus.subscribe.mock.calls[0][0];
-      subscribeCallback({ isConnected: true, isInternetReachable: null });
+      mockProcessQueue.mockClear();
+
+      await act(async () => {
+        subscribeCallback({ isConnected: true, isInternetReachable: null });
+        jest.advanceTimersByTime(600);
+      });
 
       expect(mockProcessQueue).toHaveBeenCalled();
     });
 
-    it('does not process queue when offline', () => {
+    it('does not process queue when offline', async () => {
       render(<App />);
 
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
+
       const subscribeCallback = mockNetworkStatus.subscribe.mock.calls[0][0];
-      subscribeCallback({ isConnected: false, isInternetReachable: false });
+      mockProcessQueue.mockClear();
+
+      await act(async () => {
+        subscribeCallback({ isConnected: false, isInternetReachable: false });
+        jest.advanceTimersByTime(600);
+      });
 
       expect(mockProcessQueue).not.toHaveBeenCalled();
     });
 
-    it('does not process queue when connected but not reachable', () => {
+    it('does not process queue when connected but not reachable', async () => {
       render(<App />);
 
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
+
       const subscribeCallback = mockNetworkStatus.subscribe.mock.calls[0][0];
-      subscribeCallback({ isConnected: true, isInternetReachable: false });
+      mockProcessQueue.mockClear();
+
+      await act(async () => {
+        subscribeCallback({ isConnected: true, isInternetReachable: false });
+        jest.advanceTimersByTime(600);
+      });
 
       expect(mockProcessQueue).not.toHaveBeenCalled();
     });
 
-    it('cleans up on unmount', () => {
+    it('cleans up on unmount', async () => {
       const { unmount } = render(<App />);
+
+      await act(async () => {
+        await jest.runAllTimersAsync();
+      });
 
       unmount();
 
