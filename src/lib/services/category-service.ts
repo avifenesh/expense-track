@@ -15,6 +15,13 @@ export interface ArchiveCategoryInput {
   isArchived: boolean
 }
 
+export interface UpdateCategoryInput {
+  id: string
+  userId: string
+  name: string
+  color?: string | null
+}
+
 /** Result type for createOrReactivateCategory */
 export type CreateCategoryResult =
   | { success: true; category: Awaited<ReturnType<typeof prisma.category.create>>; reactivated: boolean }
@@ -128,4 +135,50 @@ export async function getCategoryById(id: string, userId?: string) {
     return await prisma.category.findFirst({ where: { id, userId } })
   }
   return await prisma.category.findUnique({ where: { id } })
+}
+
+/** Result type for updateCategory */
+export type UpdateCategoryResult =
+  | { success: true; category: Awaited<ReturnType<typeof prisma.category.update>> }
+  | { success: false; error: 'DUPLICATE' }
+
+/**
+ * Update a category's name and/or color
+ * Checks for duplicate names within the same user and type
+ */
+export async function updateCategory(input: UpdateCategoryInput): Promise<UpdateCategoryResult> {
+  // Get the existing category to check its type
+  const existing = await prisma.category.findFirst({
+    where: { id: input.id, userId: input.userId },
+  })
+
+  if (!existing) {
+    throw new ServiceError('Category not found', 'NOT_FOUND', 404)
+  }
+
+  // Check for duplicate name (same user, same type, different id, not archived)
+  const duplicate = await prisma.category.findFirst({
+    where: {
+      userId: input.userId,
+      name: input.name,
+      type: existing.type,
+      id: { not: input.id },
+      isArchived: false,
+    },
+  })
+
+  if (duplicate) {
+    return { success: false, error: 'DUPLICATE' }
+  }
+
+  // Update the category
+  const category = await prisma.category.update({
+    where: { id: input.id, userId: input.userId },
+    data: {
+      name: input.name,
+      color: input.color !== undefined ? input.color : undefined,
+    },
+  })
+
+  return { success: true, category }
 }
