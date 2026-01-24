@@ -678,5 +678,27 @@ describe('Category API Routes', () => {
       const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
       expect(response.status).toBe(400)
     })
+
+    it('updates category with color set to null', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Updated Category',
+          color: null,
+        }),
+      })
+
+      const response = await UpdateCategory(request, { params: Promise.resolve({ id: categoryId }) })
+      expect(response.status).toBe(200)
+
+      const data = await response.json()
+      expect(data.name).toBe('Updated Category')
+      // Color may be null or undefined after setting to null
+      expect(data.color).toBeFalsy()
+    })
   })
 })

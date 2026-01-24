@@ -128,8 +128,8 @@ export const updateCategoryApiSchema = z.object({
   color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g., #FF0000)')
-    .optional()
-    .nullable(),
+    .nullish()
+    .transform((v) => v ?? undefined),
 })
 
 export type UpdateCategoryApiInput = z.infer<typeof updateCategoryApiSchema>

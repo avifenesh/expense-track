@@ -88,16 +88,16 @@ interface EditModalState {
   visible: boolean
   category: Category | null
   name: string
-  color: string
+  color: string | null
   error: string | null
   isSubmitting: boolean
 }
 
 type EditModalAction =
-  | { type: 'OPEN'; payload: { category: Category; color: string } }
+  | { type: 'OPEN'; payload: { category: Category } }
   | { type: 'CLOSE' }
   | { type: 'SET_NAME'; payload: string }
-  | { type: 'SET_COLOR'; payload: string }
+  | { type: 'SET_COLOR'; payload: string | null }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_SUBMITTING'; payload: boolean }
 
@@ -105,7 +105,7 @@ const editInitialState: EditModalState = {
   visible: false,
   category: null,
   name: '',
-  color: '',
+  color: null,
   error: null,
   isSubmitting: false,
 }
@@ -117,7 +117,7 @@ function editReducer(state: EditModalState, action: EditModalAction): EditModalS
         visible: true,
         category: action.payload.category,
         name: action.payload.category.name,
-        color: action.payload.color,
+        color: action.payload.category.color,
         error: null,
         isSubmitting: false,
       }
@@ -198,8 +198,7 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
   }, [createState.name, createState.type, createState.color, handleCreateCancel])
 
   const handleEditPress = useCallback((category: Category) => {
-    const color = category.color || (category.type === 'EXPENSE' ? EXPENSE_COLORS[0] : INCOME_COLORS[0])
-    editDispatch({ type: 'OPEN', payload: { category, color } })
+    editDispatch({ type: 'OPEN', payload: { category } })
   }, [])
 
   const handleEditCancel = useCallback(() => {
@@ -375,16 +374,26 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
   }, [isLoading, activeTab, handleOpenCreate])
 
   const renderColorPicker = (
-    selectedColor: string,
-    onSelect: (color: string) => void,
+    selectedColor: string | null,
+    onSelect: (color: string | null) => void,
     type: TransactionType,
-    testIdPrefix: string
+    testIdPrefix: string,
+    showNoColor = false
   ) => {
     const palette = getColorPalette(type)
     return (
       <View style={styles.colorPickerContainer}>
         <Text style={styles.inputLabel}>Color</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorPicker}>
+          {showNoColor && (
+            <Pressable
+              style={[styles.colorOption, styles.noColorOption, !selectedColor && styles.colorOptionSelected]}
+              onPress={() => onSelect(null)}
+              testID={`${testIdPrefix}.color.none`}
+            >
+              <Text style={styles.noColorText}>✕</Text>
+            </Pressable>
+          )}
           {palette.map((color) => (
             <Pressable
               key={color}
@@ -561,7 +570,8 @@ export function CategoriesScreen({ navigation }: AppStackScreenProps<'Categories
                 editState.color,
                 (color) => editDispatch({ type: 'SET_COLOR', payload: color }),
                 editState.category.type,
-                'categories.editModal'
+                'categories.editModal',
+                true
               )}
 
             <View style={styles.modalActions}>
@@ -885,6 +895,16 @@ const styles = StyleSheet.create({
   },
   colorOptionSelected: {
     borderColor: '#fff',
+  },
+  noColorOption: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noColorText: {
+    color: '#94a3b8',
+    fontSize: 16,
+    fontWeight: '600',
   },
   modalActions: {
     flexDirection: 'row',

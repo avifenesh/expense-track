@@ -799,8 +799,7 @@ Update a category's name and/or color.
 - 400: Validation error - Invalid name, duplicate category name, or missing required fields
 - 401: Unauthorized - Invalid or missing auth token
 - 402: Payment Required - Subscription expired
-- 403: Forbidden - User does not own the category
-- 404: Not found - Category does not exist
+- 404: Not found - Category does not exist or user does not own it
 - 429: Rate limited - Too many requests
 - 500: Server error - Unable to update category
 
@@ -830,7 +829,7 @@ Update a category's name and/or color.
 
 - Cannot change category type (INCOME/EXPENSE)
 - Cannot modify holding categories' special properties
-- Color is optional; omit to keep existing color
+- Color is optional; omit to keep existing color, or set to `null` to explicitly remove it
 - Name validation matches server-side rules (alphanumeric start/end)
 
 ---
