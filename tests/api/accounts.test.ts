@@ -88,10 +88,8 @@ describe('GET /api/v1/accounts', () => {
     vi.clearAllMocks()
     resetAllRateLimits()
     mockRequireJwtAuth.mockReturnValue(mockUser)
-    // Cast to unknown since we're mocking the select result, not full Account type
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockAccountFindMany.mockResolvedValue(mockAccounts as unknown as any)
-    // Mock transaction aggregate for balance calculation
     mockTransactionAggregate.mockResolvedValue({
       _sum: { amount: null },
       _count: { _all: 0 },
@@ -171,7 +169,6 @@ describe('GET /api/v1/accounts', () => {
 
     it('calculates balance correctly from transactions', async () => {
       mockAccountFindMany.mockResolvedValue([mockAccounts[0]] as never)
-      // First call for income, second for expense (per account)
       mockTransactionAggregate
         .mockResolvedValueOnce({
           _sum: { amount: mockDecimal(1000) },
@@ -335,11 +332,9 @@ describe('PUT /api/v1/accounts/[id]', () => {
     })
 
     it('returns 400 when name already exists for another account', async () => {
-      // First findFirst returns the account to update
       mockAccountFindFirst
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mockResolvedValueOnce(mockAccount as any)
-        // Second findFirst checks for duplicate name
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mockResolvedValueOnce({ ...mockAccount, id: 'acc-2' } as any)
 

@@ -21,7 +21,6 @@ import { serverLogger } from '@/lib/server-logger'
  * @throws {500} Server error - Unable to fetch accounts
  */
 export async function GET(request: NextRequest) {
-  // 1. Authenticate with JWT
   let user
   try {
     user = requireJwtAuth(request)
@@ -29,14 +28,12 @@ export async function GET(request: NextRequest) {
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 
-  // 2. Rate limit check
   const rateLimit = checkRateLimit(user.userId)
   if (!rateLimit.allowed) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
 
-  // 3. Fetch accounts for user
   try {
     const accounts = await prisma.account.findMany({
       where: {
@@ -55,7 +52,6 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     })
 
-    // 4. Calculate balance for each account
     const accountsWithBalance = await Promise.all(
       accounts.map(async (account) => {
         const [income, expense] = await Promise.all([

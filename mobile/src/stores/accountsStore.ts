@@ -153,7 +153,6 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
       const { accounts, activeAccountId } = get();
       const remainingAccounts = accounts.filter((acc) => acc.id !== id);
 
-      // If the deleted account was active, select the first remaining account
       const newActiveId = activeAccountId === id
         ? (remainingAccounts.length > 0 ? remainingAccounts[0].id : null)
         : activeAccountId;
@@ -186,5 +185,4 @@ export const useAccountsStore = create<AccountsStore>((set, get) => ({
   },
 }));
 
-// Register for cleanup on logout
 registerStoreReset(() => useAccountsStore.getState().reset());

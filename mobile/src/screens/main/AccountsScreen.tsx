@@ -96,7 +96,6 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
   }, [editingAccount, editName, handleEditCancel])
 
   const handleDeletePress = useCallback((account: Account) => {
-    // Cannot delete active account
     if (account.id === activeAccountId) {
       Alert.alert(
         'Cannot Delete',
@@ -106,7 +105,6 @@ export function AccountsScreen({ navigation }: AppStackScreenProps<'Accounts'>) 
       return
     }
 
-    // Cannot delete only account
     if (accounts.length <= 1) {
       Alert.alert(
         'Cannot Delete',

@@ -34,7 +34,6 @@ const updateAccountSchema = z.object({
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: accountId } = await params
 
-  // 1. Authenticate with JWT
   let user
   try {
     user = requireJwtAuth(request)
@@ -42,18 +41,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 
-  // 2. Rate limit check
   const rateLimit = checkRateLimit(user.userId)
   if (!rateLimit.allowed) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
 
-  // 3. Subscription check
   const subscriptionError = await checkSubscription(user.userId)
   if (subscriptionError) return subscriptionError
 
-  // 4. Parse and validate body
   let body
   try {
     body = await request.json()
@@ -66,7 +62,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
   }
 
-  // 5. Verify account ownership
   const account = await prisma.account.findFirst({
     where: {
       id: accountId,
@@ -79,7 +74,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return notFoundError('Account not found')
   }
 
-  // 6. Check for duplicate name (account name must be unique per user)
   const existingWithName = await prisma.account.findFirst({
     where: {
       userId: user.userId,
@@ -93,7 +87,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return validationError({ name: ['An account with this name already exists'] })
   }
 
-  // 7. Update account
   try {
     const updatedAccount = await prisma.account.update({
       where: { id: accountId },
@@ -135,7 +128,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: accountId } = await params
 
-  // 1. Authenticate with JWT
   let user
   try {
     user = requireJwtAuth(request)
@@ -143,18 +135,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 
-  // 2. Rate limit check
   const rateLimit = checkRateLimit(user.userId)
   if (!rateLimit.allowed) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
 
-  // 3. Subscription check
   const subscriptionError = await checkSubscription(user.userId)
   if (subscriptionError) return subscriptionError
 
-  // 4. Verify account ownership
   const account = await prisma.account.findFirst({
     where: {
       id: accountId,
@@ -167,18 +156,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return notFoundError('Account not found')
   }
 
-  // 5. Get user to check active account
   const dbUser = await prisma.user.findUnique({
     where: { id: user.userId },
     select: { activeAccountId: true },
   })
 
-  // 6. Cannot delete active account
   if (dbUser?.activeAccountId === accountId) {
     return validationError({ id: ['Cannot delete the active account. Switch to another account first.'] })
   }
 
-  // 7. Count user's accounts to ensure at least one remains
   const accountCount = await prisma.account.count({
     where: {
       userId: user.userId,
@@ -190,7 +176,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return validationError({ id: ['Cannot delete your only account.'] })
   }
 
-  // 8. Soft delete the account
   try {
     await prisma.account.update({
       where: { id: accountId },

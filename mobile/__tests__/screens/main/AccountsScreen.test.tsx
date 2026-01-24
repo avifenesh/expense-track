@@ -146,8 +146,6 @@ describe('AccountsScreen', () => {
     it('displays negative balance correctly', () => {
       renderAccountsScreen()
 
-      // Negative balance is formatted with EUR currency (German locale uses comma as decimal)
-      // EUR locale formats -250 as "-250,00 €" or similar
       expect(screen.getByText(/-250/)).toBeTruthy()
     })
 
@@ -176,7 +174,6 @@ describe('AccountsScreen', () => {
 
   describe('Error Display', () => {
     it('displays error message when present', async () => {
-      // Mock fetchAccounts to simulate an error state after fetch
       const mockFetchAccounts = jest.fn().mockImplementation(() => {
         useAccountsStore.setState({
           accounts: mockAccounts,
@@ -384,8 +381,8 @@ describe('AccountsScreen', () => {
 
     it('disables delete button when only one account exists', async () => {
       useAccountsStore.setState({
-        accounts: [mockAccounts[0]], // Only one account
-        activeAccountId: null, // Not the active one
+        accounts: [mockAccounts[0]],
+        activeAccountId: null,
         isLoading: false,
         error: null,
       })
@@ -435,14 +432,12 @@ describe('AccountsScreen', () => {
 
       fireEvent.press(screen.getByTestId('accounts.delete.acc-2'))
 
-      // Get the onPress callback from the destructive button
       const alertCall = (Alert.alert as jest.Mock).mock.calls[0]
       const deleteButton = alertCall[2].find((btn: { text: string }) => btn.text === 'Delete')
       await deleteButton.onPress()
 
       expect(mockDeleteAccount).toHaveBeenCalledWith('acc-2')
 
-      // Restore
       useAccountsStore.getState = originalGetState
     })
   })
