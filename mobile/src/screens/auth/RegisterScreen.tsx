@@ -190,6 +190,7 @@ export function RegisterScreen({ navigation }: AuthScreenProps<'Register'>) {
                   secureTextEntry
                   autoCapitalize="none"
                   autoComplete="password-new"
+                  textContentType="none"
                   editable={!isLoading}
                   testID="register.passwordInput"
                 />

@@ -78,7 +78,10 @@ describe('Transaction E2E Tests', () => {
       // Enter amount (enterAmount dismisses keyboard via tapReturnKey)
       await AddTransactionScreen.enterAmount('42.50');
 
-      // Enter description (enterDescription dismisses keyboard via tapReturnKey)
+      // Select a category (required field)
+      await AddTransactionScreen.selectCategory('Groceries');
+
+      // Enter description (enterDescription dismisses keyboard by tapping outside)
       await AddTransactionScreen.enterDescription(testDescription);
 
       // Submit (tapSubmit scrolls to button first)

@@ -374,6 +374,7 @@ export const AddTransactionScreen = {
     accountPicker: 'addTransaction.accountPicker',
     categoryPicker: 'addTransaction.categoryPicker',
     submitButton: 'addTransaction.submitButton',
+    categoryPrefix: 'addTransaction.category.',
   },
 
   async waitForScreen(): Promise<void> {
@@ -387,6 +388,13 @@ export const AddTransactionScreen = {
     await element(by.id('addTransaction.amountInput')).typeText(amount);
     // Dismiss keyboard after typing amount
     await element(by.id('addTransaction.amountInput')).tapReturnKey();
+  },
+
+  async selectCategory(categoryName: string): Promise<void> {
+    // Category testIDs are formatted as: addTransaction.category.{lowercase-hyphenated-name}
+    // e.g., "Dining Out" -> "addTransaction.category.dining-out"
+    const testId = `addTransaction.category.${categoryName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
+    await element(by.id(testId)).tap();
   },
 
   async enterDescription(description: string): Promise<void> {
