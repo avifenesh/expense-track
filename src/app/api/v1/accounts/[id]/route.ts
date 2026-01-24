@@ -104,6 +104,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return successResponse(updatedAccount)
   } catch (error) {
+    // Handle Prisma unique constraint violation (P2002)
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return validationError({ name: ['An account with this name already exists'] })
+    }
     serverLogger.error('Failed to update account', {
       action: 'PUT /api/v1/accounts/[id]',
       userId: user.userId,
@@ -118,7 +122,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
  *
  * Soft deletes an account. Cannot delete the only account or the active account.
  *
- * @returns {Object} { success: true }
+ * @returns {Object} { deleted: true }
  * @throws {400} Validation error - Cannot delete only/active account
  * @throws {401} Unauthorized - Invalid or missing auth token
  * @throws {404} Not found - Account not found or not owned by user

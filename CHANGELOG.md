@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Edit account names with validation
   - Delete accounts with safety checks (cannot delete only/active account)
   - Pull-to-refresh functionality
-  - Loading states with skeleton components
+  - Loading states with activity indicator
   - Integration with accountsStore for real-time data
   - Navigation from Settings screen
 - API: Enhanced GET /api/v1/accounts endpoint (#302)

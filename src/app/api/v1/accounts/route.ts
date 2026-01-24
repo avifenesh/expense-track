@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     const accountsWithBalance = accounts.map((account) => ({
       ...account,
-      balance: balances.get(account.id) || 0,
+      balance: Math.round((balances.get(account.id) || 0) * 100) / 100,
     }))
 
     return successResponse({ accounts: accountsWithBalance })

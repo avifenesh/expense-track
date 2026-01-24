@@ -68,6 +68,7 @@ const renderAccountsScreen = () => {
 describe('AccountsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.restoreAllMocks()
 
     // Set up auth store with test user
     useAuthStore.setState({
