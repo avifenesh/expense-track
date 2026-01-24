@@ -15,6 +15,6 @@ export default async function globalSetup() {
   }
 
   // 2. Run Detox global setup
-  const { default: detoxGlobalSetup } = await import('detox/runners/jest/globalSetup')
+  const { default: detoxGlobalSetup } = await import('detox/runners/jest/globalSetup.js')
   await detoxGlobalSetup()
 }
