@@ -75,6 +75,9 @@ describe('Transaction E2E Tests', () => {
       // Enter amount
       await AddTransactionScreen.enterAmount('42.50');
 
+      // Dismiss keyboard to reveal categories below
+      await element(by.id('addTransaction.screen')).tap();
+
       // Select a category (required for validation)
       // Categories are seeded by setupTestData() - tap Groceries
       await waitFor(element(by.id('addTransaction.category.groceries')))
