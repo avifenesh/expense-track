@@ -87,23 +87,36 @@ describe('Transaction E2E Tests', () => {
       // Submit (tapSubmit scrolls to button first)
       await AddTransactionScreen.tapSubmit();
 
-      // Wait for navigation back to dashboard - wait for FAB which is always visible
-      // (toast may cover part of dashboard.screen, failing 75% visibility check)
-      await waitFor(element(by.id('dashboard.addTransactionFab')))
-        .toBeVisible()
-        .withTimeout(TIMEOUTS.LONG);
+      // Wait for navigation back to dashboard
+      // Disable sync because app is busy with network requests (transaction refresh, toast)
+      await device.disableSynchronization();
+      try {
+        await waitFor(element(by.id('dashboard.addTransactionFab')))
+          .toBeVisible()
+          .withTimeout(TIMEOUTS.LONG);
 
-      // Transaction should appear in the list
-      await waitFor(element(by.text('$42.50')))
-        .toBeVisible()
-        .withTimeout(TIMEOUTS.MEDIUM);
+        // Transaction should appear in the list
+        await waitFor(element(by.text('$42.50')))
+          .toBeVisible()
+          .withTimeout(TIMEOUTS.MEDIUM);
+      } finally {
+        await device.enableSynchronization();
+      }
     });
   });
 
   describe('Transaction List', () => {
     it('displays recent transactions on dashboard', async () => {
       // Dashboard should have transactions list
-      await expect(element(by.id('dashboard.recentTransactionsSection'))).toBeVisible();
+      // Disable sync as dashboard may be refreshing data
+      await device.disableSynchronization();
+      try {
+        await waitFor(element(by.id('dashboard.recentTransactionsSection')))
+          .toBeVisible()
+          .withTimeout(TIMEOUTS.MEDIUM);
+      } finally {
+        await device.enableSynchronization();
+      }
     });
 
     it('taps on transaction to view details', async () => {
