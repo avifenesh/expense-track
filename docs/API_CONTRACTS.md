@@ -332,7 +332,7 @@ Reset password using token.
 
 ---
 
-### DELETE /api/v1/auth/account (PLANNED)
+### DELETE /api/v1/auth/account (PLANNED - Issue #243)
 
 > ⚠️ **Not yet implemented.** Planned for GDPR compliance.
 
@@ -365,7 +365,7 @@ Delete user account (GDPR compliance).
 
 ---
 
-### GET /api/v1/auth/export (PLANNED)
+### GET /api/v1/auth/export (PLANNED - Issue #244)
 
 > ⚠️ **Not yet implemented.** Planned for GDPR compliance.
 
@@ -1253,7 +1253,7 @@ Delete a shared expense (owner only). Cannot delete if any participant has alrea
 
 ---
 
-### POST /api/v1/expenses/shares/[participantId]/remind (PLANNED)
+### POST /api/v1/expenses/shares/[participantId]/remind (PLANNED - Issue #189)
 
 > ⚠️ **Not yet implemented.** Planned for future release.
 
@@ -1493,7 +1493,7 @@ Mark onboarding as complete.
 
 ---
 
-### POST /api/v1/onboarding/skip (PLANNED)
+### POST /api/v1/onboarding/skip (PLANNED - Issue #199)
 
 > ⚠️ **Not yet implemented.** Planned for future release.
 

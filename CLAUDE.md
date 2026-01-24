@@ -38,28 +38,6 @@ Every PR receives automatic reviews from 4 agents: **Copilot**, **Claude**, **Ge
 - Treat all reviewer feedback as required changes, not suggestions
 - If a comment seems incorrect, explain why in your response before dismissing
 
-## Transformation Roadmap
-
-5-sprint plan to transform from personal app to multi-tenant SaaS with mobile:
-
-- **Sprint 1**: Production readiness - 90%+ test coverage, bug fixes, UX polish - COMPLETE
-- **Sprint 2**: Multi-tenant - user auth, data isolation, subscriptions, data migration - COMPLETE
-- **Sprint 3**: Mobile - React Native app (Expo), REST API, iOS/Android deployment - 92% COMPLETE
-  - Core screens (Dashboard, Transactions, Budgets, Sharing, Settings, Profile, AddBudget, ShareExpense): DONE
-  - Mobile API client & Zustand stores: DONE
-  - REST API endpoints: DONE (8 minor gaps remain - see issues #196, #197, #199, #204, #205, #243, #244, #189)
-  - E2E testing infrastructure: IN PROGRESS (PR #295)
-  - Remaining: CategoriesScreen (#301), AccountsScreen (#302), Settings wiring (#303), GET /holdings & /recurring, Detox Android CI
-- **Sprint 4**: Production Infrastructure - External services, caching, monitoring, performance - 15% COMPLETE
-  - Paddle billing integration: DONE (#165)
-  - Rate limiting: DONE (implemented across all API endpoints)
-  - Server logging infrastructure: DONE (server-logger.ts)
-  - Subscription validation middleware: DONE
-  - Remaining: Redis session storage, email service, OAuth providers, analytics, performance optimization, backups, staging env
-- **Sprint 5**: Launch Prep - Legal compliance, support infrastructure, app store submissions
-
-Issues tracked in GitHub Projects.
-
 ## Commands
 
 ```bash

@@ -188,7 +188,7 @@ Server actions and REST API endpoints audit for Issue #64.
 
 ## REST Endpoints Status
 
-> **Updated**: 2026-01-21 (Reality Check Scan)
+> **Updated**: 2026-01-24
 
 ### Expense Sharing Endpoints
 
@@ -199,7 +199,7 @@ Server actions and REST API endpoints audit for Issue #64.
 ✅ POST   /api/v1/expenses/share              - Share expense with users
 ✅ PATCH  /api/v1/expenses/shares/[id]/paid   - Mark share as paid
 ✅ POST   /api/v1/expenses/shares/[id]/decline - Decline share
-⚠️  DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense (Issue #187)
+✅ DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense
 ✅ GET    /api/v1/users/lookup                - Lookup user by email
 ⚠️  POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder (Issue #189)
 ```
@@ -286,22 +286,17 @@ Returns 402 with error response:
 
 ## Summary
 
-### Current State (Updated 2026-01-21)
+### Current State
 - **Web app**: Fully functional with 43 server actions
 - **REST API**: 40+ route handlers covering core CRUD operations and most features
 - **Authentication**: JWT-based for mobile, cookie-based for web
-- **Mobile App**: 80% complete - core screens and stores implemented
 
 ### Remaining API Gaps
-1. **Expense Sharing**: DELETE share, user lookup, payment reminders (#187, #188, #189)
-2. **Read Endpoints**: holdings list, recurring list, dashboard summary (#191, #196, #197)
-3. **Onboarding**: skip endpoint (#199)
-4. **Misc**: exchange rate refresh, set balance (#204, #205)
-
-### Sprint 4 Priorities
-1. Complete remaining expense sharing endpoints
-2. Add dashboard summary endpoint for mobile
-3. Add subscription validation to more REST endpoints
+1. **Expense Sharing**: Payment reminders (#189)
+2. **Read Endpoints**: Holdings list, recurring list (#196, #197)
+3. **Onboarding**: Skip endpoint (#199)
+4. **Misc**: Exchange rate refresh, set balance (#204, #205)
+5. **GDPR**: Account deletion, data export (#243, #244)
 
 ### Notes
 - Server actions in `shared.ts` are internal utilities, not user-facing actions
