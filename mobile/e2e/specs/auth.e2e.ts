@@ -41,8 +41,7 @@ describe('Auth E2E Tests', () => {
   describe('Login Flow', () => {
     it('logs in with valid credentials and navigates to dashboard', async () => {
       await LoginScreen.enterEmail(TEST_USER.email);
-      await LoginScreen.enterPassword(TEST_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
+      await LoginScreen.enterPassword(TEST_USER.password); // Dismisses keyboard
       await LoginScreen.tapSubmit();
 
       // Should navigate to dashboard (user already completed onboarding)
@@ -52,8 +51,7 @@ describe('Auth E2E Tests', () => {
 
     it('shows error for invalid credentials', async () => {
       await LoginScreen.enterEmail(INVALID_USER.email);
-      await LoginScreen.enterPassword(INVALID_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
+      await LoginScreen.enterPassword(INVALID_USER.password); // Dismisses keyboard
       await LoginScreen.tapSubmit();
 
       // Should show error message
@@ -63,8 +61,7 @@ describe('Auth E2E Tests', () => {
     });
 
     it('shows validation error for empty email', async () => {
-      await LoginScreen.enterPassword(TEST_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
+      await LoginScreen.enterPassword(TEST_USER.password); // Dismisses keyboard
       await LoginScreen.tapSubmit();
 
       // Should show email validation error
@@ -106,6 +103,12 @@ describe('Auth E2E Tests', () => {
       await expect(element(by.id('register.displayNameInput'))).toBeVisible();
       await expect(element(by.id('register.emailInput'))).toBeVisible();
       await expect(element(by.id('register.passwordInput'))).toBeVisible();
+
+      // Submit button may be below fold - scroll to see it
+      await waitFor(element(by.id('register.submitButton')))
+        .toBeVisible()
+        .whileElement(by.id('register.screen'))
+        .scroll(300, 'down');
       await expect(element(by.id('register.submitButton'))).toBeVisible();
       await expect(element(by.id('register.loginLink'))).toBeVisible();
     });
@@ -121,9 +124,8 @@ describe('Auth E2E Tests', () => {
 
       await RegisterScreen.enterDisplayName('New Test User');
       await RegisterScreen.enterEmail(uniqueEmail);
-      await RegisterScreen.enterPassword('TestPassword123!');
-      await element(by.id('register.screen')).tap(); // Dismiss keyboard
-      await RegisterScreen.tapSubmit();
+      await RegisterScreen.enterPassword('TestPassword123!'); // Dismisses keyboard
+      await RegisterScreen.tapSubmit(); // Scrolls to button and taps
 
       // Test users (@test.local) are auto-verified, so they go directly to login
       await LoginScreen.waitForScreen();
@@ -136,9 +138,8 @@ describe('Auth E2E Tests', () => {
 
       await RegisterScreen.enterDisplayName('Test User');
       await RegisterScreen.enterEmail('test@test.local');
-      await RegisterScreen.enterPassword('weak'); // Too short, missing requirements
-      await element(by.id('register.screen')).tap(); // Dismiss keyboard
-      await RegisterScreen.tapSubmit();
+      await RegisterScreen.enterPassword('weak'); // Too short, missing requirements - dismisses keyboard
+      await RegisterScreen.tapSubmit(); // Scrolls to button and taps
 
       // Should show password requirements
       await waitFor(element(by.id('register.passwordRequirements')))

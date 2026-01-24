@@ -114,10 +114,11 @@ export const RegisterScreen = {
 
   async tapSubmit(): Promise<void> {
     // Scroll to make sure button is visible (keyboard may have pushed it off-screen)
+    // Use larger scroll distance as register form is longer than login
     await waitFor(element(by.id('register.submitButton')))
       .toBeVisible()
       .whileElement(by.id('register.screen'))
-      .scroll(100, 'down');
+      .scroll(300, 'down');
     await element(by.id('register.submitButton')).tap();
   },
 
@@ -275,14 +276,54 @@ export const AddTransactionScreen = {
   async enterAmount(amount: string): Promise<void> {
     await element(by.id('addTransaction.amountInput')).clearText();
     await element(by.id('addTransaction.amountInput')).typeText(amount);
+    // Dismiss keyboard after typing to allow scrolling to next field
+    await element(by.id('addTransaction.amountInput')).tapReturnKey();
+  },
+
+  async selectCategory(categoryName: string): Promise<void> {
+    // Category testID is normalized: lowercased and special chars replaced with hyphens
+    const normalizedName = categoryName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+    const testId = `addTransaction.category.${normalizedName}`;
+    // Categories should be visible after amount input - scroll if needed
+    await waitFor(element(by.id(testId)))
+      .toBeVisible()
+      .whileElement(by.id('addTransaction.scrollView'))
+      .scroll(200, 'down');
+    await element(by.id(testId)).tap();
+  },
+
+  async selectFirstCategory(): Promise<void> {
+    // Wait for categories to load (they should be visible after entering amount)
+    await waitFor(element(by.id('addTransaction.categoryGrid')))
+      .toBeVisible()
+      .withTimeout(10000);
+    // Select "Groceries" which is the first expense category
+    // Category testID format: addTransaction.category.{name-lowercased-with-hyphens}
+    await waitFor(element(by.id('addTransaction.category.groceries')))
+      .toBeVisible()
+      .withTimeout(5000);
+    await element(by.id('addTransaction.category.groceries')).tap();
   },
 
   async enterDescription(description: string): Promise<void> {
+    // Scroll within the ScrollView to make description input visible
+    // The scrollable element is addTransaction.scrollView, not the screen
+    await waitFor(element(by.id('addTransaction.descriptionInput')))
+      .toBeVisible()
+      .whileElement(by.id('addTransaction.scrollView'))
+      .scroll(300, 'down');
     await element(by.id('addTransaction.descriptionInput')).clearText();
     await element(by.id('addTransaction.descriptionInput')).typeText(description);
+    // Dismiss keyboard after typing description
+    await element(by.id('addTransaction.descriptionInput')).tapReturnKey();
   },
 
   async tapSubmit(): Promise<void> {
+    // Submit button is in a fixed footer - should be visible without scrolling
+    // Just wait for it to be visible and tap
+    await waitFor(element(by.id('addTransaction.submitButton')))
+      .toBeVisible()
+      .withTimeout(5000);
     await element(by.id('addTransaction.submitButton')).tap();
   },
 
