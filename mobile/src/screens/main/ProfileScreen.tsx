@@ -12,20 +12,16 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { AppStackScreenProps } from '../../navigation/types'
-import { useAuthStore } from '../../stores'
+import { useAuthStore, useAccountsStore } from '../../stores'
 import { updateProfile, updateCurrency, getProfile } from '../../services/auth'
 import { ApiError } from '../../services/api'
-
-const CURRENCIES = [
-  { code: 'USD', label: 'US Dollar (USD)' },
-  { code: 'EUR', label: 'Euro (EUR)' },
-  { code: 'ILS', label: 'Israeli Shekel (ILS)' },
-] as const
+import { CURRENCIES } from '../../constants/currencies'
 
 export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
   const user = useAuthStore((state) => state.user)
   const accessToken = useAuthStore((state) => state.accessToken)
   const updateUser = useAuthStore((state) => state.updateUser)
+  const fetchAccounts = useAccountsStore((state) => state.fetchAccounts)
 
   const [displayName, setDisplayName] = useState(user?.displayName || '')
   const [selectedCurrency, setSelectedCurrency] = useState('USD')
@@ -53,7 +49,10 @@ export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
         setInitialDisplayName(profile.displayName || '')
         setSelectedCurrency(profile.preferredCurrency || 'USD')
         setInitialCurrency(profile.preferredCurrency || 'USD')
-      } catch {
+      } catch (err) {
+        // Log error for debugging, but fall back to auth store data
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch user profile:', err)
         // Fall back to auth store data if profile fetch fails
         if (user?.displayName) {
           setDisplayName(user.displayName)
@@ -113,6 +112,8 @@ export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
       if (currencyChanged) {
         await updateCurrency(selectedCurrency, accessToken)
         setInitialCurrency(selectedCurrency)
+        // Refetch accounts to ensure currency changes are reflected globally
+        fetchAccounts()
       }
 
       setSuccessMessage('Profile updated successfully')
@@ -199,7 +200,7 @@ export function ProfileScreen({ navigation }: AppStackScreenProps<'Profile'>) {
                   value={displayName}
                   onChangeText={(text) => {
                     setDisplayName(text)
-                    if (displayNameError) validateDisplayName(text)
+                    validateDisplayName(text)
                   }}
                   onBlur={() => validateDisplayName(displayName)}
                   placeholder="Enter your display name"
