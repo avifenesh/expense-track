@@ -1836,6 +1836,68 @@ Get current user's subscription state and Paddle checkout settings.
 
 ## Accounts Endpoints
 
+### POST /api/v1/accounts
+
+Create a new account for the authenticated user.
+
+**Auth:** Bearer token required
+
+**Request:**
+
+```json
+{
+  "name": "Savings Account",
+  "type": "SELF",
+  "color": "#4CAF50",
+  "preferredCurrency": "USD"
+}
+```
+
+**Validation:**
+
+- `name`: Required. Min 1 character, max 50 characters. Must be unique across user's non-deleted accounts.
+- `type`: Required. One of: SELF, PARTNER, OTHER.
+- `color`: Optional. Hex color code (e.g., #4CAF50).
+- `preferredCurrency`: Optional. One of: USD, EUR, ILS.
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "name": "Savings Account",
+    "type": "SELF",
+    "preferredCurrency": "USD",
+    "color": "#4CAF50",
+    "icon": null,
+    "description": null
+  }
+}
+```
+
+**Errors:**
+
+- 400: Validation error - Invalid input or duplicate account name
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to create account
+
+**Example Error (400 - Duplicate name):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "name": ["An account with this name already exists"]
+  }
+}
+```
+
+---
+
 ### GET /api/v1/accounts
 
 Retrieves all accounts for the authenticated user with calculated balances.
@@ -1879,7 +1941,7 @@ Retrieves all accounts for the authenticated user with calculated balances.
 
 ### PUT /api/v1/accounts/[id]
 
-Update an account's name.
+Update an account's name, type, color, or preferred currency.
 
 **Auth:** Bearer token required
 
@@ -1891,13 +1953,19 @@ Update an account's name.
 
 ```json
 {
-  "name": "New Account Name"
+  "name": "New Account Name",
+  "type": "PARTNER",
+  "color": "#FF5722",
+  "preferredCurrency": "EUR"
 }
 ```
 
 **Validation:**
 
 - `name`: Required. Min 1 character, max 50 characters.
+- `type`: Optional. One of: SELF, PARTNER, OTHER.
+- `color`: Optional. Hex color code. Set to null to remove.
+- `preferredCurrency`: Optional. One of: USD, EUR, ILS. Set to null to remove.
 - Account must be owned by the authenticated user.
 - Name must be unique across user's non-deleted accounts.
 
@@ -1909,9 +1977,9 @@ Update an account's name.
   "data": {
     "id": "clx...",
     "name": "New Account Name",
-    "type": "SELF",
-    "preferredCurrency": "USD",
-    "color": "#4CAF50",
+    "type": "PARTNER",
+    "preferredCurrency": "EUR",
+    "color": "#FF5722",
     "icon": "wallet",
     "description": "My personal account"
   }
