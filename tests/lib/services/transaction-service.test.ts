@@ -503,7 +503,19 @@ describe('transaction-service.ts', () => {
 
       const result = await getTransactionById('txn-1')
 
-      expect(prisma.transaction.findFirst).toHaveBeenCalledWith({ where: { id: 'txn-1', deletedAt: null } })
+      expect(prisma.transaction.findFirst).toHaveBeenCalledWith({
+        where: { id: 'txn-1', deletedAt: null },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              color: true,
+            },
+          },
+        },
+      })
       expect(result).toEqual(mockTransaction)
     })
 
