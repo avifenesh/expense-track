@@ -413,15 +413,14 @@ export const AddTransactionScreen = {
   },
 
   async tapSubmit(): Promise<void> {
-    // Try to tap submit button - it's in a fixed footer so should be visible
-    // If not visible, scroll the content area first
-    try {
-      await element(by.id('addTransaction.submitButton')).tap();
-    } catch {
-      // If tap fails, scroll to bring button into view and retry
-      await element(by.id('addTransaction.scrollView')).scrollTo('bottom');
-      await element(by.id('addTransaction.submitButton')).tap();
-    }
+    // Dismiss keyboard first by tapping outside any input
+    await element(by.id('addTransaction.screen')).tap();
+    // Scroll to bring submit button into view (above keyboard if still visible)
+    await waitFor(element(by.id('addTransaction.submitButton')))
+      .toBeVisible()
+      .whileElement(by.id('addTransaction.scrollView'))
+      .scroll(200, 'down');
+    await element(by.id('addTransaction.submitButton')).tap();
   },
 
   async assertVisible(): Promise<void> {
