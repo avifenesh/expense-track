@@ -51,6 +51,7 @@ export class BackendManager {
           ...process.env,
           PORT: String(this.port),
           HOSTNAME: '127.0.0.1',
+          E2E_TEST: 'true',
         },
         stdio: ['ignore', 'pipe', 'pipe'],
         // On Windows, we need shell to handle npm properly
