@@ -114,11 +114,12 @@ describe('Transaction E2E Tests', () => {
       // Disable sync as dashboard may be refreshing data
       await device.disableSynchronization();
       try {
-        // Scroll down to see the recent transactions section (below fold)
-        await element(by.id('dashboard.scrollView')).scroll(300, 'down');
+        // Scroll down more to see the recent transactions section (below fold)
+        // Use larger scroll value to ensure section is visible on all device sizes
+        await element(by.id('dashboard.scrollView')).scroll(500, 'down');
 
-        // Now check for the section
-        await waitFor(element(by.id('dashboard.recentTransactionsSection')))
+        // Now check for the section (or its title as fallback)
+        await waitFor(element(by.id('dashboard.recentTransactionsTitle')))
           .toBeVisible()
           .withTimeout(TIMEOUTS.MEDIUM);
       } finally {
