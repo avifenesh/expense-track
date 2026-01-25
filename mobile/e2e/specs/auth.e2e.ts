@@ -46,8 +46,14 @@ describe('Auth E2E Tests', () => {
       await LoginScreen.tapSubmit();
 
       // Should navigate to dashboard (user already completed onboarding)
-      await DashboardScreen.waitForScreen();
-      await expect(element(by.id('dashboard.screen'))).toBeVisible();
+      // Disable sync because dashboard fetches data continuously
+      await device.disableSynchronization();
+      try {
+        await DashboardScreen.waitForScreen();
+        await expect(element(by.id('dashboard.screen'))).toBeVisible();
+      } finally {
+        await device.enableSynchronization();
+      }
     });
 
     it('shows error for invalid credentials', async () => {
