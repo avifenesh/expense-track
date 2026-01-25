@@ -96,7 +96,6 @@ export async function getTransactionById(id: string, userId?: string) {
       ...(userId && { account: { userId } }),
     },
     include: {
-      account: userId ? true : undefined,
       category: {
         select: {
           id: true,

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET as GetTransactions, POST as CreateTransaction } from '@/app/api/v1/transactions/route'
-import { PUT as UpdateTransaction, DELETE as DeleteTransaction } from '@/app/api/v1/transactions/[id]/route'
+import { GET as GetTransaction, PUT as UpdateTransaction, DELETE as DeleteTransaction } from '@/app/api/v1/transactions/[id]/route'
 import { POST as CreateRequest } from '@/app/api/v1/transactions/requests/route'
 import { POST as ApproveRequest } from '@/app/api/v1/transactions/requests/[id]/approve/route'
 import { POST as RejectRequest } from '@/app/api/v1/transactions/requests/[id]/reject/route'
@@ -378,6 +378,109 @@ describe('Transaction API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.data.transactions.length).toBeGreaterThanOrEqual(1)
+    })
+  })
+
+  describe('GET /api/v1/transactions/[id]', () => {
+    let transactionId: string
+
+    beforeEach(async () => {
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+      const transaction = await prisma.transaction.create({
+        data: {
+          accountId,
+          categoryId,
+          type: 'EXPENSE',
+          amount: 75,
+          currency: 'USD',
+          date: now,
+          month: monthStart,
+          description: 'TEST_GetSingleTransaction',
+        },
+      })
+      transactionId = transaction.id
+    })
+
+    it('returns transaction with valid JWT and user ownership', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions/${transactionId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransaction(request, { params: Promise.resolve({ id: transactionId }) })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.data).toEqual(
+        expect.objectContaining({
+          id: transactionId,
+          accountId,
+          categoryId,
+          type: 'EXPENSE',
+          amount: '75',
+          currency: 'USD',
+          isRecurring: false,
+          category: expect.objectContaining({
+            id: categoryId,
+            name: expect.any(String),
+            type: expect.any(String),
+          }),
+        })
+      )
+    })
+
+    it('returns 401 with missing token', async () => {
+      const request = new NextRequest(`http://localhost/api/v1/transactions/${transactionId}`, {
+        method: 'GET',
+      })
+
+      const response = await GetTransaction(request, { params: Promise.resolve({ id: transactionId }) })
+      expect(response.status).toBe(401)
+    })
+
+    it('returns 404 for non-existent transaction', async () => {
+      const request = new NextRequest('http://localhost/api/v1/transactions/non-existent-id', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransaction(request, { params: Promise.resolve({ id: 'non-existent-id' }) })
+      expect(response.status).toBe(404)
+    })
+
+    it('returns 404 for transaction owned by another user', async () => {
+      // Create a transaction in the other account (not owned by test user)
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      const otherCategory = await prisma.category.upsert({
+        where: { userId_name_type: { userId: 'approver-user', name: 'TEST_ApproverCategory', type: 'EXPENSE' } },
+        update: {},
+        create: { userId: 'approver-user', name: 'TEST_ApproverCategory', type: 'EXPENSE' },
+      })
+      const otherTransaction = await prisma.transaction.create({
+        data: {
+          accountId: otherAccountId,
+          categoryId: otherCategory.id,
+          type: 'EXPENSE',
+          amount: 100,
+          currency: 'USD',
+          date: now,
+          month: monthStart,
+          description: 'TEST_OtherUserTransaction',
+        },
+      })
+
+      const request = new NextRequest(`http://localhost/api/v1/transactions/${otherTransaction.id}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${validToken}` },
+      })
+
+      const response = await GetTransaction(request, { params: Promise.resolve({ id: otherTransaction.id }) })
+      // Should return 404 (not 403) to avoid leaking existence of transaction
+      expect(response.status).toBe(404)
     })
   })
 
