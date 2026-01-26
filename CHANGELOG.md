@@ -100,6 +100,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Returns subscription state (TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED)
   - Includes Paddle checkout configuration and pricing details
   - Comprehensive test suite with 90%+ coverage
+- Mobile: subscriptionStore for client-side subscription state management (#318)
+  - New `stores/subscriptionStore.ts` Zustand store for subscription state
+  - New `lib/subscriptionPersistence.ts` for AsyncStorage caching
+  - Manages subscription status (TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED)
+  - Smart caching with 5-minute TTL to reduce API load
+  - Instant app start with cached data and background refresh
+  - Integrates with GET /api/v1/subscriptions endpoint
+  - Store registry integration for logout cleanup
+  - Comprehensive test suite with 95%+ coverage
 
 - Mobile: Skeleton loading components for all main screens (#227)
   - Base Skeleton component with animated pulsing opacity effect

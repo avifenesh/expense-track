@@ -46,14 +46,14 @@ __tests__/
     forms/       # Form component tests (FormButton, FormInput, FormSelect, FormCurrencyInput, FormDatePicker)
   contexts/        # Context tests (AuthContext)
   hooks/           # Hook tests (useAuthState)
-  lib/             # Utility tests (validation, tokenStorage)
+  lib/             # Utility tests (validation, tokenStorage, subscriptionPersistence)
   navigation/      # Navigation component tests (AuthStack, RootNavigator, TabIcon)
   screens/
     auth/          # Auth screen tests (Login, Register, ResetPassword, VerifyEmail)
     onboarding/    # Onboarding screen tests (Welcome, Currency, Categories, Budget, SampleData, Complete)
     main/          # Main app screen tests (Dashboard, Transactions, AddTransaction, EditTransaction, Budgets, AddBudget)
   services/        # Service tests (api, auth)
-  stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories, sharing)
+  stores/          # Zustand store tests (auth, accounts, transactions, budgets, categories, sharing, subscription)
 ```
 
 ## Project Structure
@@ -789,6 +789,7 @@ The app uses Zustand for state management with dedicated stores for each domain:
 - **budgetsStore** - Budget tracking and management
 - **categoriesStore** - Category management
 - **sharingStore** - Expense sharing and settlement tracking
+- **subscriptionStore** - Subscription status management with caching
 
 ### accountsStore
 
@@ -937,7 +938,87 @@ function SharingScreen() {
 - `POST /api/v1/expenses/shares/[participantId]/remind` - Send reminder
 - `GET /api/v1/users/lookup` - Lookup user by email
 
+### subscriptionStore
+
+Manages subscription status and access control with caching and persistence.
+
+**State:**
+```typescript
+{
+  status: SubscriptionStatus | null    // TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED
+  isActive: boolean                    // Overall active status
+  trialEndsAt: string | null           // Trial expiration date
+  currentPeriodEnd: string | null      // Current subscription period end
+  daysRemaining: number | null         // Days left in trial/period
+  canAccessApp: boolean                // Whether user can access app features
+  isLoading: boolean
+  error: string | null
+  lastFetched: number | null           // Timestamp of last fetch for cache TTL
+}
+```
+
+**Actions:**
+- `fetchSubscription()` - Load subscription status from API (with 5-minute cache)
+- `refresh()` - Force refresh subscription status bypassing cache
+- `loadFromCache()` - Load from AsyncStorage cache then background fetch
+- `clearError()` - Clear error state
+- `reset()` - Reset store to initial state and clear cache
+
+**Subscription Status Values:**
+- `TRIALING` - Active trial period
+- `ACTIVE` - Paid and active
+- `PAST_DUE` - Payment failed, grace period
+- `CANCELED` - Canceled, access until period end
+- `EXPIRED` - No longer has access
+
+**Usage:**
+```typescript
+import { useSubscriptionStore } from '@/stores';
+
+function SubscriptionGate() {
+  const {
+    canAccessApp,
+    status,
+    daysRemaining,
+    fetchSubscription,
+    isLoading
+  } = useSubscriptionStore();
+
+  useEffect(() => {
+    fetchSubscription();
+  }, [fetchSubscription]);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!canAccessApp) {
+    return <SubscriptionExpiredScreen />;
+  }
+
+  return <AppContent />;
+}
+```
+
+**API Integration:**
+- `GET /api/v1/subscriptions` - Fetch subscription status, checkout settings, and pricing
+
+**Persistence:**
+- Subscription data cached in AsyncStorage via `subscriptionPersistence.ts`
+- 5-minute TTL for cache - reduces unnecessary API calls
+- Cache loaded on app start with background refresh
+- Cache cleared on logout
+
+**Features:**
+- Smart caching with TTL to reduce API load
+- Instant app start with cached data
+- Background refresh after loading from cache
+- Automatic persistence after each fetch
+- Integration with store registry for logout cleanup
+
 See `docs/API_CONTRACTS.md` for detailed API documentation.
+
+---
 
 ## Skeleton Loading Components
 
