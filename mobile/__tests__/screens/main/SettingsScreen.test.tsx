@@ -1,10 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { Share, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SettingsScreen } from '../../../src/screens/main/SettingsScreen';
 import { AuthProvider } from '../../../src/contexts';
 import * as biometricService from '../../../src/services/biometric';
 import * as authService from '../../../src/services/auth';
+import { ApiError } from '../../../src/services/api';
 import { useAuthStore } from '../../../src/stores';
 import { createMockStoreImplementation } from '../../utils/mockZustandStore';
 import type { MainTabScreenProps } from '../../../src/navigation/types';
@@ -18,6 +20,9 @@ jest.mock('../../../src/services/biometric', () => ({
   authenticateWithBiometric: jest.fn(),
 }));
 jest.mock('../../../src/services/auth');
+
+jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
+jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 // Mock the stores index (which the component imports from)
 jest.mock('../../../src/stores', () => ({
   useAuthStore: jest.fn(),
@@ -453,6 +458,162 @@ describe('SettingsScreen', () => {
         expect(screen.queryByTestId('export-format-modal')).toBeNull();
       });
     });
+
+    it('exports data in JSON format and shares it', async () => {
+      const mockExportData = {
+        exportedAt: '2026-01-26T00:00:00Z',
+        user: { id: 'user-123', email: 'test@example.com' },
+        accounts: [],
+        transactions: [],
+      };
+      mockAuthService.exportUserData.mockResolvedValue(mockExportData);
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal.json')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('export-format-modal.json'));
+
+      await waitFor(() => {
+        expect(mockAuthService.exportUserData).toHaveBeenCalledWith('json', 'access-token-123');
+      });
+
+      await waitFor(() => {
+        expect(Share.share).toHaveBeenCalledWith({
+          message: JSON.stringify(mockExportData, null, 2),
+          title: 'balance-beacon-export.json',
+        });
+      });
+
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Your data has been exported successfully');
+    });
+
+    it('exports data in CSV format and shares it', async () => {
+      const mockCsvData = { format: 'csv' as const, data: 'id,name\n1,test' };
+      mockAuthService.exportUserData.mockResolvedValue(mockCsvData);
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal.csv')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('export-format-modal.csv'));
+
+      await waitFor(() => {
+        expect(mockAuthService.exportUserData).toHaveBeenCalledWith('csv', 'access-token-123');
+      });
+
+      await waitFor(() => {
+        expect(Share.share).toHaveBeenCalledWith({
+          message: 'id,name\n1,test',
+          title: 'balance-beacon-export.csv',
+        });
+      });
+    });
+
+    it('shows error alert when export fails with ApiError', async () => {
+      mockAuthService.exportUserData.mockRejectedValue(new ApiError('Rate limit exceeded', 429));
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal.json')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('export-format-modal.json'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Export Failed', 'Rate limit exceeded');
+      });
+    });
+
+    it('shows generic error when export fails with unknown error', async () => {
+      mockAuthService.exportUserData.mockRejectedValue(new Error('Network error'));
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal.json')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('export-format-modal.json'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Export Failed', 'Failed to export data');
+      });
+    });
+
+    it('shows error when no access token', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: null,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal.json')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('export-format-modal.json'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'You must be logged in to export data');
+      });
+    });
   });
 
   describe('Delete Account', () => {
@@ -581,6 +742,128 @@ describe('SettingsScreen', () => {
 
       await waitFor(() => {
         expect(screen.queryByTestId('delete-account-modal')).toBeNull();
+      });
+    });
+
+    it('deletes account when email matches and confirm is pressed', async () => {
+      mockAuthService.deleteAccount.mockResolvedValue({ message: 'Account deleted successfully' });
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal.email-input')).toBeTruthy();
+      });
+
+      fireEvent.changeText(screen.getByTestId('delete-account-modal.email-input'), 'test@example.com');
+
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('delete-account-modal.confirm');
+        expect(confirmButton.props.accessibilityState?.disabled).toBe(false);
+      });
+
+      fireEvent.press(screen.getByTestId('delete-account-modal.confirm'));
+
+      await waitFor(() => {
+        expect(mockAuthService.deleteAccount).toHaveBeenCalledWith('test@example.com', 'access-token-123');
+      });
+
+      await waitFor(() => {
+        expect(mockLogout).toHaveBeenCalled();
+      });
+
+      expect(Alert.alert).toHaveBeenCalledWith('Account Deleted', 'Your account has been permanently deleted');
+    });
+
+    it('shows error alert when delete fails with ApiError', async () => {
+      mockAuthService.deleteAccount.mockRejectedValue(new ApiError('Email confirmation does not match', 400));
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal.email-input')).toBeTruthy();
+      });
+
+      fireEvent.changeText(screen.getByTestId('delete-account-modal.email-input'), 'test@example.com');
+      fireEvent.press(screen.getByTestId('delete-account-modal.confirm'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Delete Failed', 'Email confirmation does not match');
+      });
+    });
+
+    it('shows generic error when delete fails with unknown error', async () => {
+      mockAuthService.deleteAccount.mockRejectedValue(new Error('Network error'));
+
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal.email-input')).toBeTruthy();
+      });
+
+      fireEvent.changeText(screen.getByTestId('delete-account-modal.email-input'), 'test@example.com');
+      fireEvent.press(screen.getByTestId('delete-account-modal.confirm'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Delete Failed', 'Failed to delete account');
+      });
+    });
+
+    it('shows error when no access token for delete', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: null,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal.email-input')).toBeTruthy();
+      });
+
+      fireEvent.changeText(screen.getByTestId('delete-account-modal.email-input'), 'test@example.com');
+      fireEvent.press(screen.getByTestId('delete-account-modal.confirm'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'You must be logged in to delete your account');
       });
     });
   });
