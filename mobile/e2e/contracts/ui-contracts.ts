@@ -550,17 +550,40 @@ export const DeleteAccountModal = {
 
   async assertConfirmDisabled(): Promise<void> {
     const attributes = await element(by.id('delete-account-modal.confirm')).getAttributes();
-    const isDisabled = (attributes as { enabled?: boolean }).enabled === false;
+    // Detox returns attributes differently on iOS vs Android
+    // iOS: enabled is undefined when disabled (or accessibilityState.disabled is true)
+    // Android: enabled is false
+    const attrs = attributes as {
+      enabled?: boolean;
+      accessibilityState?: { disabled?: boolean };
+    };
+    const isDisabled =
+      attrs.enabled === false ||
+      attrs.accessibilityState?.disabled === true ||
+      // iOS sometimes reports as enabled: undefined when disabled
+      (attrs.enabled === undefined && attrs.accessibilityState?.disabled !== false);
+
     if (!isDisabled) {
-      throw new Error('Expected confirm button to be disabled');
+      throw new Error(
+        `Expected confirm button to be disabled. Attributes: ${JSON.stringify(attributes)}`
+      );
     }
   },
 
   async assertConfirmEnabled(): Promise<void> {
     const attributes = await element(by.id('delete-account-modal.confirm')).getAttributes();
-    const isEnabled = (attributes as { enabled?: boolean }).enabled !== false;
+    const attrs = attributes as {
+      enabled?: boolean;
+      accessibilityState?: { disabled?: boolean };
+    };
+    const isEnabled =
+      attrs.enabled === true ||
+      (attrs.enabled !== false && attrs.accessibilityState?.disabled !== true);
+
     if (!isEnabled) {
-      throw new Error('Expected confirm button to be enabled');
+      throw new Error(
+        `Expected confirm button to be enabled. Attributes: ${JSON.stringify(attributes)}`
+      );
     }
   },
 };
