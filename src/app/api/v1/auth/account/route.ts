@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import {
   validationError,
   authError,
-  successResponse,
+  successResponseWithRateLimit,
   serverError,
   rateLimitError,
 } from '@/lib/api-helpers'
@@ -140,12 +140,13 @@ export async function DELETE(request: NextRequest) {
 
     serverLogger.info('User account deleted (GDPR)', {
       userId: user.id,
-      originalEmail: user.email,
     })
 
-    return successResponse({
-      message: 'Account deleted successfully',
-    })
+    return successResponseWithRateLimit(
+      { message: 'Account deleted successfully' },
+      auth.userId,
+      'account_deletion',
+    )
   } catch (error) {
     serverLogger.error('Account deletion failed', {
       error: error instanceof Error ? error.message : String(error),

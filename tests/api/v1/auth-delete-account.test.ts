@@ -24,6 +24,11 @@ vi.mock('@/lib/rate-limit', () => ({
   checkRateLimitTyped: vi.fn().mockReturnValue({ allowed: true, limit: 3, remaining: 2, resetAt: new Date() }),
   incrementRateLimitTyped: vi.fn(),
   resetAllRateLimits: vi.fn(),
+  getRateLimitHeaders: vi.fn().mockReturnValue({
+    'X-RateLimit-Limit': '3',
+    'X-RateLimit-Remaining': '2',
+    'X-RateLimit-Reset': '1234567890',
+  }),
 }))
 
 vi.mock('@/lib/paddle', () => ({
@@ -409,7 +414,6 @@ describe('DELETE /api/v1/auth/account', () => {
         'User account deleted (GDPR)',
         expect.objectContaining({
           userId: 'user-123',
-          originalEmail: 'test@example.com',
         }),
       )
     })
