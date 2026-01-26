@@ -51,7 +51,6 @@ export function ExportFormatModal({
       testID="export-format-modal"
     >
       <SafeAreaView style={styles.container} edges={['top']}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <Text style={styles.title}>Export Data</Text>
@@ -70,12 +69,10 @@ export function ExportFormatModal({
         </View>
 
         <View style={styles.content}>
-          {/* Description */}
           <Text style={styles.description}>
             Choose a format to export your data. You can share the exported file or save it to your device.
           </Text>
 
-          {/* Loading overlay */}
           {isExporting && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#38bdf8" testID="export-format-modal.loading" />
@@ -83,7 +80,6 @@ export function ExportFormatModal({
             </View>
           )}
 
-          {/* Format options */}
           {!isExporting && (
             <View style={styles.optionsContainer}>
               <Pressable
@@ -120,7 +116,6 @@ export function ExportFormatModal({
             </View>
           )}
 
-          {/* Info */}
           <View style={styles.infoContainer}>
             <Text style={styles.infoText}>
               Your export will include all your transactions, budgets, categories, accounts, and holdings.

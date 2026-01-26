@@ -49,7 +49,6 @@ export function DeleteAccountModal({
       testID="delete-account-modal"
     >
       <SafeAreaView style={styles.container} edges={['top']}>
-        {/* Header */}
         <View style={styles.header}>
           <Pressable
             style={styles.cancelButton}
@@ -68,7 +67,6 @@ export function DeleteAccountModal({
         </View>
 
         <View style={styles.content}>
-          {/* Warning */}
           <View style={styles.warningContainer}>
             <Text style={styles.warningTitle}>This action cannot be undone</Text>
             <Text style={styles.warningText}>
@@ -84,7 +82,6 @@ export function DeleteAccountModal({
             </View>
           </View>
 
-          {/* Email confirmation */}
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>
               To confirm, type your email address:
@@ -105,7 +102,6 @@ export function DeleteAccountModal({
             />
           </View>
 
-          {/* Delete button */}
           <Pressable
             style={[
               styles.deleteButton,

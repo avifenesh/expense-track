@@ -11,8 +11,6 @@ import { DeleteAccountModal } from '../../components/DeleteAccountModal'
 import { ApiError } from '../../services/api'
 
 export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks
   const biometricCapability = useAuthStore((state) => state.biometricCapability)
   const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled)
   const user = useAuthStore((state) => state.user)
@@ -21,8 +19,6 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBiometricLoading, setIsBiometricLoading] = useState(false)
   const [biometricError, setBiometricError] = useState<string | null>(null)
-
-  // Export/Delete state
   const [showExportModal, setShowExportModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
