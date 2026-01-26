@@ -33,12 +33,7 @@ export async function DELETE(request: NextRequest) {
       auth = requireJwtAuth(request)
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message === 'Token expired') {
-          return authError('Token expired')
-        }
-        if (error.message === 'Missing authorization token') {
-          return authError('Missing authorization token')
-        }
+        return authError(error.message)
       }
       return authError('Invalid token')
     }
