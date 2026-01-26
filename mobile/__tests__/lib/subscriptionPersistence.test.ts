@@ -63,9 +63,44 @@ describe('subscriptionPersistence', () => {
       expect(result).toBeNull();
     });
 
-    it('returns null when stored value is missing status', async () => {
+    it('returns null when stored value is missing required fields', async () => {
       mockAsyncStorage.getItem.mockResolvedValueOnce(
         JSON.stringify({ isActive: true, canAccessApp: true })
+      );
+
+      const result = await loadSubscription();
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when stored value is missing cachedAt', async () => {
+      mockAsyncStorage.getItem.mockResolvedValueOnce(
+        JSON.stringify({
+          status: 'TRIALING',
+          isActive: true,
+          canAccessApp: true,
+          trialEndsAt: null,
+          currentPeriodEnd: null,
+          daysRemaining: 14,
+        })
+      );
+
+      const result = await loadSubscription();
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when isActive is not boolean', async () => {
+      mockAsyncStorage.getItem.mockResolvedValueOnce(
+        JSON.stringify({
+          status: 'TRIALING',
+          isActive: 'true',
+          canAccessApp: true,
+          trialEndsAt: null,
+          currentPeriodEnd: null,
+          daysRemaining: 14,
+          cachedAt: 1706300000000,
+        })
       );
 
       const result = await loadSubscription();

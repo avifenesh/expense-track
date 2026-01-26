@@ -46,6 +46,51 @@ const initialState: SubscriptionState = {
   lastFetched: null,
 };
 
+type SetState = (
+  partial: Partial<SubscriptionState> | ((state: SubscriptionState) => Partial<SubscriptionState>)
+) => void;
+
+async function performFetch(set: SetState): Promise<void> {
+  const accessToken = useAuthStore.getState().accessToken;
+  if (!accessToken) {
+    set({ error: 'Not authenticated' });
+    return;
+  }
+
+  set({ isLoading: true, error: null });
+
+  try {
+    const response = await getSubscriptionStatus(accessToken);
+    const { subscription } = response;
+    const now = Date.now();
+
+    set({
+      status: subscription.status,
+      isActive: subscription.isActive,
+      trialEndsAt: subscription.trialEndsAt,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      daysRemaining: subscription.daysRemaining,
+      canAccessApp: subscription.canAccessApp,
+      isLoading: false,
+      lastFetched: now,
+    });
+
+    await saveSubscription({
+      status: subscription.status,
+      isActive: subscription.isActive,
+      trialEndsAt: subscription.trialEndsAt,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      daysRemaining: subscription.daysRemaining,
+      canAccessApp: subscription.canAccessApp,
+      cachedAt: now,
+    });
+  } catch (error) {
+    const message =
+      error instanceof ApiError ? error.message : 'Failed to fetch subscription status';
+    set({ error: message, isLoading: false });
+  }
+}
+
 export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   ...initialState,
 
@@ -60,44 +105,7 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       return;
     }
 
-    const accessToken = useAuthStore.getState().accessToken;
-    if (!accessToken) {
-      set({ error: 'Not authenticated' });
-      return;
-    }
-
-    set({ isLoading: true, error: null });
-
-    try {
-      const response = await getSubscriptionStatus(accessToken);
-      const { subscription } = response;
-      const now = Date.now();
-
-      set({
-        status: subscription.status,
-        isActive: subscription.isActive,
-        trialEndsAt: subscription.trialEndsAt,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        daysRemaining: subscription.daysRemaining,
-        canAccessApp: subscription.canAccessApp,
-        isLoading: false,
-        lastFetched: now,
-      });
-
-      await saveSubscription({
-        status: subscription.status,
-        isActive: subscription.isActive,
-        trialEndsAt: subscription.trialEndsAt,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        daysRemaining: subscription.daysRemaining,
-        canAccessApp: subscription.canAccessApp,
-        cachedAt: now,
-      });
-    } catch (error) {
-      const message =
-        error instanceof ApiError ? error.message : 'Failed to fetch subscription status';
-      set({ error: message, isLoading: false });
-    }
+    await performFetch(set);
   },
 
   refresh: async () => {
@@ -107,44 +115,7 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       return;
     }
 
-    const accessToken = useAuthStore.getState().accessToken;
-    if (!accessToken) {
-      set({ error: 'Not authenticated' });
-      return;
-    }
-
-    set({ isLoading: true, error: null });
-
-    try {
-      const response = await getSubscriptionStatus(accessToken);
-      const { subscription } = response;
-      const now = Date.now();
-
-      set({
-        status: subscription.status,
-        isActive: subscription.isActive,
-        trialEndsAt: subscription.trialEndsAt,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        daysRemaining: subscription.daysRemaining,
-        canAccessApp: subscription.canAccessApp,
-        isLoading: false,
-        lastFetched: now,
-      });
-
-      await saveSubscription({
-        status: subscription.status,
-        isActive: subscription.isActive,
-        trialEndsAt: subscription.trialEndsAt,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        daysRemaining: subscription.daysRemaining,
-        canAccessApp: subscription.canAccessApp,
-        cachedAt: now,
-      });
-    } catch (error) {
-      const message =
-        error instanceof ApiError ? error.message : 'Failed to fetch subscription status';
-      set({ error: message, isLoading: false });
-    }
+    await performFetch(set);
   },
 
   loadFromCache: async () => {

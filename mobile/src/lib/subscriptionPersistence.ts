@@ -14,18 +14,34 @@ export interface CachedSubscription {
   cachedAt: number;
 }
 
+function isValidCachedSubscription(value: unknown): value is CachedSubscription {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.status === 'string' &&
+    typeof obj.isActive === 'boolean' &&
+    typeof obj.canAccessApp === 'boolean' &&
+    (obj.trialEndsAt === null || typeof obj.trialEndsAt === 'string') &&
+    (obj.currentPeriodEnd === null || typeof obj.currentPeriodEnd === 'string') &&
+    (obj.daysRemaining === null || typeof obj.daysRemaining === 'number') &&
+    typeof obj.cachedAt === 'number'
+  );
+}
+
 export async function loadSubscription(): Promise<CachedSubscription | null> {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
     if (!stored) {
       return null;
     }
-    const parsed = JSON.parse(stored);
-    if (!parsed || typeof parsed !== 'object' || !parsed.status) {
+    const parsed: unknown = JSON.parse(stored);
+    if (!isValidCachedSubscription(parsed)) {
       logger.warn('Invalid subscription format in storage, returning null');
       return null;
     }
-    return parsed as CachedSubscription;
+    return parsed;
   } catch (error) {
     logger.error('Failed to load subscription cache', error);
     return null;
