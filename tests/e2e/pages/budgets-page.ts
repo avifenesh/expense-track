@@ -34,12 +34,10 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickEditBudget(category: string) {
-    // Find the budget list item by looking for a card that contains both:
-    // 1. The category name
-    // 2. A "Remove" button (only budget list items have this, not the form)
-    const budgetItems = this.page.locator('div.rounded-2xl').filter({
-      has: this.page.getByRole('button', { name: /remove/i }),
-    })
+    // Find the budget list item by targeting the specific class structure
+    // Budget items have 'rounded-2xl' and 'px-4' classes, which distinguishes them
+    // from the Card container which has 'rounded-2xl' but uses different padding
+    const budgetItems = this.page.locator('div.rounded-2xl.px-4')
     const targetItem = budgetItems.filter({ hasText: category })
     await expect(targetItem).toBeVisible({ timeout: 10000 })
 
@@ -77,12 +75,10 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickDeleteBudget(category: string) {
-    // Find the budget list item by looking for a card that contains:
-    // 1. The category name
-    // 2. A "Remove" button (only budget list items have this)
-    const budgetItems = this.page.locator('div.rounded-2xl').filter({
-      has: this.page.getByRole('button', { name: /remove/i }),
-    })
+    // Find the budget list item by targeting the specific class structure
+    // Budget items have 'rounded-2xl' and 'px-4' classes, which distinguishes them
+    // from the Card container which has 'rounded-2xl' but uses different padding
+    const budgetItems = this.page.locator('div.rounded-2xl.px-4')
     const targetItem = budgetItems.filter({ hasText: category })
     await expect(targetItem).toBeVisible({ timeout: 20000 })
 
