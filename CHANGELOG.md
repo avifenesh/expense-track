@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Loading states with activity indicator
   - Integration with accountsStore for real-time data
   - Navigation from Settings screen
+- API: DELETE /api/v1/auth/account endpoint for GDPR-compliant account deletion (#243)
+  - Soft-delete user accounts with email confirmation
+  - Anonymizes personal data (email, display name, password)
+  - Deletes all refresh tokens for user
+  - Cancels Paddle subscription if active
+  - Rate limited (3 requests per hour)
+  - JWT authentication required
+  - Comprehensive test suite with 21 tests
 - API: Enhanced GET /api/v1/accounts endpoint (#302)
   - Now returns calculated `balance` field for each account
   - Balance = Total Income - Total Expenses
