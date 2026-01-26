@@ -24,7 +24,8 @@ test.describe('budgets', () => {
 
       await budgetsPage.submitBudget()
 
-      await expect(page.getByText(/budget updated/i)).toBeVisible()
+      // Budget form uses "created" for new budgets and "updated" for existing ones
+      await expect(page.getByText(/budget (created|updated)/i)).toBeVisible()
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')
@@ -68,9 +69,9 @@ test.describe('budgets', () => {
 
       await budgetsPage.submitBudget()
 
-      // Wait for budget saved toast before looking for remove button
-      // Toast may say "Budget saved" or "Budget updated" depending on whether it's new or existing
-      await expect(page.getByText(/budget (saved|updated)/i)).toBeVisible({ timeout: 10000 })
+      // Wait for budget toast before looking for remove button
+      // Toast may say "Budget created" or "Budget updated" depending on whether it's new or existing
+      await expect(page.getByText(/budget (created|updated)/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
       await page.waitForLoadState('networkidle')

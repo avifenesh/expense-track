@@ -32,7 +32,7 @@ test.describe('pricing page', () => {
       await expect(page.getByText('Priority support')).toBeVisible()
 
       await expect(page.getByText('Limited (50)')).toBeVisible()
-      await expect(page.getByText('Unlimited')).toBeVisible()
+      await expect(page.getByText('Unlimited', { exact: true })).toBeVisible()
     })
 
     test('should have CTA button linking to register', async ({ page }) => {
