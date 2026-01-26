@@ -4,15 +4,22 @@ import { Alert } from 'react-native';
 import { SyncStatusBadge } from '../../src/components/SyncStatusBadge';
 import { useOfflineQueueStore } from '../../src/stores';
 
-jest.mock('../../src/stores', () => ({
-  useOfflineQueueStore: jest.fn(),
-}));
+interface QueuedItem {
+  id: string;
+  data: {
+    accountId: string;
+    categoryId: string;
+    type: 'EXPENSE';
+    amount: number;
+    currency: 'USD';
+    date: string;
+  };
+  createdAt: string;
+  retryCount: number;
+  lastError?: string;
+}
 
-jest.spyOn(Alert, 'alert');
-
-const mockUseOfflineQueueStore = useOfflineQueueStore as unknown as jest.Mock;
-
-const createQueuedItem = (id: string, lastError?: string) => ({
+const createQueuedItem = (id: string, lastError?: string): QueuedItem => ({
   id,
   data: {
     accountId: 'account-1',
@@ -27,24 +34,47 @@ const createQueuedItem = (id: string, lastError?: string) => ({
   lastError,
 });
 
+// Mock state that will be updated in tests
+let mockStoreState = {
+  items: [] as QueuedItem[],
+  isSyncing: false,
+  syncError: null as string | null,
+  processQueue: jest.fn(),
+};
+
+jest.mock('../../src/stores', () => ({
+  useOfflineQueueStore: Object.assign(
+    // The hook itself - calls selector with state
+    (selector?: (state: typeof mockStoreState) => unknown) => {
+      if (selector) {
+        return selector(mockStoreState);
+      }
+      return mockStoreState;
+    },
+    // getState method
+    { getState: () => mockStoreState }
+  ),
+}));
+
+jest.spyOn(Alert, 'alert');
+
 describe('SyncStatusBadge', () => {
   const mockProcessQueue = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (
-      useOfflineQueueStore as unknown as { getState: jest.Mock }
-    ).getState = jest.fn().mockReturnValue({
-      processQueue: mockProcessQueue,
-    });
-  });
-
-  it('renders nothing when queue is empty and not syncing', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
+    mockStoreState = {
       items: [],
       isSyncing: false,
       syncError: null,
-    });
+      processQueue: mockProcessQueue,
+    };
+  });
+
+  it('renders nothing when queue is empty and not syncing', () => {
+    mockStoreState.items = [];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
 
     const { queryByTestId } = render(<SyncStatusBadge />);
 
@@ -52,11 +82,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('renders pending count when items are queued', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1'), createQueuedItem('2')],
-      isSyncing: false,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1'), createQueuedItem('2')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(<SyncStatusBadge />);
 
@@ -65,11 +93,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('renders syncing spinner when syncing', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: true,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = true;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(<SyncStatusBadge />);
 
@@ -77,11 +103,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('renders error icon when there is a sync error', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1', 'Network error')],
-      isSyncing: false,
-      syncError: 'Failed to sync',
-    });
+    mockStoreState.items = [createQueuedItem('1', 'Network error')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = 'Failed to sync';
 
     const { getByTestId } = render(<SyncStatusBadge />);
 
@@ -89,11 +113,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('renders error icon when items have errors', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1', 'Some error')],
-      isSyncing: false,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1', 'Some error')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(<SyncStatusBadge />);
 
@@ -101,11 +123,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('shows alert with queue status on press', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: false,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(<SyncStatusBadge />);
     fireEvent.press(getByTestId('sync-status-badge'));
@@ -118,11 +138,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('shows retry button in alert when there are failed items', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1', 'Network error')],
-      isSyncing: false,
-      syncError: 'Failed',
-    });
+    mockStoreState.items = [createQueuedItem('1', 'Network error')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = 'Failed';
 
     const { getByTestId } = render(<SyncStatusBadge />);
     fireEvent.press(getByTestId('sync-status-badge'));
@@ -134,11 +152,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('calls processQueue when retry is pressed', async () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1', 'Network error')],
-      isSyncing: false,
-      syncError: 'Failed',
-    });
+    mockStoreState.items = [createQueuedItem('1', 'Network error')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = 'Failed';
 
     const { getByTestId } = render(<SyncStatusBadge />);
     fireEvent.press(getByTestId('sync-status-badge'));
@@ -151,11 +167,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('calls custom onPress handler when provided', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: false,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
     const onPress = jest.fn();
 
     const { getByTestId } = render(<SyncStatusBadge onPress={onPress} />);
@@ -166,11 +180,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('applies custom style', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: false,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(
       <SyncStatusBadge style={{ marginTop: 10 }} />
@@ -184,11 +196,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('has correct accessibility properties', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: false,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(<SyncStatusBadge />);
     const badge = getByTestId('sync-status-badge');
@@ -198,11 +208,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('updates accessibility label when syncing', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: true,
-      syncError: null,
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = true;
+    mockStoreState.syncError = null;
 
     const { getByTestId } = render(<SyncStatusBadge />);
     const badge = getByTestId('sync-status-badge');
@@ -211,11 +219,9 @@ describe('SyncStatusBadge', () => {
   });
 
   it('updates accessibility label when there is an error', () => {
-    mockUseOfflineQueueStore.mockReturnValue({
-      items: [createQueuedItem('1')],
-      isSyncing: false,
-      syncError: 'Failed',
-    });
+    mockStoreState.items = [createQueuedItem('1')];
+    mockStoreState.isSyncing = false;
+    mockStoreState.syncError = 'Failed';
 
     const { getByTestId } = render(<SyncStatusBadge />);
     const badge = getByTestId('sync-status-badge');
