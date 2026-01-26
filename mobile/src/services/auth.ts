@@ -97,6 +97,17 @@ export interface ExportDataUser {
   email: string
   displayName: string | null
   preferredCurrency: string
+  emailVerified?: boolean
+  hasCompletedOnboarding?: boolean
+  createdAt: string
+}
+
+export interface ExportDataSubscription {
+  id: string
+  status: string
+  trialEndsAt: string | null
+  currentPeriodStart: string | null
+  currentPeriodEnd: string | null
   createdAt: string
 }
 
@@ -155,6 +166,7 @@ export interface ExportDataHolding {
 export interface ExportDataJsonResponse {
   exportedAt: string
   user: ExportDataUser
+  subscription?: ExportDataSubscription
   accounts: ExportDataAccount[]
   categories: ExportDataCategory[]
   transactions: ExportDataTransaction[]

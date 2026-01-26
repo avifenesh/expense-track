@@ -27,6 +27,13 @@ export function DeleteAccountModal({
 }: DeleteAccountModalProps) {
   const [emailInput, setEmailInput] = useState('');
 
+  // Reset email input when modal visibility changes to hidden
+  React.useEffect(() => {
+    if (!visible) {
+      setEmailInput('');
+    }
+  }, [visible]);
+
   const isEmailMatch = emailInput.toLowerCase() === userEmail.toLowerCase();
 
   const handleClose = useCallback(() => {
@@ -36,9 +43,10 @@ export function DeleteAccountModal({
 
   const handleConfirm = useCallback(() => {
     if (isEmailMatch && !isDeleting) {
-      onConfirm(emailInput);
+      // Pass the original userEmail to ensure exact match with server
+      onConfirm(userEmail);
     }
-  }, [isEmailMatch, isDeleting, emailInput, onConfirm]);
+  }, [isEmailMatch, isDeleting, userEmail, onConfirm]);
 
   return (
     <Modal
