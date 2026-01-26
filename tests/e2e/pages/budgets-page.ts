@@ -34,11 +34,17 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickEditBudget(category: string) {
-    // Wait for the budget list item to be visible first
-    const item = this.page.locator('div.rounded-2xl', { hasText: category })
-    await expect(item.first()).toBeVisible({ timeout: 10000 })
-    // Click the edit button within the budget item
-    const editButton = item.getByRole('button', { name: /edit/i }).first()
+    // Find the budget list item by looking for a card that contains both:
+    // 1. The category name
+    // 2. A "Remove" button (only budget list items have this, not the form)
+    const budgetItems = this.page.locator('div.rounded-2xl').filter({
+      has: this.page.getByRole('button', { name: /remove/i }),
+    })
+    const targetItem = budgetItems.filter({ hasText: category })
+    await expect(targetItem).toBeVisible({ timeout: 10000 })
+
+    // Click the edit button within this specific budget item
+    const editButton = targetItem.getByRole('button', { name: /edit/i })
     await expect(editButton).toBeVisible({ timeout: 5000 })
     await editButton.click()
   }
@@ -71,12 +77,18 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickDeleteBudget(category: string) {
-    // First verify the budget is visible in the list
-    // Use .first() to handle strict mode - category appears in both list and dropdown
-    await expect(this.page.getByText(category).first()).toBeVisible({ timeout: 20000 })
-    // Use getByRole for the Remove button directly - it's more reliable than nested locators
+    // Find the budget list item by looking for a card that contains:
+    // 1. The category name
+    // 2. A "Remove" button (only budget list items have this)
+    const budgetItems = this.page.locator('div.rounded-2xl').filter({
+      has: this.page.getByRole('button', { name: /remove/i }),
+    })
+    const targetItem = budgetItems.filter({ hasText: category })
+    await expect(targetItem).toBeVisible({ timeout: 20000 })
+
+    // Click the remove button within this specific budget item
     // Budget deletion is immediate (no confirmation dialog)
-    const removeButton = this.page.getByRole('button', { name: /remove/i }).first()
+    const removeButton = targetItem.getByRole('button', { name: /remove/i })
     await expect(removeButton).toBeVisible({ timeout: 10000 })
     await removeButton.click()
   }
