@@ -778,11 +778,30 @@ describe('SettingsScreen', () => {
         expect(mockAuthService.deleteAccount).toHaveBeenCalledWith('test@example.com', 'access-token-123');
       });
 
+      // Alert.alert is called with callback that triggers logout when OK is pressed
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Account Deleted',
+          'Your account has been permanently deleted',
+          expect.arrayContaining([
+            expect.objectContaining({ text: 'OK', onPress: expect.any(Function) }),
+          ]),
+          { cancelable: false }
+        );
+      });
+
+      // Simulate pressing OK button to trigger logout
+      const alertCall = (Alert.alert as jest.Mock).mock.calls.find(
+        call => call[0] === 'Account Deleted'
+      );
+      if (alertCall && alertCall[2]) {
+        const okButton = alertCall[2].find((btn: { text: string }) => btn.text === 'OK');
+        okButton?.onPress?.();
+      }
+
       await waitFor(() => {
         expect(mockLogout).toHaveBeenCalled();
       });
-
-      expect(Alert.alert).toHaveBeenCalledWith('Account Deleted', 'Your account has been permanently deleted');
     });
 
     it('shows error alert when delete fails with ApiError', async () => {

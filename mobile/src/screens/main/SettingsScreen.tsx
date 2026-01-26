@@ -101,10 +101,18 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
       await deleteAccount(confirmEmail, accessToken)
       setShowDeleteModal(false)
 
-      // Logout after successful deletion
-      await useAuthStore.getState().logout()
-
-      Alert.alert('Account Deleted', 'Your account has been permanently deleted')
+      // Show confirmation alert, then logout to ensure user sees the message
+      Alert.alert(
+        'Account Deleted',
+        'Your account has been permanently deleted',
+        [
+          {
+            text: 'OK',
+            onPress: () => useAuthStore.getState().logout(),
+          },
+        ],
+        { cancelable: false }
+      )
     } catch (error) {
       const errorMessage = error instanceof ApiError ? error.message : 'Failed to delete account'
       Alert.alert('Delete Failed', errorMessage)
