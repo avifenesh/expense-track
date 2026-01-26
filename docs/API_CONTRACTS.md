@@ -365,11 +365,9 @@ Delete user account (GDPR compliance).
 
 ---
 
-### GET /api/v1/auth/export (PLANNED - Issue #244)
+### GET /api/v1/auth/export
 
-> ⚠️ **Not yet implemented.** Planned for GDPR compliance.
-
-Export all user data (GDPR compliance).
+Export all user data (GDPR Article 20 - Right to data portability).
 
 **Auth:** Bearer token required
 
@@ -377,23 +375,152 @@ Export all user data (GDPR compliance).
 
 - `format`: `json` (default) or `csv`
 
-**Response (200):**
+**Response (200 - JSON format):**
 
 ```json
 {
   "success": true,
   "data": {
-    "user": { ... },
-    "accounts": [ ... ],
-    "categories": [ ... ],
-    "transactions": [ ... ],
-    "budgets": [ ... ],
-    "holdings": [ ... ],
-    "recurringTemplates": [ ... ],
-    "sharedExpenses": [ ... ]
+    "exportedAt": "2024-01-15T12:00:00.000Z",
+    "user": {
+      "id": "clx...",
+      "email": "user@example.com",
+      "displayName": "John Doe",
+      "preferredCurrency": "USD",
+      "emailVerified": true,
+      "hasCompletedOnboarding": true,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "subscription": {
+      "id": "clx...",
+      "status": "TRIALING",
+      "trialEndsAt": "2024-01-29T00:00:00.000Z",
+      "currentPeriodStart": null,
+      "currentPeriodEnd": null,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "accounts": [
+      {
+        "id": "clx...",
+        "name": "Personal",
+        "type": "SELF",
+        "preferredCurrency": "USD",
+        "color": "#4CAF50",
+        "icon": "wallet",
+        "description": "My personal account",
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [
+      {
+        "id": "clx...",
+        "name": "Food",
+        "type": "EXPENSE",
+        "color": "#FF5722",
+        "isHolding": false,
+        "isArchived": false,
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "transactions": [
+      {
+        "id": "clx...",
+        "accountId": "clx...",
+        "categoryId": "clx...",
+        "type": "EXPENSE",
+        "amount": 50.00,
+        "currency": "USD",
+        "date": "2024-01-10T00:00:00.000Z",
+        "month": "2024-01-01T00:00:00.000Z",
+        "description": "Groceries",
+        "isRecurring": false,
+        "isMutual": false,
+        "createdAt": "2024-01-10T00:00:00.000Z"
+      }
+    ],
+    "budgets": [
+      {
+        "id": "clx...",
+        "accountId": "clx...",
+        "categoryId": "clx...",
+        "month": "2024-01-01T00:00:00.000Z",
+        "planned": 500.00,
+        "currency": "USD",
+        "notes": "Monthly food budget",
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "holdings": [
+      {
+        "id": "clx...",
+        "accountId": "clx...",
+        "categoryId": "clx...",
+        "symbol": "AAPL",
+        "quantity": 10.5,
+        "averageCost": 150.00,
+        "currency": "USD",
+        "notes": "Apple stock",
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "recurringTemplates": [
+      {
+        "id": "clx...",
+        "accountId": "clx...",
+        "categoryId": "clx...",
+        "type": "EXPENSE",
+        "amount": 15.00,
+        "currency": "USD",
+        "dayOfMonth": 1,
+        "description": "Netflix",
+        "isActive": true,
+        "startMonth": "2024-01-01T00:00:00.000Z",
+        "endMonth": null,
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      }
+    ]
   }
 }
 ```
+
+**Response (200 - CSV format):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "format": "csv",
+    "data": "=== USER ===\nid,email,displayName,...\nclx...,user@example.com,John Doe,...\n\n=== SUBSCRIPTION ===\n..."
+  }
+}
+```
+
+**CSV Sections:**
+
+- `USER` - User profile data
+- `SUBSCRIPTION` - Subscription details (if exists)
+- `ACCOUNTS` - All user accounts
+- `CATEGORIES` - All categories
+- `TRANSACTIONS` - All transactions
+- `BUDGETS` - All budgets
+- `HOLDINGS` - All stock holdings
+- `RECURRING TEMPLATES` - All recurring templates
+
+**Rate Limit Headers:**
+
+```
+X-RateLimit-Limit: 3
+X-RateLimit-Remaining: 2
+X-RateLimit-Reset: 1705334400
+```
+
+**Errors:**
+
+- 400: Validation error - Invalid format parameter
+- 401: Invalid or missing auth token
+- 401: User not found
+- 429: Rate limited (3 requests per hour)
+- 500: Data export failed
 
 ---
 
