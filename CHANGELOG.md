@@ -31,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Rate limited (3 requests per hour)
   - JWT authentication required
   - Comprehensive test suite with 21 tests
+- API: GET /api/v1/auth/export endpoint for GDPR-compliant data export (#244)
+  - Export all user data in JSON or CSV format
+  - Supports GDPR Article 20 - Right to data portability
+  - Returns user profile, subscription, accounts, categories, transactions, budgets, holdings, recurring templates
+  - Rate limited (3 requests per hour)
+  - JWT authentication required
+  - Comprehensive test suite with 42 tests
 - API: Enhanced GET /api/v1/accounts endpoint (#302)
   - Now returns calculated `balance` field for each account
   - Balance = Total Income - Total Expenses

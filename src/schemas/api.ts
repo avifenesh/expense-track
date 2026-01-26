@@ -238,3 +238,9 @@ export const deleteAccountApiSchema = z.object({
 })
 
 export type DeleteAccountApiInput = z.infer<typeof deleteAccountApiSchema>
+
+export const exportUserDataApiSchema = z.object({
+  format: z.enum(['json', 'csv']).default('json'),
+})
+
+export type ExportUserDataApiInput = z.infer<typeof exportUserDataApiSchema>
