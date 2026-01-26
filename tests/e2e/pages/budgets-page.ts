@@ -34,8 +34,13 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickEditBudget(category: string) {
+    // Wait for the budget list item to be visible first
     const item = this.page.locator('div.rounded-2xl', { hasText: category })
-    await item.getByRole('button', { name: /edit/i }).first().click()
+    await expect(item.first()).toBeVisible({ timeout: 10000 })
+    // Click the edit button within the budget item
+    const editButton = item.getByRole('button', { name: /edit/i }).first()
+    await expect(editButton).toBeVisible({ timeout: 5000 })
+    await editButton.click()
   }
 
   async clickCancelEdit() {
@@ -43,9 +48,11 @@ export class BudgetsPage extends BasePage {
   }
 
   async expectEditMode(categoryName: string) {
-    await expect(this.page.getByText(`Edit budget: ${categoryName}`)).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Update budget' })).toBeVisible()
+    // The component uses requestAnimationFrame to scroll the form into view,
+    // so we need a longer timeout to wait for the edit mode to be fully active
+    await expect(this.page.getByText(`Edit budget: ${categoryName}`)).toBeVisible({ timeout: 10000 })
+    await expect(this.page.getByRole('button', { name: 'Cancel' })).toBeVisible({ timeout: 5000 })
+    await expect(this.page.getByRole('button', { name: 'Update budget' })).toBeVisible({ timeout: 5000 })
   }
 
   async expectNotEditMode() {
