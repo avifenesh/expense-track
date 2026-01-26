@@ -571,6 +571,16 @@ describe('GET /api/v1/auth/export', () => {
         }),
       )
     })
+
+    it('should filter out deleted holdings', async () => {
+      await GET(buildRequest())
+
+      expect(prisma.holding.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ deletedAt: null }),
+        }),
+      )
+    })
   })
 
   describe('logging', () => {

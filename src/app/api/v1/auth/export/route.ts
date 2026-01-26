@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([]),
       accountIds.length > 0
         ? prisma.holding.findMany({
-            where: { accountId: { in: accountIds } },
+            where: { accountId: { in: accountIds }, deletedAt: null },
             select: {
               id: true,
               accountId: true,
@@ -369,34 +369,36 @@ export async function GET(request: NextRequest) {
 
     const csvSections: string[] = []
 
-    csvSections.push('=== USER ===')
-    csvSections.push('id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt')
-    csvSections.push(
-      [
-        exportData.user.id,
-        escapeCsv(exportData.user.email),
-        escapeCsv(exportData.user.displayName),
-        exportData.user.preferredCurrency,
-        exportData.user.emailVerified,
-        exportData.user.hasCompletedOnboarding,
-        exportData.user.createdAt,
-      ].join(','),
+    addCsvSection(
+      csvSections,
+      'USER',
+      'id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt',
+      [exportData.user],
+      (u) => [
+        u.id,
+        escapeCsv(u.email),
+        escapeCsv(u.displayName),
+        u.preferredCurrency,
+        u.emailVerified,
+        u.hasCompletedOnboarding,
+        u.createdAt,
+      ],
     )
 
     if (exportData.subscription) {
-      const sub = exportData.subscription
-      csvSections.push('')
-      csvSections.push('=== SUBSCRIPTION ===')
-      csvSections.push('id,status,trialEndsAt,currentPeriodStart,currentPeriodEnd,createdAt')
-      csvSections.push(
-        [
-          sub.id,
-          sub.status,
-          sub.trialEndsAt ?? '',
-          sub.currentPeriodStart ?? '',
-          sub.currentPeriodEnd ?? '',
-          sub.createdAt,
-        ].join(','),
+      addCsvSection(
+        csvSections,
+        'SUBSCRIPTION',
+        'id,status,trialEndsAt,currentPeriodStart,currentPeriodEnd,createdAt',
+        [exportData.subscription],
+        (s) => [
+          s.id,
+          s.status,
+          s.trialEndsAt ?? '',
+          s.currentPeriodStart ?? '',
+          s.currentPeriodEnd ?? '',
+          s.createdAt,
+        ],
       )
     }
 
