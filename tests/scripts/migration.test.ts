@@ -50,6 +50,8 @@ function createMockUser(overrides: Partial<{
     passwordResetExpires: null,
     hasCompletedOnboarding: true,
     activeAccountId: null,
+    deletedAt: null,
+    deletedBy: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
