@@ -93,6 +93,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Back navigation to app
   - Pricing page E2E test suite
   - Comprehensive unit tests for comparison table
+- Mobile: Subscription service for checking user subscription status (#319)
+  - New `services/subscription.ts` with getSubscriptionStatus() function
+  - TypeScript types for subscription status, checkout info, and pricing info
+  - Integrates with GET /api/v1/subscriptions endpoint
+  - Returns subscription state (TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED)
+  - Includes Paddle checkout configuration and pricing details
+  - Comprehensive test suite with 90%+ coverage
 
 - Mobile: Skeleton loading components for all main screens (#227)
   - Base Skeleton component with animated pulsing opacity effect
