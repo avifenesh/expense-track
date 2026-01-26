@@ -1,4 +1,4 @@
-import { apiRequest, apiPost, ApiError } from '../../src/services/api';
+import { apiRequest, apiPost, apiDeleteWithBody, ApiError } from '../../src/services/api';
 
 // Mock fetch globally
 const mockFetch = jest.fn();
@@ -167,5 +167,50 @@ describe('apiPost', () => {
         body: JSON.stringify({ email: 'test@example.com', password: 'pass' }),
       })
     );
+  });
+});
+
+describe('apiDeleteWithBody', () => {
+  beforeEach(() => {
+    mockFetch.mockClear();
+  });
+
+  it('sends DELETE request with body', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: { message: 'Deleted' } }),
+    });
+
+    await apiDeleteWithBody('/auth/account', { confirmEmail: 'test@example.com' }, 'access-token');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/auth/account'),
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ confirmEmail: 'test@example.com' }),
+        headers: expect.objectContaining({
+          Authorization: 'Bearer access-token',
+        }),
+      })
+    );
+  });
+
+  it('returns data on success', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          data: { message: 'Account deleted successfully' },
+        }),
+    });
+
+    const result = await apiDeleteWithBody<{ message: string }>(
+      '/auth/account',
+      { confirmEmail: 'test@example.com' },
+      'access-token'
+    );
+
+    expect(result).toEqual({ message: 'Account deleted successfully' });
   });
 });

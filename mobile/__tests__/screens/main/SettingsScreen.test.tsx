@@ -34,10 +34,12 @@ const mockDisableBiometric = jest.fn();
 const setupAuthStoreMock = (overrides: Partial<{
   biometricCapability: { isAvailable: boolean; biometricType: string; isEnrolled: boolean } | null;
   isBiometricEnabled: boolean;
+  user: { id: string; email: string; displayName?: string; hasCompletedOnboarding: boolean } | null;
+  accessToken: string | null;
 }> = {}) => {
   const state = {
-    user: null,
-    accessToken: null,
+    user: overrides.user ?? null,
+    accessToken: overrides.accessToken ?? null,
     refreshToken: null,
     isAuthenticated: false,
     hasCompletedOnboarding: false,
@@ -383,6 +385,202 @@ describe('SettingsScreen', () => {
       await waitFor(() => {
         const logoutButton = screen.getByTestId('logout-button');
         expect(logoutButton.props.accessibilityState?.disabled).toBe(true);
+      });
+    });
+  });
+
+  describe('Export Data', () => {
+    it('opens export modal when Export Data is pressed', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal')).toBeTruthy();
+      });
+    });
+
+    it('shows JSON and CSV format options in export modal', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal.json')).toBeTruthy();
+        expect(screen.getByTestId('export-format-modal.csv')).toBeTruthy();
+      });
+    });
+
+    it('closes export modal when cancel is pressed', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.exportDataButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.exportDataButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('export-format-modal')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('export-format-modal.cancel'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('export-format-modal')).toBeNull();
+      });
+    });
+  });
+
+  describe('Delete Account', () => {
+    it('opens delete modal when Delete Account is pressed', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal')).toBeTruthy();
+      });
+    });
+
+    it('shows warning text in delete modal', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByText('This action cannot be undone')).toBeTruthy();
+      });
+    });
+
+    it('shows email input in delete modal', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal.email-input')).toBeTruthy();
+      });
+    });
+
+    it('disables confirm button until email matches', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('delete-account-modal.confirm');
+        expect(confirmButton.props.accessibilityState?.disabled).toBe(true);
+      });
+    });
+
+    it('enables confirm button when email matches', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal.email-input')).toBeTruthy();
+      });
+
+      fireEvent.changeText(screen.getByTestId('delete-account-modal.email-input'), 'test@example.com');
+
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('delete-account-modal.confirm');
+        expect(confirmButton.props.accessibilityState?.disabled).toBe(false);
+      });
+    });
+
+    it('closes delete modal when cancel is pressed', async () => {
+      setupAuthStoreMock({
+        user: { id: 'user-123', email: 'test@example.com', hasCompletedOnboarding: true },
+        accessToken: 'access-token-123',
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.deleteAccountButton')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('settings.deleteAccountButton'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-account-modal')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('delete-account-modal.cancel'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('delete-account-modal')).toBeNull();
       });
     });
   });
