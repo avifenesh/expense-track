@@ -71,12 +71,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const response = await authService.login(email, password);
 
       // Fetch user profile to get actual hasCompletedOnboarding status
-      let userProfile;
-      try {
-        userProfile = await authService.getProfile(response.accessToken);
-      } catch {
-        // If profile fetch fails, use defaults (new user needs onboarding)
-        userProfile = null;
+      // Retry up to 3 times to handle transient network issues
+      let userProfile = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          userProfile = await authService.getProfile(response.accessToken);
+          break; // Success, exit retry loop
+        } catch {
+          if (attempt < 2) {
+            // Wait before retry (200ms, 400ms)
+            await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 200));
+          }
+          // On final attempt failure, userProfile stays null
+        }
       }
 
       set({
