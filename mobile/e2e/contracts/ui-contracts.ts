@@ -447,10 +447,7 @@ export const BudgetsScreen = {
 export const SettingsScreen = {
   testIds: {
     screen: 'settings.screen',
-    scrollView: 'settings.scrollView',
-    logoutButton: 'logout-button',
-    exportDataButton: 'settings.exportDataButton',
-    deleteAccountButton: 'settings.deleteAccountButton',
+    logoutButton: 'settings.logoutButton',
   },
 
   async waitForScreen(): Promise<void> {
@@ -460,108 +457,11 @@ export const SettingsScreen = {
   },
 
   async tapLogout(): Promise<void> {
-    await element(by.id('logout-button')).tap();
-  },
-
-  async tapExportData(): Promise<void> {
-    await element(by.id('settings.exportDataButton')).tap();
-  },
-
-  async tapDeleteAccount(): Promise<void> {
-    await element(by.id('settings.deleteAccountButton')).tap();
+    await element(by.id('settings.logoutButton')).tap();
   },
 
   async assertVisible(): Promise<void> {
     await expect(element(by.id('settings.screen'))).toBeVisible();
-  },
-};
-
-export const ExportFormatModal = {
-  testIds: {
-    modal: 'export-format-modal',
-    jsonButton: 'export-format-modal.json',
-    csvButton: 'export-format-modal.csv',
-    cancelButton: 'export-format-modal.cancel',
-  },
-
-  async waitForModal(): Promise<void> {
-    await waitFor(element(by.id('export-format-modal')))
-      .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
-  },
-
-  async selectJson(): Promise<void> {
-    await element(by.id('export-format-modal.json')).tap();
-  },
-
-  async selectCsv(): Promise<void> {
-    await element(by.id('export-format-modal.csv')).tap();
-  },
-
-  async tapCancel(): Promise<void> {
-    await element(by.id('export-format-modal.cancel')).tap();
-  },
-
-  async assertVisible(): Promise<void> {
-    await expect(element(by.id('export-format-modal'))).toBeVisible();
-  },
-
-  async assertNotVisible(): Promise<void> {
-    await expect(element(by.id('export-format-modal'))).not.toBeVisible();
-  },
-};
-
-export const DeleteAccountModal = {
-  testIds: {
-    modal: 'delete-account-modal',
-    emailInput: 'delete-account-modal.email-input',
-    confirmButton: 'delete-account-modal.confirm',
-    cancelButton: 'delete-account-modal.cancel',
-  },
-
-  async waitForModal(): Promise<void> {
-    await waitFor(element(by.id('delete-account-modal')))
-      .toBeVisible()
-      .withTimeout(TIMEOUTS.MEDIUM);
-  },
-
-  async enterEmail(email: string): Promise<void> {
-    await element(by.id('delete-account-modal.email-input')).clearText();
-    await element(by.id('delete-account-modal.email-input')).typeText(email);
-  },
-
-  async tapConfirm(): Promise<void> {
-    await element(by.id('delete-account-modal.confirm')).tap();
-  },
-
-  async tapCancel(): Promise<void> {
-    await element(by.id('delete-account-modal.cancel')).tap();
-  },
-
-  async assertVisible(): Promise<void> {
-    await expect(element(by.id('delete-account-modal'))).toBeVisible();
-  },
-
-  async assertNotVisible(): Promise<void> {
-    await expect(element(by.id('delete-account-modal'))).not.toBeVisible();
-  },
-
-  async assertConfirmDisabled(): Promise<void> {
-    // Detox doesn't have direct disabled state check, so we verify by attributes
-    const attributes = await element(by.id('delete-account-modal.confirm')).getAttributes();
-    const isDisabled = (attributes as { enabled?: boolean }).enabled === false;
-    if (!isDisabled) {
-      throw new Error('Expected confirm button to be disabled');
-    }
-  },
-
-  async assertConfirmEnabled(): Promise<void> {
-    // Verify button is enabled by checking attributes
-    const attributes = await element(by.id('delete-account-modal.confirm')).getAttributes();
-    const isEnabled = (attributes as { enabled?: boolean }).enabled !== false;
-    if (!isEnabled) {
-      throw new Error('Expected confirm button to be enabled');
-    }
   },
 };
 
