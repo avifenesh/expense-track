@@ -15,7 +15,6 @@ import {
 import { serverLogger } from '@/lib/server-logger'
 import { exportUserDataApiSchema } from '@/schemas/api'
 
-/** Export user data type for JSON format */
 interface UserDataExport {
   exportedAt: string
   user: {
@@ -115,7 +114,6 @@ interface UserDataExport {
  */
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate via JWT
     let auth
     try {
       auth = requireJwtAuth(request)
@@ -126,13 +124,11 @@ export async function GET(request: NextRequest) {
       return authError('Invalid token')
     }
 
-    // Rate limit check (3/hour for data export)
     const rateLimit = checkRateLimitTyped(auth.userId, 'data_export')
     if (!rateLimit.allowed) {
       return rateLimitError(rateLimit.resetAt)
     }
 
-    // Parse and validate query parameters
     const url = new URL(request.url)
     const formatParam = url.searchParams.get('format') ?? 'json'
 
@@ -143,7 +139,6 @@ export async function GET(request: NextRequest) {
 
     const { format } = parsed.data
 
-    // Stage 1: Fetch user and accounts in parallel (need accountIds for stage 2)
     const [user, accounts] = await Promise.all([
       prisma.user.findUnique({
         where: { id: auth.userId, deletedAt: null },
@@ -179,7 +174,6 @@ export async function GET(request: NextRequest) {
 
     const accountIds = accounts.map((a) => a.id)
 
-    // Stage 2: Fetch all remaining data in parallel
     const [subscription, categories, transactions, budgets, holdings, recurringTemplates] = await Promise.all([
       prisma.subscription.findUnique({
         where: { userId: auth.userId },
@@ -280,7 +274,6 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([]),
     ])
 
-    // Increment rate limit only after successful data fetch
     incrementRateLimitTyped(auth.userId, 'data_export')
 
     serverLogger.info('User data exported (GDPR)', {
@@ -296,7 +289,6 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Build export data with proper serialization
     const exportData: UserDataExport = {
       exportedAt: new Date().toISOString(),
       user: {
@@ -352,7 +344,6 @@ export async function GET(request: NextRequest) {
       return successResponseWithRateLimit(exportData, auth.userId, 'data_export')
     }
 
-    // CSV format
     type CsvValue = string | number | boolean | null | undefined
     const escapeCsv = (value: string | null | undefined): string =>
       `"${(value ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`
@@ -378,7 +369,6 @@ export async function GET(request: NextRequest) {
 
     const csvSections: string[] = []
 
-    // User section (single row, handled separately)
     csvSections.push('=== USER ===')
     csvSections.push('id,email,displayName,preferredCurrency,emailVerified,hasCompletedOnboarding,createdAt')
     csvSections.push(
@@ -393,7 +383,6 @@ export async function GET(request: NextRequest) {
       ].join(','),
     )
 
-    // Subscription section (single row, conditional)
     if (exportData.subscription) {
       const sub = exportData.subscription
       csvSections.push('')

@@ -2,12 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { Currency, TransactionType, AccountType, SubscriptionStatus } from '@prisma/client'
 
-// Helper to create mock Decimal with toNumber method
 function mockDecimal(value: number) {
   return { toNumber: () => value }
 }
 
-// Mock dependencies before imports
 vi.mock('@/lib/api-auth', () => ({
   requireJwtAuth: vi.fn(),
 }))
