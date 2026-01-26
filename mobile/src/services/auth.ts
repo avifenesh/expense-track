@@ -1,9 +1,18 @@
 import { apiGet, apiPost, apiPatch, apiDeleteWithBody } from './api'
 
+export interface LoginUser {
+  id: string
+  email: string
+  displayName: string | null
+  preferredCurrency: string
+  hasCompletedOnboarding: boolean
+}
+
 export interface LoginResponse {
   accessToken: string
   refreshToken: string
   expiresIn: number
+  user: LoginUser | null
 }
 
 export interface MessageResponse {

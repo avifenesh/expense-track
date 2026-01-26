@@ -39,13 +39,38 @@ export async function POST(request: NextRequest) {
     const accessToken = generateAccessToken(userId, normalizedEmail)
     const { token: refreshToken, jti, expiresAt } = generateRefreshToken(userId, normalizedEmail)
 
-    await prisma.refreshToken.create({
-      data: { jti, userId, email: normalizedEmail, expiresAt },
-    })
+    // Fetch user profile and create refresh token in parallel
+    const [user, _] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          displayName: true,
+          preferredCurrency: true,
+          hasCompletedOnboarding: true,
+        },
+      }),
+      prisma.refreshToken.create({
+        data: { jti, userId, email: normalizedEmail, expiresAt },
+      }),
+    ])
 
     return NextResponse.json({
       success: true,
-      data: { accessToken, refreshToken, expiresIn: 900 },
+      data: {
+        accessToken,
+        refreshToken,
+        expiresIn: 900,
+        user: user
+          ? {
+              id: user.id,
+              email: normalizedEmail,
+              displayName: user.displayName,
+              preferredCurrency: user.preferredCurrency,
+              hasCompletedOnboarding: user.hasCompletedOnboarding,
+            }
+          : null,
+      },
     })
   } catch {
     return serverError('Login failed')

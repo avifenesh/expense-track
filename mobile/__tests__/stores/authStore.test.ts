@@ -63,19 +63,18 @@ describe('authStore', () => {
   });
 
   describe('login', () => {
-    it('successfully logs in and fetches profile', async () => {
+    it('successfully logs in with user data from response', async () => {
       mockAuthService.login.mockResolvedValue({
         accessToken: 'access-token-123',
         refreshToken: 'refresh-token-456',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: true,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: 'Test User',
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
 
       await useAuthStore.getState().login('test@example.com', 'password123');
@@ -92,45 +91,16 @@ describe('authStore', () => {
       });
     });
 
-    it('retries profile fetch on failure and succeeds', async () => {
+    it('handles null user in login response', async () => {
       mockAuthService.login.mockResolvedValue({
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
+        user: null,
       });
-      // Fail twice, succeed on third attempt
-      mockAuthService.getProfile
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce({
-          id: 'user-123',
-          email: 'test@example.com',
-          displayName: 'Test User',
-          preferredCurrency: 'USD',
-          hasCompletedOnboarding: true,
-          subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
-        });
 
       await useAuthStore.getState().login('test@example.com', 'password');
 
-      expect(mockAuthService.getProfile).toHaveBeenCalledTimes(3);
-      const state = useAuthStore.getState();
-      expect(state.user?.hasCompletedOnboarding).toBe(true);
-      expect(state.user?.id).toBe('user-123');
-    });
-
-    it('defaults hasCompletedOnboarding to false when all profile retries fail', async () => {
-      mockAuthService.login.mockResolvedValue({
-        accessToken: 'token',
-        refreshToken: 'refresh',
-        expiresIn: 900,
-      });
-      // All 3 attempts fail
-      mockAuthService.getProfile.mockRejectedValue(new Error('Network error'));
-
-      await useAuthStore.getState().login('test@example.com', 'password');
-
-      expect(mockAuthService.getProfile).toHaveBeenCalledTimes(3);
       const state = useAuthStore.getState();
       expect(state.isAuthenticated).toBe(true);
       expect(state.user?.hasCompletedOnboarding).toBe(false);
@@ -142,14 +112,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: false,
+        },
       });
 
       await useAuthStore.getState().login('Test@Example.COM', 'password');
@@ -188,14 +157,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: true,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -273,14 +241,13 @@ describe('authStore', () => {
         accessToken: 'old-access',
         refreshToken: 'old-refresh',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: true,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -290,6 +257,7 @@ describe('authStore', () => {
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
         expiresIn: 900,
+        user: null,
       });
 
       await useAuthStore.getState().refreshTokens();
@@ -325,6 +293,7 @@ describe('authStore', () => {
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
         expiresIn: 900,
+        user: null,
       });
 
       await useAuthStore.getState().refreshTokens();
@@ -342,14 +311,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: false,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: false,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -390,6 +358,7 @@ describe('authStore', () => {
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
         expiresIn: 900,
+        user: null,
       });
       mockAuthService.getProfile.mockResolvedValue({
         id: 'user-123',
@@ -397,7 +366,15 @@ describe('authStore', () => {
         displayName: 'Biometric User',
         preferredCurrency: 'USD',
         hasCompletedOnboarding: true,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        createdAt: '2024-01-01',
+        subscription: {
+          status: 'active',
+          isActive: true,
+          trialEndsAt: null,
+          currentPeriodEnd: null,
+          daysRemaining: null,
+          canAccessApp: true,
+        },
       });
 
       await useAuthStore.getState().loginWithBiometric();
@@ -451,14 +428,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: true,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -512,14 +488,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
-      });
-      mockAuthService.getProfile.mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        displayName: null,
-        preferredCurrency: 'USD',
-        hasCompletedOnboarding: true,
-        subscription: { isActive: true, isTrialing: false, trialEndsAt: null, currentPeriodEnd: null },
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
 

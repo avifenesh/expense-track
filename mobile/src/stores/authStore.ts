@@ -70,30 +70,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const response = await authService.login(email, password);
 
-      // Fetch user profile to get actual hasCompletedOnboarding status
-      // Retry up to 3 times to handle transient network issues
-      let userProfile = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          userProfile = await authService.getProfile(response.accessToken);
-          break; // Success, exit retry loop
-        } catch {
-          if (attempt < 2) {
-            // Wait before retry (200ms, 400ms)
-            await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 200));
-          }
-          // On final attempt failure, userProfile stays null
-        }
-      }
-
+      // User data is included in login response - no separate call needed
       set({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         user: {
-          id: userProfile?.id ?? null,
+          id: response.user?.id ?? null,
           email: email.toLowerCase(),
-          displayName: userProfile?.displayName ?? undefined,
-          hasCompletedOnboarding: userProfile?.hasCompletedOnboarding ?? false,
+          displayName: response.user?.displayName ?? undefined,
+          hasCompletedOnboarding: response.user?.hasCompletedOnboarding ?? false,
         },
         isAuthenticated: true,
       });
