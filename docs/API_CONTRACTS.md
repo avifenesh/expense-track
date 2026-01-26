@@ -332,9 +332,7 @@ Reset password using token.
 
 ---
 
-### DELETE /api/v1/auth/account (PLANNED - Issue #243)
-
-> ⚠️ **Not yet implemented.** Planned for GDPR compliance.
+### DELETE /api/v1/auth/account
 
 Delete user account (GDPR compliance).
 
@@ -362,6 +360,8 @@ Delete user account (GDPR compliance).
 **Errors:**
 
 - 400: Email confirmation does not match
+- 401: Invalid or missing auth token
+- 429: Rate limited (3 requests per hour)
 
 ---
 
