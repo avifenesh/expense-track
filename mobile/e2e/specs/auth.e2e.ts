@@ -49,8 +49,27 @@ describe('Auth E2E Tests', () => {
       await device.disableSynchronization();
       try {
         await LoginScreen.tapSubmit();
-        await DashboardScreen.waitForScreen();
+
+        // Wait for either dashboard or onboarding to appear
+        // Test user should have hasCompletedOnboarding=true from ensureTestUser
+        await waitFor(element(by.id('dashboard.screen')))
+          .toBeVisible()
+          .withTimeout(TIMEOUTS.LONG);
+
+        // Verify we're on dashboard, not onboarding
         await expect(element(by.id('dashboard.screen'))).toBeVisible();
+      } catch (error) {
+        // Check if we landed on onboarding instead (indicates hasCompletedOnboarding=false)
+        try {
+          await expect(element(by.id('onboarding.welcomeScreen'))).toBeVisible();
+          throw new Error(
+            'Login navigated to onboarding instead of dashboard. ' +
+            'Test user hasCompletedOnboarding may not be set correctly.'
+          );
+        } catch {
+          // Re-throw original error if not on onboarding either
+          throw error;
+        }
       } finally {
         await device.enableSynchronization();
       }
