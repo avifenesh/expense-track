@@ -531,7 +531,17 @@ export const DeleteAccountModal = {
     await element(by.id('delete-account-modal.email-input')).clearText();
     await element(by.id('delete-account-modal.email-input')).typeText(email);
     // Dismiss keyboard after typing
-    await element(by.id('delete-account-modal.email-input')).tapReturnKey();
+    // On Android, tapReturnKey() fails with "Couldn't click" coordinate errors
+    // Use pressBack() on Android which reliably dismisses keyboard
+    // On iOS, tapReturnKey() works fine
+    const platform = device.getPlatform();
+    if (platform === 'android') {
+      await device.pressBack();
+    } else {
+      await element(by.id('delete-account-modal.email-input')).tapReturnKey();
+    }
+    // Small delay for keyboard animation
+    await new Promise((resolve) => setTimeout(resolve, 300));
   },
 
   async tapConfirm(): Promise<void> {
