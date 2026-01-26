@@ -113,8 +113,8 @@ interface UserDataExport {
  * Rate limit: 3 requests per hour (data_export)
  */
 export async function GET(request: NextRequest) {
+  let auth: { userId: string; email: string } | undefined
   try {
-    let auth
     try {
       auth = requireJwtAuth(request)
     } catch (error) {
@@ -502,6 +502,7 @@ export async function GET(request: NextRequest) {
     )
   } catch (error) {
     serverLogger.error('Data export failed', {
+      userId: auth?.userId,
       error: error instanceof Error ? error.message : String(error),
     })
     return serverError('Data export failed')
