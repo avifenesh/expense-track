@@ -228,3 +228,13 @@ export const userLookupApiSchema = z.object({
 export const markPaidApiSchema = z.object({
   participantId: z.string().min(1, 'Participant ID is required'),
 })
+
+// ============================================
+// Auth Schemas (API)
+// ============================================
+
+export const deleteAccountApiSchema = z.object({
+  confirmEmail: z.string().email('Please enter your email to confirm deletion'),
+})
+
+export type DeleteAccountApiInput = z.infer<typeof deleteAccountApiSchema>

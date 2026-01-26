@@ -44,7 +44,7 @@ export function requireJwtAuth(request: NextRequest): AuthenticatedUser {
  */
 export async function getUserAuthInfo(userId: string): Promise<AuthUser> {
   const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, deletedAt: null },
     select: {
       id: true,
       email: true,

@@ -45,7 +45,9 @@ describe('User Model Schema', () => {
         passwordResetToken: null,
         passwordResetExpires: null,
         hasCompletedOnboarding: false,
-    activeAccountId: null,
+activeAccountId: null,
+        deletedAt: null,
+        deletedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -80,7 +82,9 @@ describe('User Model Schema', () => {
         passwordResetToken: null,
         passwordResetExpires: null,
         hasCompletedOnboarding: false,
-    activeAccountId: null,
+activeAccountId: null,
+        deletedAt: null,
+        deletedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -111,7 +115,9 @@ describe('User Model Schema', () => {
         passwordResetToken: null,
         passwordResetExpires: null,
         hasCompletedOnboarding: false,
-    activeAccountId: null,
+activeAccountId: null,
+        deletedAt: null,
+        deletedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -458,7 +464,9 @@ describe('User Model Schema', () => {
         passwordResetToken: null,
         passwordResetExpires: null,
         hasCompletedOnboarding: false,
-    activeAccountId: null,
+        activeAccountId: null,
+        deletedAt: null,
+        deletedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         accounts: [

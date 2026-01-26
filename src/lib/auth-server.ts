@@ -92,9 +92,9 @@ export async function verifyCredentials({
 }): Promise<{ valid: false; reason?: 'email_not_verified' } | { valid: true; userId: string }> {
   const normalizedEmail = email.trim().toLowerCase()
 
-  // Check database users
+  // Check database users (exclude soft-deleted accounts)
   const dbUser = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
+    where: { email: normalizedEmail, deletedAt: null },
     select: { id: true, passwordHash: true, emailVerified: true },
   })
 
@@ -215,9 +215,9 @@ export async function getSession(): Promise<AuthSession | null> {
     return null
   }
 
-  // Step 2: Verify user exists in database with verified email
+  // Step 2: Verify user exists in database with verified email and not deleted
   const dbUser = await prisma.user.findUnique({
-    where: { email: tokenSession.userEmail.toLowerCase() },
+    where: { email: tokenSession.userEmail.toLowerCase(), deletedAt: null },
     select: { id: true, emailVerified: true },
   })
 

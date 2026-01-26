@@ -57,6 +57,8 @@ describe('GET /api/v1/users/me', () => {
     passwordResetExpires: null,
     hasCompletedOnboarding: true,
     activeAccountId: null,
+    deletedAt: null,
+    deletedBy: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   }

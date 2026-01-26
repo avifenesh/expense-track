@@ -106,6 +106,7 @@ Server actions and REST API endpoints audit for Issue #64.
 | `/api/v1/auth/login` | POST | Authenticate user | None |
 | `/api/v1/auth/logout` | POST | Invalidate refresh token | Refresh Token |
 | `/api/v1/auth/refresh` | POST | Refresh access token | Refresh Token |
+| `/api/v1/auth/account` | DELETE | Delete user account (GDPR) | JWT Bearer |
 
 ### Transaction Endpoints (`/api/v1/transactions/`)
 
@@ -298,7 +299,7 @@ Returns 402 with error response:
 2. **Read Endpoints**: Holdings list, recurring list (#196, #197)
 3. **Onboarding**: Skip endpoint (#199)
 4. **Misc**: Exchange rate refresh, set balance (#204, #205)
-5. **GDPR**: Account deletion, data export (#243, #244)
+5. **GDPR**: Data export (#244)
 
 ### Notes
 - Server actions in `shared.ts` are internal utilities, not user-facing actions
