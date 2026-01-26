@@ -43,12 +43,12 @@ describe('Auth E2E Tests', () => {
       await LoginScreen.enterEmail(TEST_USER.email);
       await LoginScreen.enterPassword(TEST_USER.password);
       await element(by.id('login.screen')).tap(); // Dismiss keyboard
-      await LoginScreen.tapSubmit();
 
-      // Should navigate to dashboard (user already completed onboarding)
-      // Disable sync because dashboard fetches data continuously
+      // Disable sync BEFORE tapping submit - dashboard has continuous data fetching
+      // that blocks Detox synchronization
       await device.disableSynchronization();
       try {
+        await LoginScreen.tapSubmit();
         await DashboardScreen.waitForScreen();
         await expect(element(by.id('dashboard.screen'))).toBeVisible();
       } finally {
