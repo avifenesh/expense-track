@@ -491,6 +491,45 @@ Create a new transaction.
 
 ---
 
+### GET /api/v1/transactions/[id]
+
+Get a single transaction by ID.
+
+**Auth:** Bearer token required
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "accountId": "clx...",
+    "categoryId": "clx...",
+    "type": "EXPENSE",
+    "amount": "125.50",
+    "currency": "USD",
+    "date": "2024-01-15",
+    "month": "2024-01-01",
+    "description": "Grocery shopping",
+    "isRecurring": false,
+    "category": {
+      "id": "clx...",
+      "name": "Groceries",
+      "type": "EXPENSE",
+      "color": "#10b981"
+    }
+  }
+}
+```
+
+**Errors:**
+- 401: Invalid or missing auth token
+- 404: Transaction not found (or not owned by user)
+- 429: Rate limited
+
+---
+
 ### PUT /api/v1/transactions/[id]
 
 Update a transaction.

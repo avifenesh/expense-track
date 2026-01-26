@@ -95,8 +95,11 @@ describe('Transaction E2E Tests', () => {
           .toBeVisible()
           .withTimeout(TIMEOUTS.LONG);
 
-        // Transaction should appear in the list
-        await waitFor(element(by.text('$42.50')))
+        // Scroll down to see recent transactions section (may be below fold)
+        await element(by.id('dashboard.scrollView')).scroll(300, 'down');
+
+        // Transaction should appear in the list (expenses show as -$amount)
+        await waitFor(element(by.text('-$42.50')))
           .toBeVisible()
           .withTimeout(TIMEOUTS.MEDIUM);
       } finally {
@@ -111,7 +114,12 @@ describe('Transaction E2E Tests', () => {
       // Disable sync as dashboard may be refreshing data
       await device.disableSynchronization();
       try {
-        await waitFor(element(by.id('dashboard.recentTransactionsSection')))
+        // Scroll down more to see the recent transactions section (below fold)
+        // Use larger scroll value to ensure section is visible on all device sizes
+        await element(by.id('dashboard.scrollView')).scroll(500, 'down');
+
+        // Now check for the section (or its title as fallback)
+        await waitFor(element(by.id('dashboard.recentTransactionsTitle')))
           .toBeVisible()
           .withTimeout(TIMEOUTS.MEDIUM);
       } finally {

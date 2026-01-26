@@ -15,6 +15,65 @@ import {
 import { ensureApiAccountOwnership } from '@/lib/api-auth-helpers'
 import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
 import { formatDateForApi } from '@/utils/date'
+import { serverLogger } from '@/lib/server-logger'
+
+/**
+ * GET /api/v1/transactions/[id]
+ *
+ * Retrieves a single transaction by ID.
+ *
+ * @param id - The transaction ID (path parameter)
+ *
+ * @returns {Transaction} The transaction with all fields
+ * @throws {401} Unauthorized - Invalid or missing auth token
+ * @throws {404} Not found - Transaction does not exist
+ * @throws {429} Rate limited - Too many requests
+ */
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  // 1. Authenticate
+  let user
+  try {
+    user = requireJwtAuth(request)
+  } catch (error) {
+    return authError(error instanceof Error ? error.message : 'Unauthorized')
+  }
+
+  // 1.5 Rate limit check
+  const rateLimit = checkRateLimit(user.userId)
+  if (!rateLimit.allowed) {
+    return rateLimitError(rateLimit.resetAt)
+  }
+  incrementRateLimit(user.userId)
+
+  // Note: No subscription check for GET - users can always view their data
+
+  // 2. Fetch transaction with ownership check
+  try {
+    const transaction = await getTransactionById(id, user.userId)
+    if (!transaction) {
+      return notFoundError('Transaction not found')
+    }
+
+    return successResponse({
+      id: transaction.id,
+      accountId: transaction.accountId,
+      categoryId: transaction.categoryId,
+      type: transaction.type,
+      amount: transaction.amount.toString(),
+      currency: transaction.currency,
+      date: formatDateForApi(transaction.date),
+      month: formatDateForApi(transaction.month),
+      description: transaction.description,
+      isRecurring: transaction.isRecurring,
+      category: transaction.category,
+    })
+  } catch (error) {
+    serverLogger.error('Failed to fetch transaction', { action: 'GET /api/v1/transactions/[id]' }, error)
+    return serverError('Unable to fetch transaction')
+  }
+}
 
 /**
  * PUT /api/v1/transactions/[id]

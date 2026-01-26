@@ -89,13 +89,23 @@ export async function deleteTransaction(id: string, deletedBy: string) {
  * If userId is provided, only returns the transaction if it belongs to that user (via account)
  */
 export async function getTransactionById(id: string, userId?: string) {
-  if (userId) {
-    return await prisma.transaction.findFirst({
-      where: { id, account: { userId }, deletedAt: null },
-      include: { account: true },
-    })
-  }
-  return await prisma.transaction.findFirst({ where: { id, deletedAt: null } })
+  return await prisma.transaction.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+      ...(userId && { account: { userId } }),
+    },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          color: true,
+        },
+      },
+    },
+  })
 }
 
 /**
