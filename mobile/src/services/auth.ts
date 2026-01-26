@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch } from './api'
+import { apiGet, apiPost, apiPatch, apiDeleteWithBody } from './api'
 
 export interface LoginResponse {
   accessToken: string
@@ -89,4 +89,117 @@ export interface UpdateCurrencyResponse {
 
 export async function updateCurrency(currency: string, accessToken: string): Promise<UpdateCurrencyResponse> {
   return apiPatch<UpdateCurrencyResponse>('/users/me/currency', { currency }, accessToken)
+}
+
+// Export data types
+export interface ExportDataUser {
+  id: string
+  email: string
+  displayName: string | null
+  preferredCurrency: string
+  emailVerified?: boolean
+  hasCompletedOnboarding?: boolean
+  createdAt: string
+}
+
+export interface ExportDataSubscription {
+  id: string
+  status: string
+  trialEndsAt: string | null
+  currentPeriodStart: string | null
+  currentPeriodEnd: string | null
+  createdAt: string
+}
+
+export interface ExportDataAccount {
+  id: string
+  name: string
+  preferredCurrency: string
+  createdAt: string
+}
+
+export interface ExportDataCategory {
+  id: string
+  name: string
+  icon: string
+  color: string
+  type: string
+}
+
+export interface ExportDataTransaction {
+  id: string
+  description: string | null
+  amount: string
+  type: string
+  date: string
+  categoryName: string
+  accountName: string
+}
+
+export interface ExportDataBudget {
+  id: string
+  amount: string
+  month: string
+  categoryName: string
+  accountName: string
+}
+
+export interface ExportDataRecurring {
+  id: string
+  description: string | null
+  amount: string
+  type: string
+  frequency: string
+  startDate: string
+  categoryName: string
+  accountName: string
+}
+
+export interface ExportDataHolding {
+  id: string
+  symbol: string
+  quantity: string
+  costBasis: string
+  accountName: string
+}
+
+export interface ExportDataJsonResponse {
+  exportedAt: string
+  user: ExportDataUser
+  subscription?: ExportDataSubscription
+  accounts: ExportDataAccount[]
+  categories: ExportDataCategory[]
+  transactions: ExportDataTransaction[]
+  budgets: ExportDataBudget[]
+  recurringTemplates: ExportDataRecurring[]
+  holdings: ExportDataHolding[]
+}
+
+export interface ExportDataCsvResponse {
+  format: 'csv'
+  data: string
+}
+
+export type ExportDataResponse = ExportDataJsonResponse | ExportDataCsvResponse
+
+export interface DeleteAccountResponse {
+  message: string
+}
+
+export async function exportUserData(
+  format: 'json' | 'csv',
+  accessToken: string
+): Promise<ExportDataResponse> {
+  return apiGet<ExportDataResponse>(`/auth/export?format=${format}`, accessToken)
+}
+
+export async function deleteAccount(
+  confirmEmail: string,
+  accessToken: string
+): Promise<DeleteAccountResponse> {
+  return apiDeleteWithBody<DeleteAccountResponse>(
+    '/auth/account',
+    { confirmEmail },
+    accessToken
+  )
 }

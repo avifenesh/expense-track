@@ -1,20 +1,28 @@
-import React, { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator } from 'react-native'
+import React, { useState, useCallback } from 'react'
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator, Alert, Share } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import { APP_NAME, APP_VERSION } from '../../constants'
 import { useAuthStore } from '../../stores'
 import { getBiometricTypeLabel } from '../../services/biometric'
+import { exportUserData, deleteAccount } from '../../services/auth'
+import { ExportFormatModal, type ExportFormat } from '../../components/ExportFormatModal'
+import { DeleteAccountModal } from '../../components/DeleteAccountModal'
+import { ApiError } from '../../services/api'
 
 export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
-  // Select only STATE values, not functions, to prevent re-render loops
-  // Functions are accessed via getState() within callbacks
   const biometricCapability = useAuthStore((state) => state.biometricCapability)
   const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled)
+  const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBiometricLoading, setIsBiometricLoading] = useState(false)
   const [biometricError, setBiometricError] = useState<string | null>(null)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -44,6 +52,74 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
       setIsBiometricLoading(false)
     }
   }
+
+  const handleExportData = useCallback(async (format: ExportFormat) => {
+    if (!accessToken) {
+      Alert.alert('Error', 'You must be logged in to export data')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      const data = await exportUserData(format, accessToken)
+
+      let shareContent: string
+      let filename: string
+
+      if ('format' in data && data.format === 'csv') {
+        shareContent = data.data
+        filename = 'balance-beacon-export.csv'
+      } else {
+        shareContent = JSON.stringify(data, null, 2)
+        filename = 'balance-beacon-export.json'
+      }
+
+      setShowExportModal(false)
+
+      await Share.share({
+        message: shareContent,
+        title: filename,
+      })
+
+      Alert.alert('Success', 'Your data has been exported successfully')
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : 'Failed to export data'
+      Alert.alert('Export Failed', errorMessage)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [accessToken])
+
+  const handleDeleteAccount = useCallback(async (confirmEmail: string) => {
+    if (!accessToken) {
+      Alert.alert('Error', 'You must be logged in to delete your account')
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await deleteAccount(confirmEmail, accessToken)
+      setShowDeleteModal(false)
+
+      // Show confirmation alert, then logout to ensure user sees the message
+      Alert.alert(
+        'Account Deleted',
+        'Your account has been permanently deleted',
+        [
+          {
+            text: 'OK',
+            onPress: () => useAuthStore.getState().logout(),
+          },
+        ],
+        { cancelable: false }
+      )
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : 'Failed to delete account'
+      Alert.alert('Delete Failed', errorMessage)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [accessToken])
 
   const biometricLabel = biometricCapability ? getBiometricTypeLabel(biometricCapability.biometricType) : 'Biometric'
 
@@ -123,11 +199,19 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data</Text>
           <View style={styles.menuGroup}>
-            <Pressable style={styles.menuItem}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => setShowExportModal(true)}
+              testID="settings.exportDataButton"
+            >
               <Text style={styles.menuText}>Export Data</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
-            <Pressable style={styles.menuItem}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => setShowDeleteModal(true)}
+              testID="settings.deleteAccountButton"
+            >
               <Text style={[styles.menuText, styles.dangerText]}>Delete Account</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
@@ -163,6 +247,21 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
 
         <Text style={styles.appName}>{APP_NAME}</Text>
       </ScrollView>
+
+      <ExportFormatModal
+        visible={showExportModal}
+        isExporting={isExporting}
+        onClose={() => setShowExportModal(false)}
+        onSelectFormat={handleExportData}
+      />
+
+      <DeleteAccountModal
+        visible={showDeleteModal}
+        userEmail={user?.email || ''}
+        isDeleting={isDeleting}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+      />
     </SafeAreaView>
   )
 }

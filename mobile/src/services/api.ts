@@ -154,3 +154,18 @@ export function apiPatch<T>(
 export function apiDelete<T>(endpoint: string, accessToken?: string | null): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'DELETE' }, accessToken);
 }
+
+export function apiDeleteWithBody<T>(
+  endpoint: string,
+  body: unknown,
+  accessToken?: string | null
+): Promise<T> {
+  return apiRequest<T>(
+    endpoint,
+    {
+      method: 'DELETE',
+      body: JSON.stringify(body),
+    },
+    accessToken
+  );
+}
