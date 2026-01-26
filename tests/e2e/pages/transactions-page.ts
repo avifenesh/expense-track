@@ -74,7 +74,8 @@ export class TransactionsPage extends BasePage {
 
   async clickDeleteTransaction(description: string) {
     // First verify the transaction is visible in the list
-    await expect(this.page.getByText(description)).toBeVisible({ timeout: 20000 })
+    // Use .first() to handle strict mode - description may appear in multiple places
+    await expect(this.page.getByText(description).first()).toBeVisible({ timeout: 20000 })
     // Use getByRole for the Delete button directly - it's more reliable than nested locators
     // The most recently created transaction appears at the top, so first() gets the right one
     // Transaction deletion is immediate (no confirmation dialog)
