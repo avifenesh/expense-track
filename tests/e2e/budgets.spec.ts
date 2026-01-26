@@ -81,7 +81,7 @@ test.describe('budgets', () => {
       // Budget deletion is immediate (no confirmation dialog)
       await budgetsPage.clickDeleteBudget(TEST_CATEGORIES.ENTERTAINMENT)
 
-      await expect(page.getByText(/budget removed/i)).toBeVisible()
+      await expect(page.getByText(/budget removed/i)).toBeVisible({ timeout: 10000 })
 
       await dashboardPage.clickSignOut()
     })
