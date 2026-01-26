@@ -48,9 +48,8 @@ export function ExportFormatModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
-      testID="export-format-modal"
     >
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="export-format-modal">
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <Text style={styles.title}>Export Data</Text>

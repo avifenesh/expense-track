@@ -54,9 +54,8 @@ export function DeleteAccountModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
-      testID="delete-account-modal"
     >
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="delete-account-modal">
         <View style={styles.header}>
           <Pressable
             style={styles.cancelButton}
