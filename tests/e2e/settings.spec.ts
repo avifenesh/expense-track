@@ -95,7 +95,7 @@ test.describe('settings', () => {
       await expect(page.getByRole('button', { name: /export as csv/i })).toBeVisible()
     })
 
-    test('should trigger download when export button is clicked', async ({ page }) => {
+    test('should trigger JSON download when export button is clicked', async ({ page }) => {
       const accountButton = page.getByRole('button', { name: /account/i })
       await accountButton.click()
       await page.getByRole('menuitem', { name: /export my data/i }).click()
@@ -109,6 +109,26 @@ test.describe('settings', () => {
 
       // Verify download filename
       expect(download.suggestedFilename()).toMatch(/balance-beacon-export.*\.json/)
+    })
+
+    test('should trigger CSV download when CSV format is selected', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
+
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+
+      // Click CSV format
+      const csvButton = page.getByRole('button', { name: /csv/i }).first()
+      await csvButton.click()
+
+      // Wait for download event
+      const downloadPromise = page.waitForEvent('download')
+      await page.getByRole('button', { name: /export as csv/i }).click()
+      const download = await downloadPromise
+
+      // Verify download filename
+      expect(download.suggestedFilename()).toMatch(/balance-beacon-export.*\.csv/)
     })
 
     test('should close export dialog', async ({ page }) => {
