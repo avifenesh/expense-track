@@ -11,11 +11,11 @@ This test suite covers:
 - **Budgets** (7 tests): Create, edit, delete, filter budgets
 - **Sharing** (6 tests): Expense sharing, participants, settlement balances
 - **Dashboard** (9 tests): Layout, month navigation, account switching, tabs
-- **Settings** (8 tests): Account menu dropdown, export data, sign out, delete account
+- **Settings** (18 tests): Account menu dropdown, export data (JSON/CSV), sign out, delete account confirmation
 - **Subscription** (5 tests): Subscription banner, upgrade page, pricing
 - **Pricing** (9 tests): Public pricing page, comparison table, navigation
 
-**Total: 77 web E2E tests**
+**Total: 87 web E2E tests**
 
 ## Setup
 
