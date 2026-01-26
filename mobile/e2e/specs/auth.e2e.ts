@@ -40,39 +40,15 @@ describe('Auth E2E Tests', () => {
 
   describe('Login Flow', () => {
     it('logs in with valid credentials and navigates to dashboard', async () => {
+      // enterPassword dismisses keyboard via tapReturnKey
       await LoginScreen.enterEmail(TEST_USER.email);
       await LoginScreen.enterPassword(TEST_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
+      await LoginScreen.tapSubmit();
 
-      // Disable sync BEFORE tapping submit - dashboard has continuous data fetching
-      // that blocks Detox synchronization
-      await device.disableSynchronization();
-      try {
-        await LoginScreen.tapSubmit();
-
-        // Wait for either dashboard or onboarding to appear
-        // Test user should have hasCompletedOnboarding=true from ensureTestUser
-        await waitFor(element(by.id('dashboard.screen')))
-          .toBeVisible()
-          .withTimeout(TIMEOUTS.LONG);
-
-        // Verify we're on dashboard, not onboarding
-        await expect(element(by.id('dashboard.screen'))).toBeVisible();
-      } catch (error) {
-        // Check if we landed on onboarding instead (indicates hasCompletedOnboarding=false)
-        try {
-          await expect(element(by.id('onboarding.welcomeScreen'))).toBeVisible();
-          throw new Error(
-            'Login navigated to onboarding instead of dashboard. ' +
-            'Test user hasCompletedOnboarding may not be set correctly.'
-          );
-        } catch {
-          // Re-throw original error if not on onboarding either
-          throw error;
-        }
-      } finally {
-        await device.enableSynchronization();
-      }
+      // Wait for dashboard - test user should have hasCompletedOnboarding=true
+      // from ensureTestUser which calls completeOnboarding API
+      await DashboardScreen.waitForScreen();
+      await expect(element(by.id('dashboard.screen'))).toBeVisible();
     });
 
     it('shows error for invalid credentials', async () => {
