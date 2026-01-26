@@ -447,7 +447,10 @@ export const BudgetsScreen = {
 export const SettingsScreen = {
   testIds: {
     screen: 'settings.screen',
-    logoutButton: 'settings.logoutButton',
+    scrollView: 'settings.scrollView',
+    exportDataButton: 'settings.exportDataButton',
+    deleteAccountButton: 'settings.deleteAccountButton',
+    logoutButton: 'logout-button',
   },
 
   async waitForScreen(): Promise<void> {
@@ -456,12 +459,109 @@ export const SettingsScreen = {
       .withTimeout(TIMEOUTS.MEDIUM);
   },
 
+  async tapExportData(): Promise<void> {
+    await element(by.id('settings.exportDataButton')).tap();
+  },
+
+  async tapDeleteAccount(): Promise<void> {
+    await element(by.id('settings.deleteAccountButton')).tap();
+  },
+
   async tapLogout(): Promise<void> {
-    await element(by.id('settings.logoutButton')).tap();
+    await element(by.id('logout-button')).tap();
   },
 
   async assertVisible(): Promise<void> {
     await expect(element(by.id('settings.screen'))).toBeVisible();
+  },
+};
+
+export const ExportFormatModal = {
+  testIds: {
+    modal: 'export-format-modal',
+    cancelButton: 'export-format-modal.cancel',
+    jsonButton: 'export-format-modal.json',
+    csvButton: 'export-format-modal.csv',
+    loading: 'export-format-modal.loading',
+  },
+
+  async waitForModal(): Promise<void> {
+    await waitFor(element(by.id('export-format-modal')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async tapJson(): Promise<void> {
+    await element(by.id('export-format-modal.json')).tap();
+  },
+
+  async tapCsv(): Promise<void> {
+    await element(by.id('export-format-modal.csv')).tap();
+  },
+
+  async tapCancel(): Promise<void> {
+    await element(by.id('export-format-modal.cancel')).tap();
+  },
+
+  async assertVisible(): Promise<void> {
+    await expect(element(by.id('export-format-modal'))).toBeVisible();
+  },
+
+  async assertNotVisible(): Promise<void> {
+    await expect(element(by.id('export-format-modal'))).not.toBeVisible();
+  },
+};
+
+export const DeleteAccountModal = {
+  testIds: {
+    modal: 'delete-account-modal',
+    cancelButton: 'delete-account-modal.cancel',
+    emailInput: 'delete-account-modal.email-input',
+    confirmButton: 'delete-account-modal.confirm',
+    loading: 'delete-account-modal.loading',
+  },
+
+  async waitForModal(): Promise<void> {
+    await waitFor(element(by.id('delete-account-modal')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  async enterEmail(email: string): Promise<void> {
+    await element(by.id('delete-account-modal.email-input')).clearText();
+    await element(by.id('delete-account-modal.email-input')).typeText(email);
+  },
+
+  async tapConfirm(): Promise<void> {
+    await element(by.id('delete-account-modal.confirm')).tap();
+  },
+
+  async tapCancel(): Promise<void> {
+    await element(by.id('delete-account-modal.cancel')).tap();
+  },
+
+  async assertVisible(): Promise<void> {
+    await expect(element(by.id('delete-account-modal'))).toBeVisible();
+  },
+
+  async assertNotVisible(): Promise<void> {
+    await expect(element(by.id('delete-account-modal'))).not.toBeVisible();
+  },
+
+  async assertConfirmDisabled(): Promise<void> {
+    const attributes = await element(by.id('delete-account-modal.confirm')).getAttributes();
+    const isDisabled = (attributes as { enabled?: boolean }).enabled === false;
+    if (!isDisabled) {
+      throw new Error('Expected confirm button to be disabled');
+    }
+  },
+
+  async assertConfirmEnabled(): Promise<void> {
+    const attributes = await element(by.id('delete-account-modal.confirm')).getAttributes();
+    const isEnabled = (attributes as { enabled?: boolean }).enabled !== false;
+    if (!isEnabled) {
+      throw new Error('Expected confirm button to be enabled');
+    }
   },
 };
 
