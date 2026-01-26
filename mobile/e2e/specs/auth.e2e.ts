@@ -40,20 +40,15 @@ describe('Auth E2E Tests', () => {
 
   describe('Login Flow', () => {
     it('logs in with valid credentials and navigates to dashboard', async () => {
+      // enterPassword dismisses keyboard via tapReturnKey
       await LoginScreen.enterEmail(TEST_USER.email);
       await LoginScreen.enterPassword(TEST_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
       await LoginScreen.tapSubmit();
 
-      // Should navigate to dashboard (user already completed onboarding)
-      // Disable sync because dashboard fetches data continuously
-      await device.disableSynchronization();
-      try {
-        await DashboardScreen.waitForScreen();
-        await expect(element(by.id('dashboard.screen'))).toBeVisible();
-      } finally {
-        await device.enableSynchronization();
-      }
+      // Wait for dashboard - test user should have hasCompletedOnboarding=true
+      // from ensureTestUser which calls completeOnboarding API
+      await DashboardScreen.waitForScreen();
+      await expect(element(by.id('dashboard.screen'))).toBeVisible();
     });
 
     it('shows error for invalid credentials', async () => {

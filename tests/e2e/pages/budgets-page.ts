@@ -34,8 +34,17 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickEditBudget(category: string) {
-    const item = this.page.locator('div.rounded-2xl', { hasText: category })
-    await item.getByRole('button', { name: /edit/i }).first().click()
+    // Find the budget list item by targeting the specific class structure
+    // Budget items have 'rounded-2xl' and 'px-4' classes, which distinguishes them
+    // from the Card container which has 'rounded-2xl' but uses different padding
+    const budgetItems = this.page.locator('div.rounded-2xl.px-4')
+    const targetItem = budgetItems.filter({ hasText: category })
+    await expect(targetItem).toBeVisible({ timeout: 10000 })
+
+    // Click the edit button within this specific budget item
+    const editButton = targetItem.getByRole('button', { name: /edit/i })
+    await expect(editButton).toBeVisible({ timeout: 5000 })
+    await editButton.click()
   }
 
   async clickCancelEdit() {
@@ -43,9 +52,11 @@ export class BudgetsPage extends BasePage {
   }
 
   async expectEditMode(categoryName: string) {
-    await expect(this.page.getByText(`Edit budget: ${categoryName}`)).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Update budget' })).toBeVisible()
+    // The component uses requestAnimationFrame to scroll the form into view,
+    // so we need a longer timeout to wait for the edit mode to be fully active
+    await expect(this.page.getByText(`Edit budget: ${categoryName}`)).toBeVisible({ timeout: 10000 })
+    await expect(this.page.getByRole('button', { name: 'Cancel' })).toBeVisible({ timeout: 5000 })
+    await expect(this.page.getByRole('button', { name: 'Update budget' })).toBeVisible({ timeout: 5000 })
   }
 
   async expectNotEditMode() {
@@ -64,12 +75,16 @@ export class BudgetsPage extends BasePage {
   }
 
   async clickDeleteBudget(category: string) {
-    // First verify the budget is visible in the list
-    // Use .first() to handle strict mode - category appears in both list and dropdown
-    await expect(this.page.getByText(category).first()).toBeVisible({ timeout: 20000 })
-    // Use getByRole for the Remove button directly - it's more reliable than nested locators
+    // Find the budget list item by targeting the specific class structure
+    // Budget items have 'rounded-2xl' and 'px-4' classes, which distinguishes them
+    // from the Card container which has 'rounded-2xl' but uses different padding
+    const budgetItems = this.page.locator('div.rounded-2xl.px-4')
+    const targetItem = budgetItems.filter({ hasText: category })
+    await expect(targetItem).toBeVisible({ timeout: 20000 })
+
+    // Click the remove button within this specific budget item
     // Budget deletion is immediate (no confirmation dialog)
-    const removeButton = this.page.getByRole('button', { name: /remove/i }).first()
+    const removeButton = targetItem.getByRole('button', { name: /remove/i })
     await expect(removeButton).toBeVisible({ timeout: 10000 })
     await removeButton.click()
   }

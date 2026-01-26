@@ -221,8 +221,8 @@ jest.mock('react-native-safe-area-context', () => {
       ),
     SafeAreaConsumer: SafeAreaContext.Consumer,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    SafeAreaView: ({ children, edges, style }) =>
-      React.createElement(View, { testID: 'safe-area-view', style }, children),
+    SafeAreaView: ({ children, edges, style, testID }) =>
+      React.createElement(View, { testID: testID || 'safe-area-view', style }, children),
     useSafeAreaInsets: () => inset,
     useSafeAreaFrame: () => frame,
     SafeAreaInsetsContext: SafeAreaContext,

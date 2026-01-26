@@ -63,11 +63,18 @@ describe('authStore', () => {
   });
 
   describe('login', () => {
-    it('successfully logs in and updates state', async () => {
+    it('successfully logs in with user data from response', async () => {
       mockAuthService.login.mockResolvedValue({
         accessToken: 'access-token-123',
         refreshToken: 'refresh-token-456',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: 'Test User',
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
 
       await useAuthStore.getState().login('test@example.com', 'password123');
@@ -77,10 +84,27 @@ describe('authStore', () => {
       expect(state.accessToken).toBe('access-token-123');
       expect(state.refreshToken).toBe('refresh-token-456');
       expect(state.user).toEqual({
-        id: null,
+        id: 'user-123',
         email: 'test@example.com',
-        hasCompletedOnboarding: false,
+        displayName: 'Test User',
+        hasCompletedOnboarding: true,
       });
+    });
+
+    it('handles null user in login response', async () => {
+      mockAuthService.login.mockResolvedValue({
+        accessToken: 'token',
+        refreshToken: 'refresh',
+        expiresIn: 900,
+        user: null,
+      });
+
+      await useAuthStore.getState().login('test@example.com', 'password');
+
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.user?.hasCompletedOnboarding).toBe(false);
+      expect(state.user?.id).toBeNull();
     });
 
     it('normalizes email to lowercase', async () => {
@@ -88,6 +112,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: false,
+        },
       });
 
       await useAuthStore.getState().login('Test@Example.COM', 'password');
@@ -126,6 +157,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -203,6 +241,13 @@ describe('authStore', () => {
         accessToken: 'old-access',
         refreshToken: 'old-refresh',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -212,6 +257,7 @@ describe('authStore', () => {
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
         expiresIn: 900,
+        user: null,
       });
 
       await useAuthStore.getState().refreshTokens();
@@ -247,6 +293,7 @@ describe('authStore', () => {
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
         expiresIn: 900,
+        user: null,
       });
 
       await useAuthStore.getState().refreshTokens();
@@ -264,6 +311,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: false,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -304,6 +358,23 @@ describe('authStore', () => {
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
         expiresIn: 900,
+        user: null,
+      });
+      mockAuthService.getProfile.mockResolvedValue({
+        id: 'user-123',
+        email: 'biometric@example.com',
+        displayName: 'Biometric User',
+        preferredCurrency: 'USD',
+        hasCompletedOnboarding: true,
+        createdAt: '2024-01-01',
+        subscription: {
+          status: 'active',
+          isActive: true,
+          trialEndsAt: null,
+          currentPeriodEnd: null,
+          daysRemaining: null,
+          canAccessApp: true,
+        },
       });
 
       await useAuthStore.getState().loginWithBiometric();
@@ -357,6 +428,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
     });
@@ -410,6 +488,13 @@ describe('authStore', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
         expiresIn: 900,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          displayName: null,
+          preferredCurrency: 'USD',
+          hasCompletedOnboarding: true,
+        },
       });
       await useAuthStore.getState().login('test@example.com', 'password');
 

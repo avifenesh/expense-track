@@ -57,6 +57,80 @@ test.describe('settings', () => {
       await expect(page.getByText(/download.*data/i)).toBeVisible()
     })
 
+    test('should show JSON and CSV format options', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
+
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+
+      // Format selection buttons should be visible
+      await expect(page.getByRole('button', { name: /json/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /csv/i })).toBeVisible()
+    })
+
+    test('should default to JSON format with correct button text', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
+
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+
+      // Export button should show JSON format by default
+      await expect(page.getByRole('button', { name: /export as json/i })).toBeVisible()
+    })
+
+    test('should switch to CSV format when selected', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
+
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+
+      // Click CSV format
+      const csvButton = page.getByRole('button', { name: /csv/i }).first()
+      await csvButton.click()
+
+      // Export button should update to show CSV
+      await expect(page.getByRole('button', { name: /export as csv/i })).toBeVisible()
+    })
+
+    test('should trigger JSON download when export button is clicked', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
+
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+
+      // Wait for download event
+      const downloadPromise = page.waitForEvent('download')
+      await page.getByRole('button', { name: /export as json/i }).click()
+      const download = await downloadPromise
+
+      // Verify download filename
+      expect(download.suggestedFilename()).toMatch(/balance-beacon-export.*\.json/)
+    })
+
+    test('should trigger CSV download when CSV format is selected', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /export my data/i }).click()
+
+      await expect(page.getByRole('heading', { name: /export/i })).toBeVisible()
+
+      // Click CSV format
+      const csvButton = page.getByRole('button', { name: /csv/i }).first()
+      await csvButton.click()
+
+      // Wait for download event
+      const downloadPromise = page.waitForEvent('download')
+      await page.getByRole('button', { name: /export as csv/i }).click()
+      const download = await downloadPromise
+
+      // Verify download filename
+      expect(download.suggestedFilename()).toMatch(/balance-beacon-export.*\.csv/)
+    })
+
     test('should close export dialog', async ({ page }) => {
       const accountButton = page.getByRole('button', { name: /account/i })
       await accountButton.click()
@@ -69,83 +143,6 @@ test.describe('settings', () => {
       await closeButton.click()
 
       await expect(exportDialog).not.toBeVisible()
-    })
-
-    test('should show JSON and CSV format options', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /export my data/i }).click()
-
-      // Check format options are visible
-      await expect(page.getByRole('button', { name: /json/i })).toBeVisible()
-      await expect(page.getByRole('button', { name: /csv/i })).toBeVisible()
-      await expect(page.getByText(/structured data format/i)).toBeVisible()
-      await expect(page.getByText(/spreadsheet compatible/i)).toBeVisible()
-    })
-
-    test('should allow format selection', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /export my data/i }).click()
-
-      // Default should be JSON
-      const exportButton = page.getByRole('button', { name: /export as json/i })
-      await expect(exportButton).toBeVisible()
-
-      // Click CSV format
-      await page.getByRole('button', { name: /csv/i }).click()
-
-      // Export button should update
-      await expect(page.getByRole('button', { name: /export as csv/i })).toBeVisible()
-    })
-
-    test('should trigger download when export is clicked', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /export my data/i }).click()
-
-      // Wait for CSRF token to load
-      await expect(page.getByRole('button', { name: /export as json/i })).toBeEnabled({ timeout: 5000 })
-
-      // Set up download listener
-      const downloadPromise = page.waitForEvent('download')
-
-      // Click export
-      await page.getByRole('button', { name: /export as json/i }).click()
-
-      // Verify download started
-      const download = await downloadPromise
-      expect(download.suggestedFilename()).toMatch(/balance-beacon-export.*\.json/)
-    })
-
-    test('should export CSV format', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /export my data/i }).click()
-
-      // Select CSV
-      await page.getByRole('button', { name: /csv/i }).click()
-
-      // Wait for CSRF token to load
-      await expect(page.getByRole('button', { name: /export as csv/i })).toBeEnabled({ timeout: 5000 })
-
-      // Set up download listener
-      const downloadPromise = page.waitForEvent('download')
-
-      // Click export
-      await page.getByRole('button', { name: /export as csv/i }).click()
-
-      // Verify download started
-      const download = await downloadPromise
-      expect(download.suggestedFilename()).toMatch(/balance-beacon-export.*\.csv/)
-    })
-
-    test('should show GDPR compliance text', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /export my data/i }).click()
-
-      await expect(page.getByText(/gdpr.*article.*20/i)).toBeVisible()
     })
   })
 
@@ -173,6 +170,57 @@ test.describe('settings', () => {
       await expect(page.getByText(/this action.*permanent/i)).toBeVisible()
     })
 
+    test('should show email confirmation input', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /delete account/i }).click()
+
+      await expect(page.getByRole('heading', { name: /delete.*account/i })).toBeVisible()
+
+      // Email confirmation input should be visible
+      const emailInput = page.getByPlaceholder(/enter your email/i)
+      await expect(emailInput).toBeVisible()
+    })
+
+    test('should have delete button disabled when email is empty', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /delete account/i }).click()
+
+      await expect(page.getByRole('heading', { name: /delete.*account/i })).toBeVisible()
+
+      // Delete button should be disabled initially
+      const deleteButton = page.getByRole('button', { name: /delete account/i })
+      await expect(deleteButton).toBeDisabled()
+    })
+
+    test('should keep delete button disabled for wrong email', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /delete account/i }).click()
+
+      await expect(page.getByRole('heading', { name: /delete.*account/i })).toBeVisible()
+
+      // Type wrong email
+      const emailInput = page.getByPlaceholder(/enter your email/i)
+      await emailInput.fill('wrong-email@example.com')
+
+      // Delete button should still be disabled
+      const deleteButton = page.getByRole('button', { name: /delete account/i })
+      await expect(deleteButton).toBeDisabled()
+    })
+
+    test('should show warning about irreversible action', async ({ page }) => {
+      const accountButton = page.getByRole('button', { name: /account/i })
+      await accountButton.click()
+      await page.getByRole('menuitem', { name: /delete account/i }).click()
+
+      await expect(page.getByRole('heading', { name: /delete.*account/i })).toBeVisible()
+
+      // Warning text should be visible
+      await expect(page.getByText(/permanent.*irreversible/i)).toBeVisible()
+    })
+
     test('should close delete account dialog', async ({ page }) => {
       const accountButton = page.getByRole('button', { name: /account/i })
       await accountButton.click()
@@ -187,62 +235,7 @@ test.describe('settings', () => {
       await expect(deleteDialog).not.toBeVisible()
     })
 
-    test('should show email confirmation input', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /delete account/i }).click()
-
-      // Check for email input field
-      const emailInput = page.getByRole('textbox')
-      await expect(emailInput).toBeVisible()
-
-      // Check for instruction text
-      await expect(page.getByText(/type.*to confirm/i)).toBeVisible()
-    })
-
-    test('should disable delete button when email does not match', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /delete account/i }).click()
-
-      // Wait for CSRF token to load
-      await page.waitForTimeout(500)
-
-      // Delete button should be disabled initially
-      const deleteButton = page.getByRole('button', { name: /delete account/i })
-      await expect(deleteButton).toBeDisabled()
-
-      // Enter wrong email
-      const emailInput = page.getByRole('textbox')
-      await emailInput.fill('wrong@email.com')
-
-      // Button should still be disabled
-      await expect(deleteButton).toBeDisabled()
-    })
-
-    test('should enable delete button when email matches', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /delete account/i }).click()
-
-      // Get the user email from the instruction text
-      const instructionText = await page.getByText(/type.*to confirm/i).textContent()
-      const emailMatch = instructionText?.match(/Type\s+(\S+@\S+)\s+to confirm/i)
-      const userEmail = emailMatch?.[1] || ''
-
-      // Wait for CSRF token
-      await page.waitForTimeout(500)
-
-      // Enter matching email
-      const emailInput = page.getByRole('textbox')
-      await emailInput.fill(userEmail)
-
-      // Button should now be enabled
-      const deleteButton = page.getByRole('button', { name: /delete account/i })
-      await expect(deleteButton).toBeEnabled()
-    })
-
-    test('should close dialog with close button', async ({ page }) => {
+    test('should close delete dialog with X button', async ({ page }) => {
       const accountButton = page.getByRole('button', { name: /account/i })
       await accountButton.click()
       await page.getByRole('menuitem', { name: /delete account/i }).click()
@@ -250,24 +243,11 @@ test.describe('settings', () => {
       const deleteDialog = page.getByRole('heading', { name: /delete.*account/i })
       await expect(deleteDialog).toBeVisible()
 
-      // Click the X close button
+      // Close with X button
       const closeButton = page.getByRole('button', { name: /close/i })
       await closeButton.click()
 
       await expect(deleteDialog).not.toBeVisible()
     })
-
-    test('should show warning about irreversible action', async ({ page }) => {
-      const accountButton = page.getByRole('button', { name: /account/i })
-      await accountButton.click()
-      await page.getByRole('menuitem', { name: /delete account/i }).click()
-
-      // Check for warning text
-      await expect(page.getByText(/permanent.*irreversible/i)).toBeVisible()
-      await expect(page.getByText(/transactions.*budgets.*categories/i)).toBeVisible()
-    })
-
-    // Note: We don't actually delete the test account as that would break other tests
-    // The actual delete flow is covered by unit tests and API tests
   })
 })

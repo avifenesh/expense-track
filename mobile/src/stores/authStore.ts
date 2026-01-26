@@ -70,23 +70,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const response = await authService.login(email, password);
 
-      // Fetch user profile to get actual hasCompletedOnboarding status
-      let userProfile;
-      try {
-        userProfile = await authService.getProfile(response.accessToken);
-      } catch {
-        // If profile fetch fails, use defaults (new user needs onboarding)
-        userProfile = null;
-      }
-
+      // User data is included in login response - no separate call needed
       set({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         user: {
-          id: userProfile?.id ?? null,
+          id: response.user?.id ?? null,
           email: email.toLowerCase(),
-          displayName: userProfile?.displayName ?? undefined,
-          hasCompletedOnboarding: userProfile?.hasCompletedOnboarding ?? false,
+          displayName: response.user?.displayName ?? undefined,
+          hasCompletedOnboarding: response.user?.hasCompletedOnboarding ?? false,
         },
         isAuthenticated: true,
       });
