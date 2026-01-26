@@ -530,6 +530,8 @@ export const DeleteAccountModal = {
   async enterEmail(email: string): Promise<void> {
     await element(by.id('delete-account-modal.email-input')).clearText();
     await element(by.id('delete-account-modal.email-input')).typeText(email);
+    // Dismiss keyboard after typing
+    await element(by.id('delete-account-modal.email-input')).tapReturnKey();
   },
 
   async tapConfirm(): Promise<void> {
@@ -552,7 +554,18 @@ export const DeleteAccountModal = {
     // Due to known Detox issue (https://github.com/wix/Detox/issues/4644),
     // getAttributes().enabled may return incorrect values.
     // Instead, we verify the button doesn't trigger action when tapped.
+    // First, dismiss keyboard if open (it may cover the button/modal)
+    try {
+      await element(by.id('delete-account-modal')).tap();
+    } catch {
+      // Ignore if tap fails
+    }
+    // Wait a bit for UI to settle
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Tap the confirm button
     await element(by.id('delete-account-modal.confirm')).tap();
+    // Wait a bit for any potential navigation/action
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     // If disabled, the modal should still be visible (action not triggered)
     await expect(element(by.id('delete-account-modal'))).toBeVisible();
   },
