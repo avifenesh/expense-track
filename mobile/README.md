@@ -77,7 +77,7 @@ src/
     RootNavigator.tsx
   stores/       # Zustand stores (auth, accounts, transactions, budgets, categories, sharing)
   lib/          # Utilities (validation, tokenStorage, logger)
-  services/     # API services (api, auth)
+  services/     # API services (api, auth, subscription)
   types/        # TypeScript definitions
   constants/    # App constants
 ```
@@ -416,6 +416,39 @@ The app implements JWT-based authentication with the following features:
 - `services/api.ts` - Base API client with JWT token management and request interceptors
 - `contexts/AuthContext.tsx` - Authentication state management with React Context
 - `lib/tokenStorage.ts` - Secure token storage using expo-secure-store
+
+### Subscription Service
+
+- `services/subscription.ts` - Subscription state API client for checking user subscription status
+
+The subscription service provides a single function for fetching subscription state from the backend:
+
+**getSubscriptionStatus(accessToken: string)** - Fetch subscription state, Paddle checkout settings, and pricing info
+
+Returns:
+- Subscription info (status, isActive, canAccessApp, trial/period dates, Paddle IDs)
+- Checkout info (priceId, customData, customerEmail) - null if Paddle not configured
+- Pricing info (monthlyPriceCents, trialDays, currency)
+
+Subscription status values:
+- `TRIALING` - Active trial period
+- `ACTIVE` - Paid and active
+- `PAST_DUE` - Payment failed, grace period
+- `CANCELED` - Canceled, access until period end
+- `EXPIRED` - No longer has access
+
+Usage:
+```typescript
+import { getSubscriptionStatus } from '@/services';
+
+const { subscription, checkout, pricing } = await getSubscriptionStatus(accessToken);
+
+if (subscription.canAccessApp) {
+  // User has access to app features
+}
+```
+
+See `docs/API_CONTRACTS.md` for full API documentation.
 
 ### Auth State
 
