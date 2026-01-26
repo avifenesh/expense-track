@@ -52,12 +52,10 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   fetchSubscription: async () => {
     const { isLoading, lastFetched } = get();
 
-    // Prevent concurrent fetches
     if (isLoading) {
       return;
     }
 
-    // Check TTL - skip if cache is fresh
     if (lastFetched && Date.now() - lastFetched < CACHE_TTL_MS) {
       return;
     }
@@ -86,7 +84,6 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
         lastFetched: now,
       });
 
-      // Persist to cache
       await saveSubscription({
         status: subscription.status,
         isActive: subscription.isActive,
@@ -106,7 +103,6 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   refresh: async () => {
     const { isLoading } = get();
 
-    // Prevent concurrent fetches
     if (isLoading) {
       return;
     }
@@ -135,7 +131,6 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
         lastFetched: now,
       });
 
-      // Persist to cache
       await saveSubscription({
         status: subscription.status,
         isActive: subscription.isActive,
@@ -167,7 +162,6 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       });
     }
 
-    // Always fetch fresh data in background after loading cache
     const { fetchSubscription } = get();
     fetchSubscription();
   },
@@ -182,5 +176,4 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   },
 }));
 
-// Register for cleanup on logout
 registerStoreReset(() => useSubscriptionStore.getState().reset());
