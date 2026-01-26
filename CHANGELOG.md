@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration with accountsStore for real-time data
   - Navigation from Settings screen
 - API: DELETE /api/v1/auth/account endpoint for GDPR-compliant account deletion (#243)
+- Mobile: Settings Export Data and Delete Account buttons (#303)
+  - Export Data button opens modal to select JSON or CSV format
+  - Export includes all user data (transactions, budgets, categories, accounts, holdings, recurring templates)
+  - Delete Account button opens confirmation modal with email verification
+  - Warning modal shows all data that will be deleted
+  - New ExportFormatModal component with format selection
+  - New DeleteAccountModal component with email confirmation input
+  - Integration with exportUserData() and deleteAccount() auth service functions
+  - GDPR compliance (Article 20 - data portability, right to deletion)
+  - Rate limited endpoints (3 requests per hour)
   - Soft-delete user accounts with email confirmation
   - Anonymizes personal data (email, display name, password)
   - Deletes all refresh tokens for user

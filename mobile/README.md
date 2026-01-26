@@ -452,6 +452,65 @@ All auth endpoints integrate with the backend REST API:
 
 See `docs/API_CONTRACTS.md` for full API documentation.
 
+### Settings Features
+
+The Settings screen provides account management features including data export and account deletion.
+
+#### Export Data
+
+Users can export all their data in JSON or CSV format for data portability (GDPR Article 20 compliance).
+
+**Features:**
+- Export format selection modal (JSON or CSV)
+- Exports complete user profile, subscription, accounts, categories, transactions, budgets, holdings, recurring templates
+- File sharing/saving integration
+- Rate limited (3 requests per hour)
+
+**Usage:**
+```tsx
+import { exportUserData } from '@/services/auth';
+
+const handleExport = async (format: 'json' | 'csv') => {
+  const data = await exportUserData(format, accessToken);
+  // Share or save the exported data
+};
+```
+
+**Components:**
+- `ExportFormatModal` - Modal for selecting export format with loading states
+
+**API Integration:**
+- GET `/api/v1/auth/export?format={json|csv}` - Export user data
+
+#### Delete Account
+
+Users can permanently delete their account with email confirmation (GDPR compliance).
+
+**Features:**
+- Email confirmation required for safety
+- Warning modal listing all data that will be deleted (transactions, budgets, categories, accounts, holdings, subscription)
+- Soft-delete with data anonymization
+- Cancels active Paddle subscription
+- Rate limited (3 requests per hour)
+- Automatic logout after deletion
+
+**Usage:**
+```tsx
+import { deleteAccount } from '@/services/auth';
+
+const handleDelete = async (confirmEmail: string) => {
+  await deleteAccount(confirmEmail, accessToken);
+  // User is logged out automatically
+};
+```
+
+**Components:**
+- `DeleteAccountModal` - Confirmation modal with email verification input and loading states
+
+**API Integration:**
+- DELETE `/api/v1/auth/account` - Delete user account with email confirmation
+
+
 ## Navigation Architecture
 
 The app uses React Navigation with conditional routing:
