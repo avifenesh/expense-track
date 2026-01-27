@@ -106,8 +106,9 @@ describe('auth-server.ts', () => {
     await vi.resetModules()
 
     // Make findFirst delegate to findUnique so both work with same mock setup
-    vi.mocked(prisma.user.findFirst).mockImplementation((...args: unknown[]) =>
-      (prisma.user.findUnique as (...a: unknown[]) => unknown)(...args),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.user.findFirst).mockImplementation((...args: any[]) =>
+      (prisma.user.findUnique as any)(...args),
     )
 
     // Create fresh cookie mock
