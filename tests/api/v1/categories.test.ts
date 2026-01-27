@@ -687,7 +687,7 @@ describe('Category API Routes', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: 'Updated Category',
+          name: 'TEST_NullColor',
           color: null,
         }),
       })
@@ -697,7 +697,7 @@ describe('Category API Routes', () => {
 
       const data = await response.json()
       expect(data.success).toBe(true)
-      expect(data.data.name).toBe('Updated Category')
+      expect(data.data.name).toBe('TEST_NullColor')
       // Color may be null or undefined after setting to null
       expect(data.data.color).toBeFalsy()
     })

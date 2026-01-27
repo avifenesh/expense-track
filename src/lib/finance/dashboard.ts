@@ -50,7 +50,7 @@ export async function getDashboardData({
     settlementBalances,
     paymentHistory,
   ] = await Promise.all([
-    getCategories(userId),
+    getCategories(userId, true),
     getBudgetsForMonth({ monthKey, accountId }),
     getTransactionsForMonth({
       monthKey,
@@ -458,7 +458,8 @@ export async function getDashboardData({
     recurringTemplates,
     transactionRequests,
     accounts,
-    categories,
+    categories: categories.filter((c) => !c.isArchived),
+    allCategories: categories,
     holdings: [], // Will be populated separately in page.tsx
     comparison: {
       previousMonth: getMonthKey(previousMonthStart),

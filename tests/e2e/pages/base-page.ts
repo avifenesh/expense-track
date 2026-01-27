@@ -66,4 +66,16 @@ export class BasePage {
   currentUrl(): string {
     return this.page.url()
   }
+
+  /**
+   * Wait for CSRF token fetch to complete after tab navigation.
+   * The CSRF hook fires on component mount and takes ~200-500ms.
+   * Using a fixed wait because:
+   * - waitForLoadState('networkidle') causes hangs with Next.js persistent connections
+   * - waitForResponse may miss the CSRF fetch if it completed before this call
+   * - 1000ms provides reliable margin across environments
+   */
+  async waitForCsrf() {
+    await this.page.waitForTimeout(1000)
+  }
 }

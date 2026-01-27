@@ -4,6 +4,8 @@ import { BasePage } from './base-page'
 export class BudgetsPage extends BasePage {
   async navigateToBudgetsTab() {
     await this.page.getByRole('tab', { name: 'Budgets' }).click()
+    await this.page.waitForSelector('#budgetCategoryId', { state: 'visible' })
+    await this.waitForCsrf()
   }
 
   async fillBudgetForm(data: { account?: string; category: string; planned: string; currency?: string }) {

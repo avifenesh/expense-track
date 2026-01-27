@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn().mockResolvedValue(null), // By default, no DB user found (legacy users only)
+      findFirst: vi.fn().mockResolvedValue(null), // By default, no DB user found (legacy users only)
       update: vi.fn().mockResolvedValue({}), // For activeAccountId updates
     },
   },
@@ -87,6 +88,7 @@ function mockDbUser(email: string) {
   }
   const user = users[email.toLowerCase()]
   vi.mocked(prisma.user.findUnique).mockResolvedValue(user ? (user as never) : null)
+  vi.mocked(prisma.user.findFirst).mockResolvedValue(user ? (user as never) : null)
 }
 
 describe('auth-server.ts', () => {
@@ -102,6 +104,13 @@ describe('auth-server.ts', () => {
 
     // Reset modules to pick up new env vars
     await vi.resetModules()
+
+    // Make findFirst delegate to findUnique so both work with same mock setup
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    vi.mocked(prisma.user.findFirst).mockImplementation((...args: any[]) =>
+      (prisma.user.findUnique as any)(...args),
+    )
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     // Create fresh cookie mock
     mockCookies = createMockCookieStore()

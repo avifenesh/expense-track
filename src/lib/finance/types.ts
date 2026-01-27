@@ -283,6 +283,7 @@ export type DashboardData = {
   transactionRequests: Awaited<ReturnType<typeof getTransactionRequests>>
   accounts: Awaited<ReturnType<typeof getAccounts>>
   categories: Awaited<ReturnType<typeof getCategories>>
+  allCategories: Awaited<ReturnType<typeof getCategories>>
   holdings: HoldingWithPrice[]
   comparison: {
     previousMonth: string

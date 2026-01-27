@@ -4,6 +4,8 @@ import { BasePage } from './base-page'
 export class TransactionsPage extends BasePage {
   async navigateToTransactionsTab() {
     await this.page.getByRole('tab', { name: 'Transactions' }).click()
+    await this.page.waitForSelector('#transactionCategory', { state: 'visible' })
+    await this.waitForCsrf()
   }
 
   async fillTransactionForm(data: {

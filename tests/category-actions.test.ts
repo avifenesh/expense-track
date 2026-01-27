@@ -40,6 +40,10 @@ vi.mock('@/lib/subscription', () => ({
   }),
 }))
 
+vi.mock('@/lib/dashboard-cache', () => ({
+  invalidateAllDashboardCache: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('@prisma/client')>()
   return {

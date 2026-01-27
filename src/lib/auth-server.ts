@@ -93,7 +93,7 @@ export async function verifyCredentials({
   const normalizedEmail = email.trim().toLowerCase()
 
   // Check database users (exclude soft-deleted accounts)
-  const dbUser = await prisma.user.findUnique({
+  const dbUser = await prisma.user.findFirst({
     where: { email: normalizedEmail, deletedAt: null },
     select: { id: true, passwordHash: true, emailVerified: true },
   })
@@ -216,7 +216,7 @@ export async function getSession(): Promise<AuthSession | null> {
   }
 
   // Step 2: Verify user exists in database with verified email and not deleted
-  const dbUser = await prisma.user.findUnique({
+  const dbUser = await prisma.user.findFirst({
     where: { email: tokenSession.userEmail.toLowerCase(), deletedAt: null },
     select: { id: true, emailVerified: true },
   })
