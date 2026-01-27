@@ -124,7 +124,7 @@ test.describe('categories', () => {
 
       // After archive, category should disappear from the (non-archived) list
       // Wait for the UI to re-render after server action
-      await page.waitForTimeout(500)
+      await page.waitForLoadState('networkidle')
 
       // Verify the category vanished from non-archived view (client-side update via router.refresh)
       await categoriesPage.searchCategories(archiveName)

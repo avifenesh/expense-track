@@ -66,4 +66,9 @@ export class BasePage {
   currentUrl(): string {
     return this.page.url()
   }
+
+  /** Wait for CSRF token and other async fetches to complete after tab navigation */
+  async waitForNetworkSettled() {
+    await this.page.waitForLoadState('networkidle')
+  }
 }

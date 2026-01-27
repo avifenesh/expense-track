@@ -5,8 +5,7 @@ export class RecurringPage extends BasePage {
   async navigateToRecurringTab() {
     await this.page.getByRole('tab', { name: 'Auto-repeat' }).click()
     await this.page.waitForSelector('#recurringAmount', { state: 'visible' })
-    // Wait for CSRF token to load (async fetch on component mount)
-    await this.page.waitForTimeout(1000)
+    await this.waitForNetworkSettled()
   }
 
   async fillRecurringForm(data: {

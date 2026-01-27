@@ -54,7 +54,7 @@ test.describe('sharing', () => {
       await shareButton.click()
       // Wait for share expense form to mount and CSRF token to load
       await page.waitForSelector('[placeholder="Enter email address"]', { state: 'visible' })
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState('networkidle')
 
       await sharingPage.fillShareExpenseForm({
         splitType: 'Split equally',
@@ -100,7 +100,7 @@ test.describe('sharing', () => {
       await shareButton.click()
       // Wait for share expense form to mount and CSRF token to load
       await page.waitForSelector('[placeholder="Enter email address"]', { state: 'visible' })
-      await page.waitForTimeout(1000)
+      await page.waitForLoadState('networkidle')
 
       // Add participant (aria-label="Add participant")
       const emailInput = page.getByPlaceholder('Enter email address')

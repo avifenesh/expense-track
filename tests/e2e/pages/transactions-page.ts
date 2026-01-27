@@ -5,8 +5,7 @@ export class TransactionsPage extends BasePage {
   async navigateToTransactionsTab() {
     await this.page.getByRole('tab', { name: 'Transactions' }).click()
     await this.page.waitForSelector('#transactionCategory', { state: 'visible' })
-    // Wait for CSRF token to load (async fetch on component mount)
-    await this.page.waitForTimeout(1000)
+    await this.waitForNetworkSettled()
   }
 
   async fillTransactionForm(data: {

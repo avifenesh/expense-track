@@ -5,8 +5,7 @@ export class HoldingsPage extends BasePage {
   async navigateToHoldingsTab() {
     await this.page.getByRole('tab', { name: 'Investments' }).click()
     await this.page.waitForSelector('#symbol', { state: 'visible' })
-    // Wait for CSRF token to load (async fetch on component mount)
-    await this.page.waitForTimeout(1000)
+    await this.waitForNetworkSettled()
   }
 
   async fillHoldingForm(data: {
@@ -37,8 +36,8 @@ export class HoldingsPage extends BasePage {
     await this.page.getByText(/holding added|holding deleted|error|already exists/i)
       .waitFor({ state: 'visible', timeout: 15000 })
       .catch(() => {})
-    // Additional wait for holdings list to refresh
-    await this.page.waitForTimeout(1000)
+    // Wait for holdings list to refresh
+    await this.page.waitForLoadState('networkidle')
   }
 
   async expectHoldingInList(symbol: string) {
