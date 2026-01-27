@@ -67,8 +67,16 @@ export class BasePage {
     return this.page.url()
   }
 
-  /** Wait for CSRF token and other async fetches to complete after tab navigation */
+  /** Wait for CSRF token fetch to complete after tab navigation */
   async waitForNetworkSettled() {
-    await this.page.waitForLoadState('networkidle')
+    // Wait for the CSRF token endpoint to respond.
+    // Use Promise.race with a timeout since the request may have already completed.
+    await Promise.race([
+      this.page.waitForResponse(
+        (res) => res.url().includes('/api/csrf'),
+        { timeout: 5000 },
+      ),
+      this.page.waitForLoadState('networkidle'),
+    ])
   }
 }

@@ -86,7 +86,7 @@ test.describe('holdings', () => {
       // The API validates symbols against Alpha Vantage which may be rate-limited in CI.
       // If we see an error about the symbol or API, skip gracefully.
       const apiError = await page
-        .getByText(/invalid or unknown symbol|API request failed|rate limit/i)
+        .getByText(/invalid or unknown symbol|API request failed|rate limit|alpha vantage/i)
         .isVisible()
         .catch(() => false)
       if (apiError) {

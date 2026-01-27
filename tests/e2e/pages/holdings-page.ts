@@ -33,7 +33,7 @@ export class HoldingsPage extends BasePage {
       if (form) form.requestSubmit()
     })
     // Wait for feedback text (success or error) to appear
-    await this.page.getByText(/holding added|holding deleted|error|already exists/i)
+    await this.page.getByText(/holding added|holding deleted|error|invalid|already exists|rate limit|alpha vantage|API request/i)
       .waitFor({ state: 'visible', timeout: 15000 })
       .catch(() => {})
     // Wait for holdings list to refresh
