@@ -52,6 +52,9 @@ test.describe('sharing', () => {
       const shareButton = page.getByRole('button', { name: 'Share expense' }).first()
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
+      // Wait for share expense form to mount and CSRF token to load
+      await page.waitForSelector('[placeholder="Enter email address"]', { state: 'visible' })
+      await page.waitForTimeout(1000)
 
       await sharingPage.fillShareExpenseForm({
         splitType: 'Split equally',
@@ -95,6 +98,9 @@ test.describe('sharing', () => {
       const shareButton = page.getByRole('button', { name: 'Share expense' }).first()
       await expect(shareButton).toBeVisible({ timeout: 10000 })
       await shareButton.click()
+      // Wait for share expense form to mount and CSRF token to load
+      await page.waitForSelector('[placeholder="Enter email address"]', { state: 'visible' })
+      await page.waitForTimeout(1000)
 
       // Add participant (aria-label="Add participant")
       const emailInput = page.getByPlaceholder('Enter email address')

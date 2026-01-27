@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { successVoid, failure } from '@/lib/action-result'
 import { handlePrismaError } from '@/lib/prisma-errors'
+import { invalidateAllDashboardCache } from '@/lib/dashboard-cache'
 import { parseInput, requireCsrfToken, requireActiveSubscription } from './shared'
 import { categorySchema, archiveCategorySchema } from '@/schemas'
 import { createOrReactivateCategory } from '@/lib/services/category-service'
@@ -33,6 +34,7 @@ export async function createCategoryAction(input: z.infer<typeof categorySchema>
     return failure({ name: ['A category with this name already exists'] })
   }
 
+  await invalidateAllDashboardCache()
   revalidatePath('/')
   return successVoid()
 }
@@ -67,6 +69,7 @@ export async function archiveCategoryAction(input: z.infer<typeof archiveCategor
     })
   }
 
+  await invalidateAllDashboardCache()
   revalidatePath('/')
   return successVoid()
 }

@@ -59,6 +59,7 @@ const mockDashboardData: DashboardData = {
   transactionRequests: [],
   accounts: [],
   categories: [],
+  allCategories: [],
   holdings: [],
   comparison: {
     previousMonth: '2023-12',

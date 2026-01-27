@@ -759,7 +759,7 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
           />
         )}
 
-        {activeTab === 'categories' && <CategoriesTab categories={data.categories} />}
+        {activeTab === 'categories' && <CategoriesTab categories={data.allCategories} />}
 
         {/* Holdings Tab */}
         {activeTab === 'holdings' && (
