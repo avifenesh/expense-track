@@ -94,12 +94,18 @@ test.describe('holdings', () => {
           break
         }
 
-        // Clear symbol field for next attempt
-        await page.locator('#symbol').clear()
+        // Check for "already exists" (soft-deleted duplicate) — try next symbol
+        const duplicateMsg = await page.getByText(/already exists/i).isVisible().catch(() => false)
+        if (duplicateMsg) {
+          await page.locator('#symbol').clear()
+          continue
+        }
+
+        // Any other error (API rate limit, network error) — stop trying
+        break
       }
 
       if (!created) {
-        // All symbols failed — skip downstream tests gracefully
         testSymbol = ''
         await dashboardPage.clickSignOut()
         return
