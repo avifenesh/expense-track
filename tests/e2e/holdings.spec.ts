@@ -6,7 +6,6 @@ import { HoldingsPage } from './pages/holdings-page'
 // Pool of known valid stock symbols for E2E tests.
 // The holdings API validates symbols against Alpha Vantage, so random strings fail.
 const VALID_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX']
-const pickSymbol = () => VALID_SYMBOLS[Math.floor(Math.random() * VALID_SYMBOLS.length)]
 
 test.describe('holdings', () => {
   test.describe.configure({ mode: 'serial' })
