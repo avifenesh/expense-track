@@ -64,24 +64,23 @@ async function performFetch(set: SetState): Promise<void> {
     const { subscription } = response;
     const now = Date.now();
 
-    set({
+    const subscriptionData = {
       status: subscription.status,
       isActive: subscription.isActive,
       trialEndsAt: subscription.trialEndsAt,
       currentPeriodEnd: subscription.currentPeriodEnd,
       daysRemaining: subscription.daysRemaining,
       canAccessApp: subscription.canAccessApp,
+    };
+
+    set({
+      ...subscriptionData,
       isLoading: false,
       lastFetched: now,
     });
 
     await saveSubscription({
-      status: subscription.status,
-      isActive: subscription.isActive,
-      trialEndsAt: subscription.trialEndsAt,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      daysRemaining: subscription.daysRemaining,
-      canAccessApp: subscription.canAccessApp,
+      ...subscriptionData,
       cachedAt: now,
     });
   } catch (error) {
@@ -122,14 +121,10 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
     const cached = await loadSubscription();
 
     if (cached) {
+      const { cachedAt, ...subscriptionData } = cached;
       set({
-        status: cached.status,
-        isActive: cached.isActive,
-        trialEndsAt: cached.trialEndsAt,
-        currentPeriodEnd: cached.currentPeriodEnd,
-        daysRemaining: cached.daysRemaining,
-        canAccessApp: cached.canAccessApp,
-        lastFetched: cached.cachedAt,
+        ...subscriptionData,
+        lastFetched: cachedAt,
       });
     }
 
@@ -141,9 +136,9 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
     set({ error: null });
   },
 
-  reset: async () => {
-    await clearSubscription();
+  reset: () => {
     set({ ...initialState });
+    clearSubscription().catch(() => {});
   },
 }));
 

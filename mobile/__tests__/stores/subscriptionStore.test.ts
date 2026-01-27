@@ -304,7 +304,7 @@ describe('subscriptionStore', () => {
   });
 
   describe('reset', () => {
-    it('resets to initial state', async () => {
+    it('resets to initial state synchronously', () => {
       useSubscriptionStore.setState({
         status: 'ACTIVE',
         isActive: true,
@@ -316,7 +316,7 @@ describe('subscriptionStore', () => {
         lastFetched: Date.now(),
       });
 
-      await useSubscriptionStore.getState().reset();
+      useSubscriptionStore.getState().reset();
 
       const state = useSubscriptionStore.getState();
       expect(state.status).toBeNull();
@@ -326,8 +326,8 @@ describe('subscriptionStore', () => {
       expect(state.lastFetched).toBeNull();
     });
 
-    it('clears subscription cache', async () => {
-      await useSubscriptionStore.getState().reset();
+    it('clears subscription cache in background', () => {
+      useSubscriptionStore.getState().reset();
 
       expect(mockClearSubscription).toHaveBeenCalled();
     });
