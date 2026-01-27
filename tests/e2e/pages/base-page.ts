@@ -67,16 +67,15 @@ export class BasePage {
     return this.page.url()
   }
 
-  /** Wait for CSRF token fetch to complete after tab navigation */
-  async waitForNetworkSettled() {
-    // Wait for the CSRF token endpoint to respond.
-    // Use Promise.race with a timeout since the request may have already completed.
-    await Promise.race([
-      this.page.waitForResponse(
-        (res) => res.url().includes('/api/csrf'),
-        { timeout: 5000 },
-      ),
-      this.page.waitForLoadState('networkidle'),
-    ])
+  /**
+   * Wait for CSRF token fetch to complete after tab navigation.
+   * The CSRF hook fires on component mount and takes ~200-500ms.
+   * Using a fixed wait because:
+   * - waitForLoadState('networkidle') causes hangs with Next.js persistent connections
+   * - waitForResponse may miss the CSRF fetch if it completed before this call
+   * - 1000ms provides reliable margin across environments
+   */
+  async waitForCsrf() {
+    await this.page.waitForTimeout(1000)
   }
 }

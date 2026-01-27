@@ -5,7 +5,7 @@ export class CategoriesPage extends BasePage {
   async navigateToCategoriesTab() {
     await this.page.getByRole('tab', { name: 'Labels' }).click()
     await this.page.waitForSelector('#categoryName', { state: 'visible' })
-    await this.waitForNetworkSettled()
+    await this.waitForCsrf()
   }
 
   async fillCategoryForm(data: { name: string; type?: string }) {

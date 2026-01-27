@@ -5,7 +5,7 @@ export class HoldingsPage extends BasePage {
   async navigateToHoldingsTab() {
     await this.page.getByRole('tab', { name: 'Investments' }).click()
     await this.page.waitForSelector('#symbol', { state: 'visible' })
-    await this.waitForNetworkSettled()
+    await this.waitForCsrf()
   }
 
   async fillHoldingForm(data: {
@@ -34,10 +34,10 @@ export class HoldingsPage extends BasePage {
     })
     // Wait for feedback text (success or error) to appear
     await this.page.getByText(/holding added|holding deleted|error|invalid|already exists|rate limit|alpha vantage|API request/i)
-      .waitFor({ state: 'visible', timeout: 15000 })
+      .waitFor({ state: 'visible', timeout: 10000 })
       .catch(() => {})
     // Wait for holdings list to refresh
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForTimeout(1000)
   }
 
   async expectHoldingInList(symbol: string) {

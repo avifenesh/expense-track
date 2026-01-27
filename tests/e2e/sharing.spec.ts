@@ -42,7 +42,7 @@ test.describe('sharing', () => {
       await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
-      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1000)
       // Navigate back to transactions tab after reload
       await transactionsPage.navigateToTransactionsTab()
 
@@ -54,7 +54,7 @@ test.describe('sharing', () => {
       await shareButton.click()
       // Wait for share expense form to mount and CSRF token to load
       await page.waitForSelector('[placeholder="Enter email address"]', { state: 'visible' })
-      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1000)
 
       await sharingPage.fillShareExpenseForm({
         splitType: 'Split equally',
@@ -88,7 +88,7 @@ test.describe('sharing', () => {
       await expect(page.getByText(/transaction saved/i)).toBeVisible({ timeout: 10000 })
       // Reload page to ensure fresh data (optimistic updates can cause timing issues)
       await page.reload()
-      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1000)
       // Navigate back to transactions tab after reload
       await transactionsPage.navigateToTransactionsTab()
 
@@ -100,7 +100,7 @@ test.describe('sharing', () => {
       await shareButton.click()
       // Wait for share expense form to mount and CSRF token to load
       await page.waitForSelector('[placeholder="Enter email address"]', { state: 'visible' })
-      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1000)
 
       // Add participant (aria-label="Add participant")
       const emailInput = page.getByPlaceholder('Enter email address')
@@ -108,7 +108,7 @@ test.describe('sharing', () => {
       const addButton = page.getByLabel('Add participant')
       await addButton.click()
       // Wait for participant lookup (async server action) to complete
-      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1000)
 
       await sharingPage.expectParticipantAdded(TEST_USER_2.email)
 

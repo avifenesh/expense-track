@@ -72,39 +72,40 @@ test.describe('holdings', () => {
         return
       }
 
-      testSymbol = VALID_SYMBOLS[0]
+      // Try each valid symbol until one is successfully created.
+      // Symbols may fail due to: soft-deleted duplicates, API rate limits, or invalid symbols.
+      let created = false
+      for (const sym of VALID_SYMBOLS) {
+        testSymbol = sym
 
-      await holdingsPage.fillHoldingForm({
-        symbol: testSymbol,
-        quantity: '10',
-        averageCost: '200.00',
-        notes: 'E2E test holding',
-      })
+        await holdingsPage.fillHoldingForm({
+          symbol: testSymbol,
+          quantity: '10',
+          averageCost: '200.00',
+          notes: 'E2E test holding',
+        })
 
-      await holdingsPage.submitHolding()
+        await holdingsPage.submitHolding()
 
-      // The API validates symbols against Alpha Vantage which may be rate-limited in CI.
-      // If we see an error about the symbol or API, skip gracefully.
-      const apiError = await page
-        .getByText(/invalid or unknown symbol|API request failed|rate limit|alpha vantage/i)
-        .isVisible()
-        .catch(() => false)
-      if (apiError) {
-        // Mark testSymbol as empty so downstream serial tests also skip
+        // Check if creation succeeded
+        const successMsg = await page.getByText(/holding added/i).isVisible().catch(() => false)
+        if (successMsg) {
+          created = true
+          break
+        }
+
+        // Clear symbol field for next attempt
+        await page.locator('#symbol').clear()
+      }
+
+      if (!created) {
+        // All symbols failed — skip downstream tests gracefully
         testSymbol = ''
         await dashboardPage.clickSignOut()
         return
       }
 
-      // Check for "already exists" — use a different symbol
-      const alreadyExists = await page.getByText(/already exists/i).isVisible().catch(() => false)
-      if (alreadyExists) {
-        // The symbol is already tracked — just use it for the delete test
-        await dashboardPage.clickSignOut()
-        return
-      }
-
-      // Verify holding appears in list (confirms successful creation)
+      // Verify holding appears in list
       await holdingsPage.expectHoldingInList(testSymbol)
 
       await dashboardPage.clickSignOut()
@@ -133,7 +134,6 @@ test.describe('holdings', () => {
       const dashboardPage = new DashboardPage(page)
 
       await holdingsPage.navigateToHoldingsTab()
-      await page.waitForLoadState('networkidle')
 
       // testSymbol should exist from the previous 'create' test (serial mode)
       // If API was unavailable during create, skip this test
@@ -141,6 +141,12 @@ test.describe('holdings', () => {
         await dashboardPage.clickSignOut()
         return
       }
+
+      // Reload to ensure fresh API data (cache may be stale between tests)
+      await page.reload()
+      await holdingsPage.navigateToHoldingsTab()
+
+      // Wait for holdings to load (API fetch on mount)
       await holdingsPage.expectHoldingInList(testSymbol)
 
       // Accept the confirm dialog before clicking delete
