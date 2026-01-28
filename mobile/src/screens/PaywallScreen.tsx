@@ -76,6 +76,9 @@ export function PaywallScreen() {
           style={styles.subscribeButton}
           onPress={handleSubscribe}
           testID="paywall.subscribeButton"
+          accessibilityRole="button"
+          accessibilityLabel="Subscribe to Balance Beacon"
+          accessibilityHint="Opens pricing page in browser"
         >
           <Text style={styles.subscribeButtonText}>Subscribe Now</Text>
         </Pressable>
@@ -85,6 +88,10 @@ export function PaywallScreen() {
           onPress={handleSignOut}
           disabled={isSigningOut}
           testID="paywall.signOutButton"
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+          accessibilityHint="Sign out from your account"
+          accessibilityState={{ disabled: isSigningOut }}
         >
           {isSigningOut ? (
             <ActivityIndicator
