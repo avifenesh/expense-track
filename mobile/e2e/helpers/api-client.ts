@@ -115,11 +115,27 @@ export class TestApiClient {
 
     if (!response.ok) {
       const errorMessage = json.error?.message || json.message || `API error: ${response.status}`;
+      console.error(`[TestApiClient] API error on ${method} ${path}:`, {
+        status: response.status,
+        error: errorMessage,
+        body: json
+      });
       throw new Error(errorMessage);
     }
 
     // API responses have { success: true, data: T } format
-    return json.data !== undefined ? json.data : json;
+    const result = json.data !== undefined ? json.data : json;
+
+    // Debug log for subscription endpoint
+    if (path.includes('subscriptions')) {
+      console.log(`[TestApiClient] ${method} ${path} response:`, {
+        hasData: json.data !== undefined,
+        dataKeys: json.data ? Object.keys(json.data) : [],
+        resultKeys: result ? Object.keys(result) : []
+      });
+    }
+
+    return result;
   }
 
   // ============ Auth ============
@@ -182,7 +198,14 @@ export class TestApiClient {
   // ============ Subscription ============
 
   async getSubscriptionStatus(): Promise<SubscriptionResponse> {
-    return this.request<SubscriptionResponse>('GET', '/api/v1/subscriptions');
+    try {
+      const response = await this.request<SubscriptionResponse>('GET', '/api/v1/subscriptions');
+      console.log('[TestApiClient] Subscription API response:', JSON.stringify(response, null, 2));
+      return response;
+    } catch (error) {
+      console.error('[TestApiClient] Subscription API error:', error);
+      throw error;
+    }
   }
 
   // ============ Accounts ============

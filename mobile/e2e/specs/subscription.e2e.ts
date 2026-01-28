@@ -109,6 +109,12 @@ describe('Subscription E2E Tests', () => {
       // Verify subscription endpoint returns expected structure
       const response = await api.getSubscriptionStatus();
 
+      // Debug: log response structure if undefined
+      if (!response || !response.subscription) {
+        console.error('[E2E] Subscription API response:', JSON.stringify(response, null, 2));
+      }
+
+      expect(response).toBeDefined();
       expect(response.subscription).toBeDefined();
       expect(response.subscription.status).toBeDefined();
       expect(response.subscription.canAccessApp).toBeDefined();
