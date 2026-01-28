@@ -6,9 +6,8 @@ import { device } from 'detox';
 beforeAll(async () => {
   await device.launchApp({
     newInstance: true,
-    launchArgs: { detoxPrintBusyIdleResources: 'YES' },
   });
-}, 300000); // 5 minute timeout for initial app launch in CI
+});
 
 beforeEach(async () => {
   // Use launchApp with newInstance: true to fully restart the app between tests
@@ -16,9 +15,8 @@ beforeEach(async () => {
   // occurs when reloadReactNative() encounters errors
   await device.launchApp({
     newInstance: true,
-    launchArgs: { detoxPrintBusyIdleResources: 'YES' },
   });
-}, 240000); // 4 minute timeout for app relaunches in CI
+});
 
 afterAll(async () => {
   await device.terminateApp();
