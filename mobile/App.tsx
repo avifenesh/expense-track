@@ -15,8 +15,8 @@ export default function App() {
     let debounceTimeout: NodeJS.Timeout | undefined
 
     const initializeApp = async () => {
-      // Check if running in Detox E2E mode
-      const isDetoxE2E = __DEV__ && typeof (global as any).detox !== 'undefined'
+      // Check if running in Detox E2E mode (works in both debug and release builds)
+      const isDetoxE2E = typeof (global as any).detox !== 'undefined'
 
       // Initialize auth store on app startup
       useAuthStore.getState().initialize()
