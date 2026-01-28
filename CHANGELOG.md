@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- Mobile: PaywallScreen for subscription expiration (#317)
+  - New PaywallScreen component shown when user's subscription has expired
+  - Subscribe button opens balancebeacon.com/pricing in browser
+  - Sign out button to logout from expired account
+  - useSubscriptionState hook for navigation access control
+  - RootNavigator integration with subscription checking logic
+  - Lenient offline behavior - network errors don't block app access
+  - Loading screen while subscription initializes (if no cached data)
+  - Paywall only shown when subscription is explicitly expired
+  - Full accessibility support with ARIA labels
+  - Comprehensive test suite with 95%+ coverage
 - Mobile: AccountsScreen for managing accounts (#302)
   - View all user accounts with calculated balances
   - Switch between accounts (e.g., personal, shared)
