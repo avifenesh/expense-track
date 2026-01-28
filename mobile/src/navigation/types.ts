@@ -49,6 +49,7 @@ export type AppStackParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>
   Onboarding: NavigatorScreenParams<OnboardingStackParamList>
+  Paywall: undefined
   App: NavigatorScreenParams<AppStackParamList>
 }
 

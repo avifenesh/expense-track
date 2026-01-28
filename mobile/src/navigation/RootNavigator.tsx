@@ -5,7 +5,9 @@ import type { RootStackParamList } from './types';
 import { AuthStack } from './AuthStack';
 import { OnboardingStack } from './OnboardingStack';
 import { AppStack } from './AppStack';
+import { PaywallScreen } from '../screens/PaywallScreen';
 import { useAuthState } from '../hooks/useAuthState';
+import { useSubscriptionState } from '../hooks/useSubscriptionState';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -18,11 +20,44 @@ function LoadingScreen() {
 }
 
 export function RootNavigator() {
-  const { isAuthenticated, hasCompletedOnboarding, isLoading } = useAuthState();
+  const { isAuthenticated, hasCompletedOnboarding, isLoading: authLoading } = useAuthState();
+  const {
+    canAccessApp,
+    isLoading: subscriptionLoading,
+    isInitialized: subscriptionInitialized,
+    error: subscriptionError,
+  } = useSubscriptionState();
 
-  if (isLoading) {
+  // Show loading while auth is initializing
+  if (authLoading) {
     return <LoadingScreen />;
   }
+
+  // For authenticated + onboarded users, also wait for subscription to initialize
+  // But only if we don't have cached data yet and there's no error
+  // Network errors should NOT block access (lenient offline behavior)
+  const shouldWaitForSubscription =
+    isAuthenticated &&
+    hasCompletedOnboarding &&
+    !subscriptionInitialized &&
+    subscriptionLoading &&
+    !subscriptionError;
+
+  if (shouldWaitForSubscription) {
+    return <LoadingScreen />;
+  }
+
+  // Determine if paywall should be shown:
+  // - User is authenticated and onboarded
+  // - Subscription has been initialized (we have data)
+  // - canAccessApp is explicitly false
+  // - No subscription error (network errors should NOT lock out users)
+  const shouldShowPaywall =
+    isAuthenticated &&
+    hasCompletedOnboarding &&
+    subscriptionInitialized &&
+    !canAccessApp &&
+    !subscriptionError;
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -30,6 +65,8 @@ export function RootNavigator() {
         <Stack.Screen name="Auth" component={AuthStack} />
       ) : !hasCompletedOnboarding ? (
         <Stack.Screen name="Onboarding" component={OnboardingStack} />
+      ) : shouldShowPaywall ? (
+        <Stack.Screen name="Paywall" component={PaywallScreen} />
       ) : (
         <Stack.Screen name="App" component={AppStack} />
       )}

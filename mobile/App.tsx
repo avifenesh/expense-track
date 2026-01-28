@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react'
+import { AppState, AppStateStatus } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { NavigationContainer } from './src/navigation'
-import { useAuthStore, useOfflineQueueStore } from './src/stores'
+import { useAuthStore, useOfflineQueueStore, useSubscriptionStore } from './src/stores'
 import { networkStatus } from './src/services/networkStatus'
 import { Toast } from './src/components'
 
 export default function App() {
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined
+    let networkUnsubscribe: (() => void) | undefined
+    let appStateSubscription: { remove: () => void } | undefined
     let debounceTimeout: NodeJS.Timeout | undefined
 
     const initializeApp = async () => {
@@ -21,8 +23,12 @@ export default function App() {
       // Load offline queue from storage before subscribing to network changes
       await useOfflineQueueStore.getState().loadFromStorage()
 
+      // Initialize subscription state (loads from cache, then fetches fresh in background)
+      // Must happen after auth initialize since subscription fetch requires auth token
+      useSubscriptionStore.getState().loadFromCache()
+
       // Subscribe to network changes and process queue when online (with debounce)
-      unsubscribe = networkStatus.subscribe((status) => {
+      networkUnsubscribe = networkStatus.subscribe((status) => {
         if (status.isConnected && (status.isInternetReachable === null || status.isInternetReachable)) {
           // Clear any pending debounce
           if (debounceTimeout) {
@@ -44,6 +50,20 @@ export default function App() {
       ) {
         useOfflineQueueStore.getState().processQueue()
       }
+
+      // Subscribe to app state changes to refresh subscription when app comes to foreground
+      const handleAppStateChange = (nextAppState: AppStateStatus) => {
+        if (nextAppState === 'active') {
+          // Only refresh if user is authenticated
+          const { isAuthenticated } = useAuthStore.getState()
+          if (isAuthenticated) {
+            // fetchSubscription respects the 5-minute TTL cache
+            useSubscriptionStore.getState().fetchSubscription()
+          }
+        }
+      }
+
+      appStateSubscription = AppState.addEventListener('change', handleAppStateChange)
     }
 
     initializeApp()
@@ -52,7 +72,8 @@ export default function App() {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout)
       }
-      unsubscribe?.()
+      networkUnsubscribe?.()
+      appStateSubscription?.remove()
       networkStatus.cleanup()
     }
   }, [])
