@@ -15,6 +15,9 @@ export default function App() {
     let debounceTimeout: NodeJS.Timeout | undefined
 
     const initializeApp = async () => {
+      // Check if running in Detox E2E mode
+      const isDetoxE2E = __DEV__ && typeof (global as any).detox !== 'undefined'
+
       // Initialize auth store on app startup
       useAuthStore.getState().initialize()
 
@@ -26,7 +29,15 @@ export default function App() {
 
       // Initialize subscription state (loads from cache, then fetches fresh in background)
       // Must happen after auth initialize since subscription fetch requires auth token
-      useSubscriptionStore.getState().loadFromCache()
+      // Skip in E2E mode to prevent blocking Detox synchronization
+      if (!isDetoxE2E) {
+        // Fire-and-forget with catch to prevent blocking
+        useSubscriptionStore.getState().loadFromCache().catch((error) => {
+          console.warn('[App] Subscription initialization failed (non-fatal):', error)
+        })
+      } else {
+        console.log('[App] Skipping subscription initialization in E2E mode')
+      }
 
       // Subscribe to network changes and process queue when online (with debounce)
       networkUnsubscribe = networkStatus.subscribe((status) => {

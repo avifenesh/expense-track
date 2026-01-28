@@ -33,11 +33,19 @@ module.exports = {
   behavior: {
     init: {
       exposeGlobals: true,
+      // Increase timeouts for slow CI environments
+      launchTimeout: 180000, // 3 minutes for app launch
     },
     launchApp: 'auto',
     cleanup: {
       shutdownDevice: false,
     },
+  },
+
+  // Session configuration for better stability
+  session: {
+    autoStart: true,
+    debugSynchronization: 10000, // Log if synchronization takes > 10s
   },
 
   apps: {
