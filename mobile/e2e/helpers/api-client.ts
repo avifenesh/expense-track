@@ -2,7 +2,6 @@
  * E2E Test API Client
  * Direct API calls for test setup and teardown
  */
-/* eslint-disable no-console */
 
 import { TEST_USER } from './fixtures';
 
@@ -283,26 +282,18 @@ export class TestApiClient {
 
   /**
    * Verifies user has valid subscription access.
-   * Logs warning if canAccessApp is false (indicates subscription issue).
    */
   async verifySubscriptionAccess(): Promise<void> {
     try {
       const { subscription } = await this.getSubscriptionStatus();
       if (!subscription.canAccessApp) {
-        console.warn(
-          `[TestApiClient] WARNING: User cannot access app. ` +
-            `Status: ${subscription.status}, canAccessApp: ${subscription.canAccessApp}`
-        );
-      } else {
-        console.log(
-          `[TestApiClient] Subscription verified: ${subscription.status}, ` +
-            `canAccessApp: ${subscription.canAccessApp}`
+        throw new Error(
+          `User cannot access app. Status: ${subscription.status}, canAccessApp: ${subscription.canAccessApp}`
         );
       }
     } catch (error) {
-      console.warn(
-        '[TestApiClient] Failed to verify subscription:',
-        error instanceof Error ? error.message : error
+      throw new Error(
+        `Failed to verify subscription: ${error instanceof Error ? error.message : error}`
       );
     }
   }
@@ -313,9 +304,8 @@ export class TestApiClient {
   async setupTestData(): Promise<void> {
     try {
       await this.seedData();
-    } catch (error) {
-      // Seed may fail if data already exists - that's OK
-      console.log('[TestApiClient] Seed data may already exist:', error);
+    } catch {
+      // Seed may fail if data already exists
     }
   }
 

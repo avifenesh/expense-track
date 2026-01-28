@@ -41,29 +41,23 @@ describe('Auth E2E Tests', () => {
 
   describe('Login Flow', () => {
     it('logs in with valid credentials and navigates to dashboard', async () => {
-      // enterPassword dismisses keyboard via tapReturnKey
       await LoginScreen.enterEmail(TEST_USER.email);
       await LoginScreen.enterPassword(TEST_USER.password);
       await LoginScreen.tapSubmit();
 
-      // Wait for login screen to disappear
       await waitFor(element(by.id('login.screen')))
         .not.toBeVisible()
         .withTimeout(TIMEOUTS.LONG);
 
-      // Wait for root loading screen to disappear (subscription initialization)
-      // This may flash quickly or not appear at all if cached
       try {
         await waitFor(element(by.id('root.loadingScreen')))
           .toBeVisible()
           .withTimeout(TIMEOUTS.SHORT);
         await RootLoadingScreen.waitForDisappear();
       } catch {
-        // Loading screen not visible or already gone - continue
+        // Loading screen may not appear
       }
 
-      // Wait for dashboard - test user should have hasCompletedOnboarding=true
-      // from ensureTestUser which calls completeOnboarding API
       await DashboardScreen.waitForScreen();
       await expect(element(by.id('dashboard.screen'))).toBeVisible();
     });
@@ -71,10 +65,9 @@ describe('Auth E2E Tests', () => {
     it('shows error for invalid credentials', async () => {
       await LoginScreen.enterEmail(INVALID_USER.email);
       await LoginScreen.enterPassword(INVALID_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
+      await element(by.id('login.screen')).tap();
       await LoginScreen.tapSubmit();
 
-      // Should show error message
       await waitFor(element(by.id('login.errorText')))
         .toBeVisible()
         .withTimeout(TIMEOUTS.MEDIUM);
@@ -82,10 +75,9 @@ describe('Auth E2E Tests', () => {
 
     it('shows validation error for empty email', async () => {
       await LoginScreen.enterPassword(TEST_USER.password);
-      await element(by.id('login.screen')).tap(); // Dismiss keyboard
+      await element(by.id('login.screen')).tap();
       await LoginScreen.tapSubmit();
 
-      // Should show email validation error
       await waitFor(element(by.id('login.emailInput-error')))
         .toBeVisible()
         .withTimeout(TIMEOUTS.SHORT);
@@ -109,7 +101,6 @@ describe('Auth E2E Tests', () => {
       await LoginScreen.tapRegisterLink();
       await RegisterScreen.waitForScreen();
 
-      // Navigate back to login
       await element(by.id('register.loginLink')).tap();
       await LoginScreen.waitForScreen();
       await expect(element(by.id('login.screen'))).toBeVisible();
@@ -131,7 +122,6 @@ describe('Auth E2E Tests', () => {
 
   describe('Registration Flow', () => {
     it('registers new user and navigates to login (test users auto-verified)', async () => {
-      // Generate unique email for this test run
       const uniqueEmail = `e2e-new-${Date.now()}@test.local`;
 
       await LoginScreen.tapRegisterLink();
@@ -140,10 +130,9 @@ describe('Auth E2E Tests', () => {
       await RegisterScreen.enterDisplayName('New Test User');
       await RegisterScreen.enterEmail(uniqueEmail);
       await RegisterScreen.enterPassword('TestPassword123!');
-      await element(by.id('register.screen')).tap(); // Dismiss keyboard
+      await element(by.id('register.screen')).tap();
       await RegisterScreen.tapSubmit();
 
-      // Test users (@test.local) are auto-verified, so they go directly to login
       await LoginScreen.waitForScreen();
       await expect(element(by.id('login.screen'))).toBeVisible();
     });
@@ -154,11 +143,10 @@ describe('Auth E2E Tests', () => {
 
       await RegisterScreen.enterDisplayName('Test User');
       await RegisterScreen.enterEmail('test@test.local');
-      await RegisterScreen.enterPassword('weak'); // Too short, missing requirements
-      await element(by.id('register.screen')).tap(); // Dismiss keyboard
+      await RegisterScreen.enterPassword('weak');
+      await element(by.id('register.screen')).tap();
       await RegisterScreen.tapSubmit();
 
-      // Should show password requirements
       await waitFor(element(by.id('register.passwordRequirements')))
         .toBeVisible()
         .withTimeout(TIMEOUTS.SHORT);

@@ -25,7 +25,6 @@ describe('Settings E2E Tests', () => {
   beforeEach(async () => {
     await device.launchApp({ newInstance: true });
 
-    // Use performLogin which handles subscription loading state
     await performLogin(TEST_USER.email, TEST_USER.password);
 
     await navigateToTab('Settings');
