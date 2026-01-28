@@ -47,7 +47,7 @@ describe('Subscription E2E Tests', () => {
           .withTimeout(TIMEOUTS.SHORT);
         await RootLoadingScreen.waitForDisappear();
       } catch {
-        // Loading screen may not appear
+        // Loading screen may not appear on fast connections or cached subscription
       }
 
       await DashboardScreen.waitForScreen();

@@ -641,7 +641,7 @@ export async function performLogin(
       .withTimeout(TIMEOUTS.SHORT);
     await RootLoadingScreen.waitForDisappear();
   } catch {
-    // Loading screen not visible
+    // Loading screen may not appear on fast connections or cached subscription
   }
 
   await waitFor(element(by.id('dashboard.screen')))
