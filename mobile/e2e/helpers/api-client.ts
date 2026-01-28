@@ -56,6 +56,31 @@ interface UserProfile {
   };
 }
 
+interface SubscriptionState {
+  status: 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'EXPIRED' | 'NONE';
+  isActive: boolean;
+  canAccessApp: boolean;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  daysRemaining: number | null;
+  paddleCustomerId: string | null;
+  paddleSubscriptionId: string | null;
+}
+
+interface SubscriptionResponse {
+  subscription: SubscriptionState;
+  checkout: {
+    priceId: string;
+    customData: Record<string, string>;
+    customerEmail: string;
+  } | null;
+  pricing: {
+    monthlyPriceCents: number;
+    trialDays: number;
+    currency: string;
+  };
+}
+
 export class TestApiClient {
   private baseUrl: string;
   private accessToken: string | null = null;
@@ -154,6 +179,12 @@ export class TestApiClient {
     );
   }
 
+  // ============ Subscription ============
+
+  async getSubscriptionStatus(): Promise<SubscriptionResponse> {
+    return this.request<SubscriptionResponse>('GET', '/api/v1/subscriptions');
+  }
+
   // ============ Accounts ============
 
   async getAccounts(): Promise<{ accounts: Account[] }> {
@@ -213,7 +244,7 @@ export class TestApiClient {
 
   /**
    * Ensures test user exists and is ready for testing.
-   * Registers if not exists, logs in, and completes onboarding.
+   * Registers if not exists, logs in, completes onboarding, and verifies subscription.
    * Note: Registration now creates default accounts automatically.
    */
   async ensureTestUser(
@@ -228,6 +259,9 @@ export class TestApiClient {
         // Always call completeOnboarding for test users to ensure subscription exists
         // The endpoint is idempotent and creates subscription if missing
         await this.completeOnboarding();
+
+        // Verify subscription state - warn if user can't access app
+        await this.verifySubscriptionAccess();
       }
 
       return loginResponse;
@@ -238,9 +272,38 @@ export class TestApiClient {
 
       if (completeOnboarding) {
         await this.completeOnboarding();
+
+        // Verify subscription state after onboarding
+        await this.verifySubscriptionAccess();
       }
 
       return loginResponse;
+    }
+  }
+
+  /**
+   * Verifies user has valid subscription access.
+   * Logs warning if canAccessApp is false (indicates subscription issue).
+   */
+  async verifySubscriptionAccess(): Promise<void> {
+    try {
+      const { subscription } = await this.getSubscriptionStatus();
+      if (!subscription.canAccessApp) {
+        console.warn(
+          `[TestApiClient] WARNING: User cannot access app. ` +
+            `Status: ${subscription.status}, canAccessApp: ${subscription.canAccessApp}`
+        );
+      } else {
+        console.log(
+          `[TestApiClient] Subscription verified: ${subscription.status}, ` +
+            `canAccessApp: ${subscription.canAccessApp}`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        '[TestApiClient] Failed to verify subscription:',
+        error instanceof Error ? error.message : error
+      );
     }
   }
 
