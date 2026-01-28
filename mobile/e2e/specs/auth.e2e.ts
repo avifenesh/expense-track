@@ -11,6 +11,7 @@ import {
   RegisterScreen,
   ResetPasswordScreen,
   DashboardScreen,
+  RootLoadingScreen,
 } from '../contracts/ui-contracts';
 
 describe('Auth E2E Tests', () => {
@@ -44,6 +45,22 @@ describe('Auth E2E Tests', () => {
       await LoginScreen.enterEmail(TEST_USER.email);
       await LoginScreen.enterPassword(TEST_USER.password);
       await LoginScreen.tapSubmit();
+
+      // Wait for login screen to disappear
+      await waitFor(element(by.id('login.screen')))
+        .not.toBeVisible()
+        .withTimeout(TIMEOUTS.LONG);
+
+      // Wait for root loading screen to disappear (subscription initialization)
+      // This may flash quickly or not appear at all if cached
+      try {
+        await waitFor(element(by.id('root.loadingScreen')))
+          .toBeVisible()
+          .withTimeout(TIMEOUTS.SHORT);
+        await RootLoadingScreen.waitForDisappear();
+      } catch {
+        // Loading screen not visible or already gone - continue
+      }
 
       // Wait for dashboard - test user should have hasCompletedOnboarding=true
       // from ensureTestUser which calls completeOnboarding API

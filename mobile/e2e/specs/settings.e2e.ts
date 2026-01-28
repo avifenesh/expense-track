@@ -7,12 +7,11 @@ import { device, element, by, expect, waitFor } from 'detox';
 import { TestApiClient } from '../helpers/api-client';
 import { TEST_USER, TIMEOUTS } from '../helpers/fixtures';
 import {
-  LoginScreen,
-  DashboardScreen,
   SettingsScreen,
   ExportFormatModal,
   DeleteAccountModal,
   navigateToTab,
+  performLogin,
 } from '../contracts/ui-contracts';
 
 describe('Settings E2E Tests', () => {
@@ -25,14 +24,10 @@ describe('Settings E2E Tests', () => {
 
   beforeEach(async () => {
     await device.launchApp({ newInstance: true });
-    await LoginScreen.waitForScreen();
-    await LoginScreen.login(TEST_USER.email, TEST_USER.password);
-    await device.disableSynchronization();
-    try {
-      await DashboardScreen.waitForScreen();
-    } finally {
-      await device.enableSynchronization();
-    }
+
+    // Use performLogin which handles subscription loading state
+    await performLogin(TEST_USER.email, TEST_USER.password);
+
     await navigateToTab('Settings');
     await SettingsScreen.waitForScreen();
   });
