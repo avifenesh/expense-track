@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Mobile E2E: Subscription loading state handling in tests (#315)
+  - Added PaywallScreen contract for subscription expiration flows
+  - Added RootLoadingScreen contract for app initialization
+  - Added SubscriptionResponseContract for API response validation
+  - Updated performLogin helper to handle subscription loading gracefully
+  - Added TestApiClient.verifySubscriptionAccess() for subscription verification
+  - All test files now properly wait for subscription initialization
+  - Increased iOS CI timeout to 75 minutes
+  - Comprehensive mobile E2E test documentation at mobile/e2e/README.md
+
 ### Changed
 - Pricing: Updated from $5/month to $3/month (#274)
   - Reduced subscription price constant to 300 cents ($3.00)

@@ -80,6 +80,7 @@ npm test                 # Run mobile tests
 - `tests/e2e/` - Playwright E2E tests (see `tests/e2e/README.md`)
 - `mobile/` - React Native mobile app (Expo)
   - See `mobile/README.md` for setup instructions
+  - See `mobile/e2e/README.md` for mobile E2E test documentation
 
 ## Patterns
 
