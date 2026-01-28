@@ -10,7 +10,8 @@ import { Toast } from './src/components'
 export default function App() {
   useEffect(() => {
     let networkUnsubscribe: (() => void) | undefined
-    let appStateSubscription: { remove: () => void } | undefined
+    let appStateSubscription: { remove: () => void} | undefined
+    let authUnsubscribe: (() => void) | undefined
     let debounceTimeout: NodeJS.Timeout | undefined
 
     const initializeApp = async () => {
@@ -64,6 +65,17 @@ export default function App() {
       }
 
       appStateSubscription = AppState.addEventListener('change', handleAppStateChange)
+
+      // Subscribe to auth state changes to refresh subscription after login
+      authUnsubscribe = useAuthStore.subscribe(
+        (state) => state.isAuthenticated,
+        (isAuthenticated, previousIsAuthenticated) => {
+          // When user logs in (false -> true), fetch fresh subscription
+          if (isAuthenticated && !previousIsAuthenticated) {
+            useSubscriptionStore.getState().fetchSubscription()
+          }
+        }
+      )
     }
 
     initializeApp()
@@ -74,6 +86,7 @@ export default function App() {
       }
       networkUnsubscribe?.()
       appStateSubscription?.remove()
+      authUnsubscribe?.()
       networkStatus.cleanup()
     }
   }, [])

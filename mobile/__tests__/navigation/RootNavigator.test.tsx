@@ -278,7 +278,7 @@ describe('RootNavigator', () => {
         canAccessApp: false,
         isLoading: false,
         error: null,
-        status: 'trial_expired',
+        status: 'EXPIRED',
         isInitialized: true,
       });
 

@@ -16,15 +16,10 @@ export function PaywallScreen() {
   const handleSubscribe = async () => {
     try {
       const canOpen = await Linking.canOpenURL(PRICING_URL);
-      if (canOpen) {
-        await Linking.openURL(PRICING_URL);
-      } else {
-        Alert.alert(
-          'Unable to Open Link',
-          'Please visit balancebeacon.com/pricing in your browser to subscribe.',
-          [{ text: 'OK' }]
-        );
+      if (!canOpen) {
+        throw new Error('Cannot open URL');
       }
+      await Linking.openURL(PRICING_URL);
     } catch {
       Alert.alert(
         'Unable to Open Link',

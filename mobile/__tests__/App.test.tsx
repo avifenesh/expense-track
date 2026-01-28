@@ -45,6 +45,7 @@ jest.mock('../src/stores/authStore', () => ({
         accessToken: null,
         user: null,
         isLoading: false,
+        isAuthenticated: false,
         initialize: mockInitialize,
       };
       return typeof selector === 'function' ? selector(state) : state;
@@ -54,8 +55,10 @@ jest.mock('../src/stores/authStore', () => ({
         accessToken: null,
         user: null,
         isLoading: false,
+        isAuthenticated: false,
         initialize: mockInitialize,
       })),
+      subscribe: jest.fn(() => jest.fn()), // Returns unsubscribe function
     }
   ),
 }));
