@@ -4,6 +4,7 @@
  */
 
 import { device, element, by, expect, waitFor } from 'detox';
+import { expect as jestExpect } from '@jest/globals';
 import { TestApiClient } from '../helpers/api-client';
 import { TEST_USER, TIMEOUTS } from '../helpers/fixtures';
 import {
@@ -81,9 +82,9 @@ describe('Subscription E2E Tests', () => {
     it('paywall screen has subscribe and sign out buttons (via contract)', async () => {
       // This test verifies our UI contract matches the app implementation
       // by checking the testIDs are correctly defined
-      expect(PaywallScreen.testIds.screen).toBe('paywall.screen');
-      expect(PaywallScreen.testIds.subscribeButton).toBe('paywall.subscribeButton');
-      expect(PaywallScreen.testIds.signOutButton).toBe('paywall.signOutButton');
+      jestExpect(PaywallScreen.testIds.screen).toBe('paywall.screen');
+      jestExpect(PaywallScreen.testIds.subscribeButton).toBe('paywall.subscribeButton');
+      jestExpect(PaywallScreen.testIds.signOutButton).toBe('paywall.signOutButton');
     });
 
     it('paywall sign out button returns to login (documented flow)', async () => {
@@ -96,8 +97,8 @@ describe('Subscription E2E Tests', () => {
       // Since we can't easily trigger paywall with test users (they have valid trials),
       // we document this flow for manual testing and future automated tests
       // with expired subscription test users.
-      expect(typeof PaywallScreen.tapSignOut).toBe('function');
-      expect(typeof PaywallScreen.waitForSignOutComplete).toBe('function');
+      jestExpect(typeof PaywallScreen.tapSignOut).toBe('function');
+      jestExpect(typeof PaywallScreen.waitForSignOutComplete).toBe('function');
     });
   });
 
@@ -114,14 +115,14 @@ describe('Subscription E2E Tests', () => {
         console.error('[E2E] Subscription API response:', JSON.stringify(response, null, 2));
       }
 
-      expect(response).toBeDefined();
-      expect(response.subscription).toBeDefined();
-      expect(response.subscription.status).toBeDefined();
-      expect(response.subscription.canAccessApp).toBeDefined();
-      expect(response.pricing).toBeDefined();
+      jestExpect(response).toBeDefined();
+      jestExpect(response.subscription).toBeDefined();
+      jestExpect(response.subscription.status).toBeDefined();
+      jestExpect(response.subscription.canAccessApp).toBeDefined();
+      jestExpect(response.pricing).toBeDefined();
 
       // Test users should have TRIALING status with app access
-      expect(response.subscription.canAccessApp).toBe(true);
+      jestExpect(response.subscription.canAccessApp).toBe(true);
     });
 
     it('test user has TRIALING subscription status', async () => {
@@ -129,8 +130,8 @@ describe('Subscription E2E Tests', () => {
       const response = await api.getSubscriptionStatus();
 
       // E2E test users created via seed get TRIALING status
-      expect(response.subscription.status).toBe('TRIALING');
-      expect(response.subscription.isActive).toBe(true);
+      jestExpect(response.subscription.status).toBe('TRIALING');
+      jestExpect(response.subscription.isActive).toBe(true);
     });
 
     it('subscription has valid trial end date', async () => {
@@ -138,10 +139,10 @@ describe('Subscription E2E Tests', () => {
       const response = await api.getSubscriptionStatus();
 
       // Trial should have an end date in the future
-      expect(response.subscription.trialEndsAt).toBeDefined();
+      jestExpect(response.subscription.trialEndsAt).toBeDefined();
       if (response.subscription.trialEndsAt) {
         const trialEnd = new Date(response.subscription.trialEndsAt);
-        expect(trialEnd.getTime()).toBeGreaterThan(Date.now());
+        jestExpect(trialEnd.getTime()).toBeGreaterThan(Date.now());
       }
     });
   });
