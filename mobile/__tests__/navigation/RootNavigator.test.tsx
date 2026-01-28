@@ -12,6 +12,10 @@ jest.mock('../../src/hooks/useAuthState', () => ({
   useAuthState: jest.fn(),
 }));
 
+jest.mock('../../src/hooks/useSubscriptionState', () => ({
+  useSubscriptionState: jest.fn(),
+}));
+
 // Mock the offline queue store to prevent infinite loops
 jest.mock('../../src/stores/offlineQueueStore', () => ({
   useOfflineQueueStore: jest.fn((selector) => {
@@ -26,8 +30,10 @@ jest.mock('../../src/stores/offlineQueueStore', () => ({
 }));
 
 import { useAuthState } from '../../src/hooks/useAuthState';
+import { useSubscriptionState } from '../../src/hooks/useSubscriptionState';
 
 const mockUseAuthState = useAuthState as jest.Mock;
+const mockUseSubscriptionState = useSubscriptionState as jest.Mock;
 const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 
 const renderWithProviders = (component: React.ReactElement) => {
@@ -51,6 +57,15 @@ describe('RootNavigator', () => {
     mockTokenStorage.setTokens.mockResolvedValue(undefined);
     mockTokenStorage.clearTokens.mockResolvedValue(undefined);
     mockTokenStorage.setOnboardingComplete.mockResolvedValue(undefined);
+
+    // Default subscription state - has access
+    mockUseSubscriptionState.mockReturnValue({
+      canAccessApp: true,
+      isLoading: false,
+      error: null,
+      status: 'active',
+      isInitialized: true,
+    });
   });
 
   it('shows loading indicator while checking auth', () => {
@@ -116,5 +131,212 @@ describe('RootNavigator', () => {
       const tabBar = screen.queryByTestId('bottom-tabs');
       expect(dashboardElements.length > 0 || tabBar).toBeTruthy();
     }, { timeout: 3000 });
+  });
+
+  describe('Paywall', () => {
+    it('shows paywall when authenticated, onboarded, but canAccessApp is false', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: true,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: false,
+        error: null,
+        status: 'expired',
+        isInitialized: true,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('paywall.screen')).toBeTruthy();
+        expect(screen.getByText('Subscription Expired')).toBeTruthy();
+      });
+    });
+
+    it('shows main app when authenticated, onboarded, and canAccessApp is true', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: true,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: true,
+        isLoading: false,
+        error: null,
+        status: 'active',
+        isInitialized: true,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        // Should NOT show paywall
+        expect(screen.queryByTestId('paywall.screen')).toBeNull();
+        // Should show main app
+        const dashboardElements = screen.queryAllByText(/Dashboard/i);
+        const tabBar = screen.queryByTestId('bottom-tabs');
+        expect(dashboardElements.length > 0 || tabBar).toBeTruthy();
+      }, { timeout: 3000 });
+    });
+
+    it('shows loading while subscription is loading for authenticated+onboarded user', () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: true,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: true,
+        error: null,
+        status: null,
+        isInitialized: false,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      // Should show loading, not paywall
+      expect(screen.getByTestId('root.loadingScreen')).toBeTruthy();
+      expect(screen.queryByTestId('paywall.screen')).toBeNull();
+    });
+
+    it('does NOT show paywall when subscription has error (lenient offline)', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: true,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: false,
+        error: 'Network error',
+        status: null,
+        isInitialized: false,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        // Should NOT show paywall when there's an error
+        expect(screen.queryByTestId('paywall.screen')).toBeNull();
+        // Should show main app (lenient behavior)
+        const dashboardElements = screen.queryAllByText(/Dashboard/i);
+        const tabBar = screen.queryByTestId('bottom-tabs');
+        expect(dashboardElements.length > 0 || tabBar).toBeTruthy();
+      }, { timeout: 3000 });
+    });
+
+    it('does NOT show paywall when subscription is not initialized', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: true,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: false,
+        error: null,
+        status: null,
+        isInitialized: false,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        // Should NOT show paywall when not initialized
+        expect(screen.queryByTestId('paywall.screen')).toBeNull();
+        // Should show main app
+        const dashboardElements = screen.queryAllByText(/Dashboard/i);
+        const tabBar = screen.queryByTestId('bottom-tabs');
+        expect(dashboardElements.length > 0 || tabBar).toBeTruthy();
+      }, { timeout: 3000 });
+    });
+
+    it('shows paywall for trialing subscription when canAccessApp is false', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: true,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      // Trial expired
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: false,
+        error: null,
+        status: 'EXPIRED',
+        isInitialized: true,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('paywall.screen')).toBeTruthy();
+      });
+    });
+
+    it('does NOT show paywall for unauthenticated users', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: false,
+        hasCompletedOnboarding: false,
+        isLoading: false,
+        userId: null,
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: false,
+        error: null,
+        status: 'expired',
+        isInitialized: true,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        // Should show auth, not paywall
+        expect(screen.queryByTestId('paywall.screen')).toBeNull();
+        expect(screen.getAllByText('Sign In').length).toBeGreaterThan(0);
+      });
+    });
+
+    it('does NOT show paywall for users who have not completed onboarding', async () => {
+      mockUseAuthState.mockReturnValue({
+        isAuthenticated: true,
+        hasCompletedOnboarding: false,
+        isLoading: false,
+        userId: 'user-123',
+      });
+
+      mockUseSubscriptionState.mockReturnValue({
+        canAccessApp: false,
+        isLoading: false,
+        error: null,
+        status: 'expired',
+        isInitialized: true,
+      });
+
+      renderWithProviders(<RootNavigator />);
+
+      await waitFor(() => {
+        // Should show onboarding, not paywall
+        expect(screen.queryByTestId('paywall.screen')).toBeNull();
+        expect(screen.getByText('Welcome')).toBeTruthy();
+      });
+    });
   });
 });

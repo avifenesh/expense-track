@@ -45,6 +45,7 @@ jest.mock('../src/stores/authStore', () => ({
         accessToken: null,
         user: null,
         isLoading: false,
+        isAuthenticated: false,
         initialize: mockInitialize,
       };
       return typeof selector === 'function' ? selector(state) : state;
@@ -54,7 +55,40 @@ jest.mock('../src/stores/authStore', () => ({
         accessToken: null,
         user: null,
         isLoading: false,
+        isAuthenticated: false,
         initialize: mockInitialize,
+      })),
+      subscribe: jest.fn(() => jest.fn()), // Returns unsubscribe function
+    }
+  ),
+}));
+
+// Mock subscription store
+const mockLoadFromCache = jest.fn();
+const mockRefresh = jest.fn();
+jest.mock('../src/stores/subscriptionStore', () => ({
+  useSubscriptionStore: Object.assign(
+    jest.fn((selector) => {
+      const state = {
+        canAccessApp: true,
+        isLoading: false,
+        error: null,
+        status: 'ACTIVE' as const,
+        lastFetched: Date.now(),
+        loadFromCache: mockLoadFromCache,
+        refresh: mockRefresh,
+      };
+      return typeof selector === 'function' ? selector(state) : state;
+    }),
+    {
+      getState: jest.fn(() => ({
+        canAccessApp: true,
+        isLoading: false,
+        error: null,
+        status: 'ACTIVE' as const,
+        lastFetched: Date.now(),
+        loadFromCache: mockLoadFromCache,
+        refresh: mockRefresh,
       })),
     }
   ),
@@ -70,6 +104,17 @@ jest.mock('../src/hooks/useAuthState', () => ({
     hasCompletedOnboarding: false,
     isLoading: false,
     userId: null,
+  }),
+}));
+
+// Mock the subscription state hook
+jest.mock('../src/hooks/useSubscriptionState', () => ({
+  useSubscriptionState: () => ({
+    canAccessApp: true,
+    isLoading: false,
+    error: null,
+    status: 'ACTIVE' as const,
+    isInitialized: true,
   }),
 }));
 

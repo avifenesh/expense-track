@@ -1,3 +1,6 @@
+// Paywall screen
+export { PaywallScreen } from './PaywallScreen'
+
 // Auth screens
 export { LoginScreen } from './auth/LoginScreen'
 export { RegisterScreen } from './auth/RegisterScreen'

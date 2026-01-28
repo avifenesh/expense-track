@@ -551,11 +551,70 @@ The app uses React Navigation with conditional routing:
 - **AuthStack** - Shown when user is not authenticated
   - Login, Register, ResetPassword, VerifyEmail
 - **OnboardingStack** - Shown after login if onboarding not completed
-  - Welcome, Currency, Categories, Budget, SampleData, Complete
+  - Welcome, Currency, Categories, Budget, SampleData, Complete, Biometric
+- **PaywallScreen** - Shown when user's subscription has expired
+  - Displays subscription expired message
+  - Subscribe button opens pricing page in browser
+  - Sign out button to logout
 - **AppStack** - Main app with bottom tabs and modals
   - **Bottom Tabs**: Dashboard, Transactions, Budgets, Sharing, Settings
-  - **Modals**: CreateTransaction (AddTransactionScreen), CreateBudget (AddBudgetScreen)
-  - **Screens**: EditTransaction (EditTransactionScreen)
+  - **Modals**: CreateTransaction (AddTransactionScreen), CreateBudget (AddBudgetScreen), ShareExpense
+  - **Screens**: EditTransaction (EditTransactionScreen), Accounts (AccountsScreen), Categories (CategoriesScreen)
+
+### Navigation Flow
+
+The `RootNavigator` determines which stack to show based on authentication and subscription state:
+
+1. **Not Authenticated** → AuthStack (Login, Register, etc.)
+2. **Authenticated + Onboarding Incomplete** → OnboardingStack
+3. **Authenticated + Onboarded + Subscription Expired** → PaywallScreen
+4. **Authenticated + Onboarded + Active Subscription** → AppStack
+
+The navigation logic uses two hooks:
+- `useAuthState()` - Checks authentication and onboarding status
+- `useSubscriptionState()` - Checks subscription validity
+
+**Subscription Checking:**
+- App waits for subscription state to initialize before showing paywall or app
+- Network errors do NOT block access (lenient offline behavior)
+- Subscription data is cached with 5-minute TTL for performance
+- Paywall only shows when subscription is explicitly expired (not on network errors)
+
+### Subscription Access Control
+
+The `useSubscriptionState` hook provides subscription state for navigation decisions:
+
+```tsx
+import { useSubscriptionState } from '@/hooks';
+
+function MyComponent() {
+  const {
+    canAccessApp,        // true if user can access app features
+    isLoading,           // true while fetching subscription data
+    error,               // error message if fetch failed
+    status,              // TRIALING | ACTIVE | PAST_DUE | CANCELED | EXPIRED
+    isInitialized        // true if subscription data has been loaded (from cache or API)
+  } = useSubscriptionState();
+
+  if (isLoading && !isInitialized) {
+    return <LoadingScreen />;
+  }
+
+  if (!canAccessApp && isInitialized && !error) {
+    return <PaywallScreen />;
+  }
+
+  return <AppContent />;
+}
+```
+
+**Usage in RootNavigator:**
+- Waits for subscription to initialize only for authenticated + onboarded users
+- Shows loading screen while subscription initializes (if no cached data)
+- Network errors are treated leniently - app access is NOT blocked
+- Paywall only shows when `isInitialized && !canAccessApp && !error`
+
+See `mobile/src/hooks/useSubscriptionState.ts` for implementation.
 
 ## Main App Features
 
