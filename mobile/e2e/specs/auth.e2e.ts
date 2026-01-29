@@ -40,33 +40,37 @@ describe('Auth E2E Tests', () => {
   });
 
   describe('Login Flow', () => {
-    it('logs in with valid credentials and navigates to dashboard', async () => {
-      // enterPassword dismisses keyboard via tapReturnKey
-      await LoginScreen.enterEmail(TEST_USER.email);
-      await LoginScreen.enterPassword(TEST_USER.password);
-      await LoginScreen.tapSubmit();
+    it(
+      'logs in with valid credentials and navigates to dashboard',
+      async () => {
+        // enterPassword dismisses keyboard via tapReturnKey
+        await LoginScreen.enterEmail(TEST_USER.email);
+        await LoginScreen.enterPassword(TEST_USER.password);
+        await LoginScreen.tapSubmit();
 
-      // Wait for login screen to disappear
-      await waitFor(element(by.id('login.screen')))
-        .not.toBeVisible()
-        .withTimeout(TIMEOUTS.LONG);
+        // Wait for login screen to disappear
+        await waitFor(element(by.id('login.screen')))
+          .not.toBeVisible()
+          .withTimeout(TIMEOUTS.LONG);
 
-      // Wait for root loading screen to disappear (subscription initialization)
-      // This may flash quickly or not appear at all if cached
-      try {
-        await waitFor(element(by.id('root.loadingScreen')))
-          .toBeVisible()
-          .withTimeout(TIMEOUTS.SHORT);
-        await RootLoadingScreen.waitForDisappear();
-      } catch {
-        // Loading screen not visible or already gone - continue
-      }
+        // Wait for root loading screen to disappear (subscription initialization)
+        // This may flash quickly or not appear at all if cached
+        try {
+          await waitFor(element(by.id('root.loadingScreen')))
+            .toBeVisible()
+            .withTimeout(TIMEOUTS.SHORT);
+          await RootLoadingScreen.waitForDisappear();
+        } catch {
+          // Loading screen not visible or already gone - continue
+        }
 
-      // Wait for dashboard - test user should have hasCompletedOnboarding=true
-      // from ensureTestUser which calls completeOnboarding API
-      await DashboardScreen.waitForScreen();
-      await expect(element(by.id('dashboard.screen'))).toBeVisible();
-    });
+        // Wait for dashboard - test user should have hasCompletedOnboarding=true
+        // from ensureTestUser which calls completeOnboarding API
+        await DashboardScreen.waitForScreen();
+        await expect(element(by.id('dashboard.screen'))).toBeVisible();
+      },
+      240000
+    ); // 4 minute timeout for iOS (subscription loading can be slow)
 
     it('shows error for invalid credentials', async () => {
       await LoginScreen.enterEmail(INVALID_USER.email);
