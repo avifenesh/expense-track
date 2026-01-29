@@ -1,14 +1,49 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator, Alert, Share } from 'react-native'
+import React, { useState, useCallback, useEffect } from 'react'
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator, Alert, Share, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
-import { APP_NAME, APP_VERSION } from '../../constants'
-import { useAuthStore } from '../../stores'
+import { APP_NAME, APP_VERSION, PADDLE_CUSTOMER_PORTAL_URL } from '../../constants'
+import { useAuthStore, useSubscriptionStore } from '../../stores'
 import { getBiometricTypeLabel } from '../../services/biometric'
 import { exportUserData, deleteAccount } from '../../services/auth'
 import { ExportFormatModal, type ExportFormat } from '../../components/ExportFormatModal'
 import { DeleteAccountModal } from '../../components/DeleteAccountModal'
 import { ApiError } from '../../services/api'
+import type { SubscriptionStatus } from '../../services/subscription'
+
+function getStatusColor(status: SubscriptionStatus): string {
+  switch (status) {
+    case 'TRIALING':
+      return '#38bdf8'
+    case 'ACTIVE':
+      return '#22c55e'
+    case 'PAST_DUE':
+      return '#f59e0b'
+    case 'CANCELED':
+      return '#64748b'
+    case 'EXPIRED':
+      return '#ef4444'
+    default:
+      return '#64748b'
+  }
+}
+
+function getStatusLabel(status: SubscriptionStatus): string {
+  switch (status) {
+    case 'TRIALING':
+      return 'Trial'
+    case 'ACTIVE':
+      return 'Active'
+    case 'PAST_DUE':
+      return 'Past Due'
+    case 'CANCELED':
+      return 'Canceled'
+    case 'EXPIRED':
+      return 'Expired'
+    default:
+      return 'Unknown'
+  }
+}
 
 export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
   const biometricCapability = useAuthStore((state) => state.biometricCapability)
@@ -16,8 +51,18 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
   const user = useAuthStore((state) => state.user)
   const accessToken = useAuthStore((state) => state.accessToken)
 
+  const subscriptionStatus = useSubscriptionStore((state) => state.status)
+  const subscriptionDaysRemaining = useSubscriptionStore((state) => state.daysRemaining)
+  const isSubscriptionLoading = useSubscriptionStore((state) => state.isLoading)
+  const subscriptionError = useSubscriptionStore((state) => state.error)
+  const fetchSubscription = useSubscriptionStore((state) => state.fetchSubscription)
+
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBiometricLoading, setIsBiometricLoading] = useState(false)
+
+  useEffect(() => {
+    fetchSubscription()
+  }, [fetchSubscription])
   const [biometricError, setBiometricError] = useState<string | null>(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -125,6 +170,22 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
 
   const showBiometricOption = biometricCapability?.isAvailable
 
+  const handleManageSubscription = useCallback(async () => {
+    try {
+      await Linking.openURL(PADDLE_CUSTOMER_PORTAL_URL)
+    } catch {
+      Alert.alert('Error', 'Unable to open subscription management page')
+    }
+  }, [])
+
+  const handleUpgrade = useCallback(async () => {
+    try {
+      await Linking.openURL(PADDLE_CUSTOMER_PORTAL_URL)
+    } catch {
+      Alert.alert('Error', 'Unable to open upgrade page')
+    }
+  }, [])
+
   return (
     <SafeAreaView style={styles.container} edges={['top']} testID="settings.screen">
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} testID="settings.scrollView">
@@ -163,6 +224,59 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
               <Text style={styles.menuText}>Categories</Text>
               <Text style={styles.menuArrow}>›</Text>
             </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.section} testID="settings.subscriptionSection">
+          <Text style={styles.sectionTitle}>Subscription</Text>
+          <View style={styles.menuGroup}>
+            {isSubscriptionLoading ? (
+              <View style={styles.menuItem}>
+                <ActivityIndicator color="#38bdf8" testID="settings.subscriptionLoading" />
+              </View>
+            ) : subscriptionError ? (
+              <View style={styles.menuItem}>
+                <Text style={styles.errorText} testID="settings.subscriptionError">{subscriptionError}</Text>
+              </View>
+            ) : subscriptionStatus ? (
+              <>
+                <View style={styles.menuItem} testID="settings.subscriptionStatus">
+                  <Text style={styles.menuText}>Status</Text>
+                  <View
+                    style={[styles.statusBadge, { backgroundColor: getStatusColor(subscriptionStatus) }]}
+                    testID="settings.subscriptionBadge"
+                  >
+                    <Text style={styles.statusBadgeText}>{getStatusLabel(subscriptionStatus)}</Text>
+                  </View>
+                </View>
+                {subscriptionDaysRemaining !== null && subscriptionDaysRemaining > 0 && (
+                  <View style={styles.menuItem} testID="settings.daysRemaining">
+                    <Text style={styles.menuText}>Days Remaining</Text>
+                    <Text style={styles.menuValue}>{subscriptionDaysRemaining}</Text>
+                  </View>
+                )}
+                {(subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'PAST_DUE' || subscriptionStatus === 'CANCELED') && (
+                  <Pressable
+                    style={styles.menuItem}
+                    onPress={handleManageSubscription}
+                    testID="settings.manageSubscriptionButton"
+                  >
+                    <Text style={styles.menuText}>Manage Subscription</Text>
+                    <Text style={styles.menuArrow}>›</Text>
+                  </Pressable>
+                )}
+                {subscriptionStatus === 'TRIALING' && (
+                  <Pressable
+                    style={styles.menuItem}
+                    onPress={handleUpgrade}
+                    testID="settings.upgradeButton"
+                  >
+                    <Text style={[styles.menuText, styles.upgradeText]}>Upgrade</Text>
+                    <Text style={styles.menuArrow}>›</Text>
+                  </Pressable>
+                )}
+              </>
+            ) : null}
           </View>
         </View>
 
@@ -330,6 +444,19 @@ const styles = StyleSheet.create({
   },
   dangerText: {
     color: '#ef4444',
+  },
+  upgradeText: {
+    color: '#38bdf8',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   errorContainer: {
     marginTop: 8,
