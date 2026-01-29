@@ -59,15 +59,15 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBiometricLoading, setIsBiometricLoading] = useState(false)
-
-  useEffect(() => {
-    fetchSubscription()
-  }, [fetchSubscription])
   const [biometricError, setBiometricError] = useState<string | null>(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    fetchSubscription()
+  }, [fetchSubscription])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)

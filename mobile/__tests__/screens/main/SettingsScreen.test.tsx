@@ -369,6 +369,56 @@ describe('SettingsScreen', () => {
         expect(screen.getByText('Failed to update biometric settings')).toBeTruthy();
       });
     });
+
+    it('calls disableBiometric when switch is toggled off', async () => {
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: true,
+      });
+      mockDisableBiometric.mockResolvedValue(undefined);
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('biometric-switch')).toBeTruthy();
+      });
+
+      const biometricSwitch = screen.getByTestId('biometric-switch');
+      fireEvent(biometricSwitch, 'valueChange', false);
+
+      await waitFor(() => {
+        expect(mockDisableBiometric).toHaveBeenCalled();
+      });
+    });
+
+    it('shows error when disabling biometric fails', async () => {
+      setupAuthStoreMock({
+        biometricCapability: {
+          isAvailable: true,
+          biometricType: 'faceId',
+          isEnrolled: true,
+        },
+        isBiometricEnabled: true,
+      });
+      mockDisableBiometric.mockRejectedValue(new Error('Failed to disable'));
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('biometric-switch')).toBeTruthy();
+      });
+
+      const biometricSwitch = screen.getByTestId('biometric-switch');
+      fireEvent(biometricSwitch, 'valueChange', false);
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to disable')).toBeTruthy();
+      });
+    });
   });
 
   describe('Logout', () => {
@@ -966,6 +1016,22 @@ describe('SettingsScreen', () => {
       expect(screen.getByText('Failed to fetch subscription status')).toBeTruthy();
     });
 
+    it('does not show subscription status when status is null', async () => {
+      setupSubscriptionStoreMock({
+        status: null,
+        isLoading: false,
+        error: null,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('settings.subscriptionSection')).toBeTruthy();
+      });
+      expect(screen.queryByTestId('settings.subscriptionBadge')).toBeNull();
+      expect(screen.queryByTestId('settings.subscriptionStatus')).toBeNull();
+    });
+
     describe('Status Badge Colors', () => {
       it('shows blue badge for TRIALING status', async () => {
         setupSubscriptionStoreMock({
@@ -1099,6 +1165,20 @@ describe('SettingsScreen', () => {
         setupSubscriptionStoreMock({
           status: 'EXPIRED',
           daysRemaining: 0,
+        });
+
+        renderSettingsScreen();
+
+        await waitFor(() => {
+          expect(screen.getByTestId('settings.subscriptionBadge')).toBeTruthy();
+        });
+        expect(screen.queryByTestId('settings.daysRemaining')).toBeNull();
+      });
+
+      it('does not show days remaining when negative', async () => {
+        setupSubscriptionStoreMock({
+          status: 'EXPIRED',
+          daysRemaining: -1,
         });
 
         renderSettingsScreen();
