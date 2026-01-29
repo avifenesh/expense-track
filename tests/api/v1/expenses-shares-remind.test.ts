@@ -389,11 +389,11 @@ describe('POST /api/v1/expenses/shares/[participantId]/remind', () => {
     const data = await response.json()
     expect(data.error).toContain('Failed to send reminder email')
 
-    // Verify cooldown was still set (prevents spam)
+    // Verify reminderSentAt was rolled back (allows retry)
     const updated = await prisma.expenseParticipant.findUnique({
       where: { id: participantId },
     })
-    expect(updated?.reminderSentAt).not.toBeNull()
+    expect(updated?.reminderSentAt).toBeNull()
   })
 
   it('returns 404 when shared expense is soft-deleted', async () => {

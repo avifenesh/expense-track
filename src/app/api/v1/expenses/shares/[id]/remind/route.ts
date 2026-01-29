@@ -84,16 +84,41 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
       }
 
-      // 5. Update reminderSentAt timestamp BEFORE sending email
-      // This prevents spam if email send fails - cooldown is already active
-      const reminderSentAt = new Date()
+      // 5. Store previous reminderSentAt for potential rollback
+      const previousReminderSentAt = participant.reminderSentAt
 
-      await prisma.expenseParticipant.update({
-        where: { id: participantId },
-        data: { reminderSentAt },
+      // 6. Update reminderSentAt atomically with conditional check
+      // This prevents race conditions: only update if cooldown has expired
+      const cooldownThreshold = new Date(
+        Date.now() - REMINDER_COOLDOWN_HOURS * 60 * 60 * 1000
+      )
+
+      const updateResult = await prisma.expenseParticipant.updateMany({
+        where: {
+          id: participantId,
+          OR: [
+            { reminderSentAt: null },
+            { reminderSentAt: { lt: cooldownThreshold } },
+          ],
+        },
+        data: { reminderSentAt: new Date() },
       })
 
-      // 6. Send email and check result
+      // If no rows updated, another request beat us to it
+      if (updateResult.count === 0) {
+        return validationError({
+          reminderSentAt: ['You can only send one reminder per day'],
+        })
+      }
+
+      // Get the updated timestamp
+      const updated = await prisma.expenseParticipant.findUnique({
+        where: { id: participantId },
+        select: { reminderSentAt: true },
+      })
+      const reminderSentAt = updated!.reminderSentAt!
+
+      // 7. Send email and check result
       const description =
         participant.sharedExpense.description ||
         participant.sharedExpense.transaction.description ||
@@ -108,8 +133,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         description,
       })
 
-      // Log email failure but don't block response (cooldown already set)
+      // If email fails, rollback the timestamp to allow retry
       if (!emailResult.success) {
+        await prisma.expenseParticipant.update({
+          where: { id: participantId },
+          data: { reminderSentAt: previousReminderSentAt },
+        })
+
         serverLogger.error('Failed to send payment reminder email', {
           action: 'POST /api/v1/expenses/shares/[id]/remind',
           userId: user.userId,
@@ -118,14 +148,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         return serverError('Failed to send reminder email')
       }
 
-      // 7. Log action
+      // 8. Log action
       serverLogger.info('Sent payment reminder to participant', {
         action: 'POST /api/v1/expenses/shares/[id]/remind',
         userId: user.userId,
         participantId,
       })
 
-      // 8. Return success
+      // 9. Return success
       return successResponse({
         id: participantId,
         reminderSentAt: reminderSentAt.toISOString(),
