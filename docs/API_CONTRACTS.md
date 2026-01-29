@@ -2354,7 +2354,7 @@ Set the account balance for a specific month by creating an adjustment transacti
 
 - `targetBalance`: Required. Finite number representing the desired net balance for the month (can be negative). Rejects Infinity, NaN, and non-numeric values.
 - `currency`: Optional. One of: USD, EUR, ILS. Defaults to USD.
-- `monthKey`: Required. Month in YYYY-MM format (minimum 7 characters).
+- `monthKey`: Required. Month in YYYY-MM format with valid month (01-12). Invalid months like "2024-13" or "2024-00" are rejected.
 
 **Response (201 - Adjustment Created):**
 

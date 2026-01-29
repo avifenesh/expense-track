@@ -201,7 +201,7 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     expect(data.fields.monthKey).toBeDefined()
   })
 
-  it('returns 400 for invalid monthKey format', async () => {
+  it('returns 400 for invalid monthKey format (too short)', async () => {
     const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
       method: 'POST',
       headers: {
@@ -209,6 +209,42 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ targetBalance: 1000, monthKey: '24-1' }),
+    })
+
+    const response = await SetBalance(request, { params: Promise.resolve({ id: accountId }) })
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Validation failed')
+    expect(data.fields.monthKey).toBeDefined()
+  })
+
+  it('returns 400 for invalid month number (2024-13)', async () => {
+    const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetBalance: 1000, monthKey: '2024-13' }),
+    })
+
+    const response = await SetBalance(request, { params: Promise.resolve({ id: accountId }) })
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Validation failed')
+    expect(data.fields.monthKey).toBeDefined()
+  })
+
+  it('returns 400 for invalid month number (2024-00)', async () => {
+    const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetBalance: 1000, monthKey: '2024-00' }),
     })
 
     const response = await SetBalance(request, { params: Promise.resolve({ id: accountId }) })
@@ -529,5 +565,56 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     expect(response.status).toBe(400)
     expect(data.error).toBe('Validation failed')
     expect(data.fields.targetBalance).toBeDefined()
+  })
+
+  it('creates EXPENSE category for negative adjustment', async () => {
+    // Create an income transaction to establish a positive net
+    await prisma.transaction.create({
+      data: {
+        accountId,
+        categoryId,
+        type: TransactionType.INCOME,
+        amount: 1000,
+        currency: Currency.USD,
+        date: new Date(Date.UTC(2024, 0, 15)),
+        month: new Date(Date.UTC(2024, 0, 1)),
+        description: 'Test income',
+        isRecurring: false,
+      },
+    })
+
+    // Delete any existing Balance Adjustment categories to test fresh creation
+    await prisma.category.deleteMany({
+      where: { userId: TEST_USER_ID, name: 'Balance Adjustment' },
+    })
+
+    // Current net: 1000, target: 300, adjustment should be -700 (EXPENSE)
+    const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetBalance: 300, monthKey: '2024-01' }),
+    })
+
+    const response = await SetBalance(request, { params: Promise.resolve({ id: accountId }) })
+    const data = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(data.success).toBe(true)
+    expect(data.data.transaction.type).toBe('EXPENSE')
+
+    // Verify the Balance Adjustment category was created with EXPENSE type
+    const expenseCategory = await prisma.category.findFirst({
+      where: { userId: TEST_USER_ID, name: 'Balance Adjustment', type: TransactionType.EXPENSE },
+    })
+    expect(expenseCategory).not.toBeNull()
+
+    // Verify transaction uses this EXPENSE category
+    const transaction = await prisma.transaction.findFirst({
+      where: { id: data.data.transaction.id },
+    })
+    expect(transaction?.categoryId).toBe(expenseCategory!.id)
   })
 })

@@ -11,7 +11,9 @@ import { serverLogger } from '@/lib/server-logger'
 const setBalanceApiSchema = z.object({
   targetBalance: z.number().finite(),
   currency: z.nativeEnum(Currency).default(Currency.USD),
-  monthKey: z.string().min(7, 'Month key is required'),
+  monthKey: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month key must be in YYYY-MM format with valid month (01-12)'),
 })
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,22 +45,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       try {
         const result = await prisma.$transaction(async (tx) => {
-          const adjustmentCategory = await tx.category.upsert({
-            where: {
-              userId_name_type: {
-                userId: user.userId,
-                name: 'Balance Adjustment',
-                type: TransactionType.INCOME,
-              },
-            },
-            update: {},
-            create: {
-              userId: user.userId,
-              name: 'Balance Adjustment',
-              type: TransactionType.INCOME,
-            },
-          })
-
           const [incomeAgg, expenseAgg] = await Promise.all([
             tx.transaction.aggregate({
               where: { accountId, month: monthStart, deletedAt: null, type: TransactionType.INCOME },
@@ -81,6 +67,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
           const transactionType = adjustment > 0 ? TransactionType.INCOME : TransactionType.EXPENSE
           const transactionAmount = Math.abs(adjustment)
+
+          const adjustmentCategory = await tx.category.upsert({
+            where: {
+              userId_name_type: {
+                userId: user.userId,
+                name: 'Balance Adjustment',
+                type: transactionType,
+              },
+            },
+            update: {},
+            create: {
+              userId: user.userId,
+              name: 'Balance Adjustment',
+              type: transactionType,
+            },
+          })
 
           const transaction = await tx.transaction.create({
             data: {
