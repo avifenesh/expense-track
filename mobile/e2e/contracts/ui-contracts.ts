@@ -451,12 +451,27 @@ export const SettingsScreen = {
     exportDataButton: 'settings.exportDataButton',
     deleteAccountButton: 'settings.deleteAccountButton',
     logoutButton: 'logout-button',
+    subscriptionLoading: 'settings.subscriptionLoading',
+    subscriptionStatus: 'settings.subscriptionStatus',
+    subscriptionError: 'settings.subscriptionError',
   },
 
   async waitForScreen(): Promise<void> {
     await waitFor(element(by.id('settings.screen')))
       .toBeVisible()
       .withTimeout(TIMEOUTS.MEDIUM);
+  },
+
+  /**
+   * Wait for subscription data to finish loading.
+   * Subscription section shows loading indicator initially, then either
+   * status badge or error text once the API call completes.
+   */
+  async waitForSubscriptionLoaded(): Promise<void> {
+    // Wait for loading indicator to disappear
+    await waitFor(element(by.id('settings.subscriptionLoading')))
+      .not.toBeVisible()
+      .withTimeout(TIMEOUTS.LONG);
   },
 
   async tapExportData(): Promise<void> {

@@ -30,6 +30,8 @@ describe('Settings E2E Tests', () => {
 
     await navigateToTab('Settings');
     await SettingsScreen.waitForScreen();
+    // Wait for subscription data to load before interacting with the screen
+    await SettingsScreen.waitForSubscriptionLoaded();
   });
 
   describe('Settings Screen UI', () => {
