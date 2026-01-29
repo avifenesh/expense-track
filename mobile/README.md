@@ -489,6 +489,49 @@ See `docs/API_CONTRACTS.md` for full API documentation.
 
 The Settings screen provides account management features including data export and account deletion.
 
+#### Subscription Status
+
+The Settings screen displays the user's current subscription status with visual indicators and management options.
+
+**Features:**
+- Status badge with color-coded indicators:
+  - TRIALING (blue) - Active trial period
+  - ACTIVE (green) - Paid and active subscription
+  - PAST_DUE (amber) - Payment failed, grace period
+  - CANCELED (gray) - Canceled, access until period end
+  - EXPIRED (red) - No longer has access
+- Days remaining display for active trials and periods
+- Manage Subscription button - Opens Paddle customer portal for ACTIVE, PAST_DUE, CANCELED
+- Upgrade button - Opens pricing page for TRIALING users
+- Loading state with activity indicator
+- Error state with error message display
+
+**Usage:**
+```tsx
+import { useSubscriptionStore } from '@/stores';
+
+const {
+  status,
+  daysRemaining,
+  isLoading,
+  error,
+  fetchSubscription
+} = useSubscriptionStore();
+
+useEffect(() => {
+  fetchSubscription();
+}, [fetchSubscription]);
+```
+
+**Integration:**
+- Uses `subscriptionStore` for subscription state management
+- Fetches data on screen mount with automatic caching (5-minute TTL)
+- Opens `PADDLE_CUSTOMER_PORTAL_URL` for subscription management
+- See `src/stores/subscriptionStore.ts` and `src/lib/subscriptionPersistence.ts`
+
+**API Integration:**
+- GET `/api/v1/subscriptions` - Fetch subscription status and settings
+
 #### Export Data
 
 Users can export all their data in JSON or CSV format for data portability (GDPR Article 20 compliance).

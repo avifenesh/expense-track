@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- Mobile: Settings subscription status section (#316)
+  - Display subscription status with color-coded badge (TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED)
+  - Show days remaining for active subscriptions and trials
+  - Manage Subscription button opens Paddle customer portal (for ACTIVE, PAST_DUE, CANCELED)
+  - Upgrade button opens pricing page (for TRIALING)
+  - Loading and error states for subscription data fetching
+  - Added PADDLE_CUSTOMER_PORTAL_URL constant to mobile/src/constants/index.ts
+  - Integration with subscriptionStore for real-time subscription state
+  - Comprehensive test suite with 60 tests
+
 - Mobile: PaywallScreen for subscription expiration (#317)
   - New PaywallScreen component shown when user's subscription has expired
   - Subscribe button opens balancebeacon.com/pricing in browser
