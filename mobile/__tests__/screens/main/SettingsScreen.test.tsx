@@ -25,7 +25,6 @@ jest.mock('../../../src/services/auth');
 jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
-// Mock the stores index (which the component imports from)
 jest.mock('../../../src/stores', () => ({
   useAuthStore: jest.fn(),
   useSubscriptionStore: jest.fn(),
@@ -133,7 +132,6 @@ describe('SettingsScreen', () => {
     jest.clearAllMocks();
     setupAuthStoreMock();
     setupSubscriptionStoreMock();
-    // Default biometric mocks - not available
     mockBiometricService.checkBiometricCapability.mockResolvedValue({
       isAvailable: false,
       biometricType: 'none',
@@ -386,7 +384,6 @@ describe('SettingsScreen', () => {
       fireEvent.press(screen.getByTestId('logout-button'));
 
       await waitFor(() => {
-        // Logout should be called (the actual logout behavior is handled by AuthContext)
         expect(screen.getByTestId('logout-button')).toBeTruthy();
       });
     });
@@ -404,7 +401,6 @@ describe('SettingsScreen', () => {
 
       fireEvent.press(screen.getByTestId('logout-button'));
 
-      // Button should show loading state (ActivityIndicator replaces text)
       await waitFor(() => {
         expect(screen.queryByText('Sign Out')).toBeNull();
       });
@@ -814,7 +810,6 @@ describe('SettingsScreen', () => {
         expect(mockAuthService.deleteAccount).toHaveBeenCalledWith('test@example.com', 'access-token-123');
       });
 
-      // Alert.alert is called with callback that triggers logout when OK is pressed
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
           'Account Deleted',
@@ -826,7 +821,6 @@ describe('SettingsScreen', () => {
         );
       });
 
-      // Simulate pressing OK button to trigger logout
       const alertCall = (Alert.alert as jest.Mock).mock.calls.find(
         call => call[0] === 'Account Deleted'
       );

@@ -146,7 +146,6 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
       await deleteAccount(confirmEmail, accessToken)
       setShowDeleteModal(false)
 
-      // Show confirmation alert, then logout to ensure user sees the message
       Alert.alert(
         'Account Deleted',
         'Your account has been permanently deleted',

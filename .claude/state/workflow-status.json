@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "task": {
+    "id": 316,
+    "source": "github",
+    "title": "Display subscription status in Settings",
+    "description": "Display subscription status in Settings",
+    "url": "https://github.com/avifenesh/balance-beacon/issues/316",
+    "labels": [
+      "subscription",
+      "mobile",
+      "phase:sprint-3",
+      "priority:medium"
+    ]
+  },
+  "workflow": {
+    "id": "worktree-setup-316",
+    "startedAt": "2026-01-29T00:00:00Z",
+    "lastActivityAt": "2026-01-29T00:00:00Z",
+    "status": "active",
+    "currentPhase": "worktree-setup"
+  },
+  "git": {
+    "branch": "feature/subscription-settings-316",
+    "baseSha": "022e7d164a55578445f7fad2c7aa411b08c54c13",
+    "currentSha": "022e7d164a55578445f7fad2c7aa411b08c54c13",
+    "mainRepoPath": "C:\\Users\\avife\\balance-beacon"
+  },
+  "policy": {},
+  "steps": [
+    {
+      "step": "worktree-created",
+      "status": "completed",
+      "startedAt": "2026-01-29T00:00:00Z",
+      "completedAt": "2026-01-29T00:00:00Z"
+    }
+  ],
+  "resume": {
+    "canResume": true,
+    "resumeFromStep": "worktree-created"
+  },
+  "agents": {
+    "reviewIterations": 0,
+    "issuesFound": 0,
+    "issuesFixed": 0
+  }
+}
