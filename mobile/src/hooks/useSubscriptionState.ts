@@ -12,13 +12,24 @@ interface SubscriptionState {
 /**
  * Hook to access subscription state from Zustand store.
  * Used by navigation to determine whether to show paywall.
+ * Uses individual selectors for each primitive value to prevent
+ * unnecessary re-renders and avoid Maximum update depth exceeded errors.
  */
 export function useSubscriptionState(): SubscriptionState {
-  return useSubscriptionStore((state) => ({
-    canAccessApp: state.canAccessApp,
-    isLoading: state.isLoading,
-    error: state.error,
-    status: state.status,
-    isInitialized: state.lastFetched !== null,
-  }));
+  // Use individual selectors for each primitive value
+  // This is more efficient than selecting an object and avoids
+  // potential issues with reference equality checks during rapid state changes
+  const canAccessApp = useSubscriptionStore((state) => state.canAccessApp);
+  const isLoading = useSubscriptionStore((state) => state.isLoading);
+  const error = useSubscriptionStore((state) => state.error);
+  const status = useSubscriptionStore((state) => state.status);
+  const isInitialized = useSubscriptionStore((state) => state.lastFetched !== null);
+
+  return {
+    canAccessApp,
+    isLoading,
+    error,
+    status,
+    isInitialized,
+  };
 }

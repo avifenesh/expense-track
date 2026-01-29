@@ -7,9 +7,9 @@ import { device, element, by, expect, waitFor } from 'detox';
 import { TestApiClient } from '../helpers/api-client';
 import { TEST_USER, TIMEOUTS } from '../helpers/fixtures';
 import {
-  LoginScreen,
   DashboardScreen,
   AddTransactionScreen,
+  performLogin,
 } from '../contracts/ui-contracts';
 
 describe('Transaction E2E Tests', () => {
@@ -24,15 +24,9 @@ describe('Transaction E2E Tests', () => {
 
   beforeEach(async () => {
     await device.launchApp({ newInstance: true });
-    await LoginScreen.waitForScreen();
 
-    // Login (enterPassword dismisses keyboard via tapReturnKey)
-    await LoginScreen.enterEmail(TEST_USER.email);
-    await LoginScreen.enterPassword(TEST_USER.password);
-    await LoginScreen.tapSubmit();
-
-    // Wait for dashboard
-    await DashboardScreen.waitForScreen();
+    // Use performLogin which handles subscription loading state
+    await performLogin(TEST_USER.email, TEST_USER.password);
   });
 
   describe('Dashboard', () => {

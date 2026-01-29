@@ -587,10 +587,90 @@ export const DeleteAccountModal = {
   },
 };
 
+// ============ Paywall Screen ============
+
+export const PaywallScreen = {
+  testIds: {
+    screen: 'paywall.screen',
+    content: 'paywall.content',
+    title: 'paywall.title',
+    subtitle: 'paywall.subtitle',
+    subscribeButton: 'paywall.subscribeButton',
+    signOutButton: 'paywall.signOutButton',
+    signOutLoading: 'paywall.signOutLoading',
+  },
+
+  async waitForScreen(): Promise<void> {
+    await waitFor(element(by.id('paywall.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.LONG);
+  },
+
+  async assertVisible(): Promise<void> {
+    await expect(element(by.id('paywall.screen'))).toBeVisible();
+  },
+
+  async assertNotVisible(): Promise<void> {
+    await expect(element(by.id('paywall.screen'))).not.toBeVisible();
+  },
+
+  async tapSubscribe(): Promise<void> {
+    await element(by.id('paywall.subscribeButton')).tap();
+  },
+
+  async tapSignOut(): Promise<void> {
+    await element(by.id('paywall.signOutButton')).tap();
+  },
+
+  async waitForSignOutComplete(): Promise<void> {
+    // After sign out, should return to login screen
+    await waitFor(element(by.id('login.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.LONG);
+  },
+};
+
+// ============ Root Loading Screen ============
+
+export const RootLoadingScreen = {
+  testIds: {
+    screen: 'root.loadingScreen',
+    indicator: 'root.loadingIndicator',
+  },
+
+  /**
+   * Wait for the root loading screen to disappear.
+   * This is shown during subscription initialization after login.
+   * Uses TIMEOUTS.LONG to handle slow API responses in CI.
+   */
+  async waitForDisappear(): Promise<void> {
+    await waitFor(element(by.id('root.loadingScreen')))
+      .not.toBeVisible()
+      .withTimeout(TIMEOUTS.LONG);
+  },
+
+  async assertVisible(): Promise<void> {
+    await expect(element(by.id('root.loadingScreen'))).toBeVisible();
+  },
+
+  async assertNotVisible(): Promise<void> {
+    await expect(element(by.id('root.loadingScreen'))).not.toBeVisible();
+  },
+};
+
 // ============ Helper Functions ============
 
 /**
  * Complete the login flow from LoginScreen to Dashboard
+ * Handles the subscription loading state that occurs after login.
+ *
+ * Flow:
+ * 1. Wait for login screen
+ * 2. Submit credentials
+ * 3. Wait for login screen to disappear
+ * 4. Wait for root loading screen to disappear (subscription initialization)
+ * 5. Wait for either dashboard or paywall screen
+ * 6. Throw error if paywall is shown (indicates subscription setup issue in tests)
  */
 export async function performLogin(
   email: string,
@@ -598,11 +678,35 @@ export async function performLogin(
 ): Promise<void> {
   await LoginScreen.waitForScreen();
   await LoginScreen.login(email, password);
-  // Either goes to onboarding or dashboard
-  // Wait for either screen to appear
+
+  // Wait for login screen to disappear (login is processing)
+  await waitFor(element(by.id('login.screen')))
+    .not.toBeVisible()
+    .withTimeout(TIMEOUTS.LONG);
+
+  // Wait for root loading screen to disappear (subscription initialization)
+  // The loading screen may flash quickly or not appear at all if subscription
+  // is already cached, so we use a try-catch with short initial check
+  try {
+    // First check if loading screen exists with short timeout
+    await waitFor(element(by.id('root.loadingScreen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.SHORT);
+
+    // If it's visible, wait for it to disappear
+    await RootLoadingScreen.waitForDisappear();
+  } catch {
+    // Loading screen not visible or already gone - continue
+  }
+
+  // Now wait for the final destination: dashboard or paywall
+  // Use waitFor with toExist to check for either screen
   await waitFor(element(by.id('dashboard.screen')))
     .toBeVisible()
     .withTimeout(TIMEOUTS.LONG);
+
+  // If we reach here, dashboard is visible - success
+  // If paywall was shown instead, the above would fail
 }
 
 /**

@@ -56,6 +56,31 @@ interface UserProfile {
   };
 }
 
+interface SubscriptionState {
+  status: 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'EXPIRED' | 'NONE';
+  isActive: boolean;
+  canAccessApp: boolean;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  daysRemaining: number | null;
+  paddleCustomerId: string | null;
+  paddleSubscriptionId: string | null;
+}
+
+interface SubscriptionResponse {
+  subscription: SubscriptionState;
+  checkout: {
+    priceId: string;
+    customData: Record<string, string>;
+    customerEmail: string;
+  } | null;
+  pricing: {
+    monthlyPriceCents: number;
+    trialDays: number;
+    currency: string;
+  };
+}
+
 export class TestApiClient {
   private baseUrl: string;
   private accessToken: string | null = null;
@@ -90,11 +115,27 @@ export class TestApiClient {
 
     if (!response.ok) {
       const errorMessage = json.error?.message || json.message || `API error: ${response.status}`;
+      console.error(`[TestApiClient] API error on ${method} ${path}:`, {
+        status: response.status,
+        error: errorMessage,
+        body: json
+      });
       throw new Error(errorMessage);
     }
 
     // API responses have { success: true, data: T } format
-    return json.data !== undefined ? json.data : json;
+    const result = json.data !== undefined ? json.data : json;
+
+    // Debug log for subscription endpoint
+    if (path.includes('subscriptions')) {
+      console.log(`[TestApiClient] ${method} ${path} response:`, {
+        hasData: json.data !== undefined,
+        dataKeys: json.data ? Object.keys(json.data) : [],
+        resultKeys: result ? Object.keys(result) : []
+      });
+    }
+
+    return result;
   }
 
   // ============ Auth ============
@@ -152,6 +193,19 @@ export class TestApiClient {
       'POST',
       '/api/v1/onboarding/complete'
     );
+  }
+
+  // ============ Subscription ============
+
+  async getSubscriptionStatus(): Promise<SubscriptionResponse> {
+    try {
+      const response = await this.request<SubscriptionResponse>('GET', '/api/v1/subscriptions');
+      console.log('[TestApiClient] Subscription API response:', JSON.stringify(response, null, 2));
+      return response;
+    } catch (error) {
+      console.error('[TestApiClient] Subscription API error:', error);
+      throw error;
+    }
   }
 
   // ============ Accounts ============
@@ -213,7 +267,7 @@ export class TestApiClient {
 
   /**
    * Ensures test user exists and is ready for testing.
-   * Registers if not exists, logs in, and completes onboarding.
+   * Registers if not exists, logs in, completes onboarding, and verifies subscription.
    * Note: Registration now creates default accounts automatically.
    */
   async ensureTestUser(
@@ -228,6 +282,9 @@ export class TestApiClient {
         // Always call completeOnboarding for test users to ensure subscription exists
         // The endpoint is idempotent and creates subscription if missing
         await this.completeOnboarding();
+
+        // Verify subscription state - warn if user can't access app
+        await this.verifySubscriptionAccess();
       }
 
       return loginResponse;
@@ -238,9 +295,38 @@ export class TestApiClient {
 
       if (completeOnboarding) {
         await this.completeOnboarding();
+
+        // Verify subscription state after onboarding
+        await this.verifySubscriptionAccess();
       }
 
       return loginResponse;
+    }
+  }
+
+  /**
+   * Verifies user has valid subscription access.
+   * Logs warning if canAccessApp is false (indicates subscription issue).
+   */
+  async verifySubscriptionAccess(): Promise<void> {
+    try {
+      const { subscription } = await this.getSubscriptionStatus();
+      if (!subscription.canAccessApp) {
+        console.warn(
+          `[TestApiClient] WARNING: User cannot access app. ` +
+            `Status: ${subscription.status}, canAccessApp: ${subscription.canAccessApp}`
+        );
+      } else {
+        console.log(
+          `[TestApiClient] Subscription verified: ${subscription.status}, ` +
+            `canAccessApp: ${subscription.canAccessApp}`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        '[TestApiClient] Failed to verify subscription:',
+        error instanceof Error ? error.message : error
+      );
     }
   }
 

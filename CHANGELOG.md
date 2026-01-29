@@ -217,3 +217,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Logout integration for state cleanup
   - 641-line comprehensive test suite with 90%+ coverage
 
+
+### Fixed
+- **E2E Tests**: Fixed mobile E2E test failures caused by infinite render loop in `useSubscriptionState` hook (#315)
+  - Fixed `useSubscriptionState` to use individual Zustand selectors instead of returning new object
+  - Added PaywallScreen and RootLoadingScreen UI contracts for subscription flow testing
+  - Updated `performLogin` helper to properly wait for subscription loading state
+  - Added subscription API contracts and verification in TestApiClient
+  - Created comprehensive `subscription.e2e.ts` test suite with 7 test cases
+  - Adjusted iOS CI timeout to 45 minutes (reasonable safety margin)
+  - Created `mobile/e2e/README.md` with comprehensive E2E testing documentation

@@ -133,6 +133,40 @@ export const SeedDataResponseContract = z.object({
   budgetsCreated: z.number(),
 });
 
+// ============ Subscription Contracts ============
+
+export const SubscriptionStatusContract = z.enum([
+  'TRIALING',
+  'ACTIVE',
+  'PAST_DUE',
+  'CANCELED',
+  'EXPIRED',
+  'NONE',
+]);
+
+export const SubscriptionResponseContract = z.object({
+  subscription: z.object({
+    status: SubscriptionStatusContract,
+    isActive: z.boolean(),
+    canAccessApp: z.boolean(),
+    trialEndsAt: z.string().nullable(),
+    currentPeriodEnd: z.string().nullable(),
+    daysRemaining: z.number().nullable(),
+    paddleCustomerId: z.string().nullable(),
+    paddleSubscriptionId: z.string().nullable(),
+  }),
+  checkout: z.object({
+    priceId: z.string(),
+    customData: z.record(z.string()),
+    customerEmail: z.string().email(),
+  }).nullable(),
+  pricing: z.object({
+    monthlyPriceCents: z.number(),
+    trialDays: z.number(),
+    currency: z.string(),
+  }),
+});
+
 // ============ Error Contract ============
 
 // API errors return { error: string, code?: string, fields?: Record<string, string[]> }
@@ -154,4 +188,6 @@ export type Category = z.infer<typeof CategoryContract>;
 export type CreateTransactionRequest = z.infer<typeof CreateTransactionRequestContract>;
 export type Transaction = z.infer<typeof TransactionContract>;
 export type Budget = z.infer<typeof BudgetContract>;
+export type SubscriptionStatus = z.infer<typeof SubscriptionStatusContract>;
+export type SubscriptionResponse = z.infer<typeof SubscriptionResponseContract>;
 export type ApiError = z.infer<typeof ApiErrorContract>;
