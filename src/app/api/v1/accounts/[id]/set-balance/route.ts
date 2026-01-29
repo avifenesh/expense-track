@@ -1,166 +1,131 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { Currency, TransactionType, Prisma } from '@prisma/client'
-import { requireJwtAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
-import {
-  authError,
-  notFoundError,
-  serverError,
-  successResponse,
-  validationError,
-  rateLimitError,
-  checkSubscription,
-} from '@/lib/api-helpers'
-import { checkRateLimit, incrementRateLimit } from '@/lib/rate-limit'
+import { notFoundError, successResponse, validationError } from '@/lib/api-helpers'
+import { withApiAuth, parseJsonBody } from '@/lib/api-middleware'
 import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { getMonthStartFromKey } from '@/utils/date'
 import { serverLogger } from '@/lib/server-logger'
 
 const setBalanceApiSchema = z.object({
-  targetBalance: z.coerce.number(),
+  targetBalance: z.number().finite(),
   currency: z.nativeEnum(Currency).default(Currency.USD),
   monthKey: z.string().min(7, 'Month key is required'),
 })
 
-function toDecimalString(value: number): string {
-  return value.toFixed(2)
-}
-
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: accountId } = await params
 
-  let user
-  try {
-    user = requireJwtAuth(request)
-  } catch (error) {
-    return authError(error instanceof Error ? error.message : 'Unauthorized')
-  }
-
-  const rateLimit = checkRateLimit(user.userId)
-  if (!rateLimit.allowed) {
-    return rateLimitError(rateLimit.resetAt)
-  }
-  incrementRateLimit(user.userId)
-
-  const subscriptionError = await checkSubscription(user.userId)
-  if (subscriptionError) return subscriptionError
-
-  let body
-  try {
-    body = await request.json()
-  } catch {
-    return validationError({ body: ['Invalid JSON'] })
-  }
-
-  const parsed = setBalanceApiSchema.safeParse(body)
-  if (!parsed.success) {
-    return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
-  }
-
-  const { targetBalance, currency, monthKey } = parsed.data
-
-  const account = await prisma.account.findFirst({
-    where: {
-      id: accountId,
-      userId: user.userId,
-      deletedAt: null,
-    },
-  })
-
-  if (!account) {
-    return notFoundError('Account not found')
-  }
-
-  const monthStart = getMonthStartFromKey(monthKey)
-
-  try {
-    let adjustmentCategory = await prisma.category.findFirst({
-      where: { name: 'Balance Adjustment', userId: user.userId },
-    })
-
-    if (!adjustmentCategory) {
-      adjustmentCategory = await prisma.category.create({
-        data: {
-          userId: user.userId,
-          name: 'Balance Adjustment',
-          type: TransactionType.INCOME,
-        },
-      })
-    }
-
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        accountId,
-        month: monthStart,
-        deletedAt: null,
-      },
-      select: {
-        type: true,
-        amount: true,
-      },
-    })
-
-    let currentIncome = 0
-    let currentExpense = 0
-
-    for (const t of transactions) {
-      const amount = typeof t.amount === 'object' ? Number(t.amount) : t.amount
-      if (t.type === TransactionType.INCOME) {
-        currentIncome += amount
-      } else {
-        currentExpense += amount
+  return withApiAuth(
+    request,
+    async (user) => {
+      const body = await parseJsonBody(request)
+      if (body === null) {
+        return validationError({ body: ['Invalid JSON'] })
       }
-    }
 
-    const currentNet = currentIncome - currentExpense
-    const adjustment = targetBalance - currentNet
+      const parsed = setBalanceApiSchema.safeParse(body)
+      if (!parsed.success) {
+        return validationError(parsed.error.flatten().fieldErrors as Record<string, string[]>)
+      }
 
-    if (Math.abs(adjustment) < 0.01) {
-      return successResponse({ adjustment: 0 })
-    }
+      const { targetBalance, currency, monthKey } = parsed.data
+      const monthStart = getMonthStartFromKey(monthKey)
 
-    const transactionType = adjustment > 0 ? TransactionType.INCOME : TransactionType.EXPENSE
-    const transactionAmount = Math.abs(adjustment)
+      const account = await prisma.account.findFirst({
+        where: { id: accountId, userId: user.userId, deletedAt: null },
+      })
 
-    const transaction = await prisma.transaction.create({
-      data: {
-        accountId,
-        categoryId: adjustmentCategory.id,
-        type: transactionType,
-        amount: new Prisma.Decimal(toDecimalString(transactionAmount)),
-        currency,
-        date: new Date(),
-        month: monthStart,
-        description: 'Balance adjustment',
-        isRecurring: false,
-      },
-    })
+      if (!account) {
+        return notFoundError('Account not found')
+      }
 
-    await invalidateDashboardCache({
-      monthKey,
-      accountId,
-    })
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          const adjustmentCategory = await tx.category.upsert({
+            where: {
+              userId_name_type: {
+                userId: user.userId,
+                name: 'Balance Adjustment',
+                type: TransactionType.INCOME,
+              },
+            },
+            update: {},
+            create: {
+              userId: user.userId,
+              name: 'Balance Adjustment',
+              type: TransactionType.INCOME,
+            },
+          })
 
-    return successResponse(
-      {
-        adjustment,
-        transaction: {
-          id: transaction.id,
-          type: transactionType,
-          amount: transactionAmount.toFixed(2),
-          currency,
-        },
-      },
-      201,
-    )
-  } catch (error) {
-    serverLogger.error('Failed to set balance', {
-      action: 'POST /api/v1/accounts/[id]/set-balance',
-      userId: user.userId,
-      accountId,
-      input: { targetBalance, currency, monthKey },
-    }, error)
-    return serverError('Unable to set balance')
-  }
+          const [incomeAgg, expenseAgg] = await Promise.all([
+            tx.transaction.aggregate({
+              where: { accountId, month: monthStart, deletedAt: null, type: TransactionType.INCOME },
+              _sum: { amount: true },
+            }),
+            tx.transaction.aggregate({
+              where: { accountId, month: monthStart, deletedAt: null, type: TransactionType.EXPENSE },
+              _sum: { amount: true },
+            }),
+          ])
+
+          const currentIncome = incomeAgg._sum.amount ? Number(incomeAgg._sum.amount) : 0
+          const currentExpense = expenseAgg._sum.amount ? Number(expenseAgg._sum.amount) : 0
+          const currentNet = currentIncome - currentExpense
+          const adjustment = targetBalance - currentNet
+
+          if (Math.abs(adjustment) < 0.01) {
+            return { adjustment: 0, transaction: null }
+          }
+
+          const transactionType = adjustment > 0 ? TransactionType.INCOME : TransactionType.EXPENSE
+          const transactionAmount = Math.abs(adjustment)
+
+          const transaction = await tx.transaction.create({
+            data: {
+              accountId,
+              categoryId: adjustmentCategory.id,
+              type: transactionType,
+              amount: new Prisma.Decimal(transactionAmount.toFixed(2)),
+              currency,
+              date: new Date(),
+              month: monthStart,
+              description: 'Balance adjustment',
+              isRecurring: false,
+            },
+          })
+
+          return { adjustment, transaction, transactionType, transactionAmount }
+        })
+
+        if (result.transaction) {
+          await invalidateDashboardCache({ monthKey, accountId })
+
+          return successResponse(
+            {
+              adjustment: result.adjustment,
+              transaction: {
+                id: result.transaction.id,
+                type: result.transactionType,
+                amount: result.transactionAmount!.toFixed(2),
+                currency,
+              },
+            },
+            201,
+          )
+        }
+
+        return successResponse({ adjustment: 0 })
+      } catch (error) {
+        serverLogger.error(
+          'Failed to set balance',
+          { action: 'POST /api/v1/accounts/[id]/set-balance', userId: user.userId, accountId },
+          error,
+        )
+        throw error
+      }
+    },
+    { requireSubscription: true },
+  )
 }

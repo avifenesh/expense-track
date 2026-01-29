@@ -2334,6 +2334,8 @@ Set the account balance for a specific month by creating an adjustment transacti
 
 **Auth:** Bearer token required
 
+**Subscription:** Active subscription required (returns 402 if expired)
+
 **Path Parameters:**
 
 - `id`: Account ID to set balance for (required)
@@ -2350,7 +2352,7 @@ Set the account balance for a specific month by creating an adjustment transacti
 
 **Validation:**
 
-- `targetBalance`: Required. The desired net balance for the month (can be negative).
+- `targetBalance`: Required. Finite number representing the desired net balance for the month (can be negative). Rejects Infinity, NaN, and non-numeric values.
 - `currency`: Optional. One of: USD, EUR, ILS. Defaults to USD.
 - `monthKey`: Required. Month in YYYY-MM format (minimum 7 characters).
 

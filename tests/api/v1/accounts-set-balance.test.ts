@@ -494,4 +494,40 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     expect(data.data.adjustment).toBe(123.45)
     expect(data.data.transaction.amount).toBe('123.45')
   })
+
+  it('returns 400 for Infinity targetBalance', async () => {
+    const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetBalance: Infinity, monthKey: '2024-01' }),
+    })
+
+    const response = await SetBalance(request, { params: Promise.resolve({ id: accountId }) })
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Validation failed')
+    expect(data.fields.targetBalance).toBeDefined()
+  })
+
+  it('returns 400 for string targetBalance', async () => {
+    const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetBalance: 'not-a-number', monthKey: '2024-01' }),
+    })
+
+    const response = await SetBalance(request, { params: Promise.resolve({ id: accountId }) })
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Validation failed')
+    expect(data.fields.targetBalance).toBeDefined()
+  })
 })
