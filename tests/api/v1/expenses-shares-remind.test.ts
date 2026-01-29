@@ -362,4 +362,65 @@ describe('POST /api/v1/expenses/shares/[participantId]/remind', () => {
       data.data.reminderSentAt
     )
   })
+
+  it('returns 500 when email sending fails', async () => {
+    const { sendPaymentReminderEmail } = await import('@/lib/email')
+    vi.mocked(sendPaymentReminderEmail).mockResolvedValueOnce({
+      success: false,
+    })
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/v1/expenses/shares/${participantId}/remind`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+
+    const response = await SendReminder(request, {
+      params: Promise.resolve({ id: participantId }),
+    })
+
+    expect(response.status).toBe(500)
+
+    const data = await response.json()
+    expect(data.error).toContain('Failed to send reminder email')
+
+    // Verify cooldown was still set (prevents spam)
+    const updated = await prisma.expenseParticipant.findUnique({
+      where: { id: participantId },
+    })
+    expect(updated?.reminderSentAt).not.toBeNull()
+  })
+
+  it('returns 404 when shared expense is soft-deleted', async () => {
+    // Soft-delete the shared expense
+    await prisma.sharedExpense.update({
+      where: { transactionId },
+      data: { deletedAt: new Date() },
+    })
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/v1/expenses/shares/${participantId}/remind`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+
+    const response = await SendReminder(request, {
+      params: Promise.resolve({ id: participantId }),
+    })
+
+    expect(response.status).toBe(404)
+
+    const data = await response.json()
+    expect(data.error).toBe('Participant not found')
+  })
 })

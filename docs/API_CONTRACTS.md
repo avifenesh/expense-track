@@ -38,7 +38,7 @@ Tokens are obtained from `/api/v1/auth/login` and refreshed via `/api/v1/auth/re
 {
   "success": false,
   "error": "Validation failed",
-  "details": {
+  "fields": {
     "fieldName": ["Error message 1", "Error message 2"]
   }
 }

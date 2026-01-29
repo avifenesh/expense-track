@@ -6,6 +6,7 @@ import {
   notFoundError,
   forbiddenError,
   validationError,
+  serverError,
 } from '@/lib/api-helpers'
 import { PaymentStatus } from '@prisma/client'
 import { serverLogger } from '@/lib/server-logger'
@@ -27,11 +28,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const { id: participantId } = await params
 
       // 1. Get participant with related data for email
-      const participant = await prisma.expenseParticipant.findFirst({
+      const participant = await prisma.expenseParticipant.findUnique({
         where: {
           id: participantId,
-          deletedAt: null,
-          sharedExpense: { deletedAt: null },
         },
         include: {
           participant: {
@@ -42,6 +41,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
               ownerId: true,
               description: true,
               currency: true,
+              deletedAt: true,
               owner: { select: { displayName: true } },
               transaction: { select: { description: true } },
             },
@@ -49,7 +49,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       })
 
-      if (!participant) {
+      // Check if participant exists and is not soft-deleted
+      if (
+        !participant ||
+        participant.deletedAt !== null ||
+        participant.sharedExpense.deletedAt !== null
+      ) {
         return notFoundError('Participant not found')
       }
 
@@ -79,13 +84,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
       }
 
-      // 5. Send email
+      // 5. Update reminderSentAt timestamp BEFORE sending email
+      // This prevents spam if email send fails - cooldown is already active
+      const reminderSentAt = new Date()
+
+      await prisma.expenseParticipant.update({
+        where: { id: participantId },
+        data: { reminderSentAt },
+      })
+
+      // 6. Send email and check result
       const description =
         participant.sharedExpense.description ||
         participant.sharedExpense.transaction.description ||
         'Shared expense'
 
-      await sendPaymentReminderEmail({
+      const emailResult = await sendPaymentReminderEmail({
         to: participant.participant.email,
         participantName: participant.participant.displayName,
         ownerName: participant.sharedExpense.owner.displayName,
@@ -94,13 +108,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         description,
       })
 
-      // 6. Update reminderSentAt timestamp
-      const reminderSentAt = new Date()
-
-      await prisma.expenseParticipant.update({
-        where: { id: participantId },
-        data: { reminderSentAt },
-      })
+      // Log email failure but don't block response (cooldown already set)
+      if (!emailResult.success) {
+        serverLogger.error('Failed to send payment reminder email', {
+          action: 'POST /api/v1/expenses/shares/[id]/remind',
+          userId: user.userId,
+          participantId,
+        })
+        return serverError('Failed to send reminder email')
+      }
 
       // 7. Log action
       serverLogger.info('Sent payment reminder to participant', {
