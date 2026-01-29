@@ -2328,6 +2328,109 @@ Switch the active account for the authenticated user. Updates the user's `active
 
 ---
 
+### POST /api/v1/accounts/[id]/set-balance
+
+Set the account balance for a specific month by creating an adjustment transaction. Calculates the difference between the current net (income - expenses) and the target balance, then creates an INCOME or EXPENSE transaction to reconcile.
+
+**Auth:** Bearer token required
+
+**Subscription:** Active subscription required (returns 402 if expired)
+
+**Path Parameters:**
+
+- `id`: Account ID to set balance for (required)
+
+**Request:**
+
+```json
+{
+  "targetBalance": 1500.00,
+  "currency": "USD",
+  "monthKey": "2024-01"
+}
+```
+
+**Validation:**
+
+- `targetBalance`: Required. Finite number representing the desired net balance for the month (can be negative). Rejects Infinity, NaN, and non-numeric values.
+- `currency`: Optional. One of: USD, EUR, ILS. Defaults to USD.
+- `monthKey`: Required. Month in YYYY-MM format with valid month (01-12). Invalid months like "2024-13" or "2024-00" are rejected.
+
+**Response (201 - Adjustment Created):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "adjustment": 500.00,
+    "transaction": {
+      "id": "clx...",
+      "type": "INCOME",
+      "amount": "500.00",
+      "currency": "USD"
+    }
+  }
+}
+```
+
+**Response (200 - No Adjustment Needed):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "adjustment": 0
+  }
+}
+```
+
+**Response Fields:**
+
+- `adjustment`: The amount adjusted (positive for income, negative for expense). Returns 0 if no adjustment needed.
+- `transaction`: Only present if an adjustment was made. Contains the created transaction details.
+- `transaction.id`: ID of the created adjustment transaction.
+- `transaction.type`: Either "INCOME" (positive adjustment) or "EXPENSE" (negative adjustment).
+- `transaction.amount`: Absolute value of the adjustment as a string with 2 decimal places.
+- `transaction.currency`: Currency of the adjustment transaction.
+
+**Errors:**
+
+- 400: Validation error - Invalid monthKey format, missing required fields, or invalid currency
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 404: Not found - Account does not exist or user does not own it
+- 429: Rate limited - Too many requests
+- 500: Server error - Unable to set balance
+
+**Example Error (400 - Invalid monthKey):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "monthKey": ["Month key is required"]
+  }
+}
+```
+
+**Business Logic:**
+
+1. Calculates current net for the specified month (sum of INCOME - sum of EXPENSE)
+2. Computes adjustment = targetBalance - currentNet
+3. If adjustment is negligible (< 0.01), returns success with adjustment: 0
+4. Creates or reuses a "Balance Adjustment" category for the user
+5. Creates an INCOME transaction if adjustment > 0, EXPENSE if adjustment < 0
+6. Invalidates dashboard cache for the affected month/account
+
+**Notes:**
+
+- The "Balance Adjustment" category is created automatically if it doesn't exist
+- Adjustment transactions have description "Balance adjustment"
+- Useful for reconciling accounts with external bank statements
+- Only considers transactions for the specified month, not cumulative balance
+
+---
+
 ## Holdings Endpoints
 
 ### POST /api/v1/holdings

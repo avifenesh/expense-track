@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- API: POST /api/v1/accounts/[id]/set-balance endpoint for setting account balance (#205)
+  - Set account balance to a specific target amount for a given month
+  - Automatically creates "Balance Adjustment" category if needed
+  - Calculates adjustment (positive or negative) to reach target balance
+  - Creates INCOME or EXPENSE transaction based on adjustment direction
+  - Skips adjustment if difference is less than $0.01
+  - Invalidates dashboard cache after balance update
+  - JWT authentication and active subscription required
+  - Comprehensive test suite with 90%+ coverage
 - API: POST /api/v1/expenses/shares/[participantId]/remind endpoint for payment reminders (#189)
   - Send payment reminders to participants with pending shares
   - 24-hour cooldown per participant (max 1 reminder per day)
