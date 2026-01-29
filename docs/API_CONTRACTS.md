@@ -1502,13 +1502,17 @@ Delete a shared expense (owner only). Cannot delete if any participant has alrea
 
 ---
 
-### POST /api/v1/expenses/shares/[participantId]/remind (PLANNED - Issue #189)
+### POST /api/v1/expenses/shares/[participantId]/remind
 
-> ⚠️ **Not yet implemented.** Planned for future release.
+Send a payment reminder to a participant (owner only).
 
-Send payment reminder to participant.
+**Auth:** Bearer token required
 
-**Auth:** Bearer token required (must be owner)
+**Authorization:** Only the expense owner can send reminders. Participants cannot send reminders to themselves or other participants.
+
+**Status Requirements:** Share must be in PENDING status. Cannot send reminders for shares that are already PAID or DECLINED.
+
+**Rate Limiting:** Maximum one reminder per participant per 24 hours. Cooldown is tracked via the `reminderSentAt` field.
 
 **Response (200):**
 
@@ -1516,10 +1520,54 @@ Send payment reminder to participant.
 {
   "success": true,
   "data": {
-    "message": "Reminder sent"
+    "id": "clx...",
+    "reminderSentAt": "2024-01-16T14:00:00.000Z"
   }
 }
 ```
+
+**Response Fields:**
+
+- `id`: The participant ID
+- `reminderSentAt`: Timestamp when the reminder was sent
+
+**Errors:**
+
+- 400: Validation error - Share is not in PENDING status (already paid or declined)
+- 400: Validation error - Cooldown active ("You can only send one reminder per day")
+- 401: Unauthorized - Invalid or missing auth token
+- 402: Payment Required - Subscription expired
+- 403: Forbidden - Only the expense owner can send reminders
+- 404: Not found - Participant not found
+- 429: Rate limited - Too many requests
+
+**Example Error (400 - Invalid status):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "status": ["Cannot send reminder for a paid share"]
+  }
+}
+```
+
+**Example Error (400 - Cooldown active):**
+
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "reminderSentAt": ["You can only send one reminder per day"]
+  }
+}
+```
+
+**Notes:**
+
+- Sends an email notification to the participant
+- Updates `reminderSentAt` timestamp in database after successful send
+- Email includes expense description, amount owed, and link to Balance Beacon
 
 ---
 
