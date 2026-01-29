@@ -82,8 +82,6 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     })
   })
 
-  // ==================== Auth Tests ====================
-
   it('returns 401 when no authorization header', async () => {
     const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
       method: 'POST',
@@ -114,8 +112,6 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     expect(response.status).toBe(401)
     expect(data.error).toBe('Invalid token')
   })
-
-  // ==================== Ownership Tests ====================
 
   it('returns 404 when account does not exist', async () => {
     const fakeAccountId = 'fake-account-id-xyz'
@@ -168,8 +164,6 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     expect(response.status).toBe(404)
     expect(data.error).toBe('Account not found')
   })
-
-  // ==================== Validation Tests ====================
 
   it('returns 400 for invalid JSON body', async () => {
     const request = new NextRequest(`http://localhost/api/v1/accounts/${accountId}/set-balance`, {
@@ -242,8 +236,6 @@ describe('POST /api/v1/accounts/[id]/set-balance', () => {
     expect(data.error).toBe('Validation failed')
     expect(data.fields.currency).toBeDefined()
   })
-
-  // ==================== Business Logic Tests ====================
 
   it('creates positive adjustment (INCOME) when target is higher than current', async () => {
     // Create an expense transaction to establish a negative net

@@ -17,16 +17,12 @@ import { invalidateDashboardCache } from '@/lib/dashboard-cache'
 import { getMonthStartFromKey } from '@/utils/date'
 import { serverLogger } from '@/lib/server-logger'
 
-// API schema - omit csrfToken since API uses JWT auth
 const setBalanceApiSchema = z.object({
   targetBalance: z.coerce.number(),
   currency: z.nativeEnum(Currency).default(Currency.USD),
   monthKey: z.string().min(7, 'Month key is required'),
 })
 
-/**
- * Helper to convert a number to a 2-decimal string for Prisma.Decimal
- */
 function toDecimalString(value: number): string {
   return value.toFixed(2)
 }
@@ -34,7 +30,6 @@ function toDecimalString(value: number): string {
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: accountId } = await params
 
-  // 1. JWT authentication
   let user
   try {
     user = requireJwtAuth(request)
@@ -42,18 +37,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return authError(error instanceof Error ? error.message : 'Unauthorized')
   }
 
-  // 2. Rate limit check
   const rateLimit = checkRateLimit(user.userId)
   if (!rateLimit.allowed) {
     return rateLimitError(rateLimit.resetAt)
   }
   incrementRateLimit(user.userId)
 
-  // 3. Subscription check
   const subscriptionError = await checkSubscription(user.userId)
   if (subscriptionError) return subscriptionError
 
-  // 4. Parse and validate request body
   let body
   try {
     body = await request.json()
@@ -68,7 +60,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { targetBalance, currency, monthKey } = parsed.data
 
-  // 5. Verify account ownership
   const account = await prisma.account.findFirst({
     where: {
       id: accountId,
@@ -81,11 +72,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return notFoundError('Account not found')
   }
 
-  // 6. Business logic
   const monthStart = getMonthStartFromKey(monthKey)
 
   try {
-    // Find or create "Balance Adjustment" category for this user
     let adjustmentCategory = await prisma.category.findFirst({
       where: { name: 'Balance Adjustment', userId: user.userId },
     })
@@ -100,7 +89,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
     }
 
-    // Calculate current net for this account in the specified month
     const transactions = await prisma.transaction.findMany({
       where: {
         accountId,
@@ -128,12 +116,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const currentNet = currentIncome - currentExpense
     const adjustment = targetBalance - currentNet
 
-    // If no adjustment needed, return early
     if (Math.abs(adjustment) < 0.01) {
       return successResponse({ adjustment: 0 })
     }
 
-    // Create adjustment transaction
     const transactionType = adjustment > 0 ? TransactionType.INCOME : TransactionType.EXPENSE
     const transactionAmount = Math.abs(adjustment)
 
@@ -151,7 +137,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     })
 
-    // Invalidate dashboard cache for affected month/account
     await invalidateDashboardCache({
       monthKey,
       accountId,
