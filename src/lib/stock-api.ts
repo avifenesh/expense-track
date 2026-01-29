@@ -1,7 +1,7 @@
 import { Currency, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
-const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY || ''
+const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY
 const STOCK_PRICE_MAX_AGE_HOURS = Number(process.env.STOCK_PRICE_MAX_AGE_HOURS) || 24
 const STOCK_REFRESH_SLEEP_MS = Number(process.env.STOCK_REFRESH_SLEEP_MS) || 12000
 const STOCK_REFRESH_TIME_BUDGET_MS = Number(process.env.STOCK_REFRESH_TIME_BUDGET_MS) || 55000
