@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated legal terms and documentation
 
 ### Added
+- API: POST /api/v1/expenses/shares/[participantId]/remind endpoint for payment reminders (#189)
+  - Send payment reminders to participants with pending shares
+  - 24-hour cooldown per participant (max 1 reminder per day)
+  - Owner-only authorization - participants cannot send reminders
+  - Status validation - only PENDING shares can be reminded
+  - Email notification sent to participant
+  - Updates reminderSentAt timestamp on ExpenseParticipant
+  - Comprehensive test suite with 12 tests
 - Mobile: Settings subscription status section (#316)
   - Display subscription status with color-coded badge (TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED)
   - Show days remaining for active subscriptions and trials

@@ -190,12 +190,11 @@ Server actions and REST API endpoints audit for Issue #64.
 ---
 
 ## REST Endpoints Status
-
-> **Updated**: 2026-01-24
+> **Updated**: 2026-01-29
 
 ### Expense Sharing Endpoints
 
-**Status**: Most core sharing endpoints are now implemented.
+**Status**: All core sharing endpoints are now implemented.
 
 ```
 ✅ GET    /api/v1/sharing                     - Combined endpoint: sharedExpenses, expensesSharedWithMe, settlementBalances
@@ -204,7 +203,7 @@ Server actions and REST API endpoints audit for Issue #64.
 ✅ POST   /api/v1/expenses/shares/[id]/decline - Decline share
 ✅ DELETE /api/v1/expenses/shares/[id]        - Cancel shared expense
 ✅ GET    /api/v1/users/lookup                - Lookup user by email
-⚠️  POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder (Issue #189)
+✅  POST   /api/v1/expenses/shares/[id]/remind - Send payment reminder (Issue #189)
 ```
 
 ### Read Endpoints
@@ -296,10 +295,9 @@ Returns 402 with error response:
 - **Authentication**: JWT-based for mobile, cookie-based for web
 
 ### Remaining API Gaps
-1. **Expense Sharing**: Payment reminders (#189)
-2. **Read Endpoints**: Holdings list, recurring list (#196, #197)
-3. **Onboarding**: Skip endpoint (#199)
-4. **Misc**: Exchange rate refresh, set balance (#204, #205)
+1. **Read Endpoints**: Holdings list, recurring list (#196, #197)
+2. **Onboarding**: Skip endpoint (#199)
+3. **Misc**: Exchange rate refresh, set balance (#204, #205)
 
 ### Notes
 - Server actions in `shared.ts` are internal utilities, not user-facing actions
