@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator, Alert, Share, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
-import { APP_NAME, APP_VERSION, PADDLE_CUSTOMER_PORTAL_URL } from '../../constants'
+import { APP_NAME, APP_VERSION, PADDLE_CUSTOMER_PORTAL_URL, PRICING_URL } from '../../constants'
 import { useAuthStore, useSubscriptionStore } from '../../stores'
 import { getBiometricTypeLabel } from '../../services/biometric'
 import { exportUserData, deleteAccount } from '../../services/auth'
@@ -179,9 +179,9 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
 
   const handleUpgrade = useCallback(async () => {
     try {
-      await Linking.openURL(PADDLE_CUSTOMER_PORTAL_URL)
+      await Linking.openURL(PRICING_URL)
     } catch {
-      Alert.alert('Error', 'Unable to open upgrade page')
+      Alert.alert('Error', 'Unable to open pricing page')
     }
   }, [])
 
@@ -254,7 +254,7 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
                     <Text style={styles.menuValue}>{subscriptionDaysRemaining}</Text>
                   </View>
                 )}
-                {(subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'PAST_DUE' || subscriptionStatus === 'CANCELED') && (
+                {(['ACTIVE', 'PAST_DUE', 'CANCELED'] as const).includes(subscriptionStatus) && (
                   <Pressable
                     style={styles.menuItem}
                     onPress={handleManageSubscription}

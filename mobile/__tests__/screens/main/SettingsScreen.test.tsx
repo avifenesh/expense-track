@@ -1282,7 +1282,7 @@ describe('SettingsScreen', () => {
         });
       });
 
-      it('opens Paddle customer portal when Upgrade is pressed', async () => {
+      it('opens pricing page when Upgrade is pressed', async () => {
         setupSubscriptionStoreMock({
           status: 'TRIALING',
           daysRemaining: 10,
@@ -1297,7 +1297,7 @@ describe('SettingsScreen', () => {
         fireEvent.press(screen.getByTestId('settings.upgradeButton'));
 
         await waitFor(() => {
-          expect(Linking.openURL).toHaveBeenCalledWith('https://customer-portal.paddle.com');
+          expect(Linking.openURL).toHaveBeenCalledWith('https://balancebeacon.com/pricing');
         });
       });
 
@@ -1339,7 +1339,7 @@ describe('SettingsScreen', () => {
         fireEvent.press(screen.getByTestId('settings.upgradeButton'));
 
         await waitFor(() => {
-          expect(Alert.alert).toHaveBeenCalledWith('Error', 'Unable to open upgrade page');
+          expect(Alert.alert).toHaveBeenCalledWith('Error', 'Unable to open pricing page');
         });
       });
     });
