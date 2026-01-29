@@ -3,7 +3,7 @@
  * Tests subscription flows including paywall behavior
  */
 
-import { device, element, by, expect, waitFor } from 'detox';
+import { device, element, by, waitFor } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
 import { TestApiClient } from '../helpers/api-client';
 import { TEST_USER, TIMEOUTS } from '../helpers/fixtures';
@@ -110,9 +110,9 @@ describe('Subscription E2E Tests', () => {
       // Verify subscription endpoint returns expected structure
       const response = await api.getSubscriptionStatus();
 
-      // Debug: log response structure if undefined
+      // Verify response is defined before assertions
       if (!response || !response.subscription) {
-        console.error('[E2E] Subscription API response:', JSON.stringify(response, null, 2));
+        throw new Error(`[E2E] Unexpected subscription API response: ${JSON.stringify(response, null, 2)}`);
       }
 
       jestExpect(response).toBeDefined();
