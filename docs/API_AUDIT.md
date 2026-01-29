@@ -239,11 +239,11 @@ Support mobile onboarding flow:
 
 ### Low Priority (Misc)
 
-> ✅ **1 of 3 endpoints implemented in Issue #206, #209**
+> ✅ **2 of 3 endpoints implemented in Issue #205, #206, #209**
 
 ```
 POST   /api/v1/exchange-rates/refresh   - Refresh exchange rates
-POST   /api/v1/accounts/[id]/set-balance - Set account balance
+✅ POST   /api/v1/accounts/[id]/set-balance - Set account balance (Issue #205)
 ✅ PATCH  /api/v1/accounts/[id]/activate   - Switch active account
 ```
 
