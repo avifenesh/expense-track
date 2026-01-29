@@ -53,3 +53,9 @@ mobile/coverage/
 .claude/workflow-status.json
 .claude/workflow-state.json
 .claude/validation-result.json
+.claude/state/
+.claude/implementation-plan.json
+.repo-map-eval-*/
+drift-detect-report.md
+
+# repo-map is committed and tracked (not ignored)
