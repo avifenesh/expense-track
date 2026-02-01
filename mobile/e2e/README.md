@@ -32,7 +32,7 @@ interface TransactionListItemProps {
 <TransactionListItem
   transaction={transaction}
   onPress={handleTransactionPress}
-  testID={`transaction-${transaction.id}`}  // Unique identifier
+  testID={`dashboard.transaction.${transaction.id}`}  // Unique identifier
 />
 ```
 
@@ -76,26 +76,24 @@ The E2E test suite includes comprehensive error handling for better debugging:
 
 ### performLogin Error Handling
 
-The `performLogin` helper includes detailed logging at each step:
+The `performLogin` helper captures screenshots on failure:
 
 ```typescript
 export async function performLogin(email: string, password: string): Promise<void> {
-  console.log('[performLogin] Starting login flow...')
-
   try {
-    // Step 1: Wait for login screen
     await LoginScreen.waitForScreen()
-    console.log('[performLogin] Login screen is ready')
-
-    // Step 2: Enter credentials
     await LoginScreen.login(email, password)
-    console.log('[performLogin] Credentials submitted')
-
-    // Step 3: Wait for navigation away from login
-    // ... additional logging
+    await waitFor(element(by.id('login.screen')))
+      .not.toBeVisible()
+      .withTimeout(TIMEOUTS.LONG)
+    // Wait for subscription initialization and dashboard
+    await waitFor(element(by.id('dashboard.screen')))
+      .toBeVisible()
+      .withTimeout(TIMEOUTS.LONG)
   } catch (error) {
     console.error('[performLogin] Login failed:', error)
-    throw error // Re-throw for test failure
+    await device.takeScreenshot('login-failure')
+    throw new Error(`Login failed for ${email}: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 ```
@@ -114,14 +112,10 @@ class BackendManager {
       this.startupLog += data.toString()
     })
   }
-
-  getStartupLog(): string {
-    return this.startupLog
-  }
 }
 ```
 
-When tests fail, check the captured logs to identify server startup issues.
+When tests fail, the startup log is automatically included in error messages.
 
 ## Key Components
 
