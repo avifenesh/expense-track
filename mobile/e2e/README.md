@@ -32,7 +32,7 @@ interface TransactionListItemProps {
 <TransactionListItem
   transaction={transaction}
   onPress={handleTransactionPress}
-  testID={`transaction-${transaction.id}`}  // Unique identifier
+  testID={`dashboard.transaction.${transaction.id}`}  // Unique identifier
 />
 ```
 
@@ -80,22 +80,14 @@ The `performLogin` helper includes detailed logging at each step:
 
 ```typescript
 export async function performLogin(email: string, password: string): Promise<void> {
-  console.log('[performLogin] Starting login flow...')
-
   try {
-    // Step 1: Wait for login screen
     await LoginScreen.waitForScreen()
-    console.log('[performLogin] Login screen is ready')
-
-    // Step 2: Enter credentials
     await LoginScreen.login(email, password)
-    console.log('[performLogin] Credentials submitted')
-
-    // Step 3: Wait for navigation away from login
-    // ... additional logging
+    // ... login flow
   } catch (error) {
     console.error('[performLogin] Login failed:', error)
-    throw error // Re-throw for test failure
+    await device.takeScreenshot('login-failure')
+    throw error
   }
 }
 ```
@@ -113,10 +105,7 @@ class BackendManager {
     this.process.stdout?.on('data', (data) => {
       this.startupLog += data.toString()
     })
-  }
-
-  getStartupLog(): string {
-    return this.startupLog
+    // Startup log included in error messages if startup fails
   }
 }
 ```
