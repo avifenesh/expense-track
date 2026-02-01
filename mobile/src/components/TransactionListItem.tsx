@@ -46,7 +46,8 @@ export function TransactionListItem({ transaction, onPress, testID }: Transactio
     )
   }
 
-  return content
+  // Wrap content with testID for E2E testing even without onPress
+  return <View testID={testID}>{content}</View>
 }
 
 const styles = StyleSheet.create({
