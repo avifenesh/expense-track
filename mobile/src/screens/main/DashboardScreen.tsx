@@ -229,8 +229,13 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Dashboard'>)
             </View>
           ) : (
             <View testID="dashboard.transactionsList">
-              {recentTransactions.map((transaction) => (
-                <TransactionListItem key={transaction.id} transaction={transaction} onPress={handleTransactionPress} />
+              {recentTransactions.map((transaction, index) => (
+                <TransactionListItem
+                  key={transaction.id}
+                  transaction={transaction}
+                  onPress={handleTransactionPress}
+                  testID={`dashboard.transaction.${index}`}
+                />
               ))}
             </View>
           )}
