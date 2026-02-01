@@ -4,6 +4,8 @@
  * These define the contract between the app and the user (test framework)
  */
 
+/* eslint-disable no-console */
+
 import { element, by, expect, waitFor } from 'detox'
 import { TIMEOUTS } from '../helpers/fixtures'
 
