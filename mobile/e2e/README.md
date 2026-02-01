@@ -15,6 +15,120 @@ The E2E test suite uses a **contracts-based architecture** with three layers:
 ### UI Contracts
 
 Page objects for all screens with testIDs and helper methods:
+
+### TestID Pattern for TransactionListItem
+
+To ensure reliable E2E test targeting, `TransactionListItem` components must include a `testID` prop:
+
+```typescript
+// TransactionListItem component accepts an optional testID prop
+interface TransactionListItemProps {
+  transaction: Transaction
+  onPress?: (transaction: Transaction) => void
+  testID?: string  // For E2E test targeting
+}
+
+// Usage in parent components (e.g., DashboardScreen)
+<TransactionListItem
+  transaction={transaction}
+  onPress={handleTransactionPress}
+  testID={`transaction-${transaction.id}`}  // Unique identifier
+/>
+```
+
+**Key Points:**
+
+- Always provide unique `testID` values based on transaction IDs
+- Use consistent naming pattern: `transaction-{id}`
+- This enables reliable element selection in E2E tests via `by.id()`
+
+## Timeout Configuration
+
+E2E tests use configurable timeouts defined in `helpers/fixtures.ts`:
+
+```typescript
+export const TIMEOUTS = {
+  SHORT: 5000, // Quick operations (5 seconds)
+  MEDIUM: 10000, // Standard operations (10 seconds)
+  LONG: 60000, // Complex operations like login (60 seconds)
+  STARTUP: 120000, // App/CI startup (120 seconds)
+}
+```
+
+**Timeout Guidelines:**
+
+- `SHORT`: Element visibility checks, simple interactions
+- `MEDIUM`: Form submissions, navigation transitions
+- `LONG`: Initial app load, login flows, API-dependent operations
+- `STARTUP`: CI environment startup, backend initialization
+
+When writing tests, always use these constants rather than hardcoded values:
+
+```typescript
+await waitFor(element(by.id('login.screen')))
+  .toBeVisible()
+  .withTimeout(TIMEOUTS.LONG)
+```
+
+## Error Handling and Logging
+
+The E2E test suite includes comprehensive error handling for better debugging:
+
+### performLogin Error Handling
+
+The `performLogin` helper includes detailed logging at each step:
+
+```typescript
+export async function performLogin(email: string, password: string): Promise<void> {
+  console.log('[performLogin] Starting login flow...')
+
+  try {
+    // Step 1: Wait for login screen
+    await LoginScreen.waitForScreen()
+    console.log('[performLogin] Login screen is ready')
+
+    // Step 2: Enter credentials
+    await LoginScreen.login(email, password)
+    console.log('[performLogin] Credentials submitted')
+
+    // Step 3: Wait for navigation away from login
+    // ... additional logging
+  } catch (error) {
+    console.error('[performLogin] Login failed:', error)
+    throw error // Re-throw for test failure
+  }
+}
+```
+
+### Backend Manager Logging
+
+The `BackendManager` class captures startup logs for debugging:
+
+```typescript
+class BackendManager {
+  private startupLog: string = ''
+
+  async start(): Promise<void> {
+    // Captures stdout/stderr during startup
+    this.process.stdout?.on('data', (data) => {
+      this.startupLog += data.toString()
+    })
+  }
+
+  getStartupLog(): string {
+    return this.startupLog
+  }
+}
+```
+
+When tests fail, check the captured logs to identify server startup issues.
+
+## Key Components
+
+### UI Contracts
+
+Page objects for all screens with testIDs and helper methods:
+
 - `LoginScreen`, `RegisterScreen`, `ResetPasswordScreen`
 - `DashboardScreen`, `TransactionsScreen`, `BudgetsScreen`, `SettingsScreen`
 - `PaywallScreen` - Subscription expiration flow
@@ -24,6 +138,7 @@ Page objects for all screens with testIDs and helper methods:
 ### API Contracts
 
 Zod schemas matching API responses:
+
 - `LoginRequestContract`, `LoginResponseContract`
 - `TransactionContract`, `CreateTransactionRequestContract`
 - `SubscriptionResponseContract` - GET /api/v1/subscriptions
@@ -31,6 +146,7 @@ Zod schemas matching API responses:
 ### TestApiClient
 
 Helper class for test setup:
+
 - `ensureTestUser()` - Creates/verifies test user with subscription
 - `getSubscriptionStatus()` - Verifies user has active subscription
 - `verifySubscriptionAccess()` - Validates `canAccessApp` is true
@@ -42,17 +158,17 @@ After the PaywallScreen was added, the app waits for subscription initialization
 
 ```typescript
 // In performLogin helper (ui-contracts.ts)
-await LoginScreen.tapLogin();
+await LoginScreen.tapLogin()
 await waitFor(element(by.id('login.screen')))
   .not.toBeVisible()
-  .withTimeout(TIMEOUTS.LONG);
+  .withTimeout(TIMEOUTS.LONG)
 
 // Wait for subscription loading (may not appear on fast connections)
 try {
   await waitFor(element(by.id('root.loadingScreen')))
     .toBeVisible()
-    .withTimeout(TIMEOUTS.SHORT);
-  await RootLoadingScreen.waitForDisappear();
+    .withTimeout(TIMEOUTS.SHORT)
+  await RootLoadingScreen.waitForDisappear()
 } catch {
   // Loading screen may not appear on fast connections or cached subscription
 }
@@ -60,7 +176,7 @@ try {
 // Finally verify dashboard
 await waitFor(element(by.id('dashboard.screen')))
   .toBeVisible()
-  .withTimeout(TIMEOUTS.LONG);
+  .withTimeout(TIMEOUTS.LONG)
 ```
 
 ## Running Tests
@@ -83,11 +199,13 @@ npm run e2e:test:ios:release
 ## CI Configuration
 
 E2E tests run on:
+
 - **Schedule**: Daily at 00:00 and 12:00 UTC
-- **Pull Requests**: When mobile/e2e/** files change
+- **Pull Requests**: When mobile/e2e/\*\* files change
 - **Manual**: workflow_dispatch
 
 Timeouts:
+
 - **iOS**: 45 minutes (tests take ~25min)
 - **Android**: 45 minutes (tests take ~32min)
 
@@ -96,6 +214,7 @@ Timeouts:
 ### Tests timeout waiting for dashboard
 
 The app waits for subscription initialization after login. Ensure:
+
 1. Test users have valid TRIALING subscriptions (created by seed-e2e.ts)
 2. Backend `/api/v1/subscriptions` endpoint is responding
 3. `performLogin` helper includes subscription loading wait
@@ -103,6 +222,7 @@ The app waits for subscription initialization after login. Ensure:
 ### App crashes with "Maximum update depth exceeded"
 
 This indicates an infinite render loop. Check:
+
 1. Zustand hooks use individual selectors (not returning new objects)
 2. No circular dependencies in store subscriptions
 3. useAuthState and useSubscriptionState patterns are followed
@@ -110,6 +230,7 @@ This indicates an infinite render loop. Check:
 ### Backend not responding
 
 Check that:
+
 1. Backend server started successfully (health check logs)
 2. DATABASE_URL is correct for the platform
 3. Test database seeded with users (AUTH_USER1_HASH, AUTH_USER2_HASH)
