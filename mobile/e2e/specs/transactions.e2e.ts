@@ -131,6 +131,9 @@ describe('Transaction E2E Tests', () => {
       }
 
       const transactionId = result.transactions[0].id
+      await waitFor(element(by.id(`dashboard.transaction.${transactionId}`)))
+        .toBeVisible()
+        .whileScrolling(by.id('dashboard.scrollView'))
       await element(by.id(`dashboard.transaction.${transactionId}`)).tap()
       await waitFor(element(by.id('editTransaction.screen')))
         .toBeVisible()

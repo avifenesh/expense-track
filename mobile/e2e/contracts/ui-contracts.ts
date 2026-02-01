@@ -6,7 +6,7 @@
 
 /* eslint-disable no-console */
 
-import { element, by, expect, waitFor } from 'detox'
+import { device, element, by, expect, waitFor } from 'detox'
 import { TIMEOUTS } from '../helpers/fixtures'
 
 // ============ Auth Screens ============
