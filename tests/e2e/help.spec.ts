@@ -64,6 +64,7 @@ test.describe('Help Center', () => {
 
     // Should navigate to article page
     await expect(page).toHaveURL(/\/help\/quick-start-guide/)
+    await page.waitForLoadState('networkidle')
     await expect(page.getByRole('heading', { name: 'Quick Start Guide' })).toBeVisible()
   })
 })
@@ -71,6 +72,7 @@ test.describe('Help Center', () => {
 test.describe('Help Article Page', () => {
   test('should display article content', async ({ page }) => {
     await page.goto('/help/quick-start-guide')
+    await page.waitForLoadState('networkidle')
 
     await expect(page.getByRole('heading', { name: 'Quick Start Guide' })).toBeVisible()
     await expect(page.getByText(/get up and running/i)).toBeVisible()
@@ -78,6 +80,7 @@ test.describe('Help Article Page', () => {
 
   test('should have back to help center link', async ({ page }) => {
     await page.goto('/help/quick-start-guide')
+    await page.waitForLoadState('networkidle')
 
     const backLink = page.getByRole('link', { name: /back to help center/i })
     await expect(backLink).toBeVisible()
@@ -86,12 +89,15 @@ test.describe('Help Article Page', () => {
 
   test('should display category badge', async ({ page }) => {
     await page.goto('/help/quick-start-guide')
+    await page.waitForLoadState('networkidle')
 
-    await expect(page.getByText('Getting Started')).toBeVisible()
+    // The category badge shows the article category label
+    await expect(page.getByText('Getting Started').first()).toBeVisible()
   })
 
   test('should show related articles if available', async ({ page }) => {
     await page.goto('/help/quick-start-guide')
+    await page.waitForLoadState('networkidle')
 
     // Check for related articles section
     const relatedSection = page.getByRole('heading', { name: /more in/i })
@@ -102,6 +108,7 @@ test.describe('Help Article Page', () => {
 
   test('should show related FAQs if available', async ({ page }) => {
     await page.goto('/help/quick-start-guide')
+    await page.waitForLoadState('networkidle')
 
     // Check for related questions section
     const relatedFAQs = page.getByRole('heading', { name: /related questions/i })
