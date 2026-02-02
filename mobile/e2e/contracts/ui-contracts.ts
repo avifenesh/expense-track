@@ -481,6 +481,11 @@ export const SettingsScreen = {
   },
 
   async tapDeleteAccount(): Promise<void> {
+    // Scroll to ensure button is fully visible (75%+ requirement)
+    await waitFor(element(by.id('settings.deleteAccountButton')))
+      .toBeVisible()
+      .whileElement(by.id('settings.screen'))
+      .scroll(200, 'down')
     await element(by.id('settings.deleteAccountButton')).tap()
   },
 
