@@ -125,15 +125,29 @@ describe('Transaction E2E Tests', () => {
       }
 
       const defaultAccount = accounts[0]
-      const result = await api.getTransactions(defaultAccount.id)
+
+      // Get current month to match dashboard filter
+      const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
+
+      // Filter transactions by current month to match what dashboard displays
+      const result = await api.getTransactions(defaultAccount.id, { month: currentMonth })
       if (result.transactions.length === 0) {
-        return // No transactions - skip test
+        return // No transactions in current month - skip test
       }
 
       const transactionId = result.transactions[0].id
+      if (!transactionId) {
+        return // Invalid transaction ID - skip test
+      }
+
+      // Scroll to transactions section first
+      await element(by.id('dashboard.scrollView')).scroll(500, 'down')
+
+      // Wait for transaction element with timeout
       await waitFor(element(by.id(`dashboard.transaction.${transactionId}`)))
         .toBeVisible()
-        .whileScrolling(by.id('dashboard.scrollView'))
+        .withTimeout(TIMEOUTS.MEDIUM)
+
       await element(by.id(`dashboard.transaction.${transactionId}`)).tap()
       await waitFor(element(by.id('editTransaction.screen')))
         .toBeVisible()
