@@ -69,7 +69,7 @@ npm test                 # Run mobile tests
   - See `docs/API_VERSIONING.md` for versioning strategy
 - `src/app/(public)/help/` - Public help center with FAQs and articles
 - `src/components/` - React components (dashboard, forms, UI primitives, help center)
-- `src/lib/help-content.ts` - Static FAQ and help article content (52 FAQs, 30 articles)
+- `src/lib/help-content.ts` - Static FAQ and help article content
 - `src/lib/help-search.ts` - Search utilities for help center
 - `src/schemas/` - Zod validation schemas
 - `src/lib/finance.ts` - Financial logic, budget tracking

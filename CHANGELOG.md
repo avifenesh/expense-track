@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Web: Public Help Center at /help route (#99)
   - 52 FAQs organized across 12 categories (getting-started, transactions, budgets, categories, recurring, holdings, sharing, currency, subscription, privacy, mobile, account-management)
-  - 30 comprehensive help articles with summaries and full content
+  - 28 comprehensive help articles with summaries and full content
   - Search functionality with fuzzy matching and relevance scoring
   - Individual article pages at /help/[slug] with related content
   - FAQ accordion component with expand/collapse animation

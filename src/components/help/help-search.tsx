@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/utils/cn'
@@ -26,7 +26,8 @@ export function HelpSearch({
 }: HelpSearchProps) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [isFocused, setIsFocused] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Debounce the search query
   useEffect(() => {
@@ -72,18 +73,30 @@ export function HelpSearch({
   const handleSuggestionClick = useCallback((suggestion: string) => {
     setQuery(suggestion)
     setDebouncedQuery(suggestion)
+    setShowSuggestions(false)
+  }, [])
+
+  // Handle focus within container (keeps suggestions open when tabbing to suggestion buttons)
+  const handleContainerBlur = useCallback((e: React.FocusEvent) => {
+    // Check if the new focus target is within the container
+    if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+      setShowSuggestions(false)
+    }
   }, [])
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div
+      ref={containerRef}
+      className={cn('space-y-3', className)}
+      onFocus={() => setShowSuggestions(true)}
+      onBlur={handleContainerBlur}
+    >
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <Input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
           className="pl-10 pr-10"
           aria-label="Search help content"
@@ -101,7 +114,7 @@ export function HelpSearch({
       </div>
 
       {/* Suggested searches shown when focused and no query */}
-      {isFocused && !query && (
+      {showSuggestions && !query && (
         <div className="space-y-2">
           <p className="text-xs text-slate-400">Popular searches:</p>
           <div className="flex flex-wrap gap-2">
@@ -109,12 +122,8 @@ export function HelpSearch({
               <button
                 key={suggestion}
                 type="button"
-                onMouseDown={(e) => {
-                  // Prevent blur before click
-                  e.preventDefault()
-                  handleSuggestionClick(suggestion)
-                }}
-                className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-white/20 hover:text-white"
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
               >
                 {suggestion}
               </button>

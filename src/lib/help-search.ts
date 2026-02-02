@@ -147,9 +147,10 @@ export function scoreArticle(article: HelpArticle, tokens: string[]): { score: n
 
 /**
  * Search FAQs and return matching items with scores.
+ * Accepts optional pre-tokenized query for performance.
  */
-export function searchFAQs(query: string): SearchResult[] {
-  const tokens = tokenizeQuery(query)
+export function searchFAQs(query: string, preTokenized?: string[]): SearchResult[] {
+  const tokens = preTokenized ?? tokenizeQuery(query)
   if (tokens.length === 0) return []
 
   const results: SearchResult[] = []
@@ -171,9 +172,10 @@ export function searchFAQs(query: string): SearchResult[] {
 
 /**
  * Search help articles and return matching items with scores.
+ * Accepts optional pre-tokenized query for performance.
  */
-export function searchArticles(query: string): SearchResult[] {
-  const tokens = tokenizeQuery(query)
+export function searchArticles(query: string, preTokenized?: string[]): SearchResult[] {
+  const tokens = preTokenized ?? tokenizeQuery(query)
   if (tokens.length === 0) return []
 
   const results: SearchResult[] = []
@@ -200,8 +202,9 @@ export function searchAll(query: string): SearchResult[] {
   const tokens = tokenizeQuery(query)
   if (tokens.length === 0) return []
 
-  const faqResults = searchFAQs(query)
-  const articleResults = searchArticles(query)
+  // Pass pre-tokenized tokens to avoid redundant tokenization
+  const faqResults = searchFAQs(query, tokens)
+  const articleResults = searchArticles(query, tokens)
 
   // Combine and sort by score
   const combined = [...faqResults, ...articleResults]
