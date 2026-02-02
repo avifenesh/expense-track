@@ -477,6 +477,11 @@ export const SettingsScreen = {
   },
 
   async tapExportData(): Promise<void> {
+    // Scroll to ensure button is fully visible (75%+ requirement)
+    await waitFor(element(by.id('settings.exportDataButton')))
+      .toBeVisible()
+      .whileElement(by.id('settings.screen'))
+      .scroll(200, 'down')
     await element(by.id('settings.exportDataButton')).tap()
   },
 
