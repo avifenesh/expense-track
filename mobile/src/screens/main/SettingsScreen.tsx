@@ -1,16 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Switch,
-  ActivityIndicator,
-  Alert,
-  Share,
-  Linking,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, ActivityIndicator, Alert, Share, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { MainTabScreenProps } from '../../navigation/types'
 import { APP_NAME, APP_VERSION, PADDLE_CUSTOMER_PORTAL_URL, PRICING_URL } from '../../constants'
@@ -109,78 +98,72 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
     }
   }
 
-  const handleExportData = useCallback(
-    async (format: ExportFormat) => {
-      if (!accessToken) {
-        Alert.alert('Error', 'You must be logged in to export data')
-        return
+  const handleExportData = useCallback(async (format: ExportFormat) => {
+    if (!accessToken) {
+      Alert.alert('Error', 'You must be logged in to export data')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      const data = await exportUserData(format, accessToken)
+
+      let shareContent: string
+      let filename: string
+
+      if ('format' in data && data.format === 'csv') {
+        shareContent = data.data
+        filename = 'balance-beacon-export.csv'
+      } else {
+        shareContent = JSON.stringify(data, null, 2)
+        filename = 'balance-beacon-export.json'
       }
 
-      setIsExporting(true)
-      try {
-        const data = await exportUserData(format, accessToken)
+      setShowExportModal(false)
 
-        let shareContent: string
-        let filename: string
+      await Share.share({
+        message: shareContent,
+        title: filename,
+      })
 
-        if ('format' in data && data.format === 'csv') {
-          shareContent = data.data
-          filename = 'balance-beacon-export.csv'
-        } else {
-          shareContent = JSON.stringify(data, null, 2)
-          filename = 'balance-beacon-export.json'
-        }
+      Alert.alert('Success', 'Your data has been exported successfully')
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : 'Failed to export data'
+      Alert.alert('Export Failed', errorMessage)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [accessToken])
 
-        setShowExportModal(false)
+  const handleDeleteAccount = useCallback(async (confirmEmail: string) => {
+    if (!accessToken) {
+      Alert.alert('Error', 'You must be logged in to delete your account')
+      return
+    }
 
-        await Share.share({
-          message: shareContent,
-          title: filename,
-        })
+    setIsDeleting(true)
+    try {
+      await deleteAccount(confirmEmail, accessToken)
+      setShowDeleteModal(false)
 
-        Alert.alert('Success', 'Your data has been exported successfully')
-      } catch (error) {
-        const errorMessage = error instanceof ApiError ? error.message : 'Failed to export data'
-        Alert.alert('Export Failed', errorMessage)
-      } finally {
-        setIsExporting(false)
-      }
-    },
-    [accessToken],
-  )
-
-  const handleDeleteAccount = useCallback(
-    async (confirmEmail: string) => {
-      if (!accessToken) {
-        Alert.alert('Error', 'You must be logged in to delete your account')
-        return
-      }
-
-      setIsDeleting(true)
-      try {
-        await deleteAccount(confirmEmail, accessToken)
-        setShowDeleteModal(false)
-
-        Alert.alert(
-          'Account Deleted',
-          'Your account has been permanently deleted',
-          [
-            {
-              text: 'OK',
-              onPress: () => useAuthStore.getState().logout(),
-            },
-          ],
-          { cancelable: false },
-        )
-      } catch (error) {
-        const errorMessage = error instanceof ApiError ? error.message : 'Failed to delete account'
-        Alert.alert('Delete Failed', errorMessage)
-      } finally {
-        setIsDeleting(false)
-      }
-    },
-    [accessToken],
-  )
+      Alert.alert(
+        'Account Deleted',
+        'Your account has been permanently deleted',
+        [
+          {
+            text: 'OK',
+            onPress: () => useAuthStore.getState().logout(),
+          },
+        ],
+        { cancelable: false }
+      )
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : 'Failed to delete account'
+      Alert.alert('Delete Failed', errorMessage)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [accessToken])
 
   const biometricLabel = biometricCapability ? getBiometricTypeLabel(biometricCapability.biometricType) : 'Biometric'
 
@@ -246,60 +229,53 @@ export function SettingsScreen({ navigation }: MainTabScreenProps<'Settings'>) {
         <View style={styles.section} testID="settings.subscriptionSection">
           <Text style={styles.sectionTitle}>Subscription</Text>
           <View style={styles.menuGroup}>
-            {isSubscriptionLoading && (
+            {isSubscriptionLoading ? (
               <View style={styles.menuItem}>
                 <ActivityIndicator color="#38bdf8" testID="settings.subscriptionLoading" />
               </View>
-            )}
-            {!isSubscriptionLoading && subscriptionError && (
+            ) : subscriptionError ? (
               <View style={styles.menuItem}>
-                <Text style={styles.errorText} testID="settings.subscriptionError">
-                  {subscriptionError}
-                </Text>
+                <Text style={styles.errorText} testID="settings.subscriptionError">{subscriptionError}</Text>
               </View>
-            )}
-            {!isSubscriptionLoading && !subscriptionError && subscriptionStatus && (
-              <View style={styles.menuItem} testID="settings.subscriptionStatus">
-                <Text style={styles.menuText}>Status</Text>
-                <View
-                  style={[styles.statusBadge, { backgroundColor: getStatusColor(subscriptionStatus) }]}
-                  testID="settings.subscriptionBadge"
-                >
-                  <Text style={styles.statusBadgeText}>{getStatusLabel(subscriptionStatus)}</Text>
+            ) : subscriptionStatus ? (
+              <>
+                <View style={styles.menuItem} testID="settings.subscriptionStatus">
+                  <Text style={styles.menuText}>Status</Text>
+                  <View
+                    style={[styles.statusBadge, { backgroundColor: getStatusColor(subscriptionStatus) }]}
+                    testID="settings.subscriptionBadge"
+                  >
+                    <Text style={styles.statusBadgeText}>{getStatusLabel(subscriptionStatus)}</Text>
+                  </View>
                 </View>
-              </View>
-            )}
-            {!isSubscriptionLoading &&
-              !subscriptionError &&
-              subscriptionStatus &&
-              subscriptionDaysRemaining !== null &&
-              subscriptionDaysRemaining > 0 && (
-                <View style={styles.menuItem} testID="settings.daysRemaining">
-                  <Text style={styles.menuText}>Days Remaining</Text>
-                  <Text style={styles.menuValue}>{subscriptionDaysRemaining}</Text>
-                </View>
-              )}
-            {!isSubscriptionLoading &&
-              !subscriptionError &&
-              subscriptionStatus !== null &&
-              (subscriptionStatus === 'ACTIVE' ||
-                subscriptionStatus === 'PAST_DUE' ||
-                subscriptionStatus === 'CANCELED') && (
-                <Pressable
-                  style={styles.menuItem}
-                  onPress={handleManageSubscription}
-                  testID="settings.manageSubscriptionButton"
-                >
-                  <Text style={styles.menuText}>Manage Subscription</Text>
-                  <Text style={styles.menuArrow}>›</Text>
-                </Pressable>
-              )}
-            {!isSubscriptionLoading && !subscriptionError && subscriptionStatus === 'TRIALING' && (
-              <Pressable style={styles.menuItem} onPress={handleUpgrade} testID="settings.upgradeButton">
-                <Text style={[styles.menuText, styles.upgradeText]}>Upgrade</Text>
-                <Text style={styles.menuArrow}>›</Text>
-              </Pressable>
-            )}
+                {subscriptionDaysRemaining !== null && subscriptionDaysRemaining > 0 && (
+                  <View style={styles.menuItem} testID="settings.daysRemaining">
+                    <Text style={styles.menuText}>Days Remaining</Text>
+                    <Text style={styles.menuValue}>{subscriptionDaysRemaining}</Text>
+                  </View>
+                )}
+                {(['ACTIVE', 'PAST_DUE', 'CANCELED'] as const).includes(subscriptionStatus) && (
+                  <Pressable
+                    style={styles.menuItem}
+                    onPress={handleManageSubscription}
+                    testID="settings.manageSubscriptionButton"
+                  >
+                    <Text style={styles.menuText}>Manage Subscription</Text>
+                    <Text style={styles.menuArrow}>›</Text>
+                  </Pressable>
+                )}
+                {subscriptionStatus === 'TRIALING' && (
+                  <Pressable
+                    style={styles.menuItem}
+                    onPress={handleUpgrade}
+                    testID="settings.upgradeButton"
+                  >
+                    <Text style={[styles.menuText, styles.upgradeText]}>Upgrade</Text>
+                    <Text style={styles.menuArrow}>›</Text>
+                  </Pressable>
+                )}
+              </>
+            ) : null}
           </View>
         </View>
 
