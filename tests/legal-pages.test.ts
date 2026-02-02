@@ -86,10 +86,85 @@ describe('Legal Pages', () => {
     })
   })
 
+  describe('Help Center Page', () => {
+    it('should export default page component', async () => {
+      const { default: HelpPage } = await import('@/app/(public)/help/page')
+      expect(typeof HelpPage).toBe('function')
+    })
+
+    it('should include search functionality', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const helpPath = path.join(process.cwd(), 'src/app/(public)/help/page.tsx')
+      const content = await fs.readFile(helpPath, 'utf-8')
+
+      // Verify search components are imported
+      expect(content).toContain('HelpSearch')
+      expect(content).toContain('FAQAccordion')
+    })
+
+    it('should include back navigation link', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const helpPath = path.join(process.cwd(), 'src/app/(public)/help/page.tsx')
+      const content = await fs.readFile(helpPath, 'utf-8')
+
+      expect(content).toContain('Back to app')
+      expect(content).toContain('href="/"')
+    })
+
+    it('should include contact support section', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const helpPath = path.join(process.cwd(), 'src/app/(public)/help/page.tsx')
+      const content = await fs.readFile(helpPath, 'utf-8')
+
+      expect(content).toContain('support@balancebeacon.app')
+      expect(content).toContain('Contact Support')
+    })
+  })
+
+  describe('Help Article Page', () => {
+    it('should export generateStaticParams function', async () => {
+      const { generateStaticParams } = await import('@/app/(public)/help/[slug]/page')
+      expect(typeof generateStaticParams).toBe('function')
+      const params = generateStaticParams()
+      expect(Array.isArray(params)).toBe(true)
+      expect(params.length).toBeGreaterThan(0)
+      expect(params[0]).toHaveProperty('slug')
+    })
+
+    it('should export generateMetadata function', async () => {
+      const { generateMetadata } = await import('@/app/(public)/help/[slug]/page')
+      expect(typeof generateMetadata).toBe('function')
+    })
+
+    it('should include back to help center link', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const articlePath = path.join(process.cwd(), 'src/app/(public)/help/[slug]/page.tsx')
+      const content = await fs.readFile(articlePath, 'utf-8')
+
+      expect(content).toContain('Back to Help Center')
+      expect(content).toContain('href="/help"')
+    })
+  })
+
   describe('Footer Component', () => {
     it('should export Footer component', async () => {
       const { Footer } = await import('@/components/ui/footer')
       expect(typeof Footer).toBe('function')
+    })
+
+    it('should include Help link', async () => {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const footerPath = path.join(process.cwd(), 'src/components/ui/footer.tsx')
+      const content = await fs.readFile(footerPath, 'utf-8')
+
+      expect(content).toContain('href="/help"')
+      // Check for Help text, accounting for whitespace in JSX
+      expect(content).toMatch(/>\s*Help\s*</)
     })
   })
 })

@@ -14,6 +14,7 @@ import {
   Download,
   FileSpreadsheet,
   Gauge,
+  HelpCircle,
   Layers,
   LogOut,
   PiggyBank,
@@ -451,6 +452,16 @@ export function DashboardPage({ data, monthKey, accountId, subscription, userEma
                   className="fixed right-4 z-50 w-48 rounded-lg border border-white/20 bg-slate-900 py-1 shadow-xl"
                   style={menuPosition.bottom ? { bottom: menuPosition.bottom } : { top: menuPosition.top }}
                 >
+                  <a
+                    href="/help"
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10 focus:bg-white/10 focus:outline-none"
+                    onClick={() => setShowSettingsMenu(false)}
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                    Help Center
+                  </a>
                   <button
                     type="button"
                     role="menuitem"
