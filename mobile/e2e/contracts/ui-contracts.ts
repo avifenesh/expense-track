@@ -487,10 +487,12 @@ export const SettingsScreen = {
 
   async tapDeleteAccount(): Promise<void> {
     // Scroll to ensure button is fully visible (75%+ requirement)
+    // Use longer timeout and larger scroll distance for deep-in-page elements
     await waitFor(element(by.id('settings.deleteAccountButton')))
       .toBeVisible()
+      .withTimeout(TIMEOUTS.LONG)
       .whileElement(by.id('settings.scrollView'))
-      .scroll(200, 'down')
+      .scroll(300, 'down')
     await element(by.id('settings.deleteAccountButton')).tap()
   },
 
