@@ -487,10 +487,10 @@ export const SettingsScreen = {
 
   async tapDeleteAccount(): Promise<void> {
     // Scroll to ensure button is fully visible (75%+ requirement)
-    // Use longer timeout and larger scroll distance for deep-in-page elements
+    // Use larger scroll distance for deep-in-page elements
+    // Note: withTimeout cannot be chained before whileElement
     await waitFor(element(by.id('settings.deleteAccountButton')))
       .toBeVisible()
-      .withTimeout(TIMEOUTS.LONG)
       .whileElement(by.id('settings.scrollView'))
       .scroll(300, 'down')
     await element(by.id('settings.deleteAccountButton')).tap()
@@ -798,9 +798,26 @@ export async function completeOnboarding(options?: {
 
 /**
  * Navigate to a tab in the main tab navigator
+ *
+ * Note: On Android with react-native-screens, there can be a race condition
+ * during tab navigation when view recycling happens. We add a small stabilization
+ * period and verify the tab is ready before tapping.
+ * See: https://github.com/software-mansion/react-native-screens/issues/2636
  */
 export async function navigateToTab(
   tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings',
 ): Promise<void> {
-  await element(by.id(`tab.${tabName.toLowerCase()}`)).tap()
+  const tabId = `tab.${tabName.toLowerCase()}`
+
+  // Wait for the tab bar to be stable and the tab element to be visible
+  // This helps avoid the "child already has a parent" race condition on Android
+  await waitFor(element(by.id(tabId)))
+    .toBeVisible()
+    .withTimeout(TIMEOUTS.MEDIUM)
+
+  // Small delay to allow any ongoing animations/transitions to complete
+  // This is a workaround for react-native-screens view recycling issues
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  await element(by.id(tabId)).tap()
 }
