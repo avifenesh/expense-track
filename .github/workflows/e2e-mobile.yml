@@ -2,8 +2,8 @@ name: E2E Tests (Mobile)
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # 00:00 UTC daily
-    - cron: '0 12 * * *'  # 12:00 UTC daily
+    - cron: '0 0 * * *' # 00:00 UTC daily
+    - cron: '0 12 * * *' # 12:00 UTC daily
   pull_request:
     branches: [main]
     paths:
@@ -74,11 +74,11 @@ jobs:
           # TEST_USER: e2e-test@test.local / TestPassword123!
           AUTH_USER1_EMAIL: e2e-test@test.local
           AUTH_USER1_DISPLAY_NAME: E2E Test User
-          AUTH_USER1_PASSWORD_HASH: "$2b$12$scka8WyFGlRUIWaZ3Xs0teAmS/oAt/gYN70M/y6TDqEi6VeqRn5zm"
+          AUTH_USER1_PASSWORD_HASH: '$2b$12$scka8WyFGlRUIWaZ3Xs0teAmS/oAt/gYN70M/y6TDqEi6VeqRn5zm'
           # TEST_USER_2: e2e-test-2@test.local / TestPassword456!
           AUTH_USER2_EMAIL: e2e-test-2@test.local
           AUTH_USER2_DISPLAY_NAME: E2E Test User 2
-          AUTH_USER2_PASSWORD_HASH: "$2b$12$T1pvfXsEK1A2KhAYm6E2/.6SPRne65004KOadGuXilDI0uFROX0lK"
+          AUTH_USER2_PASSWORD_HASH: '$2b$12$T1pvfXsEK1A2KhAYm6E2/.6SPRne65004KOadGuXilDI0uFROX0lK'
 
       # Start backend server in background
       - name: Start backend server
@@ -155,7 +155,7 @@ jobs:
         run: npx expo prebuild --clean --platform ios
         env:
           # iOS simulator uses localhost to reach host
-          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1 # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Install CocoaPods dependencies
         working-directory: mobile/ios
@@ -166,7 +166,7 @@ jobs:
         run: npm run e2e:build:ios:release
         env:
           # EXPO_PUBLIC_* vars are embedded during JS bundling (happens at build time)
-          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://localhost:3000/api/v1 # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Boot iOS Simulator
         run: |
@@ -178,9 +178,9 @@ jobs:
         run: npm run e2e:test:ios:release -- --cleanup --headless
         env:
           # For mobile app connecting to backend
-          E2E_API_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          E2E_API_URL: http://localhost:3000 # DevSkim: ignore DS137138,DS162092,DS126858
           # For test API client
-          E2E_API_BASE_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          E2E_API_BASE_URL: http://localhost:3000 # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload iOS test artifacts
         if: failure()
@@ -264,11 +264,11 @@ jobs:
           # TEST_USER: e2e-test@test.local / TestPassword123!
           AUTH_USER1_EMAIL: e2e-test@test.local
           AUTH_USER1_DISPLAY_NAME: E2E Test User
-          AUTH_USER1_PASSWORD_HASH: "$2b$12$scka8WyFGlRUIWaZ3Xs0teAmS/oAt/gYN70M/y6TDqEi6VeqRn5zm"
+          AUTH_USER1_PASSWORD_HASH: '$2b$12$scka8WyFGlRUIWaZ3Xs0teAmS/oAt/gYN70M/y6TDqEi6VeqRn5zm'
           # TEST_USER_2: e2e-test-2@test.local / TestPassword456!
           AUTH_USER2_EMAIL: e2e-test-2@test.local
           AUTH_USER2_DISPLAY_NAME: E2E Test User 2
-          AUTH_USER2_PASSWORD_HASH: "$2b$12$T1pvfXsEK1A2KhAYm6E2/.6SPRne65004KOadGuXilDI0uFROX0lK"
+          AUTH_USER2_PASSWORD_HASH: '$2b$12$T1pvfXsEK1A2KhAYm6E2/.6SPRne65004KOadGuXilDI0uFROX0lK'
 
       # Start backend server in background
       - name: Start backend server
@@ -334,15 +334,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-android-build-
 
-      # Cache AVD
-      - name: AVD Cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-31-x86_64-linux-test_avd-${{ hashFiles('mobile/detox.config.*') }}-v3
+      # Cache AVD - TEMPORARILY DISABLED due to cache hanging issues
+      # See: https://github.com/ReactiveCircus/android-emulator-runner/issues/385
+      # - name: AVD Cache
+      #   uses: actions/cache@v4
+      #   id: avd-cache
+      #   with:
+      #     path: |
+      #       ~/.android/avd/*
+      #       ~/.android/adb*
+      #     key: avd-31-x86_64-linux-test_avd-${{ hashFiles('mobile/detox.config.*') }}-v4
 
       - name: Install mobile dependencies
         working-directory: mobile
@@ -356,32 +357,32 @@ jobs:
         run: npx expo prebuild --clean --platform android
         env:
           # Android emulator uses 10.0.2.2 to reach host localhost
-          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1 # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Build Detox (Android release)
         working-directory: mobile
         run: npm run e2e:build:android:release
         env:
           # EXPO_PUBLIC_* vars are embedded during JS bundling (happens at build time)
-          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1  # DevSkim: ignore DS137138,DS162092,DS126858
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000/api/v1 # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Clean ADB server
         run: |
           adb kill-server || true
           sleep 2
 
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 31
-          target: google_apis
-          arch: x86_64
-          avd-name: test_avd
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          script: echo "Generated AVD snapshot for caching."
+      # - name: Create AVD and generate snapshot for caching
+      #   if: steps.avd-cache.outputs.cache-hit != 'true'
+      #   uses: reactivecircus/android-emulator-runner@v2
+      #   with:
+      #     api-level: 31
+      #     target: google_apis
+      #     arch: x86_64
+      #     avd-name: test_avd
+      #     force-avd-creation: false
+      #     emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+      #     disable-animations: true
+      #     script: echo "Generated AVD snapshot for caching."
 
       - name: Run Detox tests (Android)
         uses: reactivecircus/android-emulator-runner@v2
@@ -402,9 +403,9 @@ jobs:
             npm run e2e:test:android:release -- --cleanup --headless --record-logs all
         env:
           # 10.0.2.2 is Android emulator's alias for host localhost (for mobile app)
-          E2E_API_URL: http://10.0.2.2:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          E2E_API_URL: http://10.0.2.2:3000 # DevSkim: ignore DS137138,DS162092,DS126858
           # For test API client (runs on host, not in emulator)
-          E2E_API_BASE_URL: http://localhost:3000  # DevSkim: ignore DS137138,DS162092,DS126858
+          E2E_API_BASE_URL: http://localhost:3000 # DevSkim: ignore DS137138,DS162092,DS126858
 
       - name: Upload Android test artifacts
         if: failure()

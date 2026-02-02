@@ -1,0 +1,18 @@
+
+## Slop Detection Results
+
+| File | Line | Pattern | Severity | Certainty |
+|------|------|---------|----------|-----------|
+| ...eacon\mobile\DetoxTest.java | 23 | magic_numbers | low | HIGH |
+| ...eacon\mobile\DetoxTest.java | 24 | magic_numbers | low | HIGH |
+| ...eacon\mobile\DetoxTest.java | 25 | magic_numbers | low | HIGH |
+| ...e\contracts\ui-contracts.ts | 579 | bare_urls | low | HIGH |
+| mobile\e2e\globalSetup.ts | 5 | disabled_linter | low | HIGH |
+| mobile\e2e\globalTeardown.ts | 5 | disabled_linter | low | HIGH |
+| ...e\e2e\helpers\api-client.ts | 5 | disabled_linter | low | HIGH |
+| ...e\server\backend-manager.ts | 5 | disabled_linter | low | HIGH |
+| mobile\jest.setup.js | 208 | magic_numbers | low | HIGH |
+| mobile\jest.setup.js | 97 | disabled_linter | low | HIGH |
+
+**Total**: 1403 findings
+**By Severity**: critical=3, high=9, medium=21, low=1370
