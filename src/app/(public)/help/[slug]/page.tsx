@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, BookOpen, HelpCircle } from 'lucide-react'
 import { Footer } from '@/components/ui/footer'
 import { ArticleCard } from '@/components/help'
+import { ArticleContent } from '@/components/help/article-content'
 import {
   getArticleBySlug,
   getArticlesByCategory,
@@ -90,11 +91,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {/* Article Content */}
           <article className="prose prose-invert prose-slate max-w-none prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-p:text-slate-300 prose-li:text-slate-300 prose-a:text-sky-300 hover:prose-a:text-sky-200 prose-strong:text-white prose-code:text-sky-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: formatMarkdownContent(article.content),
-              }}
-            />
+            <ArticleContent content={article.content} />
           </article>
 
           {/* Related FAQs */}
@@ -143,51 +140,4 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       <Footer />
     </div>
   )
-}
-
-/**
- * Convert markdown-style content to HTML.
- * This is a simple converter for the structured content we have.
- */
-function formatMarkdownContent(content: string): string {
-  let html = content
-
-  // Convert headers
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>')
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>')
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>')
-
-  // Convert bold
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-
-  // Convert lists (unordered)
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>')
-  // Wrap consecutive <li> elements in <ul>
-  html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
-
-  // Convert numbered lists
-  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-
-  // Convert paragraphs (lines not starting with HTML tags)
-  const lines = html.split('\n')
-  const processedLines = lines.map((line) => {
-    const trimmed = line.trim()
-    if (!trimmed) return ''
-    if (trimmed.startsWith('<')) return line
-    return `<p>${trimmed}</p>`
-  })
-  html = processedLines.join('\n')
-
-  // Clean up empty paragraphs
-  html = html.replace(/<p><\/p>/g, '')
-
-  // Clean up paragraphs around block elements
-  html = html.replace(/<p>(<h[1-6]>)/g, '$1')
-  html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1')
-  html = html.replace(/<p>(<ul>)/g, '$1')
-  html = html.replace(/(<\/ul>)<\/p>/g, '$1')
-  html = html.replace(/<p>(<li>)/g, '$1')
-  html = html.replace(/(<\/li>)<\/p>/g, '$1')
-
-  return html
 }

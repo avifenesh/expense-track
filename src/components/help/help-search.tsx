@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/utils/cn'
-import { searchAll, getSuggestedSearches, type SearchResult } from '@/lib/help-search'
+import { searchAll, getSuggestedSearches } from '@/lib/help-search'
 import { type FAQItem, type HelpArticle } from '@/lib/help-content'
 
 interface HelpSearchProps {
@@ -125,79 +125,6 @@ export function HelpSearch({
 
       {/* Search indicator */}
       {query && query !== debouncedQuery && <p className="text-xs text-slate-400">Searching...</p>}
-    </div>
-  )
-}
-
-interface SearchResultsDisplayProps {
-  results: SearchResult[]
-  query: string
-  onFAQClick?: (faq: FAQItem) => void
-  onArticleClick?: (article: HelpArticle) => void
-}
-
-export function SearchResultsDisplay({ results, query, onFAQClick, onArticleClick }: SearchResultsDisplayProps) {
-  if (!query) return null
-
-  if (results.length === 0) {
-    return (
-      <div className="rounded-2xl border border-white/15 bg-white/10 p-8 text-center backdrop-blur">
-        <p className="text-sm text-slate-300">No results found for &quot;{query}&quot;</p>
-        <p className="mt-2 text-xs text-slate-400">Try different keywords or browse the categories below.</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-sm text-slate-400">
-        Found {results.length} {results.length === 1 ? 'result' : 'results'} for &quot;{query}&quot;
-      </p>
-      <div className="space-y-2">
-        {results.map((result) => {
-          if (result.type === 'faq') {
-            const faq = result.item as FAQItem
-            return (
-              <button
-                key={faq.id}
-                type="button"
-                onClick={() => onFAQClick?.(faq)}
-                className="block w-full rounded-xl border border-white/15 bg-white/10 p-4 text-left transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="mb-1 inline-block rounded bg-sky-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sky-300">
-                      FAQ
-                    </span>
-                    <p className="text-sm font-medium text-white">{faq.question}</p>
-                    <p className="mt-1 line-clamp-2 text-xs text-slate-400">{faq.answer}</p>
-                  </div>
-                </div>
-              </button>
-            )
-          }
-
-          const article = result.item as HelpArticle
-          return (
-            <button
-              key={article.slug}
-              type="button"
-              onClick={() => onArticleClick?.(article)}
-              className="block w-full rounded-xl border border-white/15 bg-white/10 p-4 text-left transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="mb-1 inline-block rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
-                    Article
-                  </span>
-                  <p className="text-sm font-medium text-white">{article.title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-400">{article.summary}</p>
-                </div>
-              </div>
-            </button>
-          )
-        })}
-      </div>
     </div>
   )
 }

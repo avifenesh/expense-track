@@ -1,3 +1,4 @@
 export { FAQAccordion } from './faq-accordion'
-export { HelpSearch, SearchResultsDisplay } from './help-search'
+export { HelpSearch } from './help-search'
+export { ArticleContent } from './article-content'
 export { ArticleCard, ArticleGrid, FeaturedArticle } from './article-card'
