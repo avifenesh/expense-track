@@ -28,6 +28,9 @@ describe('Settings E2E Tests', () => {
     // Use performLogin which handles subscription loading state
     await performLogin(TEST_USER.email, TEST_USER.password)
 
+    // Wait for dashboard to fully render before navigating
+    await expect(element(by.id('dashboard.screen'))).toBeVisible()
+
     await navigateToTab('Settings')
     await SettingsScreen.waitForScreen()
     // Wait for subscription data to load before interacting with the screen
