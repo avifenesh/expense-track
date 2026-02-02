@@ -8,12 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+
 - Pricing: Updated from $5/month to $3/month (#274)
   - Reduced subscription price constant to 300 cents ($3.00)
   - Updated pricing display across all pages
   - Updated legal terms and documentation
 
 ### Added
+
+- Web: Public Help Center at /help route (#99)
+  - 52 FAQs organized across 12 categories (getting-started, transactions, budgets, categories, recurring, holdings, sharing, currency, subscription, privacy, mobile, account-management)
+  - 30 comprehensive help articles with summaries and full content
+  - Search functionality with fuzzy matching and relevance scoring
+  - Individual article pages at /help/[slug] with related content
+  - FAQ accordion component with expand/collapse animation
+  - Help link added to footer and dashboard settings menu
+  - Static content in src/lib/help-content.ts (no database required)
+  - Search utilities in src/lib/help-search.ts with 98%+ test coverage
 - API: POST /api/v1/accounts/[id]/set-balance endpoint for setting account balance (#205)
   - Set account balance to a specific target amount for a given month
   - Automatically creates "Balance Adjustment" category if needed
@@ -160,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive test suite with 100% coverage for skeleton components
 
 ### Fixed
+
 - Web: E2E test locator fixes and improvements (#263)
   - Fixed 45+ flaky test locators across 8 spec files
   - Settings tests refactored to use account dropdown menu (not /settings page)
@@ -244,8 +256,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Logout integration for state cleanup
   - 641-line comprehensive test suite with 90%+ coverage
 
-
 ### Fixed
+
 - **E2E Tests**: Fixed mobile E2E test failures caused by infinite render loop in `useSubscriptionState` hook (#315)
   - Fixed `useSubscriptionState` to use individual Zustand selectors instead of returning new object
   - Added PaywallScreen and RootLoadingScreen UI contracts for subscription flow testing
