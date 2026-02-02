@@ -480,7 +480,7 @@ export const SettingsScreen = {
     // Scroll to ensure button is fully visible (75%+ requirement)
     await waitFor(element(by.id('settings.exportDataButton')))
       .toBeVisible()
-      .whileElement(by.id('settings.screen'))
+      .whileElement(by.id('settings.scrollView'))
       .scroll(200, 'down')
     await element(by.id('settings.exportDataButton')).tap()
   },
@@ -489,7 +489,7 @@ export const SettingsScreen = {
     // Scroll to ensure button is fully visible (75%+ requirement)
     await waitFor(element(by.id('settings.deleteAccountButton')))
       .toBeVisible()
-      .whileElement(by.id('settings.screen'))
+      .whileElement(by.id('settings.scrollView'))
       .scroll(200, 'down')
     await element(by.id('settings.deleteAccountButton')).tap()
   },
