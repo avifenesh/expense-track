@@ -67,7 +67,10 @@ npm test                 # Run mobile tests
   - See `docs/API_AUDIT.md` for mobile compatibility audit
   - See `docs/API_CONTRACTS.md` for endpoint contracts
   - See `docs/API_VERSIONING.md` for versioning strategy
-- `src/components/` - React components (dashboard, forms, UI primitives)
+- `src/app/(public)/help/` - Public help center with FAQs and articles
+- `src/components/` - React components (dashboard, forms, UI primitives, help center)
+- `src/lib/help-content.ts` - Static FAQ and help article content
+- `src/lib/help-search.ts` - Search utilities for help center
 - `src/schemas/` - Zod validation schemas
 - `src/lib/finance.ts` - Financial logic, budget tracking
 - `src/lib/paddle.ts` - Paddle payment provider integration utilities
@@ -181,6 +184,7 @@ Only for small fixes, typos, docs, or emergency hotfixes. Everything else goes t
 Write tests to find bugs, not just pass coverage. Verify real behavior and edge cases, not just happy paths.
 
 **Test suites:**
+
 - `tests/` - Unit tests (Vitest) for actions, schemas, lib functions
 - `tests/e2e/` - End-to-end tests (Playwright) for web UI flows
 - `tests/security/` - XSS attack payload tests
