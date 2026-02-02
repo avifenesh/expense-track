@@ -121,7 +121,7 @@ describe('Transaction E2E Tests', () => {
       // Get default account and transactions from the API
       const { accounts } = await api.getAccounts()
       if (accounts.length === 0) {
-        return // No accounts - skip test
+        throw new Error('Test precondition failed: No accounts found. setupTestData() should have created test data.')
       }
 
       const defaultAccount = accounts[0]
@@ -132,12 +132,16 @@ describe('Transaction E2E Tests', () => {
       // Filter transactions by current month to match what dashboard displays
       const result = await api.getTransactions(defaultAccount.id, { month: currentMonth })
       if (result.transactions.length === 0) {
-        return // No transactions in current month - skip test
+        throw new Error(
+          `Test precondition failed: No transactions found for account ${defaultAccount.id} in month ${currentMonth}. setupTestData() should have created test data.`,
+        )
       }
 
       const transactionId = result.transactions[0].id
       if (!transactionId) {
-        return // Invalid transaction ID - skip test
+        throw new Error(
+          'Test data integrity error: Transaction returned from API has no ID. This indicates a backend bug.',
+        )
       }
 
       // Scroll to transactions section first
