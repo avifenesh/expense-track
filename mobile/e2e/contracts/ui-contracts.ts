@@ -810,6 +810,7 @@ export async function navigateToTab(
   tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings',
 ): Promise<void> {
   const tabId = `tab.${tabName.toLowerCase()}`
+  const screenId = `${tabName.toLowerCase()}.screen`
 
   // Wait for the tab bar to be stable and the tab element to be visible
   // This helps avoid the "child already has a parent" race condition on Android
@@ -822,4 +823,10 @@ export async function navigateToTab(
   await new Promise((resolve) => setTimeout(resolve, 300))
 
   await element(by.id(tabId)).tap()
+
+  // Wait for the destination screen to be visible
+  // This ensures navigation is complete before returning
+  await waitFor(element(by.id(screenId)))
+    .toBeVisible()
+    .withTimeout(TIMEOUTS.LONG)
 }
