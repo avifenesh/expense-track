@@ -39,7 +39,7 @@ interface TransactionListItemProps {
 **Key Points:**
 
 - Always provide unique `testID` values based on transaction IDs
-- Use consistent naming pattern: `transaction-{id}`
+- Use consistent naming pattern: `{screen}.transaction.{id}` (e.g., `dashboard.transaction.${transaction.id}`)
 - This enables reliable element selection in E2E tests via `by.id()`
 
 ## Timeout Configuration
@@ -76,41 +76,35 @@ The E2E test suite includes comprehensive error handling for better debugging:
 
 ### performLogin Error Handling
 
-The `performLogin` helper includes detailed logging at each step:
+The `performLogin` helper includes error handling with screenshot capture on failure:
 
 ```typescript
 export async function performLogin(email: string, password: string): Promise<void> {
   try {
     await LoginScreen.waitForScreen()
-    await LoginScreen.login(email, password)
-    // ... login flow
+    await LoginScreen.enterEmail(email)
+    await LoginScreen.enterPassword(password)
+    await LoginScreen.tapSubmit()
+    // Wait for navigation to dashboard...
   } catch (error) {
     console.error('[performLogin] Login failed:', error)
     await device.takeScreenshot('login-failure')
-    throw error
+    throw new Error(`Login failed: ${error.message}`)
   }
 }
 ```
 
 ### Backend Manager Logging
 
-The `BackendManager` class captures startup logs for debugging:
+The `BackendManager` class captures startup logs for debugging. When the backend fails to start within the timeout, the startup log is automatically included in the error message:
 
 ```typescript
-class BackendManager {
-  private startupLog: string = ''
-
-  async start(): Promise<void> {
-    // Captures stdout/stderr during startup
-    this.process.stdout?.on('data', (data) => {
-      this.startupLog += data.toString()
-    })
-    // Startup log included in error messages if startup fails
-  }
-}
+// Startup logs are captured internally and included in error messages
+// When backend startup times out, the error will contain the full log
+throw new Error(`Backend failed to start: ${this.startupLog}`)
 ```
 
-When tests fail, check the captured logs to identify server startup issues.
+When tests fail, check the error message for startup logs to identify server issues.
 
 ## Key Components
 
@@ -196,7 +190,7 @@ E2E tests run on:
 Timeouts:
 
 - **iOS**: 45 minutes (tests take ~25min)
-- **Android**: 45 minutes (tests take ~32min)
+- **Android**: 60 minutes (tests take ~32min)
 
 ## Troubleshooting
 

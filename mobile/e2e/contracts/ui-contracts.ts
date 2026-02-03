@@ -737,7 +737,9 @@ export async function performLogin(email: string, password: string): Promise<voi
   } catch (error) {
     console.error('[performLogin] Login failed:', error)
     await device.takeScreenshot('login-failure')
-    throw new Error(`Login failed for ${email}: ${error instanceof Error ? error.message : String(error)}`)
+    // Mask email to avoid exposing sensitive info in logs
+    const maskedEmail = email.replace(/^(.{2})(.*)(@.*)$/, '$1***$3')
+    throw new Error(`Login failed for ${maskedEmail}: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
