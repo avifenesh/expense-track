@@ -826,8 +826,9 @@ export async function navigateToTab(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Stabilization delay before tap attempt
-      // Longer delay on retries to allow view hierarchy to settle
-      const delay = attempt === 1 ? 300 : 500 * attempt
+      // Longer initial delay to allow UI to fully settle after login
+      // Even longer delays on retries to handle transient synchronization issues
+      const delay = attempt === 1 ? 500 : 1000 * attempt
       await new Promise((resolve) => setTimeout(resolve, delay))
 
       await element(by.id(tabId)).tap()
@@ -842,9 +843,14 @@ export async function navigateToTab(
       lastError = error
       const errorMessage = error instanceof Error ? error.message : String(error)
 
-      // Check if this is the Android view recycling error
-      if (errorMessage.includes('child already has a parent') || errorMessage.includes('removeView()')) {
-        // Android view recycling race condition - retry
+      // Check if this is the Android view recycling error or Fabric idling timeout
+      if (
+        errorMessage.includes('child already has a parent') ||
+        errorMessage.includes('removeView()') ||
+        errorMessage.includes('IdlingResources') ||
+        errorMessage.includes('to become idle timed out')
+      ) {
+        // Transient Android UI synchronization error - retry
         // Continue to next retry iteration
       } else {
         // Different error - rethrow immediately
