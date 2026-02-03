@@ -796,16 +796,24 @@ export async function completeOnboarding(options?: {
 }
 
 /**
- * Navigate to a tab in the main tab navigator
+ * Navigate to a specific tab in the bottom navigation
  *
- * Note: On Android with react-native-screens, there can be a race condition
- * during tab navigation when view recycling happens. The error manifests as:
- * "The specified child already has a parent. You must call removeView() on the child's parent first."
+ * This function handles two known issues:
  *
- * This happens when Android tries to recycle views during navigation transitions.
- * We implement retry logic to handle this transient error.
+ * 1. React Native Fabric UI Manager initialization overhead: After login, the first
+ *    tab navigation can take 100+ seconds because Fabric's IdlingResources never
+ *    becomes "idle" while background initialization completes. Detox waits for idle
+ *    state before executing actions, causing Jest hook timeouts.
+ *
+ * 2. Android view recycling race condition: react-native-screens can throw
+ *    "The specified child already has a parent" during navigation.
+ *
+ * Solution: Proactively disable Detox synchronization during the tap, then re-enable
+ * for the screen visibility wait. This prevents the 120s idle timeout without hiding
+ * real errors.
  *
  * See: https://github.com/software-mansion/react-native-screens/issues/2636
+ * See: https://wix.github.io/Detox/docs/troubleshooting/synchronization
  */
 export async function navigateToTab(
   tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings',
@@ -818,9 +826,7 @@ export async function navigateToTab(
     .toBeVisible()
     .withTimeout(TIMEOUTS.MEDIUM)
 
-  // Retry logic for Android view recycling race condition and Fabric idling issues
-  // The "child already has a parent" error is transient and resolves after a short wait
-  // The "IdlingResources to become idle" error requires disabling synchronization
+  // Retry logic for transient errors (Android view recycling, etc.)
   const maxRetries = 3
   let lastError: unknown = null
 
@@ -830,9 +836,24 @@ export async function navigateToTab(
       const delay = attempt === 1 ? 300 : 500
       await new Promise((resolve) => setTimeout(resolve, delay))
 
-      await element(by.id(tabId)).tap()
+      // CRITICAL: Disable synchronization BEFORE the tap to prevent Fabric UI
+      // Manager idle timeout. The first navigation after login can block for 120s+
+      // waiting for IdlingResources, causing Jest hook timeouts before Detox can
+      // even throw an error. By disabling sync proactively, we allow the tap to
+      // execute immediately.
+      await device.disableSynchronization()
 
-      // If tap succeeded, wait for destination screen and return
+      try {
+        await element(by.id(tabId)).tap()
+
+        // Small delay to allow navigation animation to start
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      } finally {
+        // Always re-enable synchronization for the waitFor check
+        await device.enableSynchronization()
+      }
+
+      // Now wait for destination screen with sync enabled (validates real UI state)
       await waitFor(element(by.id(screenId)))
         .toBeVisible()
         .withTimeout(TIMEOUTS.LONG)
@@ -842,38 +863,13 @@ export async function navigateToTab(
       lastError = error
       const errorMessage = error instanceof Error ? error.message : String(error)
 
-      // Check if this is the Android view recycling error
+      // Check if this is the Android view recycling error - retry with delay
       if (errorMessage.includes('child already has a parent') || errorMessage.includes('removeView()')) {
-        // Transient view hierarchy error - retry with delay
         continue
       }
 
-      // Check if this is a Fabric UI idling timeout
-      if (errorMessage.includes('IdlingResources') || errorMessage.includes('to become idle timed out')) {
-        // The Fabric UI Manager never becomes idle after login
-        // Disable synchronization for this tap, then re-enable
-        await device.disableSynchronization()
-        try {
-          await new Promise((resolve) => setTimeout(resolve, 500))
-          await element(by.id(tabId)).tap()
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-          await device.enableSynchronization()
-
-          // Wait for destination screen
-          await waitFor(element(by.id(screenId)))
-            .toBeVisible()
-            .withTimeout(TIMEOUTS.LONG)
-
-          return // Success
-        } catch (syncError) {
-          await device.enableSynchronization()
-          lastError = syncError
-          // Continue to next retry
-        }
-      } else {
-        // Different error - rethrow immediately
-        throw error
-      }
+      // Any other error - rethrow immediately
+      throw error
     }
   }
 
