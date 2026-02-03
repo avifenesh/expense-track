@@ -802,8 +802,12 @@ export async function completeOnboarding(options?: {
  * Navigate to a tab in the main tab navigator
  *
  * Note: On Android with react-native-screens, there can be a race condition
- * during tab navigation when view recycling happens. We add a small stabilization
- * period and verify the tab is ready before tapping.
+ * during tab navigation when view recycling happens. The error manifests as:
+ * "The specified child already has a parent. You must call removeView() on the child's parent first."
+ *
+ * This happens when Android tries to recycle views during navigation transitions.
+ * We implement retry logic to handle this transient error.
+ *
  * See: https://github.com/software-mansion/react-native-screens/issues/2636
  */
 export async function navigateToTab(
@@ -813,20 +817,45 @@ export async function navigateToTab(
   const screenId = `${tabName.toLowerCase()}.screen`
 
   // Wait for the tab bar to be stable and the tab element to be visible
-  // This helps avoid the "child already has a parent" race condition on Android
   await waitFor(element(by.id(tabId)))
     .toBeVisible()
     .withTimeout(TIMEOUTS.MEDIUM)
 
-  // Small delay to allow any ongoing animations/transitions to complete
-  // This is a workaround for react-native-screens view recycling issues
-  await new Promise((resolve) => setTimeout(resolve, 300))
+  // Retry logic for Android view recycling race condition
+  // The "child already has a parent" error is transient and resolves after a short wait
+  const maxRetries = 3
+  let lastError: unknown = null
 
-  await element(by.id(tabId)).tap()
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Stabilization delay before tap attempt
+      // Longer delay on retries to allow view hierarchy to settle
+      const delay = attempt === 1 ? 300 : 500 * attempt
+      await new Promise((resolve) => setTimeout(resolve, delay))
 
-  // Wait for the destination screen to be visible
-  // This ensures navigation is complete before returning
-  await waitFor(element(by.id(screenId)))
-    .toBeVisible()
-    .withTimeout(TIMEOUTS.LONG)
+      await element(by.id(tabId)).tap()
+
+      // If tap succeeded, wait for destination screen and return
+      await waitFor(element(by.id(screenId)))
+        .toBeVisible()
+        .withTimeout(TIMEOUTS.LONG)
+
+      return // Success - exit function
+    } catch (error) {
+      lastError = error
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // Check if this is the Android view recycling error
+      if (errorMessage.includes('child already has a parent') || errorMessage.includes('removeView()')) {
+        console.log(`[navigateToTab] Android view recycling error on attempt ${attempt}/${maxRetries}, retrying...`)
+        // Continue to next retry iteration
+      } else {
+        // Different error - rethrow immediately
+        throw error
+      }
+    }
+  }
+
+  // All retries exhausted
+  throw lastError
 }
