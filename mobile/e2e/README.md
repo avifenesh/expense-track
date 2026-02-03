@@ -87,7 +87,6 @@ export async function performLogin(email: string, password: string): Promise<voi
     await LoginScreen.tapSubmit()
     // Wait for navigation to dashboard...
   } catch (error) {
-    console.error('[performLogin] Login failed:', error)
     await device.takeScreenshot('login-failure')
     throw new Error(`Login failed: ${error.message}`)
   }
@@ -189,8 +188,8 @@ E2E tests run on:
 
 Timeouts:
 
-- **iOS**: 45 minutes (tests take ~25min)
-- **Android**: 60 minutes (tests take ~32min)
+- **iOS**: 45 minutes (tests take ~32-33min)
+- **Android**: 60 minutes (tests take ~35-36min)
 
 ## Troubleshooting
 

@@ -4,8 +4,6 @@
  * These define the contract between the app and the user (test framework)
  */
 
-/* eslint-disable no-console */
-
 import { device, element, by, expect, waitFor } from 'detox'
 import { TIMEOUTS } from '../helpers/fixtures'
 
@@ -735,7 +733,6 @@ export async function performLogin(email: string, password: string): Promise<voi
     // If we reach here, dashboard is visible - success
     // If paywall was shown instead, the above would fail
   } catch (error) {
-    console.error('[performLogin] Login failed:', error)
     await device.takeScreenshot('login-failure')
     // Mask email to avoid exposing sensitive info in logs
     const maskedEmail = email.replace(/^(.{2})(.*)(@.*)$/, '$1***$3')
@@ -847,7 +844,7 @@ export async function navigateToTab(
 
       // Check if this is the Android view recycling error
       if (errorMessage.includes('child already has a parent') || errorMessage.includes('removeView()')) {
-        console.log(`[navigateToTab] Android view recycling error on attempt ${attempt}/${maxRetries}, retrying...`)
+        // Android view recycling race condition - retry
         // Continue to next retry iteration
       } else {
         // Different error - rethrow immediately

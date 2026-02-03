@@ -68,6 +68,6 @@ export const TEST_BUDGET = {
 export const TIMEOUTS = {
   SHORT: 5000,
   MEDIUM: 10000,
-  LONG: 60000,
-  STARTUP: 120000,
+  LONG: 30000,
+  STARTUP: 60000,
 }
