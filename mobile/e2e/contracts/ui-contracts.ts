@@ -818,17 +818,16 @@ export async function navigateToTab(
     .toBeVisible()
     .withTimeout(TIMEOUTS.MEDIUM)
 
-  // Retry logic for Android view recycling race condition
+  // Retry logic for Android view recycling race condition and Fabric idling issues
   // The "child already has a parent" error is transient and resolves after a short wait
+  // The "IdlingResources to become idle" error requires disabling synchronization
   const maxRetries = 3
   let lastError: unknown = null
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Stabilization delay before tap attempt
-      // Longer initial delay to allow UI to fully settle after login
-      // Even longer delays on retries to handle transient synchronization issues
-      const delay = attempt === 1 ? 500 : 1000 * attempt
+      const delay = attempt === 1 ? 300 : 500
       await new Promise((resolve) => setTimeout(resolve, delay))
 
       await element(by.id(tabId)).tap()
@@ -843,15 +842,34 @@ export async function navigateToTab(
       lastError = error
       const errorMessage = error instanceof Error ? error.message : String(error)
 
-      // Check if this is the Android view recycling error or Fabric idling timeout
-      if (
-        errorMessage.includes('child already has a parent') ||
-        errorMessage.includes('removeView()') ||
-        errorMessage.includes('IdlingResources') ||
-        errorMessage.includes('to become idle timed out')
-      ) {
-        // Transient Android UI synchronization error - retry
-        // Continue to next retry iteration
+      // Check if this is the Android view recycling error
+      if (errorMessage.includes('child already has a parent') || errorMessage.includes('removeView()')) {
+        // Transient view hierarchy error - retry with delay
+        continue
+      }
+
+      // Check if this is a Fabric UI idling timeout
+      if (errorMessage.includes('IdlingResources') || errorMessage.includes('to become idle timed out')) {
+        // The Fabric UI Manager never becomes idle after login
+        // Disable synchronization for this tap, then re-enable
+        await device.disableSynchronization()
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          await element(by.id(tabId)).tap()
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          await device.enableSynchronization()
+
+          // Wait for destination screen
+          await waitFor(element(by.id(screenId)))
+            .toBeVisible()
+            .withTimeout(TIMEOUTS.LONG)
+
+          return // Success
+        } catch (syncError) {
+          await device.enableSynchronization()
+          lastError = syncError
+          // Continue to next retry
+        }
       } else {
         // Different error - rethrow immediately
         throw error
