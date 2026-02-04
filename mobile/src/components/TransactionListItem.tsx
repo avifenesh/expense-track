@@ -1,25 +1,23 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import type { Transaction } from '../stores';
-import { formatSignedCurrency } from '../utils/format';
-import { formatDateShort } from '../utils/date';
+import React from 'react'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import type { Transaction } from '../stores'
+import { formatSignedCurrency } from '../utils/format'
+import { formatDateShort } from '../utils/date'
 
 interface TransactionListItemProps {
-  transaction: Transaction;
-  onPress?: (transaction: Transaction) => void;
+  transaction: Transaction
+  onPress?: (transaction: Transaction) => void
+  testID?: string
 }
 
-export function TransactionListItem({
-  transaction,
-  onPress,
-}: TransactionListItemProps) {
-  const amountColor = transaction.type === 'INCOME' ? '#22c55e' : '#ef4444';
-  const categoryColor = transaction.category?.color || '#64748b';
-  const formattedAmount = formatSignedCurrency(transaction.amount, transaction.type, transaction.currency);
+export function TransactionListItem({ transaction, onPress, testID }: TransactionListItemProps) {
+  const amountColor = transaction.type === 'INCOME' ? '#22c55e' : '#ef4444'
+  const categoryColor = transaction.category?.color || '#64748b'
+  const formattedAmount = formatSignedCurrency(transaction.amount, transaction.type, transaction.currency)
 
   const handlePress = () => {
-    onPress?.(transaction);
-  };
+    onPress?.(transaction)
+  }
 
   const content = (
     <View style={styles.container}>
@@ -30,11 +28,9 @@ export function TransactionListItem({
         </Text>
         <Text style={styles.dateText}>{formatDateShort(transaction.date)}</Text>
       </View>
-      <Text style={[styles.amount, { color: amountColor }]}>
-        {formattedAmount}
-      </Text>
+      <Text style={[styles.amount, { color: amountColor }]}>{formattedAmount}</Text>
     </View>
-  );
+  )
 
   if (onPress) {
     return (
@@ -43,13 +39,15 @@ export function TransactionListItem({
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={`${transaction.description || transaction.category?.name}, ${formattedAmount}`}
+        testID={testID}
       >
         {content}
       </TouchableOpacity>
-    );
+    )
   }
 
-  return content;
+  // Wrap content with testID for E2E testing even without onPress
+  return <View testID={testID}>{content}</View>
 }
 
 const styles = StyleSheet.create({
@@ -85,4 +83,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

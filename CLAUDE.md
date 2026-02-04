@@ -181,11 +181,45 @@ Only for small fixes, typos, docs, or emergency hotfixes. Everything else goes t
 Write tests to find bugs, not just pass coverage. Verify real behavior and edge cases, not just happy paths.
 
 **Test suites:**
+
 - `tests/` - Unit tests (Vitest) for actions, schemas, lib functions
 - `tests/e2e/` - End-to-end tests (Playwright) for web UI flows
 - `tests/security/` - XSS attack payload tests
+- `mobile/e2e/` - Mobile E2E tests (Detox) for iOS and Android
 
 See `tests/e2e/README.md` for E2E test documentation.
+
+### E2E Test Debugging Philosophy
+
+**NEVER increase timeouts as a fix.** Timeouts are symptoms, not root causes.
+
+When E2E tests fail or timeout:
+
+1. **Analyze the actual code first** - Read the component, test, and helper code to understand what's really happening
+2. **Verify assumptions** - Don't assume how things work, check the actual implementation
+3. **Look for real bugs** - Timeouts indicate logic errors, incorrect selectors, or missing waits
+4. **Check successful runs** - Compare timing with known-good runs to identify slowdowns
+5. **Only then adjust timeouts** - And only if the new timeout is reasonable based on successful run data
+
+**Example anti-patterns:**
+
+- ❌ Test timing out at 10s → increase to 60s
+- ❌ Test timing out at 60s → increase to 90s
+- ❌ "iOS is just slower" → increase iOS timeout to 90min
+
+**Example correct approach:**
+
+- ✅ Test timing out → check if scrolling to wrong element (SafeAreaView vs ScrollView)
+- ✅ Test timing out → check if test expects off-screen elements to be visible without scrolling
+- ✅ Test timing out → check successful runs show 32min completion, so 45min timeout is reasonable
+- ✅ Analyze code, find bug, fix bug, use realistic timeout based on successful run data
+
+**Timeout guidelines from successful runs:**
+
+- Mobile E2E (iOS): ~32-33 minutes → 45min timeout is reasonable
+- Mobile E2E (Android): ~35-36 minutes → 60min timeout is reasonable
+
+Any timeout significantly longer than these values means tests are broken, not that the platform is slow.
 
 ## Style
 
