@@ -796,24 +796,19 @@ export async function completeOnboarding(options?: {
 }
 
 /**
- * Navigate to a specific tab in the bottom navigation
+ * Navigate to a specific tab in the bottom navigation.
  *
- * This function handles two known issues:
+ * This function handles the Android view recycling race condition where
+ * react-native-screens can throw "The specified child already has a parent"
+ * during navigation. We retry with increasing delays to allow the view
+ * hierarchy to stabilize.
  *
- * 1. React Native Fabric UI Manager initialization overhead: After login, the first
- *    tab navigation can take 100+ seconds because Fabric's IdlingResources never
- *    becomes "idle" while background initialization completes. Detox waits for idle
- *    state before executing actions, causing Jest hook timeouts.
- *
- * 2. Android view recycling race condition: react-native-screens can throw
- *    "The specified child already has a parent" during navigation.
- *
- * Solution: Proactively disable Detox synchronization during the tap, then re-enable
- * for the screen visibility wait. This prevents the 120s idle timeout without hiding
- * real errors.
+ * Note: Previous versions had sync disable/enable workarounds for Fabric UI Manager
+ * idle timeout issues. These were caused by Skeleton components using Animated.loop
+ * with useNativeDriver:true, which kept the native UI thread "busy" indefinitely.
+ * The fix (useNativeDriver:false in Skeleton) allows Detox to synchronize normally.
  *
  * See: https://github.com/software-mansion/react-native-screens/issues/2636
- * See: https://wix.github.io/Detox/docs/troubleshooting/synchronization
  */
 export async function navigateToTab(
   tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings',
@@ -826,34 +821,18 @@ export async function navigateToTab(
     .toBeVisible()
     .withTimeout(TIMEOUTS.MEDIUM)
 
-  // Retry logic for transient errors (Android view recycling, etc.)
+  // Retry logic for transient errors (Android view recycling)
   const maxRetries = 3
   let lastError: unknown = null
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Stabilization delay before tap attempt
-      const delay = attempt === 1 ? 300 : 500
+      // Stabilization delay before tap attempt (longer on retries)
+      const delay = attempt === 1 ? 300 : 500 * attempt
       await new Promise((resolve) => setTimeout(resolve, delay))
 
-      // CRITICAL: Disable synchronization BEFORE the tap to prevent Fabric UI
-      // Manager idle timeout. The first navigation after login can block for 120s+
-      // waiting for IdlingResources, causing Jest hook timeouts before Detox can
-      // even throw an error. By disabling sync proactively, we allow the tap to
-      // execute immediately.
-      await device.disableSynchronization()
+      await element(by.id(tabId)).tap()
 
-      try {
-        await element(by.id(tabId)).tap()
-
-        // Small delay to allow navigation animation to start
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      } finally {
-        // Always re-enable synchronization for the waitFor check
-        await device.enableSynchronization()
-      }
-
-      // Now wait for destination screen with sync enabled (validates real UI state)
       await waitFor(element(by.id(screenId)))
         .toBeVisible()
         .withTimeout(TIMEOUTS.LONG)

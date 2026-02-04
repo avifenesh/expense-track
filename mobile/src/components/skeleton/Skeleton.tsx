@@ -19,19 +19,24 @@ export function Skeleton({ width, height, borderRadius = 4, style, testID, acces
   const opacity = useRef(new Animated.Value(MIN_OPACITY)).current
 
   useEffect(() => {
+    // Using useNativeDriver: false to avoid blocking Detox synchronization.
+    // Native driver animations run on the UI thread and keep Fabric UI Manager
+    // in a "busy" state, preventing Detox from ever reaching "idle" state.
+    // For skeleton loading indicators, JS-driven opacity animation has
+    // negligible performance difference and allows E2E tests to run correctly.
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: MAX_OPACITY,
           duration: ANIMATION_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(opacity, {
           toValue: MIN_OPACITY,
           duration: ANIMATION_DURATION,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
-      ])
+      ]),
     )
 
     animation.start()

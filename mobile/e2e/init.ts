@@ -1,4 +1,4 @@
-import { device } from 'detox';
+import { device } from 'detox'
 
 // Note: beforeAll, beforeEach, afterAll are Jest globals, not Detox exports
 // Using launchApp in beforeEach instead of reloadReactNative to avoid
@@ -6,8 +6,8 @@ import { device } from 'detox';
 beforeAll(async () => {
   await device.launchApp({
     newInstance: true,
-  });
-});
+  })
+})
 
 beforeEach(async () => {
   // Use launchApp with newInstance: true to fully restart the app between tests
@@ -15,9 +15,9 @@ beforeEach(async () => {
   // occurs when reloadReactNative() encounters errors
   await device.launchApp({
     newInstance: true,
-  });
-});
+  })
+})
 
 afterAll(async () => {
-  await device.terminateApp();
-});
+  await device.terminateApp()
+})
