@@ -798,17 +798,22 @@ export async function completeOnboarding(options?: {
 /**
  * Navigate to a specific tab in the bottom navigation.
  *
- * This function handles the Android view recycling race condition where
- * react-native-screens can throw "The specified child already has a parent"
- * during navigation. We retry with increasing delays to allow the view
- * hierarchy to stabilize.
+ * This function handles two known issues:
  *
- * Note: Previous versions had sync disable/enable workarounds for Fabric UI Manager
- * idle timeout issues. These were caused by Skeleton components using Animated.loop
- * with useNativeDriver:true, which kept the native UI thread "busy" indefinitely.
- * The fix (useNativeDriver:false in Skeleton) allows Detox to synchronize normally.
+ * 1. Fabric UI Manager idle timeout: After login, the first tab navigation can
+ *    block indefinitely waiting for FabricUIManagerIdlingResources to become idle.
+ *    This is caused by React Native Fabric's internal state management during
+ *    complex screen transitions. We work around this by temporarily disabling
+ *    Detox synchronization during the tap action.
+ *
+ * 2. Android view recycling race condition: react-native-screens can throw
+ *    "The specified child already has a parent" during navigation.
+ *
+ * Note: The Skeleton component now uses useNativeDriver:false to avoid blocking
+ * the native UI thread, but other Fabric internals can still cause idle timeouts.
  *
  * See: https://github.com/software-mansion/react-native-screens/issues/2636
+ * See: https://wix.github.io/Detox/docs/troubleshooting/synchronization
  */
 export async function navigateToTab(
   tabName: 'Dashboard' | 'Transactions' | 'Budgets' | 'Sharing' | 'Settings',
@@ -821,7 +826,7 @@ export async function navigateToTab(
     .toBeVisible()
     .withTimeout(TIMEOUTS.MEDIUM)
 
-  // Retry logic for transient errors (Android view recycling)
+  // Retry logic for transient errors (Android view recycling, Fabric idle timeout)
   const maxRetries = 3
   let lastError: unknown = null
 
@@ -831,8 +836,19 @@ export async function navigateToTab(
       const delay = attempt === 1 ? 300 : 500 * attempt
       await new Promise((resolve) => setTimeout(resolve, delay))
 
-      await element(by.id(tabId)).tap()
+      // Disable synchronization for the tap to avoid Fabric UI Manager idle timeout.
+      // This is a known workaround for React Native Fabric where the UI thread can
+      // remain "busy" indefinitely during complex transitions.
+      await device.disableSynchronization()
 
+      try {
+        await element(by.id(tabId)).tap()
+      } finally {
+        // Always re-enable synchronization
+        await device.enableSynchronization()
+      }
+
+      // Wait for destination screen with sync enabled (validates real UI state)
       await waitFor(element(by.id(screenId)))
         .toBeVisible()
         .withTimeout(TIMEOUTS.LONG)
@@ -844,6 +860,11 @@ export async function navigateToTab(
 
       // Check if this is the Android view recycling error - retry with delay
       if (errorMessage.includes('child already has a parent') || errorMessage.includes('removeView()')) {
+        continue
+      }
+
+      // Check if this is the Fabric idle timeout - retry with delay
+      if (errorMessage.includes('FabricUIManagerIdlingResources') || errorMessage.includes('idle timed out')) {
         continue
       }
 
