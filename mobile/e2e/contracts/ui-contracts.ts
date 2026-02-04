@@ -808,9 +808,9 @@ export async function completeOnboarding(options?: {
  * 2. Android view recycling race condition: react-native-screens can throw
  *    "The specified child already has a parent" during navigation.
  *
- * Solution: Disable Detox synchronization for the entire navigation sequence (tap +
- * visibility check), using manual polling instead of waitFor. This prevents the idle
- * timeout while still validating the UI state.
+ * Solution: Proactively disable Detox synchronization during the tap, then re-enable
+ * for the screen visibility wait. This prevents the 120s idle timeout without hiding
+ * real errors.
  *
  * See: https://github.com/software-mansion/react-native-screens/issues/2636
  * See: https://wix.github.io/Detox/docs/troubleshooting/synchronization
@@ -836,41 +836,29 @@ export async function navigateToTab(
       const delay = attempt === 1 ? 300 : 500
       await new Promise((resolve) => setTimeout(resolve, delay))
 
-      // CRITICAL: Disable synchronization for the ENTIRE navigation sequence.
-      // The Fabric UI Manager never becomes idle after login, so both the tap
-      // AND the waitFor would block indefinitely. We disable sync, perform the
-      // tap, poll for screen visibility manually, then re-enable sync.
+      // CRITICAL: Disable synchronization BEFORE the tap to prevent Fabric UI
+      // Manager idle timeout. The first navigation after login can block for 120s+
+      // waiting for IdlingResources, causing Jest hook timeouts before Detox can
+      // even throw an error. By disabling sync proactively, we allow the tap to
+      // execute immediately.
       await device.disableSynchronization()
 
       try {
         await element(by.id(tabId)).tap()
 
-        // Poll for destination screen visibility with sync disabled
-        // This avoids the Fabric idle timeout while still validating navigation
-        const pollInterval = 500
-        const maxWaitTime = TIMEOUTS.LONG
-        const startTime = Date.now()
-
-        while (Date.now() - startTime < maxWaitTime) {
-          try {
-            await expect(element(by.id(screenId))).toBeVisible()
-            // Success! Screen is visible
-            return
-          } catch {
-            // Screen not visible yet, wait and retry
-            await new Promise((resolve) => setTimeout(resolve, pollInterval))
-          }
-        }
-
-        // Timeout reached - throw descriptive error
-        throw new Error(
-          `Navigation to ${tabName} tab timed out after ${maxWaitTime}ms. ` +
-            `Screen '${screenId}' never became visible.`,
-        )
+        // Small delay to allow navigation animation to start
+        await new Promise((resolve) => setTimeout(resolve, 500))
       } finally {
-        // Always re-enable synchronization
+        // Always re-enable synchronization for the waitFor check
         await device.enableSynchronization()
       }
+
+      // Now wait for destination screen with sync enabled (validates real UI state)
+      await waitFor(element(by.id(screenId)))
+        .toBeVisible()
+        .withTimeout(TIMEOUTS.LONG)
+
+      return // Success - exit function
     } catch (error) {
       lastError = error
       const errorMessage = error instanceof Error ? error.message : String(error)
